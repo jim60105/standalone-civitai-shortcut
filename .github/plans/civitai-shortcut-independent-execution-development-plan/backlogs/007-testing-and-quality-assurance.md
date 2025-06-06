@@ -210,7 +210,7 @@
 ### 本地測試執行
 ```bash
 # 安裝測試相依套件
-pip install -r tests/requirements-test.txt
+uv pip install -r tests/requirements-test.txt
 
 # 執行所有新功能測試
 pytest tests/new_features/ -v

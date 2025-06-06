@@ -40,7 +40,7 @@
    COPY requirements.txt .
    
    # 安裝 Python 相依套件
-   RUN pip install --no-cache-dir -r requirements.txt
+   RUN uv pip install --no-cache-dir -r requirements.txt
    
    # 複製應用程式程式碼
    COPY scripts/ ./scripts/
@@ -74,7 +74,7 @@
    
    # 複製並安裝 Python 相依套件
    COPY requirements.txt .
-   RUN pip install --user --no-cache-dir -r requirements.txt
+   RUN uv pip install --user --no-cache-dir -r requirements.txt
    
    # 生產階段
    FROM python:3.10-slim
@@ -115,8 +115,8 @@
    *.pyd
    .Python
    env
-   pip-log.txt
-   pip-delete-this-directory.txt
+   uv-log.txt
+   uv-delete-this-directory.txt
    .tox
    .coverage
    .coverage.*

@@ -413,7 +413,7 @@
    echo -e "${YELLOW}檢查相依套件...${NC}"
    if ! python3 -c "import gradio" &> /dev/null; then
        echo -e "${YELLOW}安裝相依套件...${NC}"
-       python3 -m pip install -r requirements.txt
+       uv pip install -r requirements.txt
    fi
    
    # 啟動應用程式
@@ -443,7 +443,7 @@
    python -c "import gradio" >nul 2>&1
    if errorlevel 1 (
        echo 安裝相依套件...
-       python -m pip install -r requirements.txt
+       uv pip install -r requirements.txt
    )
    
    REM 啟動應用程式

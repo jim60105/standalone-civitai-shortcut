@@ -283,14 +283,14 @@
 - **檔案**：`install.sh` (Linux/macOS)
   ```bash
   #!/bin/bash
-  python -m pip install -r requirements.txt
+  uv pip install -r requirements.txt
   echo "安裝完成！執行 'python main.py' 啟動應用程式"
   ```
 
 - **檔案**：`install.bat` (Windows)
   ```batch
   @echo off
-  python -m pip install -r requirements.txt
+  uv pip install -r requirements.txt
   echo 安裝完成！執行 'python main.py' 啟動應用程式
   pause
   ```
@@ -321,7 +321,7 @@
   
   ## 方式二：獨立執行
   1. 複製儲存庫
-  2. 安裝相依性：pip install -r requirements.txt
+  2. 安裝相依性：uv pip install -r requirements.txt
   3. 執行：python main.py
   ```
 
