@@ -149,7 +149,7 @@ script_callbacks.on_ui_tabs(on_ui_tabs)
    ```python
    # Run as independent Gradio app
    if __name__ == "__main__":
-       civitai_shortcut.launch(server_name="0.0.0.0", server_port=7861)
+       civitai_shortcut.launch(server_name="0.0.0.0", server_port=7860)
    ```
 
 2. **Plugin architecture:**

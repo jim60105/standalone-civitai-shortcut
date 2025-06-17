@@ -77,7 +77,7 @@ class StandaloneUIBridge(IUIBridge):
             # Launch with default settings
             launch_kwargs = {
                 'server_name': kwargs.get('server_name', '0.0.0.0'),
-                'server_port': kwargs.get('server_port', 7861),
+                'server_port': kwargs.get('server_port', 7860),
                 'share': kwargs.get('share', False),
                 'debug': kwargs.get('debug', False),
                 'show_error': True,

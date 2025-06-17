@@ -242,7 +242,7 @@ if compat.is_standalone_mode():
     ui_bridge.launch_standalone(
         create_civitai_ui,
         server_name="0.0.0.0",
-        server_port=7861,
+        server_port=7860,
         share=False
     )
 ```
