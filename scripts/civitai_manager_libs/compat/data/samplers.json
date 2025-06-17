@@ -1,0 +1,175 @@
+{
+  "samplers": [
+    {
+      "name": "Euler",
+      "aliases": ["euler"],
+      "categories": ["basic"],
+      "img2img_compatible": true,
+      "default": true,
+      "description": "Basic Euler method sampler",
+      "recommended_steps": "20-30",
+      "notes": "Fast and stable, good for most use cases"
+    },
+    {
+      "name": "Euler a",
+      "aliases": ["euler_a", "euler_ancestral"],
+      "categories": ["ancestral", "basic"],
+      "img2img_compatible": true,
+      "description": "Euler ancestral sampler",
+      "recommended_steps": "20-30",
+      "notes": "More creative but less predictable than Euler"
+    },
+    {
+      "name": "LMS",
+      "aliases": ["lms"],
+      "categories": ["basic"],
+      "img2img_compatible": true,
+      "description": "Linear multistep sampler",
+      "recommended_steps": "20-30",
+      "notes": "Alternative to Euler, sometimes faster convergence"
+    },
+    {
+      "name": "Heun",
+      "aliases": ["heun"],
+      "categories": ["basic"],
+      "img2img_compatible": true,
+      "description": "Heun's method sampler",
+      "recommended_steps": "20-30",
+      "notes": "Higher quality but slower than Euler"
+    },
+    {
+      "name": "DPM2",
+      "aliases": ["dpm2"],
+      "categories": ["dpm"],
+      "img2img_compatible": true,
+      "description": "DPM solver, 2nd order",
+      "recommended_steps": "20-30",
+      "notes": "Good balance of speed and quality"
+    },
+    {
+      "name": "DPM2 a",
+      "aliases": ["dpm2_a", "dpm2_ancestral"],
+      "categories": ["dpm", "ancestral"],
+      "img2img_compatible": true,
+      "description": "DPM solver, 2nd order, ancestral",
+      "recommended_steps": "20-30",
+      "notes": "More creative variation of DPM2"
+    },
+    {
+      "name": "DPM++ 2S a",
+      "aliases": ["dpm_plus_plus_2s_a", "dpmpp_2s_a"],
+      "categories": ["dpm", "ancestral"],
+      "img2img_compatible": true,
+      "description": "DPM++ solver, 2S, ancestral",
+      "recommended_steps": "20-25",
+      "notes": "Fast and high quality, popular choice"
+    },
+    {
+      "name": "DPM++ 2M",
+      "aliases": ["dpm_plus_plus_2m", "dpmpp_2m"],
+      "categories": ["dpm"],
+      "img2img_compatible": true,
+      "description": "DPM++ solver, 2M",
+      "recommended_steps": "20-25",
+      "notes": "Excellent quality and speed balance"
+    },
+    {
+      "name": "DPM++ SDE",
+      "aliases": ["dpm_plus_plus_sde", "dpmpp_sde"],
+      "categories": ["dpm", "sde"],
+      "img2img_compatible": true,
+      "description": "DPM++ solver, SDE",
+      "recommended_steps": "20-25",
+      "notes": "High quality, good for fine details"
+    },
+    {
+      "name": "DPM++ 2M Karras",
+      "aliases": ["dpm_plus_plus_2m_karras", "dpmpp_2m_karras"],
+      "categories": ["dpm", "karras"],
+      "img2img_compatible": true,
+      "description": "DPM++ 2M with Karras noise schedule",
+      "recommended_steps": "20-30",
+      "notes": "Very popular, excellent results with Karras schedule"
+    },
+    {
+      "name": "DPM++ SDE Karras",
+      "aliases": ["dpm_plus_plus_sde_karras", "dpmpp_sde_karras"],
+      "categories": ["dpm", "karras", "sde"],
+      "img2img_compatible": true,
+      "description": "DPM++ SDE with Karras noise schedule",
+      "recommended_steps": "20-30",
+      "notes": "High quality with improved noise scheduling"
+    },
+    {
+      "name": "DDIM",
+      "aliases": ["ddim"],
+      "categories": ["basic"],
+      "img2img_compatible": true,
+      "description": "Denoising Diffusion Implicit Models",
+      "recommended_steps": "10-50",
+      "notes": "Deterministic, good for reproducible results"
+    },
+    {
+      "name": "PLMS",
+      "aliases": ["plms"],
+      "categories": ["basic"],
+      "img2img_compatible": true,
+      "description": "Pseudo Linear Multi-Step",
+      "recommended_steps": "10-50",
+      "notes": "Good alternative to DDIM"
+    },
+    {
+      "name": "UniPC",
+      "aliases": ["unipc"],
+      "categories": ["advanced"],
+      "img2img_compatible": true,
+      "description": "Unified Predictor-Corrector",
+      "recommended_steps": "10-20",
+      "notes": "Very fast, good for quick generation"
+    },
+    {
+      "name": "DEIS",
+      "aliases": ["deis"],
+      "categories": ["advanced"],
+      "img2img_compatible": true,
+      "description": "Diffusion Exponential Integrator Sampler",
+      "recommended_steps": "10-20",
+      "notes": "Fast sampler for quick results"
+    }
+  ],
+  "upscale_modes": [
+    "None",
+    "Linear",
+    "Bilinear",
+    "Bicubic",
+    "Nearest",
+    "Area",
+    "Lanczos"
+  ],
+  "sd_upscalers": [
+    "None",
+    "Lanczos",
+    "Nearest",
+    "LDSR",
+    "BSRGAN",
+    "ESRGAN_4x",
+    "R-ESRGAN 4x+",
+    "R-ESRGAN 4x+ Anime6B",
+    "ScuNET GAN",
+    "ScuNET PSNR",
+    "SwinIR 4x",
+    "4x-UltraSharp",
+    "4x-AnimeSharp",
+    "RealESRGAN_x4plus",
+    "RealESRGAN_x4plus_anime_6B"
+  ],
+  "categories": {
+    "basic": "Basic samplers suitable for most use cases",
+    "ancestral": "Ancestral samplers with added randomness",
+    "dpm": "DPM (Diffusion Probabilistic Models) family samplers",
+    "karras": "Samplers using Karras noise schedule",
+    "sde": "Stochastic Differential Equation samplers",
+    "advanced": "Advanced samplers for specific use cases",
+    "fast": "Fast samplers optimized for speed"
+  }
+}

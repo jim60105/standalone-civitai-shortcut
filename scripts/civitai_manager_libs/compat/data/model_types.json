@@ -1,0 +1,119 @@
+{
+  "checkpoint": {
+    "name": "Checkpoint",
+    "aliases": ["checkpoint", "checkpoints", "ckpt"],
+    "folder": "models/Stable-diffusion",
+    "extensions": [".ckpt", ".safetensors", ".pt", ".pth"],
+    "description": "Main Stable Diffusion model files",
+    "size_range": "2GB-8GB",
+    "notes": "Core model files for generating images"
+  },
+  "lora": {
+    "name": "LORA", 
+    "aliases": ["lora", "loras"],
+    "folder": "models/Lora",
+    "extensions": [".safetensors", ".ckpt", ".pt"],
+    "description": "Low-Rank Adaptation models for fine-tuning",
+    "size_range": "10MB-500MB",
+    "notes": "Lightweight models for style/character modifications"
+  },
+  "locon": {
+    "name": "LoCon",
+    "aliases": ["locon", "lycoris"],
+    "folder": "models/LyCORIS", 
+    "extensions": [".safetensors", ".ckpt", ".pt"],
+    "description": "LoRA with Convolution for improved image generation",
+    "size_range": "10MB-500MB",
+    "notes": "Enhanced LoRA variant with convolution layers"
+  },
+  "textual_inversion": {
+    "name": "TextualInversion",
+    "aliases": ["embedding", "embeddings", "ti", "textual_inversion"],
+    "folder": "models/embeddings",
+    "extensions": [".pt", ".bin", ".safetensors"],
+    "description": "Textual Inversion embeddings",
+    "size_range": "10KB-50MB",
+    "notes": "Small models for adding new concepts to prompts"
+  },
+  "hypernetwork": {
+    "name": "Hypernetwork",
+    "aliases": ["hypernetwork", "hypernetworks", "hypernet"],
+    "folder": "models/hypernetworks",
+    "extensions": [".pt", ".ckpt"],
+    "description": "Hypernetwork models for style modification",
+    "size_range": "50MB-200MB",
+    "notes": "Alternative to LoRA for style modifications"
+  },
+  "vae": {
+    "name": "VAE",
+    "aliases": ["vae", "vaes"],
+    "folder": "models/VAE",
+    "extensions": [".ckpt", ".safetensors", ".pt"],
+    "description": "Variational AutoEncoder models",
+    "size_range": "300MB-1GB",
+    "notes": "Improves color and detail in generated images"
+  },
+  "controlnet": {
+    "name": "Controlnet",
+    "aliases": ["controlnet", "control_net", "cn"],
+    "folder": "models/ControlNet",
+    "extensions": [".ckpt", ".safetensors", ".pt", ".pth"],
+    "description": "ControlNet models for guided generation",
+    "size_range": "1GB-3GB",
+    "notes": "Enables control over image composition and structure"
+  },
+  "aesthetic_gradient": {
+    "name": "AestheticGradient",
+    "aliases": ["aesthetic", "aesthetic_gradient"],
+    "folder": "models/aesthetic_embeddings",
+    "extensions": [".pt"],
+    "description": "Aesthetic gradient embeddings",
+    "size_range": "1KB-10MB",
+    "notes": "Embeddings for aesthetic score-based generation"
+  },
+  "wildcards": {
+    "name": "Wildcards",
+    "aliases": ["wildcard", "wildcards"],
+    "folder": "models/wildcards",
+    "extensions": [".txt"],
+    "description": "Text files containing prompt wildcards",
+    "size_range": "1KB-1MB",
+    "notes": "Collections of prompts for random generation"
+  },
+  "poses": {
+    "name": "Poses",
+    "aliases": ["pose", "poses", "openpose"],
+    "folder": "models/Poses",
+    "extensions": [".json", ".txt", ".png", ".jpg"],
+    "description": "Pose reference files",
+    "size_range": "1KB-10MB",
+    "notes": "Reference poses for character generation"
+  },
+  "upscaler": {
+    "name": "Upscaler",
+    "aliases": ["upscaler", "upscalers", "esrgan", "realesrgan"],
+    "folder": "models/ESRGAN",
+    "extensions": [".pth", ".pt"],
+    "description": "Image upscaling models",
+    "size_range": "50MB-200MB",
+    "notes": "Models for enhancing image resolution"
+  },
+  "other": {
+    "name": "Other",
+    "aliases": ["other", "misc", "miscellaneous"],
+    "folder": "models/Other",
+    "extensions": [".*"],
+    "description": "Other model types",
+    "size_range": "Variable",
+    "notes": "Miscellaneous model files that don't fit other categories"
+  },
+  "unknown": {
+    "name": "Unknown",
+    "aliases": ["unknown", "unrecognized"],
+    "folder": "models/Unknown",
+    "extensions": [".*"],
+    "description": "Unrecognized model types",
+    "size_range": "Variable",
+    "notes": "Models that couldn't be categorized automatically"
+  }
+}
