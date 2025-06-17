@@ -23,7 +23,7 @@
 		}
 	],
 
-	"postCreateCommand": "uv pip install -U pytest && cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli && rustup default stable",
+	"postCreateCommand": "uv pip install -U pytest black flake8 && cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli && rustup default stable",
 
 	"containerEnv": {
 		"LC_ALL": "C",
@@ -56,10 +56,23 @@
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
 				"ms-vscode-remote.remote-containers",
-				"donjayamanne.python-extension-pack"
+				"donjayamanne.python-extension-pack",
+				"ms-python.black-formatter",
+				"ms-python.flake8"
 			],
 			"settings": {
-				"chat.tools.autoApprove": true
+				"chat.tools.autoApprove": true,
+				"[python]": {
+					"editor.defaultFormatter": "ms-python.black-formatter"
+				},
+				"flake8.args": [
+					"--max-line-length=100",
+					"--ignore=E131,E302"
+				],
+				"black-formatter.args": [
+					"--line-length=100",
+					"--skip-string-normalization"
+				]
 			}
 		}
 	},
