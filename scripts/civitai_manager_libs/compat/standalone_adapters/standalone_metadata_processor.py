@@ -8,8 +8,23 @@ Enhanced to fully replicate AUTOMATIC1111 WebUI PNG info processing.
 import os
 import re
 import json
+import base64
+import io
 from typing import Dict, Tuple, Optional, Any, List
 from ..interfaces.imetadata_processor import IMetadataProcessor
+
+try:
+    import piexif
+    import piexif.helper
+    PIEXIF_AVAILABLE = True
+except ImportError:
+    PIEXIF_AVAILABLE = False
+
+try:
+    from PIL import Image, PngImagePlugin
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
 
 
 class StandaloneMetadataProcessor(IMetadataProcessor):
@@ -29,46 +44,138 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
         """
         Extract metadata from PNG using PIL, replicating modules.extras.run_pnginfo().
         
+        This implementation matches AUTOMATIC1111's read_info_from_image exactly.
+        
         Returns:
             Tuple containing:
-            - info1: Basic info text (parameters string)
-            - generate_data: Generation parameters as dictionary  
-            - info3: Additional info text
+            - info1: Empty string (as per WebUI)
+            - geninfo: Generation parameters as string
+            - info3: HTML formatted info for display
         """
+        if not PIL_AVAILABLE:
+            self._log_debug("PIL not available")
+            return "", "", ""
+        
         try:
-            from PIL import Image
-            from PIL.PngImagePlugin import PngInfo
-            
             if not os.path.exists(image_path):
                 self._log_debug(f"Image file not found: {image_path}")
-                return None, None, None
+                return "", "", ""
             
-            with Image.open(image_path) as img:
-                # Extract all text metadata
-                metadata = {}
-                if hasattr(img, 'text') and img.text:
-                    metadata = dict(img.text)
+            with Image.open(image_path) as image:
+                geninfo, items = self._read_info_from_image(image)
                 
-                # Look for parameters in various metadata keys
-                parameters_text = self._extract_parameters_text(metadata)
+                # Format items for display (matching WebUI's run_pnginfo format)
+                info_html = self._format_info_for_display(geninfo, items)
                 
-                if parameters_text:
-                    # Parse the parameters text into structured data
-                    generate_data = self.parse_generation_parameters(parameters_text)
-                    additional_info = self._extract_additional_info(metadata, parameters_text)
-                    
-                    self._log_debug(f"Successfully extracted PNG info from {image_path}")
-                    return parameters_text, generate_data, additional_info
-                else:
-                    self._log_debug(f"No generation parameters found in {image_path}")
-                    return None, None, None
-                    
-        except ImportError as e:
-            self._log_debug(f"PIL not available: {e}")
-            return None, None, None
+                return "", geninfo or "", info_html
+                
         except Exception as e:
             self._log_debug(f"Error extracting PNG info from {image_path}: {e}")
-            return None, None, None
+            return "", "", ""
+    
+    def _read_info_from_image(self, image: "Image.Image") -> Tuple[Optional[str], Dict[str, Any]]:
+        """
+        Read info from image, replicating AUTOMATIC1111's read_info_from_image exactly.
+        
+        Returns:
+            Tuple containing:
+            - geninfo: Generation parameters as string
+            - items: Dictionary of all metadata items
+        """
+        # Get image info copy
+        items = (image.info or {}).copy()
+        
+        # Pop parameters from items
+        geninfo = items.pop('parameters', None)
+        
+        # Check EXIF data if available
+        if "exif" in items and PIEXIF_AVAILABLE:
+            exif_data = items["exif"]
+            try:
+                exif = piexif.load(exif_data)
+            except OSError:
+                # memory / exif was not valid so piexif tried to read from a file
+                exif = None
+            
+            exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+            try:
+                exif_comment = piexif.helper.UserComment.load(exif_comment)
+            except ValueError:
+                exif_comment = exif_comment.decode('utf8', errors="ignore")
+            
+            if exif_comment:
+                geninfo = exif_comment
+        
+        # Check comment field for GIF
+        elif "comment" in items:
+            if isinstance(items["comment"], bytes):
+                geninfo = items["comment"].decode('utf8', errors="ignore")
+            else:
+                geninfo = items["comment"]
+        
+        # Remove ignored info keys (matching WebUI's IGNORED_INFO_KEYS)
+        ignored_keys = {
+            'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+            'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
+            'icc_profile', 'chromaticity', 'photoshop',
+        }
+        
+        for field in ignored_keys:
+            items.pop(field, None)
+        
+        # Handle NovelAI format (matching WebUI exactly)
+        if items.get("Software", None) == "NovelAI":
+            try:
+                json_info = json.loads(items["Comment"])
+                # Map NovelAI sampler to WebUI sampler
+                sampler_mapping = {
+                    "k_euler_ancestral": "Euler a",
+                    "k_euler": "Euler",
+                    "k_lms": "LMS",
+                    "k_heun": "Heun",
+                    "k_dpm_2": "DPM2",
+                    "k_dpm_2_ancestral": "DPM2 a",
+                    "k_dpmpp_2s_ancestral": "DPM++ 2S a",
+                    "k_dpmpp_2m": "DPM++ 2M",
+                    "k_dpmpp_sde": "DPM++ SDE",
+                    "ddim": "DDIM"
+                }
+                sampler = sampler_mapping.get(json_info.get("sampler", ""), "Euler a")
+                
+                geninfo = f"""{items["Description"]}
+Negative prompt: {json_info["uc"]}
+Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
+            except Exception:
+                self._log_debug("Error parsing NovelAI image generation parameters")
+        
+        return geninfo, items
+    
+    def _format_info_for_display(self, geninfo: Optional[str], items: Dict[str, Any]) -> str:
+        """
+        Format info for display, matching WebUI's run_pnginfo format exactly.
+        """
+        # Combine parameters and items for display
+        display_items = {**{'parameters': geninfo}, **items}
+        
+        info_parts = []
+        for key, text in display_items.items():
+            if text is not None:
+                # HTML escape the text (simplified version)
+                key_escaped = str(key).replace('<', '&lt;').replace('>', '&gt;')
+                text_escaped = str(text).replace('<', '&lt;').replace('>', '&gt;')
+                
+                info_parts.append(f"""
+<div>
+<p><b>{key_escaped}</b></p>
+<p>{text_escaped}</p>
+</div>
+""".strip())
+        
+        if len(info_parts) == 0:
+            message = "Nothing found in the image."
+            return f"<div><p>{message}</p></div>"
+        
+        return "\n".join(info_parts)
     
     def _extract_parameters_text(self, metadata: Dict[str, str]) -> Optional[str]:
         """Extract parameters text from PNG metadata."""
@@ -136,41 +243,155 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
     def extract_parameters_from_png(self, image_path: str) -> Optional[str]:
         """Extract generation parameters from PNG."""
         info1, generate_data, info3 = self.extract_png_info(image_path)
-        return info1
+        return generate_data if generate_data else info1
     
-    def parse_generation_parameters(self, parameters_text: str) -> Dict[str, Any]:
+    def parse_generation_parameters(self, x: str, skip_fields: List[str] = None) -> Dict[str, Any]:
         """
         Parse generation parameters text into structured data.
         
-        Enhanced to handle all known AUTOMATIC1111 parameter formats and edge cases.
+        This implementation exactly matches AUTOMATIC1111's infotext_utils.parse_generation_parameters.
         """
-        if not parameters_text:
+        if not x:
             return {}
         
-        params = {}
+        # Match WebUI's skip_fields default
+        if skip_fields is None:
+            skip_fields = []  # WebUI uses shared.opts.infotext_skip_pasting
+        
+        res = {}
+        
+        # Regular expressions from WebUI
+        re_param_code = r'\s*(\w[\w \-/]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
+        re_param = re.compile(re_param_code)
+        re_imagesize = re.compile(r"^(\d+)x(\d+)$")
+        
+        prompt = ""
+        negative_prompt = ""
+        
+        done_with_prompt = False
+        
+        *lines, lastline = x.strip().split("\n")
+        if len(re_param.findall(lastline)) < 3:
+            lines.append(lastline)
+            lastline = ''
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Negative prompt:"):
+                done_with_prompt = True
+                line = line[16:].strip()
+            if done_with_prompt:
+                negative_prompt += ("" if negative_prompt == "" else "\n") + line
+            else:
+                prompt += ("" if prompt == "" else "\n") + line
+        
+        for k, v in re_param.findall(lastline):
+            try:
+                if v[0] == '"' and v[-1] == '"':
+                    v = self._unquote(v)
+                
+                m = re_imagesize.match(v)
+                if m is not None:
+                    res[f"{k}-1"] = m.group(1)
+                    res[f"{k}-2"] = m.group(2)
+                else:
+                    res[k] = v
+            except Exception:
+                self._log_debug(f"Error parsing \"{k}: {v}\"")
+        
+        # Set defaults exactly as WebUI does
+        res["Prompt"] = prompt
+        res["Negative prompt"] = negative_prompt
+        
+        # Missing CLIP skip means it was set to 1 (the default)
+        if "Clip skip" not in res:
+            res["Clip skip"] = "1"
+        
+        # Process hypernet parameter
+        hypernet = res.get("Hypernet", None)
+        if hypernet is not None:
+            res["Prompt"] += f"""<hypernet:{hypernet}:{res.get("Hypernet strength", "1.0")}>"""
+        
+        if "Hires resize-1" not in res:
+            res["Hires resize-1"] = 0
+            res["Hires resize-2"] = 0
+        
+        if "Hires sampler" not in res:
+            res["Hires sampler"] = "Use same sampler"
+        
+        if "Hires schedule type" not in res:
+            res["Hires schedule type"] = "Use same scheduler"
+        
+        if "Hires checkpoint" not in res:
+            res["Hires checkpoint"] = "Use same checkpoint"
+        
+        if "Hires prompt" not in res:
+            res["Hires prompt"] = ""
+        
+        if "Hires negative prompt" not in res:
+            res["Hires negative prompt"] = ""
+        
+        if "Mask mode" not in res:
+            res["Mask mode"] = "Inpaint masked"
+        
+        if "Masked content" not in res:
+            res["Masked content"] = 'original'
+        
+        if "Inpaint area" not in res:
+            res["Inpaint area"] = "Whole picture"
+        
+        if "Masked area padding" not in res:
+            res["Masked area padding"] = 32
+        
+        # Missing RNG means the default was set, which is GPU RNG
+        if "RNG" not in res:
+            res["RNG"] = "GPU"
+        
+        if "Schedule type" not in res:
+            res["Schedule type"] = "Automatic"
+        
+        if "Schedule max sigma" not in res:
+            res["Schedule max sigma"] = 0
+        
+        if "Schedule min sigma" not in res:
+            res["Schedule min sigma"] = 0
+        
+        if "Schedule rho" not in res:
+            res["Schedule rho"] = 0
+        
+        if "VAE Encoder" not in res:
+            res["VAE Encoder"] = "Full"
+        
+        if "VAE Decoder" not in res:
+            res["VAE Decoder"] = "Full"
+        
+        if "FP8 weight" not in res:
+            res["FP8 weight"] = "Disable"
+        
+        if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
+            res["Cache FP16 weight for LoRA"] = False
+        
+        if "Emphasis" not in res:
+            res["Emphasis"] = "Original"
+        
+        if "Refiner switch by sampling steps" not in res:
+            res["Refiner switch by sampling steps"] = False
+        
+        # Remove skip_fields
+        for key in skip_fields:
+            res.pop(key, None)
+        
+        return res
+    
+    def _unquote(self, text: str) -> str:
+        """Unquote text, matching WebUI's unquote function."""
+        if len(text) == 0 or text[0] != '"' or text[-1] != '"':
+            return text
         
         try:
-            # Extract prompts first
-            positive_prompt, negative_prompt = self.extract_prompt_from_parameters(parameters_text)
-            if positive_prompt:
-                params['prompt'] = positive_prompt
-            if negative_prompt:
-                params['negative_prompt'] = negative_prompt
-            
-            # Find and parse technical parameters
-            tech_params = self._extract_technical_parameters(parameters_text)
-            params.update(tech_params)
-            
-            # Parse advanced parameters
-            advanced_params = self._extract_advanced_parameters(parameters_text)
-            params.update(advanced_params)
-            
-            self._log_debug(f"Successfully parsed {len(params)} parameters")
-            
-        except Exception as e:
-            self._log_debug(f"Error parsing parameters: {e}")
-        
-        return params
+            return json.loads(text)
+        except Exception:
+            return text
     
     def _extract_technical_parameters(self, text: str) -> Dict[str, Any]:
         """Extract technical parameters from text."""
