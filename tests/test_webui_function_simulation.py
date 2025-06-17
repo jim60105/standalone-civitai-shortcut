@@ -17,18 +17,18 @@ import shutil
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 
-from civitai_manager_libs.compat.standalone_adapters.standalone_config_manager import (
+from civitai_manager_libs.compat.standalone_adapters.standalone_config_manager import (  # noqa: E402, E501
     StandaloneConfigManager,
-)  # noqa: E402
-from civitai_manager_libs.compat.standalone_adapters.standalone_metadata_processor import (
+)
+from civitai_manager_libs.compat.standalone_adapters.standalone_metadata_processor import (  # noqa: E402, E501
     StandaloneMetadataProcessor,
-)  # noqa: E402
-from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import (
+)
+from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import (  # noqa: E402, E501
     StandalonePathManager,
-)  # noqa: E402
-from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider import (
+)
+from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider import (  # noqa: E402, E501
     StandaloneSamplerProvider,
-)  # noqa: E402
+)
 
 
 class TestStandaloneMetadataProcessor(unittest.TestCase):
