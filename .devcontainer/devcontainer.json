@@ -18,7 +18,7 @@
 		},
 		{
 			"source": "devcontainer-uv-cache-${devcontainerId}",
-			"target": "/root/.cache/uv",
+			"target": "/.cache/uv",
 			"type": "volume"
 		}
 	],
@@ -34,7 +34,7 @@
 		"UV_SYSTEM_PYTHON": "1",
 		"UV_COMPILE_BYTECODE": "1",
 		"UV_LINK_MODE": "copy",
-		"UV_CACHE_DIR": "/root/.cache/uv"
+		"UV_CACHE_DIR": "/.cache/uv"
 	},
 
 	// Additional Python development configurations
