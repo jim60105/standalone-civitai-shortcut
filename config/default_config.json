@@ -1,0 +1,41 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 7860,
+    "share": false
+  },
+  "civitai": {
+    "api_key": "",
+    "download_path": "./models",
+    "cache_enabled": true,
+    "cache_size_mb": 500,
+    "timeout": 30,
+    "max_retries": 3
+  },
+  "debug": {
+    "enabled": false,
+    "log_level": "INFO"
+  },
+  "paths": {
+    "models": "./models",
+    "output": "./outputs",
+    "cache": "./cache",
+    "logs": "./logs",
+    "data": "./data"
+  },
+  "ui": {
+    "theme": "soft",
+    "page_size": 20,
+    "auto_refresh": true
+  },
+  "download": {
+    "parallel_downloads": 2,
+    "chunk_size": 8192,
+    "verify_checksums": true
+  },
+  "metadata": {
+    "cache_duration": 3600,
+    "auto_update": true,
+    "include_nsfw": false
+  }
+}
