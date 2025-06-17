@@ -7,14 +7,14 @@ Enhanced with flexible configuration and cross-platform support.
 
 import os
 import json
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from ..interfaces.ipath_manager import IPathManager
 
 
 class StandalonePathManager(IPathManager):
     """
     Enhanced path manager implementation for standalone mode.
-    
+
     Provides comprehensive path management including:
     - Flexible base path detection
     - Configurable model folder paths
@@ -22,11 +22,11 @@ class StandalonePathManager(IPathManager):
     - Directory creation and validation
     - Path normalization and validation
     """
-    
+
     def __init__(self, base_path: Optional[str] = None, config_path: Optional[str] = None):
         """
         Initialize the standalone path manager.
-        
+
         Args:
             base_path: Optional custom base path (auto-detected if None)
             config_path: Optional path to configuration file
@@ -36,40 +36,40 @@ class StandalonePathManager(IPathManager):
         self._base_path = self._detect_base_path()
         self._model_folders = self._load_model_folders_config()
         self._debug_mode = False
-        
+
         # Ensure essential directories exist
         self._ensure_essential_directories()
-    
+
     def get_base_path(self) -> str:
         """Get the base path for standalone mode."""
         return self._base_path
-    
+
     def get_extension_path(self) -> str:
         """Get extension path (same as base path in standalone mode)."""
         return self._base_path
-    
+
     def get_models_path(self) -> str:
         """Get models directory path."""
-        models_path = os.path.join(self._base_path, 'models')
+        models_path = os.path.join(self._base_path, "models")
         self.ensure_directory_exists(models_path)
         return models_path
-    
+
     def get_model_folder_path(self, model_type: str) -> str:
         """
         Get specific model folder path with enhanced type handling.
-        
+
         Args:
             model_type: Type of model (case-insensitive)
-            
+
         Returns:
             Absolute path to the model folder
         """
         # Normalize model type for lookup
         normalized_type = self._normalize_model_type(model_type)
-        
+
         if normalized_type in self._model_folders:
             folder_path = self._model_folders[normalized_type]
-            
+
             # Handle absolute vs relative paths
             if os.path.isabs(folder_path):
                 full_path = folder_path
@@ -78,25 +78,25 @@ class StandalonePathManager(IPathManager):
         else:
             # Default fallback - create a folder under models
             full_path = os.path.join(self.get_models_path(), model_type)
-        
+
         # Ensure the directory exists
         self.ensure_directory_exists(full_path)
         return full_path
-    
+
     def get_config_path(self) -> str:
         """Get configuration file path."""
         if self._config_path:
             return self._config_path
-        
-        return os.path.join(self._base_path, 'setting.json')
-    
+
+        return os.path.join(self._base_path, "setting.json")
+
     def ensure_directory_exists(self, path: str) -> bool:
         """
         Ensure directory exists with enhanced error handling.
-        
+
         Args:
             path: Directory path to ensure exists
-            
+
         Returns:
             True if directory exists or was created successfully
         """
@@ -104,7 +104,7 @@ class StandalonePathManager(IPathManager):
             if not os.path.exists(path):
                 os.makedirs(path, exist_ok=True)
                 self._log_debug(f"Created directory: {path}")
-            
+
             return os.path.isdir(path)
         except PermissionError as e:
             self._log_debug(f"Permission denied creating directory {path}: {e}")
@@ -112,38 +112,38 @@ class StandalonePathManager(IPathManager):
         except Exception as e:
             self._log_debug(f"Error creating directory {path}: {e}")
             return False
-    
+
     def get_output_path(self) -> str:
         """Get output directory path for generated images."""
-        output_path = os.path.join(self._base_path, 'outputs')
+        output_path = os.path.join(self._base_path, "outputs")
         self.ensure_directory_exists(output_path)
         return output_path
-    
+
     def get_cache_path(self) -> str:
         """Get cache directory path."""
-        cache_path = os.path.join(self._base_path, 'cache')
+        cache_path = os.path.join(self._base_path, "cache")
         self.ensure_directory_exists(cache_path)
         return cache_path
-    
+
     def get_logs_path(self) -> str:
         """Get logs directory path."""
-        logs_path = os.path.join(self._base_path, 'logs')
+        logs_path = os.path.join(self._base_path, "logs")
         self.ensure_directory_exists(logs_path)
         return logs_path
-    
+
     def get_temp_path(self) -> str:
         """Get temporary directory path."""
-        temp_path = os.path.join(self._base_path, 'temp')
+        temp_path = os.path.join(self._base_path, "temp")
         self.ensure_directory_exists(temp_path)
         return temp_path
-    
+
     def validate_path(self, path: str) -> bool:
         """
         Validate if a path is accessible and within safe boundaries.
-        
+
         Args:
             path: Path to validate
-            
+
         Returns:
             True if path is valid and accessible
         """
@@ -151,22 +151,22 @@ class StandalonePathManager(IPathManager):
             # Check if path exists
             if not os.path.exists(path):
                 return False
-            
+
             # Check if path is within base directory (security check)
             real_path = os.path.realpath(path)
             real_base = os.path.realpath(self._base_path)
-            
+
             return real_path.startswith(real_base)
         except Exception:
             return False
-    
+
     def get_relative_path(self, full_path: str) -> str:
         """
         Get path relative to base directory.
-        
+
         Args:
             full_path: Absolute path
-            
+
         Returns:
             Path relative to base directory
         """
@@ -174,14 +174,14 @@ class StandalonePathManager(IPathManager):
             return os.path.relpath(full_path, self._base_path)
         except ValueError:
             return full_path
-    
+
     def resolve_path(self, path: str) -> str:
         """
         Resolve a potentially relative path to absolute path.
-        
+
         Args:
             path: Path to resolve (may be relative or absolute)
-            
+
         Returns:
             Absolute path
         """
@@ -189,183 +189,178 @@ class StandalonePathManager(IPathManager):
             return path
         else:
             return os.path.abspath(os.path.join(self._base_path, path))
-    
+
     def get_all_model_paths(self) -> Dict[str, str]:
         """
         Get all configured model paths.
-        
+
         Returns:
             Dictionary mapping model types to their paths
         """
         result = {}
         for model_type in self._model_folders:
             result[model_type] = self.get_model_folder_path(model_type)
-        
+
         return result
-    
+
     def add_model_folder(self, model_type: str, folder_path: str, save_config: bool = True) -> bool:
         """
         Add or update a model folder configuration.
-        
+
         Args:
             model_type: Type of model
             folder_path: Path to the folder (can be relative or absolute)
             save_config: Whether to save the configuration to file
-            
+
         Returns:
             True if successfully added
         """
         try:
             self._model_folders[model_type] = folder_path
-            
+
             # Ensure the directory exists
             full_path = self.get_model_folder_path(model_type)
             success = self.ensure_directory_exists(full_path)
-            
+
             if success and save_config:
                 self._save_model_folders_config()
-            
+
             return success
         except Exception as e:
             self._log_debug(f"Error adding model folder {model_type}: {e}")
             return False
-    
+
     def _detect_base_path(self) -> str:
         """Detect the base path for the application with enhanced logic."""
         if self._custom_base_path:
             return os.path.abspath(self._custom_base_path)
-        
+
         # Start from the current file location
         current_file = os.path.abspath(__file__)
-        
+
         # Go up from: compat/standalone_adapters/standalone_path_manager.py
         # to find the scripts directory
         path_parts = current_file.split(os.sep)
-        
+
         # Look for 'scripts' directory in the path
         scripts_index = None
         for i, part in enumerate(reversed(path_parts)):
-            if part == 'scripts':
+            if part == "scripts":
                 scripts_index = len(path_parts) - i - 1
                 break
-        
+
         if scripts_index is not None:
             # Return parent of scripts directory
             scripts_path = os.sep.join(path_parts[:scripts_index])
-            if os.path.exists(os.path.join(scripts_path, 'scripts', 'civitai_shortcut.py')):
+            if os.path.exists(os.path.join(scripts_path, "scripts", "civitai_shortcut.py")):
                 return scripts_path
-        
+
         # Fallback: go up levels until we find civitai_shortcut.py
         base_path = current_file
         for _ in range(6):  # Reasonable limit
             base_path = os.path.dirname(base_path)
-            expected_script = os.path.join(base_path, 'scripts', 'civitai_shortcut.py')
+            expected_script = os.path.join(base_path, "scripts", "civitai_shortcut.py")
             if os.path.exists(expected_script):
                 return base_path
-        
+
         # Final fallback to current working directory
         return os.getcwd()
-    
+
     def _load_model_folders_config(self) -> Dict[str, str]:
         """Load model folder configuration from file or use defaults."""
-        config_file = os.path.join(self._base_path, 'model_folders.json')
-        
+        config_file = os.path.join(self._base_path, "model_folders.json")
+
         if os.path.exists(config_file):
             try:
-                with open(config_file, 'r', encoding='utf-8') as f:
+                with open(config_file, "r", encoding="utf-8") as f:
                     config = json.load(f)
                     self._log_debug(f"Loaded model folders config from {config_file}")
                     return config
             except Exception as e:
                 self._log_debug(f"Error loading model folders config: {e}")
-        
+
         return self._get_default_model_folders()
-    
+
     def _save_model_folders_config(self) -> bool:
         """Save model folder configuration to file."""
-        config_file = os.path.join(self._base_path, 'model_folders.json')
-        
+        config_file = os.path.join(self._base_path, "model_folders.json")
+
         try:
             os.makedirs(os.path.dirname(config_file), exist_ok=True)
-            with open(config_file, 'w', encoding='utf-8') as f:
+            with open(config_file, "w", encoding="utf-8") as f:
                 json.dump(self._model_folders, f, indent=2, ensure_ascii=False)
-            
+
             self._log_debug(f"Saved model folders config to {config_file}")
             return True
         except Exception as e:
             self._log_debug(f"Error saving model folders config: {e}")
             return False
-    
+
     def _get_default_model_folders(self) -> Dict[str, str]:
         """Get default model folder configuration with comprehensive types."""
         return {
             # Standard model types
-            'Checkpoint': os.path.join("models", "Stable-diffusion"),
-            'LORA': os.path.join("models", "Lora"),
-            'LoCon': os.path.join("models", "LyCORIS"),
-            'TextualInversion': os.path.join("models", "embeddings"),
-            'Hypernetwork': os.path.join("models", "hypernetworks"),
-            'VAE': os.path.join("models", "VAE"),
-            
+            "Checkpoint": os.path.join("models", "Stable-diffusion"),
+            "LORA": os.path.join("models", "Lora"),
+            "LoCon": os.path.join("models", "LyCORIS"),
+            "TextualInversion": os.path.join("models", "embeddings"),
+            "Hypernetwork": os.path.join("models", "hypernetworks"),
+            "VAE": os.path.join("models", "VAE"),
             # Advanced model types
-            'AestheticGradient': os.path.join("models", "aesthetic_embeddings"),
-            'Controlnet': os.path.join("models", "ControlNet"),
-            'Poses': os.path.join("models", "Poses"),
-            'Wildcards': os.path.join("models", "wildcards"),
-            'Other': os.path.join("models", "Other"),
-            'Unknown': os.path.join("models", "Unknown"),
-            
+            "AestheticGradient": os.path.join("models", "aesthetic_embeddings"),
+            "Controlnet": os.path.join("models", "ControlNet"),
+            "Poses": os.path.join("models", "Poses"),
+            "Wildcards": os.path.join("models", "wildcards"),
+            "Other": os.path.join("models", "Other"),
+            "Unknown": os.path.join("models", "Unknown"),
             # Additional Networks
-            'ANLORA': os.path.join("models", "additional_networks", "lora"),
-            'LoCon_Additional': os.path.join("models", "additional_networks", "locon"),
-            
+            "ANLORA": os.path.join("models", "additional_networks", "lora"),
+            "LoCon_Additional": os.path.join("models", "additional_networks", "locon"),
             # Upscaling models
-            'ESRGAN': os.path.join("models", "ESRGAN"),
-            'RealESRGAN': os.path.join("models", "RealESRGAN"),
-            'SwinIR': os.path.join("models", "SwinIR"),
-            
+            "ESRGAN": os.path.join("models", "ESRGAN"),
+            "RealESRGAN": os.path.join("models", "RealESRGAN"),
+            "SwinIR": os.path.join("models", "SwinIR"),
             # CLIP models
-            'CLIP': os.path.join("models", "CLIP"),
-            'CLIP_vision': os.path.join("models", "CLIP_vision"),
-            
+            "CLIP": os.path.join("models", "CLIP"),
+            "CLIP_vision": os.path.join("models", "CLIP_vision"),
             # Other specialized types
-            'Deepbooru': os.path.join("models", "deepbooru"),
-            'BLIP': os.path.join("models", "BLIP"),
+            "Deepbooru": os.path.join("models", "deepbooru"),
+            "BLIP": os.path.join("models", "BLIP"),
         }
-    
+
     def _normalize_model_type(self, model_type: str) -> str:
         """
         Normalize model type string for consistent lookup.
-        
+
         Args:
             model_type: Raw model type string
-            
+
         Returns:
             Normalized model type
         """
         # Basic normalization
         normalized = model_type.strip()
-        
+
         # Handle common aliases
         aliases = {
-            'checkpoints': 'Checkpoint',
-            'checkpoint': 'Checkpoint',
-            'lora': 'LORA',
-            'locon': 'LoCon',
-            'embedding': 'TextualInversion',
-            'embeddings': 'TextualInversion',
-            'textual_inversion': 'TextualInversion',
-            'ti': 'TextualInversion',
-            'hypernetworks': 'Hypernetwork',
-            'hypernet': 'Hypernetwork',
-            'vae': 'VAE',
-            'controlnet': 'Controlnet',
-            'cn': 'Controlnet',
+            "checkpoints": "Checkpoint",
+            "checkpoint": "Checkpoint",
+            "lora": "LORA",
+            "locon": "LoCon",
+            "embedding": "TextualInversion",
+            "embeddings": "TextualInversion",
+            "textual_inversion": "TextualInversion",
+            "ti": "TextualInversion",
+            "hypernetworks": "Hypernetwork",
+            "hypernet": "Hypernetwork",
+            "vae": "VAE",
+            "controlnet": "Controlnet",
+            "cn": "Controlnet",
         }
-        
+
         normalized_lower = normalized.lower()
         return aliases.get(normalized_lower, normalized)
-    
+
     def _ensure_essential_directories(self):
         """Ensure essential directories exist."""
         essential_dirs = [
@@ -374,15 +369,15 @@ class StandalonePathManager(IPathManager):
             self.get_cache_path(),
             self.get_logs_path(),
         ]
-        
+
         for directory in essential_dirs:
             self.ensure_directory_exists(directory)
-    
+
     def _log_debug(self, message: str):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
             print(f"StandalonePathManager: {message}")
-    
+
     def set_debug_mode(self, enabled: bool):
         """Enable or disable debug mode."""
         self._debug_mode = enabled

@@ -5,10 +5,10 @@ Contains adapters that provide implementations without WebUI dependencies.
 """
 
 __all__ = [
-    'StandalonePathManager',
-    'StandaloneConfigManager',
-    'StandaloneMetadataProcessor',
-    'StandaloneUIBridge',
-    'StandaloneSamplerProvider',
-    'StandaloneParameterProcessor'
+    "StandalonePathManager",
+    "StandaloneConfigManager",
+    "StandaloneMetadataProcessor",
+    "StandaloneUIBridge",
+    "StandaloneSamplerProvider",
+    "StandaloneParameterProcessor",
 ]
