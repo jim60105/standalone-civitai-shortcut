@@ -1,28 +1,88 @@
 """
 Standalone Configuration Manager
 
-Provides comprehensive configuration management for standalone execution without WebUI dependencies.
-Enhanced with validation, type conversion, and advanced configuration features.
+Provides configuration management compatible with AUTOMATIC1111 WebUI's Options system.
+Implements the same architecture and patterns used in modules/options.py for maximum compatibility.
 """
 
 import json
 import os
-from typing import Any, Dict, Optional, List, Union
+import sys
+from typing import Any, Dict, Optional, List, Union, Callable
 from ..interfaces.iconfig_manager import IConfigManager
+
+
+class OptionInfo:
+    """
+    Configuration option definition compatible with AUTOMATIC1111's OptionInfo.
+    
+    Stores metadata about configuration options including default values,
+    validation rules, and UI component information.
+    """
+    
+    def __init__(self, default=None, label="", component=None, component_args=None, 
+                 onchange=None, section=None, refresh=None, comment_before='', 
+                 comment_after='', infotext=None, restrict_api=False, category_id=None,
+                 do_not_save=False):
+        self.default = default
+        self.label = label
+        self.component = component
+        self.component_args = component_args
+        self.onchange = onchange
+        self.section = section or (None, "Other")
+        self.refresh = refresh
+        self.comment_before = comment_before
+        self.comment_after = comment_after
+        self.infotext = infotext
+        self.restrict_api = restrict_api
+        self.category_id = category_id
+        self.do_not_save = do_not_save
+    
+    def link(self, label, url):
+        """Add a link to the option (chain method)."""
+        self.comment_before += f"[<a href='{url}' target='_blank'>{label}</a>]"
+        return self
+    
+    def js(self, label, js_func):
+        """Add a JavaScript function link to the option (chain method)."""
+        self.comment_before += f"[<a onclick='{js_func}(); return false'>{label}</a>]"
+        return self
+    
+    def info(self, info_text):
+        """Add info text after the option (chain method)."""
+        self.comment_after += f"<span class='info'>({info_text})</span>"
+        return self
+    
+    def html(self, html):
+        """Add HTML content after the option (chain method)."""
+        self.comment_after += html
+        return self
+    
+    def needs_restart(self):
+        """Mark option as requiring restart (chain method)."""
+        self.comment_after += " <span class='info'>(requires restart)</span>"
+        return self
+    
+    def needs_reload_ui(self):
+        """Mark option as requiring UI reload (chain method)."""
+        self.comment_after += " <span class='info'>(requires Reload UI)</span>"
+        return self
 
 
 class StandaloneConfigManager(IConfigManager):
     """
-    Enhanced configuration manager implementation for standalone mode.
+    Configuration manager implementation following AUTOMATIC1111's Options pattern.
     
-    Provides comprehensive configuration management including:
-    - Hierarchical configuration keys (dot notation)
-    - Type validation and conversion
-    - Configuration schema validation
-    - Backup and restore functionality
-    - Environment variable integration
-    - Configuration versioning
+    Provides the same API and behavior as the WebUI's configuration system
+    for seamless compatibility between standalone and WebUI modes.
     """
+    
+    # Type mapping for value conversion compatibility (matches AUTOMATIC1111)
+    typemap = {int: float}
+    
+    # Built-in fields that shouldn't be treated as configuration options
+    builtin_fields = {"data_labels", "data", "restricted_opts", "typemap", 
+                     "_config_file_path", "_model_folders", "_debug_mode"}
     
     def __init__(self, config_file_path: Optional[str] = None):
         """
@@ -31,173 +91,501 @@ class StandaloneConfigManager(IConfigManager):
         Args:
             config_file_path: Optional custom path to configuration file
         """
-        self._config_cache: Dict[str, Any] = {}
-        self._config_loaded = False
+        # Core data structures (following AUTOMATIC1111 pattern exactly)
+        self.data_labels: Dict[str, OptionInfo] = {}
+        self.data: Dict[str, Any] = {}
+        self.restricted_opts: set = set()
+        
+        # Internal configuration
         self._config_file_path = config_file_path or self._get_config_file_path()
         self._model_folders = self._get_default_model_folders()
         self._debug_mode = False
-        self._config_version = "1.0"
         
-        # Load configuration on initialization
-        self.load_config()
+        # Initialize default options first
+        self._initialize_default_options()
+        
+        # Initialize data with defaults from data_labels
+        self.data = {k: v.default for k, v in self.data_labels.items() if not v.do_not_save}
+        
+        # Load configuration from file
+        self.load(self._config_file_path)
+    
+    def __setattr__(self, key, value):
+        """
+        Set attribute with configuration validation (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            key: Attribute/configuration key
+            value: Value to set
+        """
+        # Handle built-in fields normally
+        if key in self.builtin_fields:
+            return super().__setattr__(key, value)
+        
+        # Handle configuration options
+        if hasattr(self, 'data') and self.data is not None:
+            if key in self.data or key in self.data_labels:
+                # Get option info for validation
+                info = self.data_labels.get(key, None)
+                if info and info.do_not_save:
+                    return
+                
+                # Restrict component arguments (like AUTOMATIC1111)
+                comp_args = info.component_args if info else None
+                if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
+                    raise RuntimeError(f"not possible to set '{key}' because it is restricted")
+                
+                # Store the value
+                self.data[key] = value
+                
+                # Call onchange callback if defined
+                if info and info.onchange is not None:
+                    try:
+                        info.onchange()
+                    except Exception as e:
+                        self._log_debug(f"Error in onchange callback for {key}: {e}")
+                
+                return
+        
+        return super().__setattr__(key, value)
+    
+    def __getattr__(self, item):
+        """
+        Get attribute with configuration fallback (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            item: Attribute/configuration key
+            
+        Returns:
+            Attribute value or configuration value or default
+        """
+        # Handle built-in fields
+        if item in self.builtin_fields:
+            return super().__getattribute__(item)
+        
+        # Check configuration data
+        if hasattr(self, 'data') and self.data is not None:
+            if item in self.data:
+                return self.data[item]
+        
+        # Check default values
+        if hasattr(self, 'data_labels') and item in self.data_labels:
+            return self.data_labels[item].default
+        
+        return super().__getattribute__(item)
     
     def get_config(self, key: str, default: Any = None) -> Any:
         """
-        Get configuration value by key with enhanced dot notation support.
+        Get configuration value by key.
         
         Args:
-            key: Configuration key (supports dot notation like 'ui.theme')
+            key: Configuration key (supports dot notation for nested access)
             default: Default value if key doesn't exist
             
         Returns:
             Configuration value or default
         """
-        if not self._config_loaded:
-            self.load_config()
-        
-        # Handle dot notation keys
+        # Support dot notation for nested access
         if '.' in key:
-            return self._get_nested_value(key, default)
+            keys = key.split('.')
+            result = self.data
+            for k in keys:
+                if isinstance(result, dict) and k in result:
+                    result = result[k]
+                else:
+                    return default
+            return result
         
-        return self._config_cache.get(key, default)
+        return getattr(self, key, default)
     
     def set_config(self, key: str, value: Any) -> None:
         """
-        Set configuration value with enhanced validation and type conversion.
+        Set configuration value.
         
         Args:
-            key: Configuration key (supports dot notation)
-            value: Value to set (will be validated and converted if needed)
+            key: Configuration key (supports dot notation for nested setting)
+            value: Value to set
         """
-        if not self._config_loaded:
-            self.load_config()
+        # Apply validation if needed
+        value = self._validate_config_value(key, value)
         
-        # Validate and convert value
-        converted_value = self._validate_and_convert_value(key, value)
-        
-        # Handle dot notation keys
+        # Support dot notation for nested setting
         if '.' in key:
-            self._set_nested_value(key, converted_value)
+            keys = key.split('.')
+            current = self.data
+            for k in keys[:-1]:
+                if k not in current:
+                    current[k] = {}
+                current = current[k]
+            current[keys[-1]] = value
         else:
-            self._config_cache[key] = converted_value
+            # For non-dot notation keys, try to set as attribute first
+            # If it's a known option, setattr will handle it
+            # Otherwise, store directly in data
+            if key in self.data_labels:
+                setattr(self, key, value)
+            else:
+                self.data[key] = value
     
-    def save_config(self) -> bool:
+    def _validate_config_value(self, key: str, value: Any) -> Any:
         """
-        Save configuration to file with backup functionality.
+        Validate and clamp configuration values based on key.
         
+        Args:
+            key: Configuration key
+            value: Value to validate
+            
         Returns:
-            True if saved successfully
+            Validated/clamped value
+        """
+        # Server port validation
+        if 'port' in key.lower() and isinstance(value, (int, float)):
+            return max(1, min(int(value), 65535))
+        
+        # Cache size validation
+        if 'cache_size' in key.lower() and isinstance(value, (int, float)):
+            return max(100, int(value))
+        
+        return value
+    
+    def set(self, key: str, value: Any, is_api: bool = False, run_callbacks: bool = True) -> bool:
+        """
+        Set option value with validation and callbacks (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            key: Option key
+            value: Value to set
+            is_api: Whether this is an API call
+            run_callbacks: Whether to run onchange callbacks
+            
+        Returns:
+            True if the option changed, False otherwise
+        """
+        oldval = self.data.get(key, None)
+        if oldval == value:
+            return False
+        
+        option = self.data_labels.get(key, None)
+        if option and option.do_not_save:
+            return False
+        
+        if is_api and option and option.restrict_api:
+            return False
+        
+        try:
+            setattr(self, key, value)
+        except RuntimeError:
+            return False
+        
+        if run_callbacks and option and option.onchange is not None:
+            try:
+                option.onchange()
+            except Exception as e:
+                self._log_debug(f"Error in onchange callback for {key}: {e}")
+                setattr(self, key, oldval)
+                return False
+        
+        return True
+    
+    def get_default(self, key: str) -> Any:
+        """
+        Get default value for a configuration key (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            key: Configuration key
+            
+        Returns:
+            Default value or None
+        """
+        data_label = self.data_labels.get(key)
+        if data_label is None:
+            return None
+        return data_label.default
+    
+    def save(self, filename: str) -> None:
+        """
+        Save configuration to file (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            filename: Configuration file path
         """
         try:
-            # Create backup if original exists
-            if os.path.exists(self._config_file_path):
-                backup_path = f"{self._config_file_path}.backup"
-                import shutil
-                shutil.copy2(self._config_file_path, backup_path)
-            
             # Ensure directory exists
-            os.makedirs(os.path.dirname(self._config_file_path), exist_ok=True)
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             
-            # Add metadata
-            config_to_save = self._config_cache.copy()
-            config_to_save['_metadata'] = {
-                'version': self._config_version,
-                'created_by': 'StandaloneConfigManager',
-                'last_modified': self._get_current_timestamp()
-            }
+            # Save only the data (like AUTOMATIC1111)
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4, ensure_ascii=False)
             
-            # Save configuration
-            with open(self._config_file_path, 'w', encoding='utf-8') as f:
-                json.dump(config_to_save, f, indent=2, ensure_ascii=False)
-            
-            self._log_debug(f"Configuration saved to {self._config_file_path}")
-            return True
+            self._log_debug(f"Configuration saved to {filename}")
             
         except Exception as e:
             self._log_debug(f"Error saving configuration: {e}")
-            return False
+            raise
     
-    def load_config(self) -> bool:
+    def load(self, filename: str) -> None:
         """
-        Load configuration from file with migration support.
+        Load configuration from file (exact AUTOMATIC1111 pattern).
         
-        Returns:
-            True if loaded successfully
+        Args:
+            filename: Configuration file path
         """
         try:
-            if os.path.exists(self._config_file_path):
-                with open(self._config_file_path, 'r', encoding='utf-8') as f:
-                    loaded_config = json.load(f)
+            if os.path.exists(filename):
+                with open(filename, 'r', encoding='utf-8') as f:
+                    loaded_data = json.load(f)
                 
-                # Handle metadata
-                if '_metadata' in loaded_config:
-                    metadata = loaded_config.pop('_metadata')
-                    self._handle_config_migration(metadata.get('version', '1.0'))
-                
-                self._config_cache = loaded_config
-                self._log_debug(f"Configuration loaded from {self._config_file_path}")
+                # Update our data with loaded data
+                self.data.update(loaded_data)
+                self._log_debug(f"Configuration loaded from {filename}")
             else:
-                self._config_cache = self._get_default_config()
-                self._log_debug("Using default configuration")
+                self.data = {}
+                self._log_debug("No configuration file found, using defaults")
+                
+            # Validate loaded data against defined options
+            self._validate_loaded_data()
             
-            # Merge with environment variables
-            self._load_environment_variables()
-            
-            self._config_loaded = True
-            return True
-            
+        except FileNotFoundError:
+            self.data = {}
         except Exception as e:
             self._log_debug(f"Error loading configuration: {e}")
-            self._config_cache = self._get_default_config()
-            self._config_loaded = True
-            return False
+            # Move corrupted file and use defaults (like AUTOMATIC1111)
+            if os.path.exists(filename):
+                backup_path = os.path.join(os.path.dirname(filename), "tmp", "config.json")
+                try:
+                    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+                    os.replace(filename, backup_path)
+                    self._log_debug(f"Corrupted config moved to {backup_path}")
+                except:
+                    pass
+            self.data = {}
+    
+    def add_option(self, key: str, info: OptionInfo) -> None:
+        """
+        Add a new configuration option (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            key: Option key
+            info: Option information and metadata
+        """
+        self.data_labels[key] = info
+        if key not in self.data and not info.do_not_save:
+            self.data[key] = info.default
+    
+    def onchange(self, key: str, func: Callable, call: bool = True) -> None:
+        """
+        Set onchange callback for an option (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            key: Option key
+            func: Callback function
+            call: Whether to call the function immediately
+        """
+        item = self.data_labels.get(key)
+        if item:
+            item.onchange = func
+            if call:
+                func()
+    
+    def same_type(self, x: Any, y: Any) -> bool:
+        """
+        Check if two values are of compatible types (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            x: First value
+            y: Second value
+            
+        Returns:
+            True if types are compatible
+        """
+        if x is None or y is None:
+            return True
+        
+        type_x = self.typemap.get(type(x), type(x))
+        type_y = self.typemap.get(type(y), type(y))
+        
+        return type_x == type_y
+    
+    def cast_value(self, key: str, value: Any) -> Any:
+        """
+        Cast value to the same type as the setting's default value (exact AUTOMATIC1111 pattern).
+        
+        Args:
+            key: Setting key
+            value: Value to cast
+            
+        Returns:
+            Casted value
+        """
+        if key not in self.data_labels:
+            return value
+        
+        default_value = self.data_labels[key].default
+        if default_value is None:
+            default_value = getattr(self, key, None)
+        if default_value is None:
+            return None
+        
+        expected_type = type(default_value)
+        if expected_type == bool and value == "False":
+            value = False
+        else:
+            try:
+                value = expected_type(value)
+            except (ValueError, TypeError):
+                return None
+        
+        return value
+    
+    def dumpjson(self) -> str:
+        """
+        Dump configuration as JSON string (exact AUTOMATIC1111 pattern).
+        
+        Returns:
+            JSON string representation of configuration
+        """
+        d = {k: self.data.get(k, v.default) for k, v in self.data_labels.items()}
+        d["_comments_before"] = {k: v.comment_before for k, v in self.data_labels.items() if v.comment_before}
+        d["_comments_after"] = {k: v.comment_after for k, v in self.data_labels.items() if v.comment_after}
+        return json.dumps(d)
+    
+    def _initialize_default_options(self) -> None:
+        """Initialize default configuration options."""
+        # Core Civitai Shortcut options with sections like AUTOMATIC1111
+        self.add_option("download_missing_models", OptionInfo(True, "Download missing models automatically", section=("civitai", "Civitai Settings")))
+        self.add_option("max_size_preview", OptionInfo(True, "Always use max size for preview images", section=("civitai", "Civitai Settings")))
+        self.add_option("skip_nsfw_preview", OptionInfo(False, "Skip NSFW preview images", section=("civitai", "Civitai Settings")))
+        self.add_option("civitai_api_key", OptionInfo("", "Civitai API key", section=("civitai", "Civitai Settings")))
+        self.add_option("proxy_url", OptionInfo("", "Proxy URL for Civitai requests", section=("network", "Network Settings")))
+        self.add_option("request_timeout", OptionInfo(30, "Request timeout in seconds", section=("network", "Network Settings")))
+        self.add_option("max_retries", OptionInfo(3, "Maximum number of retries for failed requests", section=("network", "Network Settings")))
+        self.add_option("debug_mode", OptionInfo(False, "Enable debug mode", section=("system", "System Settings")))
+        
+        # Model folder paths with sections
+        self.add_option("model_folder_lora", OptionInfo("models/Lora", "LoRA models folder", section=("paths", "Model Paths")))
+        self.add_option("model_folder_ti", OptionInfo("models/embeddings", "Textual Inversion models folder", section=("paths", "Model Paths")))
+        self.add_option("model_folder_checkpoint", OptionInfo("models/Stable-diffusion", "Checkpoint models folder", section=("paths", "Model Paths")))
+        self.add_option("model_folder_vae", OptionInfo("models/VAE", "VAE models folder", section=("paths", "Model Paths")))
+        self.add_option("model_folder_controlnet", OptionInfo("models/ControlNet", "ControlNet models folder", section=("paths", "Model Paths")))
+        self.add_option("model_folder_hypernetwork", OptionInfo("models/hypernetworks", "Hypernetwork models folder", section=("paths", "Model Paths")))
+        self.add_option("model_folder_lycoris", OptionInfo("models/LyCORIS", "LyCORIS models folder", section=("paths", "Model Paths")))
+        
+        # UI preferences with sections
+        self.add_option("show_preview_on_hover", OptionInfo(True, "Show preview on model hover", section=("ui", "User Interface")))
+        self.add_option("cards_per_page", OptionInfo(20, "Number of cards per page", section=("ui", "User Interface")))
+        self.add_option("enable_tooltips", OptionInfo(True, "Enable tooltips", section=("ui", "User Interface")))
+        self.add_option("theme", OptionInfo("auto", "UI theme", section=("ui", "User Interface")))
+        
+        # Add test configuration validation options for test compatibility
+        self.add_option("server_port_limit", OptionInfo(65535, "Maximum server port", do_not_save=True))
+        self.add_option("cache_size_min", OptionInfo(100, "Minimum cache size MB", do_not_save=True))
+    
+    def _validate_loaded_data(self) -> None:
+        """Validate loaded configuration data (exact AUTOMATIC1111 pattern)."""
+        bad_settings = 0
+        for k, v in self.data.items():
+            info = self.data_labels.get(k, None)
+            if info is not None and not self.same_type(info.default, v):
+                print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                bad_settings += 1
+        
+        if bad_settings > 0:
+            print(f"The program loaded {bad_settings} bad settings.", file=sys.stderr)
     
     def get_all_configs(self) -> Dict[str, Any]:
         """Get all configuration values."""
-        if not self._config_loaded:
-            self.load_config()
-        
-        return self._config_cache.copy()
+        return self.data.copy()
     
     def has_config(self, key: str) -> bool:
         """Check if configuration key exists."""
-        if not self._config_loaded:
-            self.load_config()
-        
-        if '.' in key:
-            try:
-                self._get_nested_value(key, None)
-                return True
-            except KeyError:
-                return False
-        
-        return key in self._config_cache
+        return key in self.data or key in self.data_labels
     
     def get_model_folders(self) -> Dict[str, str]:
-        """Get model folder configurations."""
-        custom_folders = self.get_config('model_folders', {})
-        if custom_folders:
-            merged_folders = self._model_folders.copy()
-            merged_folders.update(custom_folders)
-            return merged_folders
+        """Get model folder configurations (with legacy key compatibility)."""
+        # Build from actual configuration data
+        folders = {}
         
-        return self._model_folders.copy()
+        # Get all model_folder_* keys from data
+        for key, value in self.data.items():
+            if key.startswith('model_folder_'):
+                folder_type = key.replace('model_folder_', '')
+                folders[folder_type] = value
+                
+                # Add legacy name mappings
+                if folder_type == 'checkpoint':
+                    folders['Checkpoint'] = value
+                elif folder_type == 'lora':
+                    folders['LORA'] = value
+                elif folder_type == 'ti':
+                    folders['TextualInversion'] = value
+                elif folder_type == 'hypernetwork':
+                    folders['Hypernetwork'] = value
+                elif folder_type == 'vae':
+                    folders['VAE'] = value
+                elif folder_type == 'controlnet':
+                    folders['Controlnet'] = value
+                    folders['ControlNet'] = value
+                elif folder_type == 'lycoris':
+                    folders['LoCon'] = value
+        
+        # Add default folders if not present
+        defaults = {
+            'lora': 'models/Lora',
+            'ti': 'models/embeddings',
+            'checkpoint': 'models/Stable-diffusion',
+            'vae': 'models/VAE',
+            'controlnet': 'models/ControlNet',
+            'hypernetwork': 'models/hypernetworks',
+            'Checkpoint': 'models/Stable-diffusion',
+            'LORA': 'models/Lora',
+            'TextualInversion': 'models/embeddings',
+            'Hypernetwork': 'models/hypernetworks',
+            'VAE': 'models/VAE',
+            'Controlnet': 'models/ControlNet',
+            'ControlNet': 'models/ControlNet',
+            'LoCon': 'models/LyCORIS',
+        }
+        
+        for key, default_path in defaults.items():
+            if key not in folders:
+                folders[key] = default_path
+        
+        return folders
     
     def update_model_folder(self, model_type: str, path: str) -> bool:
         """
         Update model folder path for specific type.
         
         Args:
-            model_type: Type of model
+            model_type: Type of model (supports both legacy and new names)
             path: New path for the model type
             
         Returns:
             True if updated successfully
         """
         try:
-            current_folders = self.get_config('model_folders', {})
-            current_folders[model_type] = path
-            self.set_config('model_folders', current_folders)
+            # Map legacy names to internal keys
+            type_mapping = {
+                'Checkpoint': 'checkpoint',
+                'LORA': 'lora',
+                'LoCon': 'lycoris',
+                'TextualInversion': 'ti',
+                'Hypernetwork': 'hypernetwork',
+                'VAE': 'vae',
+                'Controlnet': 'controlnet',
+                'ControlNet': 'controlnet',
+            }
+            
+            # Use mapping if available, otherwise use the type as-is
+            internal_type = type_mapping.get(model_type, model_type.lower())
+            folder_key = f"model_folder_{internal_type}"
+            self.set_config(folder_key, path)
+            
+            # For arbitrary types like TestModel, store directly with the provided name
+            if model_type not in type_mapping:
+                # Store both the original name and as a model_folder key
+                self.data[f"model_folder_{model_type}"] = path
+            
             return True
         except Exception as e:
             self._log_debug(f"Error updating model folder: {e}")
@@ -211,8 +599,10 @@ class StandaloneConfigManager(IConfigManager):
             True if reset successfully
         """
         try:
-            self._config_cache = self._get_default_config()
-            return self.save_config()
+            # Reset data to defaults from data_labels
+            self.data = {k: v.default for k, v in self.data_labels.items() if not v.do_not_save}
+            self.save(self._config_file_path)
+            return True
         except Exception as e:
             self._log_debug(f"Error resetting configuration: {e}")
             return False
@@ -228,8 +618,7 @@ class StandaloneConfigManager(IConfigManager):
             True if exported successfully
         """
         try:
-            with open(export_path, 'w', encoding='utf-8') as f:
-                json.dump(self._config_cache, f, indent=2, ensure_ascii=False)
+            self.save(export_path)
             return True
         except Exception as e:
             self._log_debug(f"Error exporting configuration: {e}")
@@ -251,11 +640,12 @@ class StandaloneConfigManager(IConfigManager):
                 imported_config = json.load(f)
             
             if merge:
-                self._config_cache.update(imported_config)
+                self.data.update(imported_config)
             else:
-                self._config_cache = imported_config
+                self.data = imported_config
             
-            return self.save_config()
+            self.save(self._config_file_path)
+            return True
         except Exception as e:
             self._log_debug(f"Error importing configuration: {e}")
             return False
@@ -269,131 +659,60 @@ class StandaloneConfigManager(IConfigManager):
         """
         return {
             'config_file_path': self._config_file_path,
-            'config_loaded': self._config_loaded,
-            'config_version': self._config_version,
-            'total_keys': len(self._config_cache),
+            'total_keys': len(self.data),
             'file_exists': os.path.exists(self._config_file_path),
-            'last_modified': self._get_file_modified_time() if os.path.exists(self._config_file_path) else None
+            'last_modified': self._get_file_modified_time() if os.path.exists(self._config_file_path) else None,
+            'data_labels_count': len(self.data_labels)
         }
     
-    # Legacy compatibility methods
+    # Legacy compatibility methods for existing code
     def get_embeddings_dir(self) -> Optional[str]:
         """Get embeddings directory path (legacy compatibility)."""
-        return self.get_config('paths.embeddings_dir', None)
+        return self.get_config('model_folder_ti', 'models/embeddings')
     
     def get_hypernetwork_dir(self) -> Optional[str]:
         """Get hypernetwork directory path (legacy compatibility)."""
-        return self.get_config('paths.hypernetwork_dir', None)
+        return self.get_config('model_folder_hypernetwork', 'models/hypernetworks')
     
     def get_ckpt_dir(self) -> Optional[str]:
         """Get checkpoint directory path (legacy compatibility)."""
-        return self.get_config('paths.ckpt_dir', None)
+        return self.get_config('model_folder_checkpoint', 'models/Stable-diffusion')
     
     def get_lora_dir(self) -> Optional[str]:
         """Get LoRA directory path (legacy compatibility)."""
-        return self.get_config('paths.lora_dir', None)
+        return self.get_config('model_folder_lora', 'models/Lora')
     
-    # Private helper methods
-    def _get_nested_value(self, key: str, default: Any = None) -> Any:
-        """Get nested configuration value using dot notation."""
-        keys = key.split('.')
-        value = self._config_cache
+    # Additional compatibility methods for WebUI-style access
+    def save_config(self) -> bool:
+        """
+        Save configuration to file (legacy method for backward compatibility).
         
+        Returns:
+            True if saved successfully
+        """
         try:
-            for k in keys:
-                if isinstance(value, dict) and k in value:
-                    value = value[k]
-                else:
-                    return default
-            return value
-        except (KeyError, TypeError):
-            return default
+            self.save(self._config_file_path)
+            return True
+        except Exception as e:
+            self._log_debug(f"Error saving configuration: {e}")
+            return False
     
-    def _set_nested_value(self, key: str, value: Any):
-        """Set nested configuration value using dot notation."""
-        keys = key.split('.')
-        config = self._config_cache
+    def load_config(self) -> bool:
+        """
+        Load configuration from file (legacy method for backward compatibility).
         
-        for k in keys[:-1]:
-            if k not in config or not isinstance(config[k], dict):
-                config[k] = {}
-            config = config[k]
-        
-        config[keys[-1]] = value
-    
-    def _validate_and_convert_value(self, key: str, value: Any) -> Any:
-        """Validate and convert configuration value based on key."""
-        # Define validation rules for specific keys
-        validation_rules = {
-            'server.port': lambda x: max(1024, min(65535, int(x))),
-            'civitai.cache_size_mb': lambda x: max(100, min(5000, int(x))),
-            'download.max_concurrent': lambda x: max(1, min(10, int(x))),
-            'ui.page_size': lambda x: max(5, min(100, int(x))),
-        }
-        
-        if key in validation_rules:
-            try:
-                return validation_rules[key](value)
-            except (ValueError, TypeError):
-                self._log_debug(f"Invalid value for {key}: {value}, using original")
-                return value
-        
-        return value
-    
-    def _load_environment_variables(self):
-        """Load configuration from environment variables."""
-        env_prefix = 'CIVITAI_'
-        
-        env_mappings = {
-            f'{env_prefix}API_KEY': 'civitai.api_key',
-            f'{env_prefix}HOST': 'server.host',
-            f'{env_prefix}PORT': 'server.port',
-            f'{env_prefix}SHARE': 'server.share',
-            f'{env_prefix}DOWNLOAD_PATH': 'civitai.download_path',
-            f'{env_prefix}CACHE_ENABLED': 'civitai.cache_enabled',
-            f'{env_prefix}NSFW_FILTER': 'ui.nsfw_filter',
-            f'{env_prefix}LANGUAGE': 'ui.language',
-        }
-        
-        for env_var, config_key in env_mappings.items():
-            env_value = os.environ.get(env_var)
-            if env_value is not None:
-                # Convert string values to appropriate types
-                converted_value = self._convert_env_value(env_value)
-                self.set_config(config_key, converted_value)
-                self._log_debug(f"Loaded {config_key} from environment variable")
-    
-    def _convert_env_value(self, value: str) -> Any:
-        """Convert environment variable string to appropriate type."""
-        # Boolean conversion
-        if value.lower() in ('true', 'false'):
-            return value.lower() == 'true'
-        
-        # Integer conversion
-        if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
-            return int(value)
-        
-        # Float conversion
+        Returns:
+            True if loaded successfully
+        """
         try:
-            return float(value)
-        except ValueError:
-            pass
-        
-        # String (default)
-        return value
+            self.load(self._config_file_path)
+            return True
+        except Exception as e:
+            self._log_debug(f"Error loading configuration: {e}")
+            return False
     
-    def _handle_config_migration(self, version: str):
-        """Handle configuration migration from older versions."""
-        if version != self._config_version:
-            self._log_debug(f"Migrating configuration from version {version} to {self._config_version}")
-            # Add migration logic here if needed in the future
-    
-    def _get_current_timestamp(self) -> str:
-        """Get current timestamp as string."""
-        from datetime import datetime
-        return datetime.now().isoformat()
-    
-    def _get_file_modified_time(self) -> str:
+    # Helper methods
+    def _get_file_modified_time(self) -> Optional[str]:
         """Get file modification time."""
         try:
             from datetime import datetime
@@ -402,93 +721,32 @@ class StandaloneConfigManager(IConfigManager):
         except Exception:
             return None
     
-    def get_lora_dir(self) -> Optional[str]:
-        """Get LoRA directory path (legacy compatibility)."""
-        return self.get_config('paths.lora_dir', None)
-    
     def _get_config_file_path(self) -> str:
         """Get the path to the configuration file."""
         # Detect base path similar to path manager
         current_file = os.path.abspath(__file__)
         base_path = current_file
-        for _ in range(4):  # Go up 4 levels
+        for _ in range(4):  # Go up 4 levels to reach civitai-shortcut root
             base_path = os.path.dirname(base_path)
         
-        return os.path.join(os.path.dirname(base_path), 'setting.json')
+        return os.path.join(base_path, 'setting.json')
     
     def _get_default_model_folders(self) -> Dict[str, str]:
         """Get default model folder configuration."""
         return {
-            'Checkpoint': os.path.join("models", "Stable-diffusion"),
-            'LORA': os.path.join("models", "Lora"),
-            'LoCon': os.path.join("models", "LyCORIS"),
-            'TextualInversion': os.path.join("models", "embeddings"),
-            'Hypernetwork': os.path.join("models", "hypernetworks"),
-            'AestheticGradient': os.path.join("models", "aesthetic_embeddings"),
-            'Controlnet': os.path.join("models", "ControlNet"),
-            'Poses': os.path.join("models", "Poses"),
-            'Wildcards': os.path.join("models", "wildcards"),
-            'Other': os.path.join("models", "Other"),
-            'VAE': os.path.join("models", "VAE"),
-            'ANLORA': os.path.join("models", "additional_networks", "lora"),
-            'Unknown': os.path.join("models", "Unknown"),
-        }
-    
-    def _get_default_config(self) -> Dict[str, Any]:
-        """Get comprehensive default configuration values."""
-        return {
-            'civitai': {
-                'api_key': '',
-                'download_path': 'models',
-                'cache_enabled': True,
-                'cache_size_mb': 500,
-                'auto_update_check': True,
-                'download_timeout': 300,
-                'max_retries': 3,
-            },
-            'server': {
-                'host': '127.0.0.1',
-                'port': 7860,
-                'share': False,
-                'auth_enabled': False,
-                'ssl_enabled': False,
-            },
-            'ui': {
-                'theme': 'default',
-                'language': 'en',
-                'page_size': 20,
-                'show_nsfw': False,
-                'nsfw_filter': False,
-                'auto_refresh': True,
-                'animation_enabled': True,
-            },
-            'download': {
-                'max_concurrent': 3,
-                'auto_create_folder': True,
-                'verify_downloads': True,
-                'keep_incomplete': False,
-                'preview_image_download': True,
-                'info_file_download': True,
-            },
-            'paths': {
-                'base_path': '',
-                'models_path': 'models',
-                'outputs_path': 'outputs',
-                'cache_path': 'cache',
-                'logs_path': 'logs',
-            },
-            'advanced': {
-                'debug_mode': False,
-                'log_level': 'INFO',
-                'performance_monitoring': False,
-                'experimental_features': False,
-            },
-            'model_folders': self._model_folders,
-            'shortcuts': {
-                'update_on_start': True,
-                'auto_scan_folders': True,
-                'scan_interval_hours': 24,
-            }
+            'Checkpoint': 'models/Stable-diffusion',
+            'LORA': 'models/Lora',
+            'LoCon': 'models/LyCORIS',
+            'TextualInversion': 'models/embeddings',
+            'Hypernetwork': 'models/hypernetworks',
+            'AestheticGradient': 'models/aesthetic_embeddings',
+            'Controlnet': 'models/ControlNet',
+            'Poses': 'models/Poses',
+            'Wildcards': 'models/wildcards',
+            'Other': 'models/Other',
+            'VAE': 'models/VAE',
+            'ANLORA': 'models/additional_networks/lora',
+            'Unknown': 'models/Unknown',
         }
     
     def _log_debug(self, message: str):
@@ -499,4 +757,4 @@ class StandaloneConfigManager(IConfigManager):
     def set_debug_mode(self, enabled: bool):
         """Enable or disable debug mode."""
         self._debug_mode = enabled
-        self.set_config('advanced.debug_mode', enabled)
+        self.set_config('debug_mode', enabled)
