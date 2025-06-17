@@ -23,7 +23,7 @@
 		}
 	],
 
-	"postCreateCommand": "cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli && rustup default stable",
+	"postCreateCommand": "cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli && rustup default stable && uv pip install -U pytest",
 
 	"containerEnv": {
 		"LC_ALL": "C",
