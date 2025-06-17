@@ -159,7 +159,7 @@ scripts/civitai_manager_libs/compat/
 
 ### Documentation (4 files created)
 ```
-.github/codex/
+docs/
 ├── interface_specifications.md          # Detailed interface documentation
 ├── architecture_overview.md             # System architecture documentation
 ├── usage_examples.md                    # Comprehensive usage examples
