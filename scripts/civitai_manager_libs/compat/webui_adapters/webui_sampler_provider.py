@@ -2,6 +2,7 @@
 WebUI Sampler Provider
 
 Provides sampler information using AUTOMATIC1111 WebUI modules.
+Compatible with the actual AUTOMATIC1111 implementation.
 """
 
 from typing import List
@@ -12,26 +13,42 @@ class WebUISamplerProvider(ISamplerProvider):
     """Sampler provider implementation using WebUI modules."""
 
     def get_samplers(self) -> List[str]:
-        """Get list of available samplers from WebUI."""
+        """Get list of available samplers from WebUI using visible_samplers()."""
         try:
-            from modules.sd_samplers import samplers
+            from modules.sd_samplers import visible_samplers
 
-            return [x.name for x in samplers] if samplers else self._get_default_samplers()
+            visible = visible_samplers()
+            return [x.name for x in visible] if visible else self._get_default_samplers()
         except (ImportError, AttributeError):
-            return self._get_default_samplers()
+            # Fallback to older method
+            try:
+                from modules.sd_samplers import samplers
+
+                return [x.name for x in samplers] if samplers else self._get_default_samplers()
+            except (ImportError, AttributeError):
+                return self._get_default_samplers()
 
     def get_samplers_for_img2img(self) -> List[str]:
-        """Get list of samplers for img2img from WebUI."""
+        """Get list of samplers for img2img from WebUI using visible_samplers()."""
         try:
-            from modules.sd_samplers import samplers_for_img2img
+            from modules.sd_samplers import visible_samplers
 
-            return (
-                [x.name for x in samplers_for_img2img]
-                if samplers_for_img2img
-                else self._get_default_samplers()
-            )
+            # In AUTOMATIC1111, samplers_for_img2img is set to all_samplers
+            # so we use visible_samplers() which filters hidden ones
+            visible = visible_samplers()
+            return [x.name for x in visible] if visible else self._get_default_samplers()
         except (ImportError, AttributeError):
-            return self._get_default_samplers()
+            # Fallback to older method
+            try:
+                from modules.sd_samplers import samplers_for_img2img
+
+                return (
+                    [x.name for x in samplers_for_img2img]
+                    if samplers_for_img2img
+                    else self._get_default_samplers()
+                )
+            except (ImportError, AttributeError):
+                return self._get_default_samplers()
 
     def get_upscale_modes(self) -> List[str]:
         """Get upscale modes from WebUI."""

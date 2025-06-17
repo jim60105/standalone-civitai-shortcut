@@ -2,7 +2,7 @@
 Standalone Sampler Provider
 
 Provides comprehensive sampler information for standalone execution without WebUI dependencies.
-Enhanced with full sampler compatibility and configuration management.
+Enhanced with full sampler compatibility matching AUTOMATIC1111 WebUI implementation.
 """
 
 import json
@@ -16,7 +16,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
     Enhanced sampler provider implementation for standalone mode.
 
     Provides comprehensive sampler information including:
-    - Complete sampler list with aliases
+    - Complete sampler list matching AUTOMATIC1111 WebUI
     - Upscaler information
     - Configuration management
     - Validation and compatibility checking
@@ -34,8 +34,20 @@ class StandaloneSamplerProvider(ISamplerProvider):
         self._debug_mode = False
 
     def get_samplers(self) -> List[str]:
-        """Get list of available samplers."""
-        return [sampler["name"] for sampler in self._samplers_data["samplers"]]
+        """Get list of available samplers including scheduler combinations."""
+        base_samplers = [sampler["name"] for sampler in self._samplers_data["samplers"]]
+
+        # Add common scheduler combinations to match AUTOMATIC1111 behavior
+        scheduler_combinations = []
+
+        for sampler_data in self._samplers_data["samplers"]:
+            sampler_name = sampler_data["name"]
+            # Add common combinations like "DPM++ 2M Karras"
+            if "dpm" in sampler_name.lower() and "karras" in sampler_data.get("categories", []):
+                if "Karras" not in sampler_name:
+                    scheduler_combinations.append(f"{sampler_name} Karras")
+
+        return base_samplers + scheduler_combinations
 
     def get_samplers_for_img2img(self) -> List[str]:
         """
@@ -48,7 +60,18 @@ class StandaloneSamplerProvider(ISamplerProvider):
             if sampler.get("img2img_compatible", True):  # Default to True
                 img2img_compatible.append(sampler["name"])
 
-        return img2img_compatible
+        # Add scheduler combinations for img2img compatible samplers
+        scheduler_combinations = []
+        for sampler_data in self._samplers_data["samplers"]:
+            if not sampler_data.get("img2img_compatible", True):
+                continue
+            sampler_name = sampler_data["name"]
+            # Add common combinations like "DPM++ 2M Karras"
+            if "dpm" in sampler_name.lower() and "karras" in sampler_data.get("categories", []):
+                if "Karras" not in sampler_name:
+                    scheduler_combinations.append(f"{sampler_name} Karras")
+
+        return img2img_compatible + scheduler_combinations
 
     def get_upscale_modes(self) -> List[str]:
         """Get list of available upscale modes."""
@@ -64,12 +87,20 @@ class StandaloneSamplerProvider(ISamplerProvider):
 
     def is_sampler_available(self, sampler_name: str) -> bool:
         """Check if specific sampler is available."""
-        sampler_names = [s["name"] for s in self._samplers_data["samplers"]]
+        # Check base sampler names (case-insensitive)
+        sampler_names = [s["name"].lower() for s in self._samplers_data["samplers"]]
         sampler_aliases = []
         for sampler in self._samplers_data["samplers"]:
-            sampler_aliases.extend(sampler.get("aliases", []))
+            aliases = sampler.get("aliases", [])
+            sampler_aliases.extend([alias.lower() for alias in aliases])
 
-        return sampler_name in sampler_names or sampler_name in sampler_aliases
+        # Check against base names and aliases
+        if sampler_name.lower() in sampler_names or sampler_name.lower() in sampler_aliases:
+            return True
+
+        # Check against scheduler combinations
+        all_samplers = self.get_samplers()
+        return sampler_name in all_samplers
 
     def get_default_sampler(self) -> str:
         """Get default sampler name."""
@@ -95,7 +126,12 @@ class StandaloneSamplerProvider(ISamplerProvider):
             Dictionary with sampler information or None if not found
         """
         for sampler in self._samplers_data["samplers"]:
-            if sampler["name"] == sampler_name or sampler_name in sampler.get("aliases", []):
+            # Check name (case-insensitive)
+            if sampler["name"].lower() == sampler_name.lower():
+                return sampler.copy()
+            # Check aliases (case-insensitive)
+            aliases = sampler.get("aliases", [])
+            if any(alias.lower() == sampler_name.lower() for alias in aliases):
                 return sampler.copy()
 
         return None
@@ -135,6 +171,16 @@ class StandaloneSamplerProvider(ISamplerProvider):
         Returns:
             Normalized sampler name
         """
+        # Handle scheduler combinations first
+        if " " in sampler_name:
+            parts = sampler_name.split()
+            if len(parts) >= 2:
+                base_name = " ".join(parts[:-1])
+                sampler_info = self.get_sampler_info(base_name)
+                if sampler_info:
+                    return sampler_name  # Return the full combined name
+
+        # Handle base samplers and aliases
         sampler_info = self.get_sampler_info(sampler_name)
         return sampler_info["name"] if sampler_info else sampler_name
 
@@ -170,177 +216,163 @@ class StandaloneSamplerProvider(ISamplerProvider):
         return self._get_default_samplers_config()
 
     def _get_default_samplers_config(self) -> Dict[str, Any]:
-        """Get comprehensive default sampler configuration."""
+        """Get comprehensive default sampler configuration matching AUTOMATIC1111."""
         return {
             "samplers": [
+                # K-Diffusion samplers (from sd_samplers_kdiffusion.py)
+                {
+                    "name": "DPM++ 2M",
+                    "aliases": ["k_dpmpp_2m", "dpmpp_2m_karras"],
+                    "categories": ["dpm", "karras"],
+                    "img2img_compatible": True,
+                    "description": "DPM++ solver, 2M with Karras scheduler",
+                },
+                {
+                    "name": "DPM++ SDE",
+                    "aliases": ["k_dpmpp_sde"],
+                    "categories": ["dpm", "karras", "sde", "brownian_noise"],
+                    "img2img_compatible": True,
+                    "description": "DPM++ solver, SDE with Karras scheduler",
+                },
+                {
+                    "name": "DPM++ 2M SDE",
+                    "aliases": ["k_dpmpp_2m_sde"],
+                    "categories": ["dpm", "exponential", "brownian_noise"],
+                    "img2img_compatible": True,
+                    "description": "DPM++ solver, 2M SDE with exponential scheduler",
+                },
+                {
+                    "name": "DPM++ 2M SDE Heun",
+                    "aliases": ["k_dpmpp_2m_sde_heun"],
+                    "categories": ["dpm", "exponential", "brownian_noise", "heun"],
+                    "img2img_compatible": True,
+                    "description": "DPM++ solver, 2M SDE Heun with exponential scheduler",
+                },
+                {
+                    "name": "DPM++ 2S a",
+                    "aliases": ["k_dpmpp_2s_a"],
+                    "categories": ["dpm", "karras", "ancestral"],
+                    "img2img_compatible": True,
+                    "description": "DPM++ solver, 2S ancestral with Karras scheduler",
+                },
+                {
+                    "name": "DPM++ 3M SDE",
+                    "aliases": ["k_dpmpp_3m_sde"],
+                    "categories": [
+                        "dpm",
+                        "exponential",
+                        "brownian_noise",
+                        "discard_next_to_last_sigma",
+                    ],
+                    "img2img_compatible": True,
+                    "description": "DPM++ solver, 3M SDE with exponential scheduler",
+                },
+                {
+                    "name": "Euler a",
+                    "aliases": ["k_euler_a", "k_euler_ancestral"],
+                    "categories": ["ancestral", "basic"],
+                    "img2img_compatible": True,
+                    "description": "Euler ancestral sampler",
+                },
                 {
                     "name": "Euler",
-                    "aliases": ["euler"],
+                    "aliases": ["k_euler"],
                     "categories": ["basic"],
                     "img2img_compatible": True,
                     "default": True,
                     "description": "Basic Euler method sampler",
                 },
                 {
-                    "name": "Euler a",
-                    "aliases": ["euler_a", "euler_ancestral"],
-                    "categories": ["ancestral", "basic"],
-                    "img2img_compatible": True,
-                    "description": "Euler ancestral sampler",
-                },
-                {
                     "name": "LMS",
-                    "aliases": ["lms"],
+                    "aliases": ["k_lms"],
                     "categories": ["basic"],
                     "img2img_compatible": True,
                     "description": "Linear multistep sampler",
                 },
                 {
                     "name": "Heun",
-                    "aliases": ["heun"],
-                    "categories": ["basic"],
+                    "aliases": ["k_heun"],
+                    "categories": ["basic", "second_order"],
                     "img2img_compatible": True,
                     "description": "Heun's method sampler",
                 },
                 {
                     "name": "DPM2",
-                    "aliases": ["dpm2"],
-                    "categories": ["dpm"],
+                    "aliases": ["k_dpm_2"],
+                    "categories": ["dpm", "karras", "discard_next_to_last_sigma", "second_order"],
                     "img2img_compatible": True,
                     "description": "DPM solver, 2nd order",
                 },
                 {
                     "name": "DPM2 a",
-                    "aliases": ["dpm2_a", "dpm2_ancestral"],
-                    "categories": ["dpm", "ancestral"],
+                    "aliases": ["k_dpm_2_a"],
+                    "categories": [
+                        "dpm",
+                        "karras",
+                        "discard_next_to_last_sigma",
+                        "ancestral",
+                        "second_order",
+                    ],
                     "img2img_compatible": True,
                     "description": "DPM solver, 2nd order, ancestral",
                 },
                 {
-                    "name": "DPM++ 2S a",
-                    "aliases": ["dpm_plus_plus_2s_a", "dpmpp_2s_a"],
-                    "categories": ["dpm", "ancestral"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ solver, 2S, ancestral",
-                },
-                {
-                    "name": "DPM++ 2M",
-                    "aliases": ["dpm_plus_plus_2m", "dpmpp_2m"],
-                    "categories": ["dpm"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ solver, 2M",
-                },
-                {
-                    "name": "DPM++ SDE",
-                    "aliases": ["dpm_plus_plus_sde", "dpmpp_sde"],
-                    "categories": ["dpm", "sde"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ solver, SDE",
-                },
-                {
                     "name": "DPM fast",
-                    "aliases": ["dpm_fast"],
-                    "categories": ["dpm", "fast"],
+                    "aliases": ["k_dpm_fast"],
+                    "categories": ["dpm", "fast", "ancestral"],
                     "img2img_compatible": True,
                     "description": "DPM solver, fast variant",
                 },
                 {
                     "name": "DPM adaptive",
-                    "aliases": ["dpm_adaptive"],
-                    "categories": ["dpm", "adaptive"],
+                    "aliases": ["k_dpm_ad"],
+                    "categories": ["dpm", "adaptive", "ancestral"],
                     "img2img_compatible": True,
                     "description": "DPM solver, adaptive",
                 },
                 {
-                    "name": "LMS Karras",
-                    "aliases": ["lms_karras"],
-                    "categories": ["karras", "basic"],
+                    "name": "Restart",
+                    "aliases": ["restart"],
+                    "categories": ["karras", "second_order", "advanced"],
                     "img2img_compatible": True,
-                    "description": "LMS with Karras noise schedule",
+                    "description": "Restart sampler for improving generative processes",
                 },
-                {
-                    "name": "DPM2 Karras",
-                    "aliases": ["dpm2_karras"],
-                    "categories": ["dpm", "karras"],
-                    "img2img_compatible": True,
-                    "description": "DPM2 with Karras noise schedule",
-                },
-                {
-                    "name": "DPM2 a Karras",
-                    "aliases": ["dpm2_a_karras"],
-                    "categories": ["dpm", "karras", "ancestral"],
-                    "img2img_compatible": True,
-                    "description": "DPM2 ancestral with Karras noise schedule",
-                },
-                {
-                    "name": "DPM++ 2S a Karras",
-                    "aliases": ["dpm_plus_plus_2s_a_karras", "dpmpp_2s_a_karras"],
-                    "categories": ["dpm", "karras", "ancestral"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ 2S ancestral with Karras noise schedule",
-                },
-                {
-                    "name": "DPM++ 2M Karras",
-                    "aliases": ["dpm_plus_plus_2m_karras", "dpmpp_2m_karras"],
-                    "categories": ["dpm", "karras"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ 2M with Karras noise schedule",
-                },
-                {
-                    "name": "DPM++ SDE Karras",
-                    "aliases": ["dpm_plus_plus_sde_karras", "dpmpp_sde_karras"],
-                    "categories": ["dpm", "karras", "sde"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ SDE with Karras noise schedule",
-                },
+                # Timesteps samplers (from sd_samplers_timesteps.py)
                 {
                     "name": "DDIM",
                     "aliases": ["ddim"],
-                    "categories": ["basic"],
+                    "categories": ["timesteps"],
                     "img2img_compatible": True,
                     "description": "Denoising Diffusion Implicit Models",
                 },
                 {
+                    "name": "DDIM CFG++",
+                    "aliases": ["ddim_cfgpp"],
+                    "categories": ["timesteps", "cfg_plus_plus"],
+                    "img2img_compatible": True,
+                    "description": "DDIM with CFG++ enhancement",
+                },
+                {
                     "name": "PLMS",
                     "aliases": ["plms"],
-                    "categories": ["basic"],
+                    "categories": ["timesteps"],
                     "img2img_compatible": True,
                     "description": "Pseudo Linear Multi-Step",
                 },
                 {
                     "name": "UniPC",
                     "aliases": ["unipc"],
-                    "categories": ["advanced"],
+                    "categories": ["timesteps", "advanced"],
                     "img2img_compatible": True,
                     "description": "Unified Predictor-Corrector",
                 },
+                # LCM samplers (from sd_samplers_lcm.py)
                 {
-                    "name": "DEIS",
-                    "aliases": ["deis"],
-                    "categories": ["advanced"],
+                    "name": "LCM",
+                    "aliases": ["k_lcm"],
+                    "categories": ["lcm", "fast"],
                     "img2img_compatible": True,
-                    "description": "Diffusion Exponential Integrator Sampler",
-                },
-                {
-                    "name": "DPM++ 3M SDE",
-                    "aliases": ["dpm_plus_plus_3m_sde", "dpmpp_3m_sde"],
-                    "categories": ["dpm", "sde", "advanced"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ solver, 3M, SDE",
-                },
-                {
-                    "name": "DPM++ 3M SDE Karras",
-                    "aliases": ["dpm_plus_plus_3m_sde_karras", "dpmpp_3m_sde_karras"],
-                    "categories": ["dpm", "sde", "karras", "advanced"],
-                    "img2img_compatible": True,
-                    "description": "DPM++ 3M SDE with Karras noise schedule",
-                },
-                {
-                    "name": "Restart",
-                    "aliases": ["restart"],
-                    "categories": ["advanced"],
-                    "img2img_compatible": True,
-                    "description": "Restart sampler",
+                    "description": "Latent Consistency Model sampler",
                 },
             ],
             "upscale_modes": [
