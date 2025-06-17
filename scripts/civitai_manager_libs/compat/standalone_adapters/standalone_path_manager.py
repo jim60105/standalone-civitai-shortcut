@@ -8,6 +8,7 @@ Enhanced with flexible configuration and cross-platform support.
 import os
 import json
 from typing import Dict, Optional
+from .. import paths
 from ..interfaces.ipath_manager import IPathManager
 
 
@@ -40,6 +41,20 @@ class StandalonePathManager(IPathManager):
         # Ensure essential directories exist
         self._ensure_essential_directories()
 
+    def get_script_path(self) -> str:
+        """
+        Get the main script path.
+        In standalone mode, this returns our extension's base path.
+        """
+        return self._base_path
+
+    def get_user_data_path(self) -> str:
+        """
+        Get the user data directory path.
+        In standalone mode, this returns our extension's data directory.
+        """
+        return str(paths.data_path)
+
     def get_base_path(self) -> str:
         """Get the base path for standalone mode."""
         return self._base_path
@@ -50,9 +65,7 @@ class StandalonePathManager(IPathManager):
 
     def get_models_path(self) -> str:
         """Get models directory path."""
-        models_path = os.path.join(self._base_path, "models")
-        self.ensure_directory_exists(models_path)
-        return models_path
+        return str(paths.models_path)
 
     def get_model_folder_path(self, model_type: str) -> str:
         """
@@ -298,34 +311,42 @@ class StandalonePathManager(IPathManager):
 
     def _get_default_model_folders(self) -> Dict[str, str]:
         """Get default model folder configuration with comprehensive types."""
+        # Use data_path for models to align with WebUI paths
+        models_base = "data/models"
+
         return {
-            # Standard model types
-            "Checkpoint": os.path.join("models", "Stable-diffusion"),
-            "LORA": os.path.join("models", "Lora"),
-            "LoCon": os.path.join("models", "LyCORIS"),
-            "TextualInversion": os.path.join("models", "embeddings"),
-            "Hypernetwork": os.path.join("models", "hypernetworks"),
-            "VAE": os.path.join("models", "VAE"),
+            # Direct WebUI directory mappings (primary)
+            "Stable-diffusion": os.path.join(models_base, "Stable-diffusion"),
+            "Lora": os.path.join(models_base, "Lora"),
+            "VAE": os.path.join(models_base, "VAE"),
+            "embeddings": os.path.join(models_base, "embeddings"),
+            "hypernetworks": os.path.join(models_base, "hypernetworks"),
+            "ControlNet": os.path.join(models_base, "ControlNet"),
+            # Standard model types (aliases)
+            "Checkpoint": os.path.join(models_base, "Stable-diffusion"),
+            "LORA": os.path.join(models_base, "Lora"),
+            "LoCon": os.path.join(models_base, "LyCORIS"),
+            "TextualInversion": os.path.join(models_base, "embeddings"),
+            "Hypernetwork": os.path.join(models_base, "hypernetworks"),
             # Advanced model types
-            "AestheticGradient": os.path.join("models", "aesthetic_embeddings"),
-            "Controlnet": os.path.join("models", "ControlNet"),
-            "Poses": os.path.join("models", "Poses"),
-            "Wildcards": os.path.join("models", "wildcards"),
-            "Other": os.path.join("models", "Other"),
-            "Unknown": os.path.join("models", "Unknown"),
+            "AestheticGradient": os.path.join(models_base, "aesthetic_embeddings"),
+            "Poses": os.path.join(models_base, "Poses"),
+            "Wildcards": os.path.join(models_base, "wildcards"),
+            "Other": os.path.join(models_base, "Other"),
+            "Unknown": os.path.join(models_base, "Unknown"),
             # Additional Networks
-            "ANLORA": os.path.join("models", "additional_networks", "lora"),
-            "LoCon_Additional": os.path.join("models", "additional_networks", "locon"),
+            "ANLORA": os.path.join(models_base, "additional_networks", "lora"),
+            "LoCon_Additional": os.path.join(models_base, "additional_networks", "locon"),
             # Upscaling models
-            "ESRGAN": os.path.join("models", "ESRGAN"),
-            "RealESRGAN": os.path.join("models", "RealESRGAN"),
-            "SwinIR": os.path.join("models", "SwinIR"),
+            "ESRGAN": os.path.join(models_base, "ESRGAN"),
+            "RealESRGAN": os.path.join(models_base, "RealESRGAN"),
+            "SwinIR": os.path.join(models_base, "SwinIR"),
             # CLIP models
-            "CLIP": os.path.join("models", "CLIP"),
-            "CLIP_vision": os.path.join("models", "CLIP_vision"),
+            "CLIP": os.path.join(models_base, "CLIP"),
+            "CLIP_vision": os.path.join(models_base, "CLIP_vision"),
             # Other specialized types
-            "Deepbooru": os.path.join("models", "deepbooru"),
-            "BLIP": os.path.join("models", "BLIP"),
+            "Deepbooru": os.path.join(models_base, "deepbooru"),
+            "BLIP": os.path.join(models_base, "BLIP"),
         }
 
     def _normalize_model_type(self, model_type: str) -> str:
@@ -343,19 +364,18 @@ class StandalonePathManager(IPathManager):
 
         # Handle common aliases
         aliases = {
-            "checkpoints": "Checkpoint",
-            "checkpoint": "Checkpoint",
-            "lora": "LORA",
+            "checkpoints": "Stable-diffusion",
+            "checkpoint": "Stable-diffusion",
+            "lora": "Lora",
             "locon": "LoCon",
-            "embedding": "TextualInversion",
-            "embeddings": "TextualInversion",
-            "textual_inversion": "TextualInversion",
-            "ti": "TextualInversion",
-            "hypernetworks": "Hypernetwork",
-            "hypernet": "Hypernetwork",
+            "embedding": "embeddings",
+            "textual_inversion": "embeddings",
+            "ti": "embeddings",
+            "hypernetworks": "hypernetworks",
+            "hypernet": "hypernetworks",
             "vae": "VAE",
-            "controlnet": "Controlnet",
-            "cn": "Controlnet",
+            "controlnet": "ControlNet",
+            "cn": "ControlNet",
         }
 
         normalized_lower = normalized.lower()

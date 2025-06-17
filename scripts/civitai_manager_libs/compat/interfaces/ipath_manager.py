@@ -11,22 +11,26 @@ class IPathManager(ABC):
     """Abstract interface for path management across different execution modes."""
 
     @abstractmethod
-    def get_base_path(self) -> str:
+    def get_script_path(self) -> str:
         """
-        Get the base path of the application.
+        Get the main script path.
+        In WebUI mode, this returns the WebUI's script_path.
+        In standalone mode, this returns our extension's base path.
 
         Returns:
-            str: The base directory path
+            str: The script path
         """
         pass
 
     @abstractmethod
-    def get_extension_path(self) -> str:
+    def get_user_data_path(self) -> str:
         """
-        Get the extension installation path.
+        Get the user data directory path.
+        In WebUI mode, this returns the WebUI's data_path.
+        In standalone mode, this returns our extension's data directory.
 
         Returns:
-            str: The extension directory path
+            str: The user data directory path
         """
         pass
 
@@ -34,6 +38,8 @@ class IPathManager(ABC):
     def get_models_path(self) -> str:
         """
         Get the models directory path.
+        In WebUI mode, this returns the WebUI's models_path.
+        In standalone mode, this returns our extension's models directory.
 
         Returns:
             str: The models directory path
@@ -43,13 +49,13 @@ class IPathManager(ABC):
     @abstractmethod
     def get_model_folder_path(self, model_type: str) -> str:
         """
-        Get the specific folder path for a model type.
+        Get specific model folder path for a given model type.
 
         Args:
-            model_type (str): The type of model (e.g., 'Checkpoint', 'LORA')
+            model_type: The type of model (e.g., 'Stable-diffusion', 'Lora', etc.)
 
         Returns:
-            str: The folder path for the specified model type
+            str: The model folder path
         """
         pass
 
@@ -66,12 +72,12 @@ class IPathManager(ABC):
     @abstractmethod
     def ensure_directory_exists(self, path: str) -> bool:
         """
-        Ensure a directory exists, creating it if necessary.
+        Ensure that a directory exists, creating it if necessary.
 
         Args:
-            path (str): The directory path to ensure exists
+            path: The directory path to ensure exists
 
         Returns:
-            bool: True if directory exists or was created successfully
+            bool: True if directory exists or was created successfully, False otherwise
         """
         pass
