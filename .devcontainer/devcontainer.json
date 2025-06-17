@@ -26,10 +26,9 @@
 	"postCreateCommand": "cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli && rustup default stable",
 
 	"containerEnv": {
+		"LC_ALL": "C",
 		"GIT_AUTHOR_NAME": "🤖 Codex-CLI",
 		"GIT_AUTHOR_EMAIL": "codex-cli[bot]@users.noreply.github.com",
-		"GIT_COMMITTER_NAME": "🤖 Codex-CLI",
-		"GIT_COMMITTER_EMAIL": "codex-cli[bot]@users.noreply.github.com",
 		"PYTHONUNBUFFERED": "1",
 		"PYTHONDONTWRITEBYTECODE": "1",
 		"UV_SYSTEM_PYTHON": "1",
@@ -44,6 +43,25 @@
 		"7860": {
 			"label": "Python Dev Server",
 			"onAutoForward": "notify"
+		}
+	},
+
+	// VS Code extensions to install
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"vadimcn.vscode-lldb",
+				"fill-labs.dependi",
+				"LittleFoxTeam.vscode-python-test-adapter",
+				"hbenl.vscode-test-explorer",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"ms-vscode-remote.remote-containers",
+				"donjayamanne.python-extension-pack"
+			],
+			"settings": {
+				"chat.tools.autoApprove": true
+			}
 		}
 	}
 }

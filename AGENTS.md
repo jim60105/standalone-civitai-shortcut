@@ -2,7 +2,7 @@
 
 * **Project:** Civitai Shortcut - An intelligent extension for AUTOMATIC1111 Stable Diffusion WebUI that facilitates seamless integration with the Civitai platform for model browsing, downloading, and management.
 
-* **Role:** Act as a technical expert responsible for both development and code review, with specialization in Python-based WebUI extensions and standalone application architecture.
+* **Role:** Act as a technical expert responsible for development, with specialization in Python-based WebUI extensions and standalone application architecture.
 
 * **Core References:** `README.md`, `.github/copilot-instructions.md`, `scripts/civitai_shortcut.py`
 
