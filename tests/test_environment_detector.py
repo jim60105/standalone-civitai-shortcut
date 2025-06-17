@@ -29,19 +29,33 @@ class TestEnvironmentDetector(unittest.TestCase):
     
     def test_detect_environment_webui_modules_available(self):
         """Test detection when WebUI modules are available."""
-        with patch('civitai_manager_libs.compat.environment_detector.EnvironmentDetector', autospec=True):
-            # Mock successful module imports
-            mock_modules_scripts = MagicMock()
-            mock_modules_scripts.basedir.return_value = '/fake/webui/path'
+        # Reset cache to ensure clean test
+        EnvironmentDetector.reset_cache()
+        
+        # Create proper mock modules
+        mock_modules_scripts = MagicMock()
+        # Mock basedir as a callable function that returns a valid path
+        mock_modules_scripts.basedir = MagicMock(return_value='/fake/webui/path')
+        
+        mock_modules_shared = MagicMock()
+        
+        # Also need to mock the modules package itself
+        mock_modules = MagicMock()
+        mock_modules.scripts = mock_modules_scripts
+        mock_modules.shared = mock_modules_shared
+        
+        with patch.dict('sys.modules', {
+            'modules': mock_modules,
+            'modules.scripts': mock_modules_scripts,
+            'modules.shared': mock_modules_shared
+        }), patch('os.path.exists') as mock_exists:
+            # Mock os.path.exists to return True for our fake webui path
+            mock_exists.return_value = True
             
-            mock_modules_shared = MagicMock()
-            
-            with patch.dict('sys.modules', {
-                'modules.scripts': mock_modules_scripts,
-                'modules.shared': mock_modules_shared
-            }):
-                result = EnvironmentDetector.detect_environment()
-                self.assertEqual(result, 'webui')
+            # Clear any import cache and force re-detection
+            EnvironmentDetector.reset_cache()
+            result = EnvironmentDetector.detect_environment()
+            self.assertEqual(result, 'webui')
     
     def test_detect_environment_webui_modules_unavailable(self):
         """Test detection when WebUI modules are not available."""
@@ -167,23 +181,32 @@ class TestEnvironmentDetector(unittest.TestCase):
     
     def test_get_environment_info_webui_mode(self):
         """Test get_environment_info in WebUI mode."""
-        with patch.object(EnvironmentDetector, 'detect_environment', return_value='webui'):
-            # Mock WebUI modules
-            mock_modules_scripts = MagicMock()
-            mock_modules_scripts.basedir.return_value = '/fake/webui'
+        # Reset cache and force WebUI mode
+        EnvironmentDetector.reset_cache()
+        EnvironmentDetector.force_environment('webui')
+        
+        # Create proper mock modules
+        mock_modules_scripts = MagicMock()
+        mock_modules_scripts.basedir = MagicMock(return_value='/fake/webui')
+        
+        mock_modules_shared = MagicMock()
+        mock_modules_shared.cmd_opts = 'fake_cmd_opts'
+        
+        # Mock the modules package itself
+        mock_modules = MagicMock()
+        mock_modules.scripts = mock_modules_scripts
+        mock_modules.shared = mock_modules_shared
+        
+        with patch.dict('sys.modules', {
+            'modules': mock_modules,
+            'modules.scripts': mock_modules_scripts,
+            'modules.shared': mock_modules_shared
+        }):
+            info = EnvironmentDetector.get_environment_info()
             
-            mock_modules_shared = MagicMock()
-            mock_modules_shared.cmd_opts = 'fake_cmd_opts'
-            
-            with patch.dict('sys.modules', {
-                'modules.scripts': mock_modules_scripts,
-                'modules.shared': mock_modules_shared
-            }):
-                info = EnvironmentDetector.get_environment_info()
-                
-                self.assertEqual(info['environment'], 'webui')
-                self.assertEqual(info['webui_base_dir'], '/fake/webui')
-                self.assertEqual(info['webui_cmd_opts'], 'fake_cmd_opts')
+            self.assertEqual(info['environment'], 'webui')
+            self.assertEqual(info['webui_base_dir'], '/fake/webui')
+            self.assertEqual(info['webui_cmd_opts'], 'fake_cmd_opts')
 
 
 if __name__ == '__main__':
