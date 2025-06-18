@@ -4,7 +4,6 @@ Image metadata processor for PNG information extraction and embedding.
 Supports extraction via AUTOMATIC1111 WebUI extras or PIL for standalone mode.
 """
 
-import os
 import json
 import re
 from typing import Dict, Any, Optional

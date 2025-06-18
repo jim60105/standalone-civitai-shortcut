@@ -96,6 +96,19 @@ class StandalonePathManager(IPathManager):
         self.ensure_directory_exists(full_path)
         return full_path
 
+    def get_model_path(self, model_type: str) -> str:
+        """
+        Get model path for specific model type.
+        Alias for get_model_folder_path for compatibility.
+
+        Args:
+            model_type: Type of model
+
+        Returns:
+            Path to the model folder
+        """
+        return self.get_model_folder_path(model_type)
+
     def get_config_path(self) -> str:
         """Get configuration file path."""
         if self._config_path:

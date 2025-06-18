@@ -27,10 +27,20 @@ class StandaloneUIComponents:
     def _get_default_theme(self) -> str:
         """Return default inline CSS theme."""
         return """
-        .civitai-header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; color: white; text-align: center; }
-        .civitai-card { border:1px solid #e1e5e9; border-radius:8px; padding:16px; margin:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-        .civitai-preview { max-width:100%; max-height:200px; object-fit:cover; border-radius:6px; }
-        .progress-container { background:#f8f9fa; border-radius:6px; padding:10px; margin:10px 0; }
+        .civitai-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 20px; color: white; text-align: center;
+        }
+        .civitai-card {
+            border:1px solid #e1e5e9; border-radius:8px; padding:16px;
+            margin:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1);
+        }
+        .civitai-preview {
+            max-width:100%; max-height:200px; object-fit:cover; border-radius:6px;
+        }
+        .progress-container {
+            background:#f8f9fa; border-radius:6px; padding:10px; margin:10px 0;
+        }
         """
 
     def create_header(self) -> gr.HTML:

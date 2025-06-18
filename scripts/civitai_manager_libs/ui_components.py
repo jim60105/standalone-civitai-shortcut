@@ -6,7 +6,7 @@ Supports both WebUI native and standalone implementations.
 import gradio as gr
 import json
 import re
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 
 class ParameterCopyPaste:

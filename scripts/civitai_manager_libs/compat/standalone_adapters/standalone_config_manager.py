@@ -892,3 +892,16 @@ class StandaloneConfigManager(IConfigManager):
         """Enable or disable debug mode."""
         self._debug_mode = enabled
         self.set_config("debug_mode", enabled)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get configuration value (WebUI compatibility method).
+        
+        Args:
+            key: Configuration key
+            default: Default value if key not found
+            
+        Returns:
+            Configuration value or default
+        """
+        return self.get_config(key, default)
