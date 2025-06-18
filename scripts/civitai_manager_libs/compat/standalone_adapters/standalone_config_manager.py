@@ -193,6 +193,19 @@ class StandaloneConfigManager(IConfigManager):
 
         return super().__getattribute__(item)
 
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get configuration value by key (alias for get_config).
+
+        Args:
+            key: Configuration key
+            default: Default value if key doesn't exist
+
+        Returns:
+            Configuration value or default
+        """
+        return self.get_config(key, default)
+
     def get_config(self, key: str, default: Any = None) -> Any:
         """
         Get configuration value by key.
