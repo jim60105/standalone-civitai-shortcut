@@ -7,3 +7,4 @@ CivitaiShortCutBackupUrl.json
 CivitaiShortCutClassification.json
 CivitaiShortCutRecipeCollection.json
 CivitaiShortCutSetting.json
+*.log
