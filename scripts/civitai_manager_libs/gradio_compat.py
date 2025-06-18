@@ -1,61 +1,119 @@
 """
-Gradio compatibility module for versions 3.41.2 and 4.40.0.
+Gradio compatibility module for version differences.
 
-This module provides minimal compatibility shims between Gradio 3.41.2 and 4.40.0.
+This module provides compatibility shims for different Gradio versions.
 """
 
 import gradio as gr
 
-# Handle SelectData import for Gradio 3.41.2 vs 4.40.0
+# Handle SelectData import for different Gradio versions
 try:
-    from gradio import SelectData
+    # Gradio 5.x
+    from gradio.events import SelectData
 except ImportError:
-    # For older versions, create a simple data class
-    class SelectData:
-        def __init__(self, index=None, value=None):
-            self.index = index
-            self.value = value
+    try:
+        # Gradio 4.x
+        from gradio import SelectData
+    except ImportError:
+        # Fallback for older versions
+        SelectData = None
 
-
-# Handle components with safe fallbacks
+# Handle State component for different Gradio versions
 try:
-    State = gr.State
-except AttributeError:
-    # Fallback for test environments
+    # Try to import State from gradio
+    from gradio import State
+except ImportError:
+    # Gradio 5.x doesn't have State, create a dummy implementation
     class State:
         def __init__(self, value=None):
             self.value = value
+        
+        def __call__(self, *args, **kwargs):
+            return self
 
-
+# Handle HTML component for different Gradio versions
 try:
-    HTML = gr.HTML
-except AttributeError:
-    # Fallback to Markdown if HTML not available
-    HTML = getattr(gr, 'Markdown', lambda **kwargs: None)
+    # Try to import HTML from gradio
+    from gradio import HTML
+except ImportError:
+    # Gradio 5.x might not have HTML, use Markdown as fallback
+    class HTML:
+        def __init__(self, value="", **kwargs):
+            # Convert to Markdown with HTML support
+            self._markdown = gr.Markdown(value, **kwargs)
+        
+        def __getattr__(self, name):
+            return getattr(self._markdown, name)
 
+# Handle Gallery component differences
 try:
     Gallery = gr.Gallery
 except AttributeError:
-    # Use Column as fallback
-    Gallery = getattr(gr, 'Column', lambda **kwargs: None)
+    # Fallback implementation if Gallery is missing
+    class Gallery:
+        def __init__(self, **kwargs):
+            # Use a simple container as fallback
+            self._component = gr.Column(**kwargs)
+        
+        def __getattr__(self, name):
+            return getattr(self._component, name)
 
+# Handle File component differences
 try:
     File = gr.File
 except AttributeError:
-    # Use Textbox as fallback
-    File = getattr(gr, 'Textbox', lambda **kwargs: None)
+    # Fallback implementation if File is missing
+    class File:
+        def __init__(self, label=None, **kwargs):
+            # Filter out File-specific kwargs that Textbox doesn't understand
+            textbox_kwargs = {}
+            if label:
+                textbox_kwargs['label'] = label
+            # Use Textbox as fallback for file input
+            self._component = gr.Textbox(placeholder="File path", **textbox_kwargs)
+        
+        def __getattr__(self, name):
+            return getattr(self._component, name)
 
+# Handle Dropdown component differences
 try:
     Dropdown = gr.Dropdown
 except AttributeError:
-    # Use Textbox as fallback
-    Dropdown = getattr(gr, 'Textbox', lambda **kwargs: None)
+    # Fallback implementation if Dropdown is missing
+    class Dropdown:
+        def __init__(self, **kwargs):
+            # Use Textbox as fallback
+            self._component = gr.Textbox(**kwargs)
+        
+        def __getattr__(self, name):
+            return getattr(self._component, name)
 
+# Handle Accordion component differences
 try:
     Accordion = gr.Accordion
 except AttributeError:
-    # Use Column as fallback
-    Accordion = getattr(gr, 'Column', lambda **kwargs: None)
+    # Fallback implementation if Accordion is missing
+    class Accordion:
+        def __init__(self, label="", open=True, **kwargs):
+            # Use Column as fallback
+            self._component = gr.Column(**kwargs)
+        
+        def __getattr__(self, name):
+            return getattr(self._component, name)
+        
+        def __enter__(self):
+            return self._component.__enter__()
+        
+        def __exit__(self, *args):
+            return self._component.__exit__(*args)
 
 # Export all compatibility components
-__all__ = ['SelectData', 'State', 'HTML', 'Gallery', 'File', 'Dropdown', 'Accordion']
+__all__ = [
+    'SelectData',
+    'State', 
+    'HTML',
+    'Gallery',
+    'File',
+    'Dropdown',
+    'Accordion'
+]

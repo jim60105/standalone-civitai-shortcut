@@ -67,18 +67,6 @@ class StandalonePathManager(IPathManager):
         """Get models directory path."""
         return str(paths.models_path)
 
-    def get_model_path(self, model_type: str) -> str:
-        """
-        Get specific model path (alias for get_model_folder_path).
-
-        Args:
-            model_type: Type of model
-
-        Returns:
-            Absolute path to the model folder
-        """
-        return self.get_model_folder_path(model_type)
-
     def get_model_folder_path(self, model_type: str) -> str:
         """
         Get specific model folder path with enhanced type handling.
