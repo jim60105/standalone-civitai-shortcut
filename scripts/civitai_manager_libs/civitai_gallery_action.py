@@ -25,6 +25,7 @@ from . import util
 from . import civitai
 from . import setting
 from . import ishortcut
+from .gradio_compat import SelectData
 
 # Compatibility layer variables
 _compat_layer = None
@@ -385,7 +386,7 @@ def on_civitai_hidden_change(hidden, index):
     return ""
 
 
-def on_gallery_select(evt: gr.SelectData, civitai_images):
+def on_gallery_select(evt: SelectData, civitai_images):
     return evt.index, civitai_images[evt.index], gr.update(selected="Image_Information")
 
 
@@ -427,7 +428,7 @@ def on_selected_model_id_change(modelid):
     )
 
 
-def on_versions_list_select(evt: gr.SelectData, modelid=None):
+def on_versions_list_select(evt: SelectData, modelid=None):
     page_url = None
     versions_list = None
     title_name = None

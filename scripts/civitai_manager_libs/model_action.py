@@ -8,12 +8,14 @@ through the compatibility layer.
 import os
 import json
 import gradio as gr
+from .gradio_compat import State, HTML, Gallery, File, Dropdown, Accordion
 import datetime
 
 from . import util
 from . import model
 from . import setting
 from . import ishortcut
+from .gradio_compat import SelectData
 # from . import civitai
 
 # Compatibility layer variables
@@ -34,7 +36,7 @@ def get_compatibility_layer():
 def on_ui():
             
     with gr.Column(scale=1):
-        with gr.Accordion("", open=True) as model_title_name:  
+        with Accordion("", open=True) as model_title_name:  
             update_modelfolder_btn = gr.Button(value="Reload Model Information", variant="primary" , visible=True)
             with gr.Row():
                 download_imagefolder = gr.Button(value="Open Download Image Folder", variant="primary" , visible=True)
@@ -48,7 +50,7 @@ def on_ui():
                 type="array"
             )
                         
-        with gr.Accordion("", open=True, visible=False) as version_title_name:
+        with Accordion("", open=True, visible=False) as version_title_name:
             version_location = gr.Textbox(label="Version file location", interactive=False)        
             downloaded_files = gr.DataFrame(
                     headers=["File Id","Filename","Type","Downloaded"],
@@ -149,7 +151,7 @@ def on_download_openfolder_click(vlocation):
         if path:
             util.open_folder(path)
         
-def on_downloaded_information_select(evt: gr.SelectData, df):
+def on_downloaded_information_select(evt: SelectData, df):
     # util.printD(evt.index)
     vname = None
     vlocation = None

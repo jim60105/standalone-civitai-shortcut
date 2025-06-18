@@ -7,6 +7,7 @@ through the compatibility layer.
 
 import os
 import gradio as gr
+from .gradio_compat import State, HTML, Gallery, File, Dropdown, Accordion
 import shutil
 
 from . import util
@@ -31,20 +32,20 @@ def get_compatibility_layer():
 def on_setting_ui():
     with gr.Column():
         with gr.Row():
-            with gr.Accordion("Option", open=False):
+            with Accordion("Option", open=False):
                 with gr.Row():
                     civitai_api_key = gr.Textbox(value=setting.civitai_api_key, label="Civitai Api Key", info="To access the models that require you to be logged in. Please obtain the key from: https://civitai.com/user/account.", interactive=True)
                 with gr.Row():
                     shortcut_update_when_start = gr.Checkbox(value=setting.shortcut_update_when_start, label="Startup : The program performs 'Update the model information for the shortcut' when it starts.",info="At program startup, the registered shortcuts are updated with the latest data. This process operates in the background. To update manually, you can uncheck that option and use the 'Scans and Model Updates -> Update the model information for the shortcut' feature.", interactive=True)
                     shortcut_max_download_image_per_version = gr.Slider(minimum=0, maximum=30, value=setting.shortcut_max_download_image_per_version, step=1,info="When registering a shortcut of a model, you can specify the maximum number of images to download. \n This is the maximum per version, and setting it to 0 means unlimited downloads.", label='Maximum number of download images per version', interactive=True)
         with gr.Row():
-            with gr.Accordion("Screen Style", open=False):
+            with Accordion("Screen Style", open=False):
                 with gr.Row():
                     scbrowser_screen_split_ratio = gr.Slider(minimum=0, maximum=setting.shortcut_browser_screen_split_ratio_max, value=setting.shortcut_browser_screen_split_ratio, step=1, info="You can specify the size ratio between the shortcut browser and the information screen.", label='Model Browser screen ratio', interactive=True)
                 with gr.Row():
-                    info_gallery_height = gr.Dropdown(choices=["auto"], value=setting.information_gallery_height, allow_custom_value=True, interactive=True, info="You can also specify a specific size other than 'auto'" , label="Information Gallery Height")
-                    gallery_thumbnail_image_style = gr.Dropdown(choices=["scale-down","cover","contain","fill","none"], value=setting.gallery_thumbnail_image_style, interactive=True, info="This specifies the shape of the displayed thumbnail." , label="Gallery Thumbnail Image Style")
-                    shortcut_browser_search_up = gr.Dropdown(choices=["Up","Down"], value="Up" if setting.shortcut_browser_search_up else "Down", interactive=True, label="Set the position of the search bar in the shortcut browser.", info="If you select 'Up', the search bar will be placed above the thumbnail pane.")
+                    info_gallery_height = Dropdown(choices=["auto"], value=setting.information_gallery_height, allow_custom_value=True, interactive=True, info="You can also specify a specific size other than 'auto'" , label="Information Gallery Height")
+                    gallery_thumbnail_image_style = Dropdown(choices=["scale-down","cover","contain","fill","none"], value=setting.gallery_thumbnail_image_style, interactive=True, info="This specifies the shape of the displayed thumbnail." , label="Gallery Thumbnail Image Style")
+                    shortcut_browser_search_up = Dropdown(choices=["Up","Down"], value="Up" if setting.shortcut_browser_search_up else "Down", interactive=True, label="Set the position of the search bar in the shortcut browser.", info="If you select 'Up', the search bar will be placed above the thumbnail pane.")
 
         with gr.Row():
             with gr.Tabs():
@@ -60,7 +61,7 @@ def on_setting_ui():
                         usergallery_images_rows_per_page = gr.Slider(minimum=1, maximum=14, value=setting.usergallery_images_rows_per_page, step=1, label='Civitai User Gallery Image Rows Per Page', interactive=True)
                     with gr.Row():
                         usergallery_openfolder_btn = gr.Button(value="Open Civitai User Gallery Cache Folder", variant="primary")
-                        with gr.Accordion("Clean User Gallery Cache", open=False):
+                        with Accordion("Clean User Gallery Cache", open=False):
                             usergallery_cleangallery_btn = gr.Button(value="Clean Civitai User Gallery Cache", variant="primary")
 
         with gr.Row():
@@ -86,7 +87,7 @@ def on_setting_ui():
 
 
         with gr.Row():
-            with gr.Accordion("Download Folder for Extensions", open=False):
+            with Accordion("Download Folder for Extensions", open=False):
                 with gr.Column():
                     extension_locon_folder = gr.Textbox(value=setting.model_folders['LoCon'], label="LyCORIS", interactive=True)
                     extension_wildcards_folder = gr.Textbox(value=setting.model_folders['Wildcards'], label="Wildcards", interactive=True)

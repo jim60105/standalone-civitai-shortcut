@@ -1,5 +1,6 @@
 import os
 import gradio as gr
+from .gradio_compat import State, HTML, Gallery, File, Dropdown, Accordion
 import datetime
 import requests
 import shutil
@@ -16,7 +17,7 @@ from . import ishortcut_action
 def on_scan_ui():
     with gr.Column():      
         with gr.Row():
-            with gr.Accordion("Scan models for Civitai", open=True):    
+            with Accordion("Scan models for Civitai", open=True):    
                 with gr.Row():
                     with gr.Column():
                         fix_information_filename = gr.Checkbox(label="Fix version information filename", value=False , visible=False) 
@@ -41,7 +42,7 @@ def on_scan_ui():
                             with gr.Column():
                                 create_models_info_btn = gr.Button(value="Create Model Information",variant="primary")                                                       
         with gr.Row():
-            with gr.Accordion("Update Shortcuts", open=True):   
+            with Accordion("Update Shortcuts", open=True):   
                 with gr.Row():
                     with gr.Column(): 
                         scan_to_shortcut_btn = gr.Button(value="Scan downloaded models for shortcut registration",variant="primary")                    
@@ -52,7 +53,7 @@ def on_scan_ui():
                         update_all_shortcuts_btn = gr.Button(value="Update the model information for the shortcut",variant="primary")
                         update_progress = gr.Markdown(value="This feature updates registered shortcuts with the latest information and downloads any new images if available.", visible=True)
         with gr.Row():
-            with gr.Accordion("Update Downloaded Model", open=True):   
+            with Accordion("Update Downloaded Model", open=True):   
                 with gr.Row():
                     with gr.Column(): 
                         update_lora_meta_for_downloaded_model_btn = gr.Button(value="Create a Lora metadata file for a downloaded model without Lora metadata file.",variant="primary")                    

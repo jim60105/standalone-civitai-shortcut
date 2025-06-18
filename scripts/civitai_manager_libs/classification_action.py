@@ -8,6 +8,7 @@ from . import setting
 from . import ishortcut
 from . import classification
 from . import classification_browser_page
+from .gradio_compat import SelectData
 
 def on_ui(shortcut_input):   
     with gr.Row(visible=False):
@@ -364,7 +365,7 @@ def load_model_information(modelid=None, ver_index=None):
 def on_shortcut_modelid_change(modelid=None):    
     return load_model_information(modelid, None)
 
-def on_shortcut_versions_select(evt: gr.SelectData, modelid:str):
+def on_shortcut_versions_select(evt: SelectData, modelid:str):
     return load_model_information(modelid, evt.index)    
 
 def on_delete_shortcut_model_btn_click(sc_model_id:str, shortcuts):
@@ -459,7 +460,7 @@ def on_refresh_classification_change(select_name):
         return gr.update(value=select_name), gr.update(value=info), current_time, gr.update(label=select_name), current_time, gr.update(choices=classification.get_list())
     return gr.update(value=""), gr.update(value=""), current_time, gr.update(label=setting.NEWCLASSIFICATION), gr.update(visible=True), gr.update(choices=classification.get_list())
 
-def on_sc_gallery_select(evt: gr.SelectData, shortcuts, page):
+def on_sc_gallery_select(evt: SelectData, shortcuts, page):
     current_time = datetime.datetime.now()
     
     if evt.value:
@@ -513,7 +514,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
     current_time = datetime.datetime.now()          
     return gr.update(value=result_list), gr.update(minimum=1, value=cur_page, maximum=max_page, step=1, label=f"Total {max_page} Pages"), current_time
 
-def on_classification_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=True):
+def on_classification_gallery_select(evt: SelectData, shortcuts, delete_opt=True):
     if evt.value:               
         shortcut = evt.value 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
@@ -564,7 +565,7 @@ def on_classification_delete_btn_click(select_name):
     current_time = datetime.datetime.now()    
     return gr.update(value=""), gr.update(choices=classification.get_list(), value=""), current_time,gr.update(label=setting.NEWCLASSIFICATION), gr.update(visible=True), gr.update(visible=False)
 
-def on_classification_list_select(evt: gr.SelectData):
+def on_classification_list_select(evt: SelectData):
     select_name = evt.value
     info = classification.get_classification_info(select_name)
     shortcuts = classification.get_classification_shortcuts(select_name)
