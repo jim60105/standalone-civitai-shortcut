@@ -11,8 +11,10 @@ import sys
 try:
     import gradio as gr
 except ImportError:
-    print("Error: Gradio is not installed. Please install it with: pip install gradio")
-    sys.exit(1)
+    gr = None
+
+# Core modules for initialization
+from scripts.civitai_manager_libs import setting, model, util
 
 
 def create_civitai_shortcut_ui(compat_layer):
@@ -123,21 +125,9 @@ def _initialize_components(compat_layer):
         compat_layer: The compatibility layer instance
     """
     try:
-        # Import and initialize setting module
-        from scripts.civitai_manager_libs import setting
-
         setting.init()
-
-        # Import and initialize model module
-        from scripts.civitai_manager_libs import model
-
         model.update_downloaded_model()
-
-        # Import util for debug output
-        from scripts.civitai_manager_libs import util
-
         util.printD("Civitai Shortcut initialized in standalone mode")
-
     except Exception as e:
         print(f"Warning: Failed to initialize some components: {e}")
 

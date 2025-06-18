@@ -368,6 +368,37 @@ def is_latest(modelid:str)->bool:
                 return True
     return False
 
+
+def setup_ui_copypaste(compat_layer):
+    """Setup UI parameter copy-paste feature."""
+    from .ui_components import ParameterCopyPaste
+    return ParameterCopyPaste(mode=compat_layer.mode)
+
+
+def create_parameter_components(copypaste, gr=gr):
+    """Create UI components for parameter copy-paste and bind events."""
+    with gr.Row():
+        paste_button = gr.Button("Paste Params", elem_id="paste_params")
+        copy_button = gr.Button("Copy Params", elem_id="copy_params")
+
+    with gr.Column():
+        prompt = gr.Textbox(label="Prompt", lines=3)
+        negative_prompt = gr.Textbox(label="Negative Prompt", lines=2)
+        with gr.Row():
+            steps = gr.Slider(minimum=1, maximum=150, value=20, label="Steps")
+            cfg_scale = gr.Slider(minimum=1, maximum=30, value=7, label="CFG Scale")
+
+    components = {
+        'paste_button': paste_button,
+        'copy_button': copy_button,
+        'prompt': prompt,
+        'negative_prompt': negative_prompt,
+        'steps': steps,
+        'cfg_scale': cfg_scale,
+    }
+    copypaste.register_copypaste_components(components)
+    return components
+
 # def update_shortcut_information(modelid):
 #     if not modelid:    
 #         return    
