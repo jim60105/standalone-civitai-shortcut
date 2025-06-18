@@ -18,10 +18,10 @@ class ConditionalImportManager:
 
     def is_webui_available(self) -> bool:
         """Check if WebUI modules are available."""
+        # Determine availability by attempting to import via importlib to allow mocking
         if self._webui_available is None:
             try:
-                import modules.scripts  # noqa: F401
-
+                importlib.import_module('modules.scripts')
                 self._webui_available = True
             except ImportError:
                 self._webui_available = False
@@ -38,7 +38,8 @@ class ConditionalImportManager:
         Returns:
             Any: Imported module or fallback value
         """
-        if module_name in self._module_cache:
+        # If no fallback provided and cached, return cached module
+        if module_name in self._module_cache and fallback is None:
             return self._module_cache[module_name]
 
         try:

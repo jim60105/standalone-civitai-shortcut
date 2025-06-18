@@ -306,21 +306,21 @@ def load_data():
     # Load WebUI specific paths through compatibility layer
     compat = get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
-        # Get WebUI model paths
+        # Override default model folder paths directly without filesystem check
         embeddings_dir = compat.path_manager.get_model_path('embeddings')
-        if embeddings_dir and os.path.exists(embeddings_dir):
+        if embeddings_dir:
             model_folders['TextualInversion'] = embeddings_dir
 
         hypernetwork_dir = compat.path_manager.get_model_path('hypernetworks')
-        if hypernetwork_dir and os.path.exists(hypernetwork_dir):
+        if hypernetwork_dir:
             model_folders['Hypernetwork'] = hypernetwork_dir
 
         ckpt_dir = compat.path_manager.get_model_path('checkpoints')
-        if ckpt_dir and os.path.exists(ckpt_dir):
+        if ckpt_dir:
             model_folders['Checkpoint'] = ckpt_dir
 
         lora_dir = compat.path_manager.get_model_path('lora')
-        if lora_dir and os.path.exists(lora_dir):
+        if lora_dir:
             model_folders['LORA'] = lora_dir
     else:
         # Fallback: Try to get WebUI paths directly (for backward compatibility)

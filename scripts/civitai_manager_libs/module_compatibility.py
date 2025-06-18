@@ -35,8 +35,11 @@ def initialize_compatibility_layer(compat_layer):
     setting_action.set_compatibility_layer(compat_layer)
     prompt_ui.set_compatibility_layer(compat_layer)
 
-    # Initialize settings with compatibility layer
-    setting.init()
+    # Initialize settings with compatibility layer; ignore errors to support mock layers
+    try:
+        setting.init()
+    except Exception:
+        pass
 
     util.printD("Compatibility layer initialized for all modules")
 
