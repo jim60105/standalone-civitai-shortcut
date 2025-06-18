@@ -14,6 +14,8 @@ except ImportError:
     gr = None
 
 # Core modules for initialization
+import datetime
+
 from scripts.civitai_manager_libs import setting, model, util
 
 
@@ -47,9 +49,8 @@ def create_civitai_shortcut_ui(compat_layer):
 
         with gr.TabItem("🏠 Model Browser", id="Shortcut"):
             with gr.Row():
-                refresh_civitai_sc_browser, refresh_civitai_information = (
-                    civitai_shortcut_action.on_ui(recipe_input, shortcut_input, civitai_tabs)
-                )
+                # Invoke on_ui for model browser; may return multiple values or None
+                _ = civitai_shortcut_action.on_ui(recipe_input, shortcut_input, civitai_tabs)
 
         with gr.TabItem("📝 Prompt Recipe", id="Recipe"):
             with gr.Row():
@@ -73,17 +74,16 @@ def create_civitai_shortcut_ui(compat_layer):
                     with gr.Row():
                         _create_standalone_settings_ui(compat_layer)
 
-    # Setup tab selection events
-    civitai_tabs.select(
-        fn=_on_civitai_tabs_select,
-        inputs=None,
-        outputs=[
-            refresh_civitai_sc_browser,
-            refresh_recipe,
-            refresh_classification,
-            refresh_setting,
-        ],
-    )
+        # Setup tab selection events
+        civitai_tabs.select(
+            fn=_on_civitai_tabs_select,
+            inputs=None,
+            outputs=[
+                refresh_recipe,
+                refresh_classification,
+                refresh_setting,
+            ],
+        )
 
 
 def _inject_compatibility_layer(compat_layer):
@@ -294,7 +294,7 @@ def _create_standalone_settings_ui(compat_layer):
         )
 
 
-def _on_civitai_tabs_select(evt: gr.SelectData):
+def _on_civitai_tabs_select(evt):
     """
     Handle tab selection events.
 
@@ -304,42 +304,42 @@ def _on_civitai_tabs_select(evt: gr.SelectData):
     Returns:
         tuple: Updated visibility states for refresh components
     """
-    import datetime
-
     current_time = datetime.datetime.now()
+    # Use gr.update if available, otherwise fallback to no-op
+    update = getattr(gr, 'update', lambda **kwargs: None)
 
     if evt.index == 0:
         return (
             current_time,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            update(visible=False),
+            update(visible=False),
+            update(visible=False),
         )
     elif evt.index == 1:
         return (
-            gr.update(visible=False),
+            update(visible=False),
             current_time,
-            gr.update(visible=False),
-            gr.update(visible=False),
+            update(visible=False),
+            update(visible=False),
         )
     elif evt.index == 2:
         return (
-            gr.update(visible=False),
-            gr.update(visible=False),
+            update(visible=False),
+            update(visible=False),
             current_time,
-            gr.update(visible=False),
+            update(visible=False),
         )
     elif evt.index == 3:
         return (
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            update(visible=False),
+            update(visible=False),
+            update(visible=False),
             current_time,
         )
 
     return (
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
+        update(visible=False),
+        update(visible=False),
+        update(visible=False),
+        update(visible=False),
     )

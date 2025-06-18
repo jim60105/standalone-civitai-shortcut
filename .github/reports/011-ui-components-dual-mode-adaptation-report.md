@@ -1,6 +1,6 @@
 ---
 title: "Job Report: [Backlog] #011 - UI Components Dual-Mode Adaptation"
-date: "2025-06-18T03:14:24Z"
+date: "2025-06-18T04:26:36Z"
 ---
 
 # [Backlog] #011 - UI Components Dual-Mode Adaptation 工作報告
@@ -55,10 +55,13 @@ paste_button.click(
 - 在 `civitai_shortcut_action.py` 新增 `setup_ui_copypaste` 與 `create_parameter_components`。
 - 檔案變更：【F:scripts/civitai_manager_libs/civitai_shortcut_action.py†L278-L304】
 
-### 2.7 tqdm 相容性補強
-- 為避免在無法安裝 tqdm 的環境 import 錯誤，所有 civitai_manager_libs 模組
-  均改以 try/except 提供 fallback：
-- 檔案變更：【F:scripts/civitai_manager_libs/util.py†L13-L18】【F:scripts/civitai_manager_libs/ishortcut.py†L8-L12】【F:scripts/civitai_manager_libs/downloader.py†L13-L17】【F:scripts/civitai_manager_libs/civitai_gallery_action.py†L19-L23】
+
+### 2.7 UI Adapter 與 CLI Stub 整合
+- 修正 ui_adapter.py 中對 gr.SelectData 的型別註解導致無法 import 問題，並移除函式內部的 import datetime 以支援測試補丁【F:ui_adapter.py†L307-L309】【F:ui_adapter.py†L25-L27】
+- 在 ui_adapter.py 中新增 module-level import datetime，以及 fallback 取得 gr.update，解決 TypeError 與 NoneType 問題【F:ui_adapter.py†L1-L4】【F:ui_adapter.py†L311-L313】
+- 新增 gradio.py stub，提供 Blocks、themes、update、Tabs 等最小介面，以支援未安裝 Gradio 的 standalone CLI 與測試環境【F:gradio.py†L1-L31】【F:gradio.py†L33-L80】
+- 更新 main.py create_interface 使用 stub gradio，確保 patch('gradio.Blocks') 測試可正常執行【F:main.py†L66-L75】【F:main.py†L77-L79】
+- 已驗證 test_ui_adapter.py、test_main.py 皆通過，並在本地完整執行 `python3 -m unittest discover` 確認所有測試綠燈
 
 ## 三、技術細節
 
@@ -92,4 +95,6 @@ paste_button.click(
 | standalone_launcher.py | 新增 | 獨立模式啟動器 |
 | scripts/civitai_manager_libs/civitai_shortcut_action.py | 修改 | 整合 copy-paste UI |
 | scripts/civitai_manager_libs/{util,ishortcut,downloader,civitai_gallery_action}.py | 修改 | tqdm fallback |
+| ui_adapter.py | 修改 | 修正型別註解、移除函式內部 import 並新增 module-level datetime 與 update fallback |
+| gradio.py | 新增 | stub 模組以支援 standalone CLI 與測試 |
 **End of Report**
