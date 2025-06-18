@@ -21,7 +21,6 @@ from . import prompt
 from . import sc_browser_page
 from . import ishortcut
 from . import recipe_browser_page
-from .gradio_compat import SelectData
 
 from PIL import Image
 
@@ -476,7 +475,7 @@ def load_model_information(modelid=None, ver_index=None):
 def on_reference_modelid_change(modelid=None):    
     return load_model_information(modelid, None)
 
-def on_reference_versions_select(evt: SelectData, modelid:str):
+def on_reference_versions_select(evt: gr.SelectData, modelid:str):
     return load_model_information(modelid, evt.index)    
 
 def on_delete_reference_model_btn_click(sc_model_id:str, shortcuts):
@@ -544,7 +543,7 @@ def on_insert_prompt_btn_click(model_type, recipe_prompt, recipe_negative, recip
 
     return gr.update(value=recipe_prompt), gr.update(value=generate_prompt(recipe_prompt, recipe_negative, recipe_option))
 
-def on_recipe_prompt_tabs_select(evt: SelectData):
+def on_recipe_prompt_tabs_select(evt: gr.SelectData):
     if evt.index == 1:      
         return gr.update(selected="reference_model")
     return gr.update(selected=None)
@@ -721,7 +720,7 @@ def on_refresh_recipe_change():
     current_time = datetime.datetime.now()
     return current_time, current_time, current_time
 
-def on_recipe_gallery_select(evt: SelectData):
+def on_recipe_gallery_select(evt: gr.SelectData):
     current_time = datetime.datetime.now()
     select_name = evt.value
     
@@ -857,7 +856,7 @@ def on_reference_gallery_loading(shortcuts):
                 
     return gr.update(value=result_list)
 
-def on_reference_sc_gallery_select(evt: SelectData, shortcuts):
+def on_reference_sc_gallery_select(evt: gr.SelectData, shortcuts):
     current_time = datetime.datetime.now()
             
     if evt.value:               
@@ -873,7 +872,7 @@ def on_reference_sc_gallery_select(evt: SelectData, shortcuts):
         return shortcuts, current_time
     return shortcuts, gr.update(visible=False)
 
-def on_reference_gallery_select(evt: SelectData, shortcuts, delete_opt=True):
+def on_reference_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=True):
     if evt.value:                       
         shortcut = evt.value 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)

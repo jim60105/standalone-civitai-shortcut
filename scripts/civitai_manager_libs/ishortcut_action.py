@@ -20,7 +20,6 @@ from . import ishortcut
 from . import setting
 from . import classification
 from . import downloader
-from .gradio_compat import SelectData
 
 # Compatibility layer variables
 _compat_layer = None
@@ -515,7 +514,7 @@ def on_change_filename_submit(select_fileid, select_filename, df, filenames):
         
     return gr.update(visible=True), df, gr.update(choices=filelist, value=filenames), gr.update(visible=False)
 
-def on_downloadable_files_select(evt: SelectData, df, filenames):
+def on_downloadable_files_select(evt: gr.SelectData, df, filenames):
     # util.printD(evt.index)
     # index[0] # 행,열
     vid = None
@@ -622,7 +621,7 @@ def on_download_model_click(model_id, version_id, file_name, vs_folder, vs_folde
 #         return gr.update(value=current_time),gr.update(visible = is_downloaded),gr.update(value=downloaded_info),gr.update(visible=is_visible_openfolder),gr.update(visible=is_visible_changepreview)
 #     return gr.update(visible=True),gr.update(visible=False),gr.update(value=None),gr.update(visible=False),gr.update(visible=False)
 
-def on_cs_foldername_select(evt: SelectData, is_vsfolder):
+def on_cs_foldername_select(evt: gr.SelectData, is_vsfolder):
     if evt.value == setting.CREATE_MODEL_FOLDER:
         return gr.update(visible=True), gr.update(visible=is_vsfolder), gr.update(visible=True), gr.update(visible=True)
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
@@ -714,7 +713,7 @@ def on_change_preview_image_click(mid,vid,img_idx:int,civitai_images):
             # shutil.copy(selected_image_filepath, preview_img_filepath)
             #=========================================================
 
-def on_gallery_select(evt: SelectData, civitai_images):
+def on_gallery_select(evt: gr.SelectData, civitai_images):
     return evt.index, civitai_images[evt.index], gr.update(selected="Image_Information")
 
 def on_civitai_hidden_change(hidden, index):
@@ -768,7 +767,7 @@ def on_update_information_btn_click(modelid, progress=gr.Progress()):
 def on_load_saved_model(modelid=None, ver_index=None):
     return load_saved_model(modelid, ver_index)
 
-def on_versions_list_select(evt: SelectData, modelid:str):
+def on_versions_list_select(evt: gr.SelectData, modelid:str):
     return load_saved_model(modelid, evt.index)
 
 def on_file_gallery_loading(image_url):

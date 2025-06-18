@@ -7,7 +7,6 @@ from . import util
 from . import setting
 from . import recipe
 from . import ishortcut
-from .gradio_compat import SelectData
 
 from PIL import Image
 
@@ -422,7 +421,7 @@ def on_refresh_recipe_browser_change(search, classification, shortcut, sc_page, 
         gr.update(value=thumb_list), gr.update(minimum=1, maximum=thumb_max_page, value=sc_page, step=1, label=f"Total {thumb_max_page} Pages"), \
         gr.update(value=reference_list), gr.update(minimum=1, maximum=reference_max_page, value=rs_page, step=1, label=f"Total {reference_max_page} Pages")
 
-def on_recipe_reference_select_gallery_select(evt: SelectData, shortcuts):
+def on_recipe_reference_select_gallery_select(evt: gr.SelectData, shortcuts):
     if evt.value:               
         shortcut = evt.value 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
@@ -463,7 +462,7 @@ def on_recipe_reference_select_gallery_loading(shortcuts):
     
     return result_list, current_time
 
-def on_recipe_reference_gallery_select(evt: SelectData, shortcuts):
+def on_recipe_reference_gallery_select(evt: gr.SelectData, shortcuts):
     current_time = datetime.datetime.now()
             
     if evt.value:

@@ -3,13 +3,7 @@ import datetime
 import gradio as gr
 import threading
 
-# Conditional imports for WebUI mode
-try:
-    from modules import script_callbacks
-    WEBUI_MODE = True
-except ImportError:
-    WEBUI_MODE = False
-    script_callbacks = None
+from modules import script_callbacks
 
 from scripts.civitai_manager_libs import model
 from scripts.civitai_manager_libs import setting
@@ -21,49 +15,31 @@ from scripts.civitai_manager_libs import util
 from scripts.civitai_manager_libs import ishortcut
 from scripts.civitai_manager_libs import recipe_action
 from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
-from scripts.civitai_manager_libs.gradio_compat import SelectData
-
-# Global compatibility layer
-_compat_layer = None
-
-
-def get_compatibility_layer():
-    """Get the compatibility layer instance"""
-    global _compat_layer
-    if _compat_layer is None:
-        from scripts.civitai_manager_libs.compat.compat_layer import CompatibilityLayer
-        
-        # Detect environment and create compatibility layer
-        if WEBUI_MODE:
-            env = "webui"
-        else:
-            env = "standalone"
-            
-        _compat_layer = CompatibilityLayer(mode=env)
-        
-        # Initialize all modules with compatibility layer
-        initialize_compatibility_layer(_compat_layer)
-        
-        util.printD(f"Civitai Shortcut initialized in {env} mode")
-        
-    return _compat_layer
-
 
 # Initialize compatibility layer for all modules
 def initialize_civitai_shortcut():
     """Initialize Civitai Shortcut with compatibility layer"""
     try:
-        get_compatibility_layer()
+        from scripts.civitai_manager_libs.compat.compat_layer import CompatibilityLayer
+        from scripts.civitai_manager_libs.compat.environment_detector import EnvironmentDetector
+        
+        # Detect environment and create compatibility layer
+        env = EnvironmentDetector.detect_environment()
+        compat_layer = CompatibilityLayer(mode=env)
+        
+        # Initialize all modules with compatibility layer
+        initialize_compatibility_layer(compat_layer)
+        
+        util.printD(f"Civitai Shortcut initialized in {env} mode")
+        
     except Exception as e:
-        # Simple print to avoid circular dependency
-        print(f"Warning: Failed to initialize compatibility layer: {e}")
-        print("Running in fallback mode")
-
+        util.printD(f"Warning: Failed to initialize compatibility layer: {e}")
+        util.printD("Running in fallback mode")
 
 # Initialize on import
 initialize_civitai_shortcut()
 
-def on_civitai_tabs_select(evt: SelectData):
+def on_civitai_tabs_select(evt: gr.SelectData):
     current_time = datetime.datetime.now() 
     if evt.index == 0:
         return current_time, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
@@ -164,6 +140,4 @@ def on_ui_tabs():
     return (civitai_shortcut, "Civitai Shortcut", "civitai_shortcut"),
 
 
-# Only register with WebUI if in WebUI mode
-if WEBUI_MODE and script_callbacks:
-    script_callbacks.on_ui_tabs(on_ui_tabs)
+script_callbacks.on_ui_tabs(on_ui_tabs)

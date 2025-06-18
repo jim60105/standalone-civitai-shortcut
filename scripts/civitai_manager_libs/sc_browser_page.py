@@ -1,5 +1,4 @@
 import gradio as gr
-from .gradio_compat import State, HTML, Gallery, File, Dropdown, Accordion
 import math
 import os
 import datetime
@@ -33,18 +32,18 @@ def on_ui(search_open=True,user_shortcut_browser_search_up=None,user_shortcut_co
 
     thumb_list , thumb_totals, thumb_max_page  = get_thumbnail_list(None,False,None,None,None,1,shortcut_column,shortcut_rows_per_page)
     
-    show_downloaded_sc = Dropdown(label='Filter Downloaded', multiselect=False, choices=[ALL_DOWNLOADED_MODEL,DOWNLOADED_MODEL,NOT_DOWNLOADED_MODEL], value=ALL_DOWNLOADED_MODEL, interactive=True)               
+    show_downloaded_sc = gr.Dropdown(label='Filter Downloaded', multiselect=False, choices=[ALL_DOWNLOADED_MODEL,DOWNLOADED_MODEL,NOT_DOWNLOADED_MODEL], value=ALL_DOWNLOADED_MODEL, interactive=True)               
     
     # sc_list = list()
     # for i in range(0, shortcut_column):
     #     sc_list.append(gr.Button(value="tttt",scale=1))
         
     if shortcut_browser_search_up:
-        with Accordion("Search", open=search_open):        
-            shortcut_type = Dropdown(label='Filter Model Type', multiselect=True, choices=[k for k in setting.ui_typenames], interactive=True)
+        with gr.Accordion("Search", open=search_open):        
+            shortcut_type = gr.Dropdown(label='Filter Model Type', multiselect=True, choices=[k for k in setting.ui_typenames], interactive=True)
             sc_search = gr.Textbox(label="Search", value="", placeholder="Search name, #tags, @personal note ....",interactive=True, lines=1)
-            sc_classification_list = Dropdown(label='Classification',info="The selection options of classification are subject to the AND operation.", multiselect=True, choices=classification.get_list(), interactive=True)
-            shortcut_basemodel = Dropdown(label='Filter Model BaseModel', multiselect=True, choices=[k for k in setting.model_basemodels.keys()], interactive=True)
+            sc_classification_list = gr.Dropdown(label='Classification',info="The selection options of classification are subject to the AND operation.", multiselect=True, choices=classification.get_list(), interactive=True)
+            shortcut_basemodel = gr.Dropdown(label='Filter Model BaseModel', multiselect=True, choices=[k for k in setting.model_basemodels.keys()], interactive=True)
             reset_filter_btn = gr.Button(value="Reset Filter",variant="primary")
             
         sc_gallery_page = gr.Slider(minimum=1, maximum=thumb_max_page, value=1, step=1, label=f"Total {thumb_max_page} Pages", interactive=True, visible=True if shortcut_rows_per_page > 0 else False)                
@@ -52,28 +51,28 @@ def on_ui(search_open=True,user_shortcut_browser_search_up=None,user_shortcut_co
             sc_prevPage_btn = gr.Button(value="Prev",scale=1, visible=True if shortcut_rows_per_page > 0 else False)            
             sc_nextPage_btn = gr.Button(value="Next",scale=1, visible=True if shortcut_rows_per_page > 0 else False)
         
-        sc_gallery = Gallery(show_label=False, columns=shortcut_column, height="auto", object_fit=setting.gallery_thumbnail_image_style, allow_preview=False, value=thumb_list)
+        sc_gallery = gr.Gallery(show_label=False, columns=shortcut_column, height="auto", object_fit=setting.gallery_thumbnail_image_style, allow_preview=False, value=thumb_list)
     else:
         sc_gallery_page = gr.Slider(minimum=1, maximum=thumb_max_page, value=1, step=1, label=f"Total {thumb_max_page} Pages", interactive=True, visible=True if shortcut_rows_per_page > 0 else False)                
         with gr.Row():
             sc_prevPage_btn = gr.Button(value="Prev",scale=1, visible=True if shortcut_rows_per_page > 0 else False)            
             sc_nextPage_btn = gr.Button(value="Next",scale=1, visible=True if shortcut_rows_per_page > 0 else False)
         
-        sc_gallery = Gallery(show_label=False, columns=shortcut_column, height="auto", object_fit=setting.gallery_thumbnail_image_style, allow_preview=False, value=thumb_list)
+        sc_gallery = gr.Gallery(show_label=False, columns=shortcut_column, height="auto", object_fit=setting.gallery_thumbnail_image_style, allow_preview=False, value=thumb_list)
         
-        with Accordion("Search", open=search_open):        
-            shortcut_type = Dropdown(label='Filter Model Type', multiselect=True, choices=[k for k in setting.ui_typenames], interactive=True)
+        with gr.Accordion("Search", open=search_open):        
+            shortcut_type = gr.Dropdown(label='Filter Model Type', multiselect=True, choices=[k for k in setting.ui_typenames], interactive=True)
             sc_search = gr.Textbox(label="Search", value="", placeholder="Search name, #tags, @personal note ....",interactive=True, lines=1)
-            sc_classification_list = Dropdown(label='Classification',info="The selection options of classification are subject to the AND operation.", multiselect=True, choices=classification.get_list(), interactive=True)
-            shortcut_basemodel = Dropdown(label='Filter Model BaseModel', multiselect=True, choices=[k for k in setting.model_basemodels.keys()], interactive=True)
+            sc_classification_list = gr.Dropdown(label='Classification',info="The selection options of classification are subject to the AND operation.", multiselect=True, choices=classification.get_list(), interactive=True)
+            shortcut_basemodel = gr.Dropdown(label='Filter Model BaseModel', multiselect=True, choices=[k for k in setting.model_basemodels.keys()], interactive=True)
             reset_filter_btn = gr.Button(value="Reset Filter",variant="primary")
             
     with gr.Row(visible=False):
         refresh_sc_browser = gr.Textbox()
         refresh_sc_gallery = gr.Textbox()
-        sc_gallery_result = State(thumb_list)
-        sc_shortcut_column = State(shortcut_column)
-        sc_shortcut_rows_per_page = State(shortcut_rows_per_page)
+        sc_gallery_result = gr.State(thumb_list)
+        sc_shortcut_column = gr.State(shortcut_column)
+        sc_shortcut_rows_per_page = gr.State(shortcut_rows_per_page)
     
     refresh_sc_gallery.change(lambda x:x, sc_gallery_result, sc_gallery, show_progress=False)
 

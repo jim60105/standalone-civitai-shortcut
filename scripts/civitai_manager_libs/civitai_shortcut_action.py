@@ -19,7 +19,6 @@ from . import ishortcut
 from . import model_action
 from . import ishortcut_action
 from . import civitai_gallery_action
-from .gradio_compat import SelectData, State, HTML, Gallery, File, Dropdown, Accordion
 
 # Compatibility layer variables
 _compat_layer = None
@@ -46,7 +45,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         
         sc_modelid = gr.Textbox()
         update_informations = gr.Textbox()
-        current_information_tabs = State(0)
+        current_information_tabs = gr.State(0)
         refresh_NSFW = gr.Textbox()
         
     with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
@@ -58,7 +57,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                     with gr.Column():
                         gr.Markdown(value="Using the model URL from the Civitai site, you register the information of the model. You can click and drag the Civitai Model's URL or drag and drop a saved internet shortcut. Additionally, you can select multiple internet shortcuts and drop them all at once.", visible=True)
                         civitai_internet_url_txt = gr.Textbox(placeholder="Copy & Paste or Drag & Drop Civitai Model Url", show_label=False, interactive=True)
-                        civitai_internet_url = File(label="Civitai Internet Shortcut", file_count="multiple", file_types=[".url"])
+                        civitai_internet_url = gr.File(label="Civitai Internet Shortcut", file_count="multiple", file_types=[".url"])
                         # update_modelfolder_btn = gr.Button(value="Update Downloaded Model Information", variant="primary")
                         # gr.Markdown(value="If you have made direct modifications(e.g. moving or renaming a folder) to the downloaded model during runtime, please execute the \"Update Downloaded Model Information\" function, which rescans the downloaded model and updates its information accordingly. ", visible=True)
                                                     
@@ -70,15 +69,15 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
             with gr.TabItem("Scan New Version"):
                 with gr.Row():
                     with gr.Column():
-                        shortcut_new_version_type = Dropdown(label='Filter Model type', multiselect=True, choices=[k for k in setting.ui_typenames], interactive=True)                                     
+                        shortcut_new_version_type = gr.Dropdown(label='Filter Model type', multiselect=True, choices=[k for k in setting.ui_typenames], interactive=True)                                     
                         scan_new_version_btn = gr.Button(value="Scan new version model", variant="primary")
-                        sc_new_version_gallery = Gallery(label="SC New Version Gallery", elem_id="sc_new_version_gallery", show_label=False, columns=setting.shortcut_column, height="fit", object_fit=setting.gallery_thumbnail_image_style)
+                        sc_new_version_gallery = gr.Gallery(label="SC New Version Gallery", elem_id="sc_new_version_gallery", show_label=False, columns=setting.shortcut_column, height="fit", object_fit=setting.gallery_thumbnail_image_style)
                         gr.Markdown(value="The feature is to search for new versions of models on Civitai among the downloaded ones.", visible=True)
             with gr.TabItem("NSFW Filter"):
                 with gr.Row():
                     with gr.Column():
-                        nsfw_filter_enable = Dropdown(value='On', choices=['On','Off'], label='NSFW Filtering', interactive=True)
-                        nsfw_level = Dropdown(value=setting.NSFW_level_user, choices=setting.NSFW_levels, label='NSFW Filtering Level', visible=True, interactive=True)
+                        nsfw_filter_enable = gr.Dropdown(value='On', choices=['On','Off'], label='NSFW Filtering', interactive=True)
+                        nsfw_level = gr.Dropdown(value=setting.NSFW_level_user, choices=setting.NSFW_levels, label='NSFW Filtering Level', visible=True, interactive=True)
                         nsfw_save_btn = gr.Button(value="Save NSFW Setting", variant="primary", visible=True)
                         
     with gr.Column(scale=(setting.shortcut_browser_screen_split_ratio_max-setting.shortcut_browser_screen_split_ratio)):
@@ -230,7 +229,7 @@ def on_nsfw_filter(enable, level):
 def on_nsfw_save_btn_click():
     setting.save_NSFW()
 
-def on_civitai_shortcut_tabs_select(evt: SelectData):
+def on_civitai_shortcut_tabs_select(evt: gr.SelectData):
     if evt.index == 1:      
         current_time = datetime.datetime.now()  
         return current_time,gr.update(visible=False)
@@ -239,12 +238,12 @@ def on_civitai_shortcut_tabs_select(evt: SelectData):
         return gr.update(visible=False), current_time    
     return gr.update(visible=False),gr.update(visible=False)
 
-def on_civitai_information_tabs_select(evt: SelectData):
+def on_civitai_information_tabs_select(evt: gr.SelectData):
     current_time = datetime.datetime.now()  
     return evt.index, current_time
 
 ##### sc_gallery 함수 정의 #####
-def on_sc_gallery_select(evt : SelectData):
+def on_sc_gallery_select(evt : gr.SelectData):
 
     if evt.value:
         shortcut = evt.value 
