@@ -7,13 +7,30 @@ import hashlib
 import platform
 import subprocess
 
-from modules import scripts, script_callbacks, shared
+from .conditional_imports import import_manager
 
 from . import setting
 from tqdm import tqdm
 
-def printD(msg):    
-    print(f"{setting.Extensions_Name}: {msg}") 
+# Compatibility layer functions
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    try:
+        return setting.get_compatibility_layer()
+    except AttributeError:
+        return None
+
+def printD(msg, force=False):
+    """Debug message output with compatibility layer support"""
+    compat = get_compatibility_layer()
+    
+    # Check debug mode through compatibility layer
+    debug_enabled = False
+    if compat and hasattr(compat, 'config_manager'):
+        debug_enabled = compat.config_manager.get('debug.enabled', False)
+    
+    if debug_enabled or force:
+        print(f"{setting.Extensions_Name}: {msg}")
 
 def calculate_sha256(filname):
     """

@@ -1,12 +1,32 @@
+"""
+Setting Action Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import os
 import gradio as gr
 import shutil
 
 from . import util
 from . import setting
+from .conditional_imports import import_manager
 
-# import modules.scripts as scripts
-from modules import scripts, script_callbacks, shared
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        _compat_layer = setting.get_compatibility_layer()
+    return _compat_layer
 
 def on_setting_ui():
     with gr.Column():

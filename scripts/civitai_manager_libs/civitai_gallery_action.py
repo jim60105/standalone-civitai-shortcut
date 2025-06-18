@@ -1,3 +1,10 @@
+"""
+Civitai Gallery Action Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import os
 import shutil
 import requests
@@ -7,8 +14,7 @@ import re
 import threading
 import math
 
-import modules
-import modules.infotext_utils as parameters_copypaste
+from .conditional_imports import import_manager
 
 from tqdm import tqdm
 
@@ -16,6 +22,21 @@ from . import util
 from . import civitai
 from . import setting
 from . import ishortcut
+
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        _compat_layer = setting.get_compatibility_layer()
+    return _compat_layer
 
 def on_ui(recipe_input):
                
@@ -338,8 +359,38 @@ def on_prev_btn_click(usergal_page_url, paging_information):
     return page_url
 
 def on_civitai_hidden_change(hidden, index):
-    info1,info2,info3 = modules.extras.run_pnginfo(hidden)
-    return info2
+    """Process PNG info with compatibility layer support"""
+    compat = get_compatibility_layer()
+    
+    if compat and hasattr(compat, 'metadata_processor'):
+        try:
+            return compat.metadata_processor.extract_png_info(hidden)
+        except Exception as e:
+            util.printD(f"Error processing PNG info through compatibility layer: {e}")
+    
+    # Fallback: Try WebUI direct access
+    extras_module = import_manager.get_webui_module('extras')
+    if extras_module and hasattr(extras_module, 'run_pnginfo'):
+        try:
+            info1, info2, info3 = extras_module.run_pnginfo(hidden)
+            return info2
+        except Exception as e:
+            util.printD(f"Error processing PNG info through WebUI: {e}")
+    
+    # Final fallback: Try basic PIL extraction
+    try:
+        from PIL import Image
+        import io
+        if isinstance(hidden, str):
+            with Image.open(hidden) as img:
+                return img.text.get('parameters', '')
+        elif hasattr(hidden, 'read'):
+            with Image.open(io.BytesIO(hidden.read())) as img:
+                return img.text.get('parameters', '')
+    except Exception as e:
+        util.printD(f"Error in PNG info fallback processing: {e}")
+    
+    return ""
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):
     return evt.index, civitai_images[evt.index], gr.update(selected="Image_Information")

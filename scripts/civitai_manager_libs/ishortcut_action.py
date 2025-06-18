@@ -1,10 +1,17 @@
+"""
+IShortcut Action Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import os
 import json
 import gradio as gr
 import datetime
 import shutil
-import modules
-import modules.infotext_utils as parameters_copypaste
+
+from .conditional_imports import import_manager
 
 from . import util
 from . import model
@@ -13,6 +20,21 @@ from . import ishortcut
 from . import setting
 from . import classification
 from . import downloader
+
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        _compat_layer = setting.get_compatibility_layer()
+    return _compat_layer
 
 
 
@@ -80,11 +102,8 @@ def on_ui(refresh_sc_browser:gr.Textbox(), recipe_input):
                 with gr.Column():            
                     img_file_info = gr.Textbox(label="Generate Info", interactive=True, lines=6, container=True, show_copy_button=True)
 
-                    try:
-                        send_to_buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
-                    except Exception as e:
-                        util.printD(e)
-                        pass 
+                    # Create send to buttons with compatibility layer support
+                    send_to_buttons = _create_send_to_buttons()
                     send_to_recipe = gr.Button(value="Send To Recipe", variant="primary", visible=True)
 
             with gr.TabItem("Personal Note" , id="PersonalNote_Information"):      
@@ -125,10 +144,8 @@ def on_ui(refresh_sc_browser:gr.Textbox(), recipe_input):
         
         loaded_modelid = gr.Textbox()
         
-    try:
-        parameters_copypaste.bind_buttons(send_to_buttons, hidden, img_file_info)
-    except:
-        pass
+    # Bind send to buttons with compatibility layer support
+    _bind_send_to_buttons(send_to_buttons, hidden, img_file_info)
        
     personal_note_save.click(
        fn=on_personal_note_save_click,
@@ -700,8 +717,38 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
     return evt.index, civitai_images[evt.index], gr.update(selected="Image_Information")
 
 def on_civitai_hidden_change(hidden, index):
-    info1,info2,info3 = modules.extras.run_pnginfo(hidden)
-    return info2
+    """Process PNG info with compatibility layer support"""
+    compat = get_compatibility_layer()
+    
+    if compat and hasattr(compat, 'metadata_processor'):
+        try:
+            return compat.metadata_processor.extract_png_info(hidden)
+        except Exception as e:
+            util.printD(f"Error processing PNG info through compatibility layer: {e}")
+    
+    # Fallback: Try WebUI direct access
+    extras_module = import_manager.get_webui_module('extras')
+    if extras_module and hasattr(extras_module, 'run_pnginfo'):
+        try:
+            info1, info2, info3 = extras_module.run_pnginfo(hidden)
+            return info2
+        except Exception as e:
+            util.printD(f"Error processing PNG info through WebUI: {e}")
+    
+    # Final fallback: Try basic PIL extraction
+    try:
+        from PIL import Image
+        import io
+        if isinstance(hidden, str):
+            with Image.open(hidden) as img:
+                return img.text.get('parameters', '')
+        elif hasattr(hidden, 'read'):
+            with Image.open(io.BytesIO(hidden.read())) as img:
+                return img.text.get('parameters', '')
+    except Exception as e:
+        util.printD(f"Error in PNG info fallback processing: {e}")
+    
+    return ""
 
 def on_shortcut_del_btn_click(model_id):
     if model_id:
@@ -930,4 +977,44 @@ def scan_downloadedmodel_to_shortcut(progress):
     # util.printD(len(model.Downloaded_Models))
     if model.Downloaded_Models:
         modelid_list = [k for k in model.Downloaded_Models]
-        ishortcut.update_shortcut_models(modelid_list,progress)    
+        ishortcut.update_shortcut_models(modelid_list,progress)
+
+def _create_send_to_buttons():
+    """Create send to buttons with compatibility layer support"""
+    compat = get_compatibility_layer()
+    
+    # Try to use WebUI's parameter copy-paste functionality
+    if compat and compat.is_webui_mode():
+        infotext_utils = import_manager.get_webui_module('infotext_utils')
+        if infotext_utils and hasattr(infotext_utils, 'create_buttons'):
+            try:
+                return infotext_utils.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
+            except Exception as e:
+                util.printD(f"Error creating WebUI buttons: {e}")
+    
+    # Fallback: Create basic buttons for standalone mode
+    import gradio as gr
+    return {
+        "txt2img": gr.Button(value="Send to txt2img", visible=False),
+        "img2img": gr.Button(value="Send to img2img", visible=False),
+        "inpaint": gr.Button(value="Send to inpaint", visible=False),
+        "extras": gr.Button(value="Send to extras", visible=False)
+    }
+
+def _bind_send_to_buttons(send_to_buttons, hidden, img_file_info):
+    """Bind send to buttons with compatibility layer support"""
+    compat = get_compatibility_layer()
+    
+    # Try to use WebUI's parameter binding
+    if compat and compat.is_webui_mode():
+        infotext_utils = import_manager.get_webui_module('infotext_utils')
+        if infotext_utils and hasattr(infotext_utils, 'bind_buttons'):
+            try:
+                infotext_utils.bind_buttons(send_to_buttons, hidden, img_file_info)
+                return
+            except Exception as e:
+                util.printD(f"Error binding WebUI buttons: {e}")
+    
+    # Fallback: Basic button handling for standalone mode
+    # In standalone mode, these buttons won't do anything meaningful
+    util.printD("Send to buttons not functional in standalone mode")

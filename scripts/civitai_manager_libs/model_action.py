@@ -1,3 +1,10 @@
+"""
+Model Action Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import os
 import json
 import gradio as gr
@@ -8,6 +15,21 @@ from . import model
 from . import setting
 from . import ishortcut
 # from . import civitai
+
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        _compat_layer = setting.get_compatibility_layer()
+    return _compat_layer
 
 def on_ui():
             

@@ -1,10 +1,35 @@
+"""
+Prompt UI Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import gradio as gr
 
-import modules.shared as shared
-from modules.sd_samplers import samplers, samplers_for_img2img
+from .conditional_imports import import_manager
 
 from . import prompt
 from . import util
+
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        try:
+            from . import setting
+            _compat_layer = setting.get_compatibility_layer()
+        except ImportError:
+            pass
+    return _compat_layer
 
 def on_option_change(option):
     parameters = None
@@ -112,20 +137,24 @@ def on_enable_hr_change(steps, sampler, faces , cfg_scale, size_width, size_heig
     parameter_string = on_make_parameters(steps, sampler, faces , cfg_scale, size_width, size_height , enable_hr, upscaler, hr_steps, hr_denoising, hr_upscale, hr_resize_width, hr_resize_height, others)
     return gr.update(visible=enable_hr), parameter_string
     
-def ui(option):   
+def ui(option):
     with gr.Row():
-        parameters = gr.Textbox(label="Parameters", lines=3 ,interactive=True, container=True)    
+        parameters = gr.Textbox(label="Parameters", lines=3, interactive=True, container=True)
     with gr.Row():
-        sampler = gr.Dropdown(label="Sampling method", choices=[x.name for x in samplers], interactive=True)
+        # Get samplers through compatibility layer
+        sampler_choices = _get_sampler_choices()
+        sampler = gr.Dropdown(label="Sampling method", choices=sampler_choices, interactive=True)
         steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling steps", value=20, interactive=True)
     with gr.Row(Variant="compact"):
         restore_faces = gr.Checkbox(label='Restore faces', value=False, interactive=True)
         # tiling = gr.Checkbox(label='Tiling', value=False, interactive=True)
         enable_hr = gr.Checkbox(label='Hires. fix', value=False, interactive=True)
-    with gr.Row(visible=False) as hr:   
-        with gr.Column():             
+    with gr.Row(visible=False) as hr:
+        with gr.Column():
             with gr.Row(variant="compact"):
-                hr_upscaler = gr.Dropdown(label="Upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], interactive=True)
+                # Get upscalers through compatibility layer
+                upscaler_choices = _get_upscaler_choices()
+                hr_upscaler = gr.Dropdown(label="Upscaler", choices=upscaler_choices, interactive=True)
                 hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1, label='Hires steps', value=0, interactive=True)
                 denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, interactive=True)
             with gr.Row(variant="compact"):
@@ -238,5 +267,52 @@ def ui(option):
         fn=on_make_parameters,
         inputs=[steps,sampler,restore_faces,cfg_scale,width,height,enable_hr,hr_upscaler,hr_second_pass_steps,denoising_strength,hr_upscale,hr_resize_x,hr_resize_y,others],
         outputs=[parameters]                
-    )               
+    )
+
+def _get_sampler_choices():
+    """Get sampler choices through compatibility layer"""
+    compat = get_compatibility_layer()
     
+    if compat and hasattr(compat, 'sampler_provider'):
+        try:
+            return compat.sampler_provider.get_txt2img_samplers()
+        except Exception as e:
+            util.printD(f"Error getting samplers through compatibility layer: {e}")
+    
+    # Fallback: Try WebUI direct access
+    sd_samplers = import_manager.get_webui_module('sd_samplers')
+    if sd_samplers and hasattr(sd_samplers, 'samplers'):
+        try:
+            return [x.name for x in sd_samplers.samplers]
+        except Exception as e:
+            util.printD(f"Error getting samplers from WebUI: {e}")
+    
+    # Final fallback: Basic sampler list
+    return ["Euler", "Euler a", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2S a", "DPM++ 2M", "DPM++ SDE", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "DPM++ 2M Karras", "DPM++ SDE Karras", "DDIM", "PLMS"]
+
+def _get_upscaler_choices():
+    """Get upscaler choices through compatibility layer"""
+    compat = get_compatibility_layer()
+    
+    if compat and hasattr(compat, 'config_manager'):
+        try:
+            # Try to get upscaler configuration from compatibility layer
+            upscalers = compat.config_manager.get('upscalers', [])
+            if upscalers:
+                return upscalers
+        except Exception as e:
+            util.printD(f"Error getting upscalers through compatibility layer: {e}")
+    
+    # Fallback: Try WebUI direct access
+    shared = import_manager.get_webui_module('shared')
+    if shared:
+        try:
+            latent_modes = getattr(shared, 'latent_upscale_modes', [])
+            sd_upscalers = getattr(shared, 'sd_upscalers', [])
+            upscaler_names = [x.name for x in sd_upscalers] if sd_upscalers else []
+            return list(latent_modes) + upscaler_names
+        except Exception as e:
+            util.printD(f"Error getting upscalers from WebUI: {e}")
+    
+    # Final fallback: Basic upscaler list
+    return ["None", "Lanczos", "Nearest", "LDSR", "BSRGAN", "ESRGAN_4x", "R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B", "ScuNET GAN", "ScuNET PSNR", "SwinIR 4x"]

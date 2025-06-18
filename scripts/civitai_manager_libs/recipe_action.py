@@ -1,11 +1,17 @@
+"""
+Recipe Action Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import os
 import gradio as gr
 import datetime
 import uuid
 import re
 
-import modules
-import modules.infotext_utils as parameters_copypaste
+from .conditional_imports import import_manager
 
 from . import util
 from . import setting
@@ -17,6 +23,21 @@ from . import ishortcut
 from . import recipe_browser_page
 
 from PIL import Image
+
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        _compat_layer = setting.get_compatibility_layer()
+    return _compat_layer
                 
 def on_ui(recipe_input, shortcut_input, civitai_tabs):   
 
@@ -653,17 +674,47 @@ def on_recipe_drop_image_upload(recipe_img):
         return recipe_img, current_time
     return gr.update(visible=True),gr.update(visible=False)
 
-def on_recipe_generate_data_change(recipe_img):  
-    generate_data = None  
+def on_recipe_generate_data_change(recipe_img):
+    """Process recipe PNG info with compatibility layer support"""
+    generate_data = None
     if recipe_img:
-        info1,generate_data,info3 = modules.extras.run_pnginfo(recipe_img)
+        compat = get_compatibility_layer()
+        
+        if compat and hasattr(compat, 'metadata_processor'):
+            try:
+                generate_data = compat.metadata_processor.extract_png_info(recipe_img)
+            except Exception as e:
+                util.printD(f"Error processing PNG info through compatibility layer: {e}")
+        
+        # Fallback: Try WebUI direct access
+        if not generate_data:
+            extras_module = import_manager.get_webui_module('extras')
+            if extras_module and hasattr(extras_module, 'run_pnginfo'):
+                try:
+                    info1, generate_data, info3 = extras_module.run_pnginfo(recipe_img)
+                except Exception as e:
+                    util.printD(f"Error processing PNG info through WebUI: {e}")
+        
+        # Final fallback: Try basic PIL extraction
+        if not generate_data:
+            try:
+                from PIL import Image
+                import io
+                if isinstance(recipe_img, str):
+                    with Image.open(recipe_img) as img:
+                        generate_data = img.text.get('parameters', '')
+                elif hasattr(recipe_img, 'read'):
+                    with Image.open(io.BytesIO(recipe_img.read())) as img:
+                        generate_data = img.text.get('parameters', '')
+            except Exception as e:
+                util.printD(f"Error in PNG info fallback processing: {e}")
         
     if generate_data:
-        
         positivePrompt, negativePrompt, options, gen_string = analyze_prompt(generate_data)
-            
-        return gr.update(value=positivePrompt), gr.update(value=negativePrompt), gr.update(value=options), gr.update(value=gen_string)            
-    return gr.update(value=""), gr.update(value=""), gr.update(value=""), gr.update(value="")
+        return (gr.update(value=positivePrompt), gr.update(value=negativePrompt), 
+                gr.update(value=options), gr.update(value=gen_string))
+    return (gr.update(value=""), gr.update(value=""), 
+            gr.update(value=""), gr.update(value=""))
         
 def on_refresh_recipe_change():    
     current_time = datetime.datetime.now()

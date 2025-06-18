@@ -1,3 +1,10 @@
+"""
+Civitai Shortcut Action Module - Dual Mode Compatible
+
+This module has been modified to support both AUTOMATIC1111 and standalone modes
+through the compatibility layer.
+"""
+
 import gradio as gr
 import datetime
 import os
@@ -12,6 +19,21 @@ from . import ishortcut
 from . import model_action
 from . import ishortcut_action
 from . import civitai_gallery_action
+
+# Compatibility layer variables
+_compat_layer = None
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer"""
+    global _compat_layer
+    _compat_layer = compat_layer
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        _compat_layer = setting.get_compatibility_layer()
+    return _compat_layer
 
 def on_shortcut_input_change(shortcut_input):
     if not shortcut_input:

@@ -14,6 +14,30 @@ from scripts.civitai_manager_libs import scan_action
 from scripts.civitai_manager_libs import util
 from scripts.civitai_manager_libs import ishortcut
 from scripts.civitai_manager_libs import recipe_action
+from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
+
+# Initialize compatibility layer for all modules
+def initialize_civitai_shortcut():
+    """Initialize Civitai Shortcut with compatibility layer"""
+    try:
+        from scripts.civitai_manager_libs.compat.compat_layer import CompatibilityLayer
+        from scripts.civitai_manager_libs.compat.environment_detector import EnvironmentDetector
+        
+        # Detect environment and create compatibility layer
+        env = EnvironmentDetector.detect_environment()
+        compat_layer = CompatibilityLayer(mode=env)
+        
+        # Initialize all modules with compatibility layer
+        initialize_compatibility_layer(compat_layer)
+        
+        util.printD(f"Civitai Shortcut initialized in {env} mode")
+        
+    except Exception as e:
+        util.printD(f"Warning: Failed to initialize compatibility layer: {e}")
+        util.printD("Running in fallback mode")
+
+# Initialize on import
+initialize_civitai_shortcut()
 
 def on_civitai_tabs_select(evt: gr.SelectData):
     current_time = datetime.datetime.now() 

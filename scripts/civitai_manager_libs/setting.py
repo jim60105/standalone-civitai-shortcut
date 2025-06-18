@@ -2,12 +2,51 @@ import os
 import json
 import shutil
 
-from modules import scripts, script_callbacks, shared
+from .conditional_imports import import_manager
 from . import util
 
+# Compatibility layer variables
+_compat_layer = None
+
 root_path = os.getcwd()
-extension_base = scripts.basedir()
-# extension_base = os.path.join("extensions","civitai-shortcut")
+
+def set_compatibility_layer(compat_layer):
+    """Set compatibility layer (called by main program)"""
+    global _compat_layer
+    _compat_layer = compat_layer
+    _initialize_extension_base()
+
+def get_compatibility_layer():
+    """Get compatibility layer"""
+    global _compat_layer
+    if _compat_layer is None:
+        # Auto-detect and initialize (fallback)
+        try:
+            from .compat.compat_layer import CompatibilityLayer
+            from .compat.environment_detector import EnvironmentDetector
+            env = EnvironmentDetector.detect_environment()
+            _compat_layer = CompatibilityLayer(mode=env)
+            _initialize_extension_base()
+        except ImportError:
+            # Final fallback - use current directory
+            pass
+    return _compat_layer
+
+def _initialize_extension_base():
+    """Initialize extension base path"""
+    global extension_base
+    
+    compat = get_compatibility_layer()
+    if compat and hasattr(compat, 'path_manager'):
+        extension_base = compat.path_manager.get_base_path()
+    else:
+        # Fallback to current directory structure
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        extension_base = os.path.dirname(os.path.dirname(current_dir))
+
+# Initialize extension_base
+extension_base = ""
+_initialize_extension_base()
 
 headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.68',
          "Authorization": ""}
@@ -264,27 +303,48 @@ def load_data():
     global shortcut_update_when_start
     global civitai_api_key
 
-    if shared.cmd_opts.embeddings_dir:
-        model_folders['TextualInversion'] = shared.cmd_opts.embeddings_dir
+    # Load WebUI specific paths through compatibility layer
+    compat = get_compatibility_layer()
+    if compat and hasattr(compat, 'path_manager'):
+        # Get WebUI model paths
+        embeddings_dir = compat.path_manager.get_model_path('embeddings')
+        if embeddings_dir and os.path.exists(embeddings_dir):
+            model_folders['TextualInversion'] = embeddings_dir
 
-    if shared.cmd_opts.hypernetwork_dir :
-        model_folders['Hypernetwork'] = shared.cmd_opts.hypernetwork_dir
+        hypernetwork_dir = compat.path_manager.get_model_path('hypernetworks')
+        if hypernetwork_dir and os.path.exists(hypernetwork_dir):
+            model_folders['Hypernetwork'] = hypernetwork_dir
 
-    if shared.cmd_opts.ckpt_dir:
-        model_folders['Checkpoint'] = shared.cmd_opts.ckpt_dir
+        ckpt_dir = compat.path_manager.get_model_path('checkpoints')
+        if ckpt_dir and os.path.exists(ckpt_dir):
+            model_folders['Checkpoint'] = ckpt_dir
 
-    if shared.cmd_opts.lora_dir:
-        model_folders['LORA'] = shared.cmd_opts.lora_dir
+        lora_dir = compat.path_manager.get_model_path('lora')
+        if lora_dir and os.path.exists(lora_dir):
+            model_folders['LORA'] = lora_dir
+    else:
+        # Fallback: Try to get WebUI paths directly (for backward compatibility)
+        shared = import_manager.get_webui_module('shared')
+        if shared and hasattr(shared, 'cmd_opts'):
+            cmd_opts = shared.cmd_opts
+            if hasattr(cmd_opts, 'embeddings_dir') and cmd_opts.embeddings_dir:
+                model_folders['TextualInversion'] = cmd_opts.embeddings_dir
+            if hasattr(cmd_opts, 'hypernetwork_dir') and cmd_opts.hypernetwork_dir:
+                model_folders['Hypernetwork'] = cmd_opts.hypernetwork_dir
+            if hasattr(cmd_opts, 'ckpt_dir') and cmd_opts.ckpt_dir:
+                model_folders['Checkpoint'] = cmd_opts.ckpt_dir
+            if hasattr(cmd_opts, 'lora_dir') and cmd_opts.lora_dir:
+                model_folders['LORA'] = cmd_opts.lora_dir
 
     environment = load()
     if environment:
-        if "NSFW_filter" in  environment.keys():
+        if "NSFW_filter" in environment.keys():
             nsfw_filter = environment['NSFW_filter']
             filtering_enable = True
             if 'nsfw_filter_enable' in nsfw_filter.keys():
                 filtering_enable = bool(nsfw_filter['nsfw_filter_enable'])
 
-            if 'nsfw_level' in  nsfw_filter.keys():
+            if 'nsfw_level' in nsfw_filter.keys():
                 set_NSFW(filtering_enable, nsfw_filter['nsfw_level'])
 
         if "application_allow" in environment.keys():
@@ -295,13 +355,17 @@ def load_data():
             if "shortcut_update_when_start" in application_allow.keys():
                 shortcut_update_when_start = bool(application_allow['shortcut_update_when_start'])
             if "shortcut_max_download_image_per_version" in application_allow.keys():
-                shortcut_max_download_image_per_version = int(application_allow['shortcut_max_download_image_per_version'])
+                shortcut_max_download_image_per_version = int(
+                    application_allow['shortcut_max_download_image_per_version']
+                )
 
         if "screen_style" in environment.keys():
             screen_style = environment['screen_style']
 
             if "shortcut_browser_screen_split_ratio" in screen_style.keys():
-                shortcut_browser_screen_split_ratio = int(screen_style['shortcut_browser_screen_split_ratio'])
+                shortcut_browser_screen_split_ratio = int(
+                    screen_style['shortcut_browser_screen_split_ratio']
+                )
             if "information_gallery_height" in screen_style.keys():
                 if screen_style['information_gallery_height'].strip():
                     information_gallery_height = screen_style['information_gallery_height']
