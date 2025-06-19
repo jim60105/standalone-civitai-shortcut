@@ -42,12 +42,12 @@ compat = get_compatibility_layer()
 path_manager = compat.path_manager
 
 # Get application paths
-base_path = path_manager.get_base_path()
-extension_path = path_manager.get_extension_path()
+script_path = path_manager.get_script_path()
+user_data_path = path_manager.get_user_data_path()
 models_path = path_manager.get_models_path()
 
-print(f"Base path: {base_path}")
-print(f"Extension path: {extension_path}")
+print(f"Script path: {script_path}")
+print(f"User data path: {user_data_path}")
 print(f"Models path: {models_path}")
 ```
 
@@ -55,12 +55,14 @@ print(f"Models path: {models_path}")
 
 ```python
 # Get paths for specific model types
-checkpoint_path = path_manager.get_model_folder_path('Checkpoint')
-lora_path = path_manager.get_model_folder_path('LORA')
-embedding_path = path_manager.get_model_folder_path('TextualInversion')
+checkpoint_path = path_manager.get_model_folder_path('Stable-diffusion')
+lora_path = path_manager.get_model_folder_path('Lora')
+controlnet_path = path_manager.get_model_folder_path('ControlNet')
+embedding_path = path_manager.get_model_folder_path('embeddings')
 
 print(f"Checkpoints: {checkpoint_path}")
 print(f"LoRA models: {lora_path}")
+print(f"ControlNet: {controlnet_path}")
 print(f"Embeddings: {embedding_path}")
 
 # Ensure directories exist
@@ -111,6 +113,10 @@ model_folders = config.get_model_folders()
 for model_type, folder_path in model_folders.items():
     print(f"{model_type}: {folder_path}")
 
+# Get all configuration values
+all_config = config.get_all_config()
+print("All configuration:", all_config)
+
 # Get WebUI-specific directories (WebUI mode only)
 embeddings_dir = config.get_embeddings_dir()
 if embeddings_dir:
@@ -149,7 +155,7 @@ if parameters_text:
     # Parse into structured data
     params = metadata_processor.parse_generation_parameters(parameters_text)
     
-    # Extract prompts
+    # Extract prompts using the correct method
     positive_prompt, negative_prompt = metadata_processor.extract_prompt_from_parameters(parameters_text)
     
     print(f"Positive prompt: {positive_prompt}")
@@ -230,21 +236,32 @@ ui_bridge.bind_send_to_buttons(send_buttons, image_component, text_component)
 ### Launch Standalone Mode
 
 ```python
-def create_civitai_ui():
-    with gr.Blocks(title="Civitai Shortcut") as ui:
-        gr.Markdown("# Civitai Shortcut - Standalone Mode")
-        # Your UI components
-    return ui
+# Using the UI adapter (recommended)
+from ui_adapter import create_civitai_shortcut_ui
 
 compat = get_compatibility_layer()
 if compat.is_standalone_mode():
     ui_bridge = compat.ui_bridge
+    
+    # Create UI using the adapter
+    def create_ui():
+        import gradio as gr
+        with gr.Blocks(title="Civitai Shortcut") as ui:
+            create_civitai_shortcut_ui(compat)
+        return ui
+    
     ui_bridge.launch_standalone(
-        create_civitai_ui,
+        create_ui,
         server_name="0.0.0.0",
         server_port=7860,
         share=False
     )
+
+# Or using the main application directly
+from main import CivitaiShortcutApp
+
+app = CivitaiShortcutApp()
+app.launch(host="127.0.0.1", port=7860, share=False, debug=False)
 ```
 
 ## Sampler Information Examples
@@ -262,14 +279,23 @@ samplers = sampler_provider.get_samplers()
 img2img_samplers = sampler_provider.get_samplers_for_img2img()
 upscale_modes = sampler_provider.get_upscale_modes()
 sd_upscalers = sampler_provider.get_sd_upscalers()
+all_upscalers = sampler_provider.get_all_upscalers()
 
 print("Available samplers:")
 for sampler in samplers:
     print(f"  - {sampler}")
 
+print("\nImg2Img samplers:")
+for sampler in img2img_samplers:
+    print(f"  - {sampler}")
+
 print("\nUpscale modes:")
 for mode in upscale_modes:
     print(f"  - {mode}")
+
+print("\nSD Upscalers:")
+for upscaler in sd_upscalers:
+    print(f"  - {upscaler}")
 ```
 
 ### Use in UI Components
@@ -279,12 +305,13 @@ import gradio as gr
 
 samplers = sampler_provider.get_samplers()
 upscalers = sampler_provider.get_all_upscalers()
+default_sampler = sampler_provider.get_default_sampler()
 
 with gr.Blocks() as ui:
     sampler_dropdown = gr.Dropdown(
         label="Sampling method",
         choices=samplers,
-        value=sampler_provider.get_default_sampler()
+        value=default_sampler
     )
     
     upscaler_dropdown = gr.Dropdown(
@@ -322,10 +349,14 @@ print("Validated parameters:", validated_params)
 ### Extract and Merge Parameters
 
 ```python
-# Extract prompts
+# Extract prompts using the correct method name
 positive, negative = param_processor.extract_prompt_and_negative(parameters_text)
 print(f"Positive: {positive}")
 print(f"Negative: {negative}")
+
+# Validate parameters
+validated_params = param_processor.validate_parameters(parsed_params)
+print("Validated parameters:", validated_params)
 
 # Merge parameters
 base_params = {'steps': 20, 'cfg_scale': 7.5}
@@ -426,13 +457,24 @@ compat = get_compatibility_layer()
 if compat.is_webui_mode():
     # WebUI-specific functionality
     ui_bridge = compat.ui_bridge
-    ui_bridge.interrupt_generation()  # Stop current generation
-    ui_bridge.request_restart()       # Request WebUI restart
+    if hasattr(ui_bridge, 'request_restart'):
+        ui_bridge.request_restart()       # Request WebUI restart
+    
+    # Access WebUI-specific features
+    config = compat.config_manager
+    webui_embeddings = config.get_embeddings_dir()
+    if webui_embeddings:
+        print(f"Using WebUI embeddings directory: {webui_embeddings}")
     
 else:
     # Standalone-specific functionality
     print("Running in standalone mode")
     print("WebUI integration features not available")
+    
+    # Use standalone features
+    from main import CivitaiShortcutApp
+    app = CivitaiShortcutApp()
+    print("Standalone application initialized")
 ```
 
 ### Testing with Forced Environment
@@ -440,12 +482,37 @@ else:
 ```python
 import unittest
 from civitai_manager_libs.compat import get_compatibility_layer, reset_compatibility_layer
+from civitai_manager_libs.compat.environment_detector import EnvironmentDetector
 
 class TestCivitaiFeatures(unittest.TestCase):
     
+    def setUp(self):
+        """Reset compatibility layer before each test."""
+        reset_compatibility_layer()
+        EnvironmentDetector.reset_cache()
+    
     def test_webui_mode_features(self):
         """Test features in WebUI mode."""
-        reset_compatibility_layer()
+        # Force WebUI mode for testing
+        compat = get_compatibility_layer(mode='webui')
+        self.assertTrue(compat.is_webui_mode())
+        
+        # Test WebUI-specific functionality
+        path_manager = compat.path_manager
+        script_path = path_manager.get_script_path()
+        self.assertIsNotNone(script_path)
+    
+    def test_standalone_mode_features(self):
+        """Test features in standalone mode."""
+        # Force standalone mode for testing
+        compat = get_compatibility_layer(mode='standalone')
+        self.assertTrue(compat.is_standalone_mode())
+        
+        # Test standalone-specific functionality
+        config_manager = compat.config_manager
+        config_manager.set_config('test_key', 'test_value')
+        self.assertEqual(config_manager.get_config('test_key'), 'test_value')
+```
         compat = get_compatibility_layer(mode='webui')
         
         # Test WebUI-specific functionality
@@ -517,6 +584,26 @@ param_processor = compat.parameter_processor
 user_params = {'steps': 150, 'cfg_scale': 50}  # Invalid values
 validated = param_processor.validate_parameters(user_params)
 # validated will have corrected values: {'steps': 100, 'cfg_scale': 20}
+```
+
+### 5. Proper Error Handling
+
+```python
+try:
+    compat = get_compatibility_layer()
+    metadata_processor = compat.metadata_processor
+    
+    # Try to extract metadata
+    info = metadata_processor.extract_png_info("image.png")
+    if info[1]:  # Check if generation data exists
+        params = info[1]
+        print("Parameters found:", params)
+    else:
+        print("No generation parameters found")
+        
+except Exception as e:
+    print(f"Error processing image: {e}")
+    # Implement fallback behavior
 ```
 
 This documentation provides comprehensive examples for using the compatibility layer effectively across both WebUI and standalone modes.

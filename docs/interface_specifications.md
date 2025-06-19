@@ -16,20 +16,20 @@ The compatibility layer provides unified access to functionality across WebUI an
 
 #### Methods
 
-##### `get_base_path() -> str`
-- **Purpose**: Returns the base application directory path
-- **Returns**: Absolute path to the application base directory
+##### `get_script_path() -> str`
+- **Purpose**: Returns the main script path (WebUI script_path or extension base path)
+- **Returns**: Absolute path to the script directory
 - **Thread Safety**: Safe
 - **Exceptions**: None (should always return a valid path)
 
-##### `get_extension_path() -> str`
-- **Purpose**: Returns the extension installation directory path
-- **Returns**: Absolute path to the extension directory
+##### `get_user_data_path() -> str`
+- **Purpose**: Returns the user data directory path (WebUI data_path or extension data directory)
+- **Returns**: Absolute path to the user data directory
 - **Thread Safety**: Safe
 - **Exceptions**: None
 
 ##### `get_models_path() -> str`
-- **Purpose**: Returns the models storage directory path
+- **Purpose**: Returns the models storage directory path (WebUI models_path or extension models directory)
 - **Returns**: Absolute path to the models directory
 - **Thread Safety**: Safe
 - **Exceptions**: None
@@ -37,7 +37,7 @@ The compatibility layer provides unified access to functionality across WebUI an
 ##### `get_model_folder_path(model_type: str) -> str`
 - **Purpose**: Returns the directory path for a specific model type
 - **Parameters**:
-  - `model_type`: Model type identifier (e.g., 'Checkpoint', 'LORA')
+  - `model_type`: Model type identifier (e.g., 'Stable-diffusion', 'Lora', 'ControlNet')
 - **Returns**: Absolute path to the model type directory
 - **Thread Safety**: Safe
 - **Exceptions**: None (should return default path if type unknown)
@@ -93,6 +93,24 @@ The compatibility layer provides unified access to functionality across WebUI an
 - **Thread Safety**: Safe
 - **Exceptions**: Should handle and return False on errors
 
+##### `get_all_config() -> Dict[str, Any]`
+- **Purpose**: Retrieves all configuration values
+- **Returns**: Dictionary of all configuration key-value pairs
+- **Thread Safety**: Safe for reads
+- **Exceptions**: Should return empty dict on errors
+
+##### `get_model_folders() -> Dict[str, str]`
+- **Purpose**: Retrieves model folder mappings
+- **Returns**: Dictionary mapping model types to folder paths
+- **Thread Safety**: Safe for reads
+- **Exceptions**: Should return empty dict on errors
+
+##### `get_embeddings_dir() -> Optional[str]`
+- **Purpose**: Retrieves custom embeddings directory (WebUI mode only)
+- **Returns**: Embeddings directory path or None
+- **Thread Safety**: Safe
+- **Exceptions**: Should return None on errors
+
 ### IMetadataProcessor
 
 **Purpose**: Processes image metadata and generation parameters.
@@ -117,6 +135,30 @@ The compatibility layer provides unified access to functionality across WebUI an
 - **Thread Safety**: Safe
 - **Exceptions**: Should handle errors and return None
 
+##### `parse_generation_parameters(parameters_text: str) -> Dict[str, Any]`
+- **Purpose**: Parses generation parameters text into structured data
+- **Parameters**:
+  - `parameters_text`: Raw parameters text
+- **Returns**: Dictionary of parsed parameters
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty dict on errors
+
+##### `extract_prompt_from_parameters(parameters_text: str) -> Tuple[str, str]`
+- **Purpose**: Extracts positive and negative prompts from parameters text
+- **Parameters**:
+  - `parameters_text`: Raw parameters text
+- **Returns**: Tuple of (positive_prompt, negative_prompt)
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty strings on errors
+
+##### `format_parameters_for_display(params: Dict[str, Any]) -> str`
+- **Purpose**: Formats parameter dictionary for display
+- **Parameters**:
+  - `params`: Parameters dictionary
+- **Returns**: Formatted parameters string
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty string on errors
+
 ### IUIBridge
 
 **Purpose**: Provides UI integration across different execution modes.
@@ -140,6 +182,34 @@ The compatibility layer provides unified access to functionality across WebUI an
 - **Thread Safety**: UI thread only
 - **Exceptions**: Should return None on errors
 
+##### `bind_send_to_buttons(buttons: Any, image_component: Any, text_component: Any) -> None`
+- **Purpose**: Binds send-to button functionality to UI components
+- **Parameters**:
+  - `buttons`: The send-to buttons created by create_send_to_buttons
+  - `image_component`: The image component to bind
+  - `text_component`: The text component to bind
+- **Thread Safety**: UI thread only
+- **Exceptions**: Should handle errors gracefully
+
+##### `launch_standalone(ui_callback: Callable, **kwargs) -> None`
+- **Purpose**: Launches standalone UI application
+- **Parameters**:
+  - `ui_callback`: Function that creates UI components
+  - `**kwargs`: Additional launch parameters
+- **Thread Safety**: Main thread only
+- **Exceptions**: Should handle errors gracefully
+
+##### `is_webui_mode() -> bool`
+- **Purpose**: Checks if running in WebUI mode
+- **Returns**: True if in WebUI mode
+- **Thread Safety**: Safe
+- **Exceptions**: Should not raise exceptions
+
+##### `request_restart() -> None`
+- **Purpose**: Requests application restart (WebUI mode only)
+- **Thread Safety**: UI thread only
+- **Exceptions**: Should handle errors gracefully
+
 ### ISamplerProvider
 
 **Purpose**: Provides sampler and upscaler information.
@@ -154,11 +224,35 @@ The compatibility layer provides unified access to functionality across WebUI an
 - **Thread Safety**: Safe
 - **Exceptions**: Should return empty list on errors
 
+##### `get_samplers_for_img2img() -> List[str]`
+- **Purpose**: Returns list of samplers available for img2img
+- **Returns**: List of sampler names for img2img
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty list on errors
+
 ##### `get_upscale_modes() -> List[str]`
 - **Purpose**: Returns list of available upscaling modes
 - **Returns**: List of upscale mode names
 - **Thread Safety**: Safe
 - **Exceptions**: Should return empty list on errors
+
+##### `get_sd_upscalers() -> List[str]`
+- **Purpose**: Returns list of available SD upscalers
+- **Returns**: List of SD upscaler names
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty list on errors
+
+##### `get_all_upscalers() -> List[str]`
+- **Purpose**: Returns list of all available upscalers
+- **Returns**: List of all upscaler names
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty list on errors
+
+##### `get_default_sampler() -> str`
+- **Purpose**: Returns the default sampler name
+- **Returns**: Default sampler name
+- **Thread Safety**: Safe
+- **Exceptions**: Should return fallback sampler name
 
 ### IParameterProcessor
 
@@ -183,6 +277,31 @@ The compatibility layer provides unified access to functionality across WebUI an
 - **Returns**: Formatted parameters string
 - **Thread Safety**: Safe
 - **Exceptions**: Should return empty string on errors
+
+##### `extract_prompt_and_negative(text: str) -> Tuple[str, str]`
+- **Purpose**: Extracts positive and negative prompts from parameters text
+- **Parameters**:
+  - `text`: Raw parameters text containing prompts
+- **Returns**: Tuple of (positive_prompt, negative_prompt)
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty strings on errors
+
+##### `validate_parameters(params: Dict[str, Any]) -> Dict[str, Any]`
+- **Purpose**: Validates and corrects parameter values
+- **Parameters**:
+  - `params`: Parameters dictionary to validate
+- **Returns**: Validated parameters dictionary
+- **Thread Safety**: Safe
+- **Exceptions**: Should return corrected values on errors
+
+##### `merge_parameters(base_params: Dict[str, Any], override_params: Dict[str, Any]) -> Dict[str, Any]`
+- **Purpose**: Merges two parameter dictionaries
+- **Parameters**:
+  - `base_params`: Base parameters dictionary
+  - `override_params`: Override parameters dictionary
+- **Returns**: Merged parameters dictionary
+- **Thread Safety**: Safe
+- **Exceptions**: Should return base_params on errors
 
 ## Implementation Requirements
 

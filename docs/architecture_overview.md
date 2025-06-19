@@ -50,33 +50,38 @@ def _create_path_manager(self) -> IPathManager:
 
 **Detection Logic**:
 1. Attempt to import WebUI modules (`modules.scripts`, `modules.shared`)
-2. Check for WebUI-specific files (`webui.py`, `launch.py`)
-3. Look for WebUI directory structure (`extensions/`)
-4. Check environment variables
+2. Verify WebUI functionality with `modules.scripts.basedir()`
+3. Check for WebUI-specific files (`webui.py`, `launch.py`)
+4. Look for WebUI directory structure (`extensions/`)
+5. Check environment variables (`WEBUI_MODE`)
 
 **Caching**: Results are cached to avoid repeated detection overhead
+**Methods**: `detect_environment()`, `is_webui_mode()`, `is_standalone_mode()`, `force_environment()`, `reset_cache()`
 
 ### 2. Compatibility Layer (`compat_layer.py`)
 
 **Responsibility**: Central coordination and unified interface
 
 **Key Features**:
-- Singleton pattern for global access
+- Singleton pattern for global access (`get_compatibility_layer()`)
 - Lazy initialization of adapters
-- Unified API surface
+- Unified API surface across all interfaces
 - Environment-aware component creation
+- Reset functionality (`reset_compatibility_layer()`)
+
+**Architecture Pattern**: Factory + Bridge + Singleton
 
 ### 3. Abstract Interfaces (`interfaces/`)
 
 **Responsibility**: Define contracts for all functionality
 
-**Interfaces**:
-- `IPathManager`: File and directory path management
-- `IConfigManager`: Configuration persistence and access
-- `IMetadataProcessor`: Image metadata and parameter processing
-- `IUIBridge`: User interface integration
-- `ISamplerProvider`: Sampler and upscaler information
-- `IParameterProcessor`: Generation parameter processing
+**Implemented Interfaces**:
+- `IPathManager`: File and directory path management (`get_script_path()`, `get_models_path()`, etc.)
+- `IConfigManager`: Configuration persistence and access (`get_config()`, `set_config()`, `save_config()`)
+- `IMetadataProcessor`: Image metadata and parameter processing (`extract_png_info()`, `parse_generation_parameters()`)
+- `IUIBridge`: User interface integration (`register_ui_tabs()`, `create_send_to_buttons()`, `launch_standalone()`)
+- `ISamplerProvider`: Sampler and upscaler information (`get_samplers()`, `get_upscale_modes()`)
+- `IParameterProcessor`: Generation parameter processing (`parse_parameters()`, `format_parameters()`)
 
 ### 4. WebUI Adapters (`webui_adapters/`)
 
@@ -84,17 +89,35 @@ def _create_path_manager(self) -> IPathManager:
 
 **Implementation Strategy**:
 - Direct integration with WebUI modules when available
+- Use `modules.scripts.basedir()`, `modules.shared.cmd_opts`, `modules.extras.run_pnginfo()`
 - Graceful fallback to standalone behavior when modules fail
 - Maintain full compatibility with existing WebUI functionality
+
+**Adapters**:
+- `WebUIPathManager`: Uses WebUI paths and configuration
+- `WebUIConfigManager`: Integrates with WebUI settings
+- `WebUIMetadataProcessor`: Uses `modules.extras.run_pnginfo()`
+- `WebUIUIBridge`: WebUI tab registration and send-to functionality
+- `WebUISamplerProvider`: Reads from `modules.sd_samplers`
+- `WebUIParameterProcessor`: Uses WebUI parameter parsing
 
 ### 5. Standalone Adapters (`standalone_adapters/`)
 
 **Responsibility**: Implement interfaces without WebUI dependencies
 
 **Implementation Strategy**:
-- Use standard Python libraries (os, json, PIL)
+- Use standard Python libraries (os, json, PIL, gradio)
 - Provide equivalent functionality where possible
+- File-based configuration and data storage
 - Clear documentation of feature differences
+
+**Adapters**:
+- `StandalonePathManager`: File-based path detection
+- `StandaloneConfigManager`: JSON-based configuration
+- `StandaloneMetadataProcessor`: PIL-based PNG metadata extraction
+- `StandaloneUIBridge`: Gradio standalone launcher
+- `StandaloneSamplerProvider`: Static sampler lists
+- `StandaloneParameterProcessor`: Custom parameter parsing
 
 ## Data Flow
 
@@ -127,24 +150,28 @@ Return Result
 ## Interface Implementation Details
 
 ### Path Management
-- **WebUI Mode**: Uses `modules.scripts.basedir()` and `modules.shared.cmd_opts`
-- **Standalone Mode**: File-based path detection and configurable directories
+- **WebUI Mode**: Uses `modules.scripts.basedir()`, `modules.shared.cmd_opts`, and WebUI model directories
+- **Standalone Mode**: File-based path detection, configurable directories, and project-relative paths
 
 ### Configuration Management  
-- **WebUI Mode**: Integrates with WebUI configuration system
-- **Standalone Mode**: JSON-based configuration files
+- **WebUI Mode**: Integrates with WebUI configuration system through `modules.shared`
+- **Standalone Mode**: JSON-based configuration files (`CivitaiShortCutSetting.json`)
 
 ### Metadata Processing
-- **WebUI Mode**: Uses `modules.extras.run_pnginfo()`
-- **Standalone Mode**: PIL-based PNG metadata extraction
+- **WebUI Mode**: Uses `modules.extras.run_pnginfo()` for full compatibility
+- **Standalone Mode**: PIL-based PNG metadata extraction with parameter parsing
 
 ### UI Integration
-- **WebUI Mode**: Uses `modules.script_callbacks` and `modules.infotext_utils`
-- **Standalone Mode**: Gradio-based standalone launcher
+- **WebUI Mode**: Uses `modules.script_callbacks` for tab registration and `modules.infotext_utils` for parameter transfer
+- **Standalone Mode**: Gradio-based standalone launcher with `ui_adapter.py`
 
 ### Sampler Information
-- **WebUI Mode**: Reads from `modules.sd_samplers` and `modules.shared`
-- **Standalone Mode**: Static lists of known samplers and upscalers
+- **WebUI Mode**: Reads from `modules.sd_samplers`, `modules.shared.sd_upscalers`
+- **Standalone Mode**: Static lists of known samplers and upscalers with fallback choices
+
+### Parameter Processing
+- **WebUI Mode**: Leverages WebUI's parameter parsing and validation
+- **Standalone Mode**: Custom implementation with parameter validation and formatting
 
 ## Error Handling Strategy
 
@@ -206,20 +233,35 @@ Return Result
 
 ## Testing Strategy
 
-### Unit Testing
-- Each adapter is tested independently
-- Mock objects simulate environment conditions
-- Edge cases and error conditions are covered
+### Current Test Coverage
+The project includes comprehensive testing with the following test files:
 
-### Integration Testing
-- Cross-mode compatibility is verified
-- End-to-end workflows are tested
-- Performance benchmarks are maintained
+- **`test_environment_detector.py`**: Environment detection functionality
+- **`test_compat_layer.py`**: Core compatibility layer functionality  
+- **`test_adapters.py`**: All adapter implementations (WebUI and Standalone)
+- **`test_module_compatibility.py`**: Module compatibility modifications
+- **`test_integration.py`**: Cross-mode integration testing
+- **`test_ui_adapter.py`**: UI adapter functionality
+- **`test_main.py`**: Main application and launcher testing
+- **`test_cli.py`**: Command-line interface testing
+- **`test_path_manager_verification.py`**: Path management verification
+- **`test_webui_function_simulation.py`**: WebUI function simulation
 
-### Environment Testing
-- Both WebUI and standalone modes are tested
-- Different configuration scenarios are validated
-- Upgrade and migration paths are tested
+### Testing Approach
+- **Unit Testing**: Each adapter is tested independently with comprehensive mocking
+- **Integration Testing**: Cross-mode compatibility is verified with real workflows
+- **Environment Testing**: Both WebUI and standalone modes are tested thoroughly
+- **Mock Strategy**: WebUI modules are mocked to enable testing without WebUI installation
+- **Coverage**: High test coverage maintained for all critical components
+
+### Test Execution
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html
+```
 
 ## Deployment Considerations
 

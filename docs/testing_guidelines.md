@@ -58,18 +58,21 @@ Test functionality in different execution environments.
 ## Test Requirements
 
 ### Coverage Requirements
-- **Environment Detection**: 100% line coverage
-- **Core Interfaces**: 95% line coverage
-- **Path Management**: 95% line coverage
-- **Configuration Management**: 95% line coverage
-- **Metadata Processing**: 90% line coverage
-- **UI Bridge**: 85% line coverage (UI components are harder to test)
+- **Environment Detection**: 100% line coverage (implemented in `test_environment_detector.py`)
+- **Core Interfaces**: 95% line coverage (implemented in `test_compat_layer.py`)
+- **Path Management**: 95% line coverage (implemented in `test_adapters.py`)
+- **Configuration Management**: 95% line coverage (implemented in `test_adapters.py`)
+- **Metadata Processing**: 90% line coverage (implemented in `test_adapters.py`)
+- **UI Bridge**: 85% line coverage (implemented in `test_ui_adapter.py`)
+- **Module Compatibility**: 90% line coverage (implemented in `test_module_compatibility.py`)
+- **Integration Tests**: 85% line coverage (implemented in `test_integration.py`)
 
 ### Performance Requirements
 - Environment detection should complete in < 10ms
 - Path operations should complete in < 5ms
 - Configuration operations should complete in < 20ms
 - Metadata extraction should complete in < 100ms per image
+- Application startup should complete in < 3 seconds
 
 ### Reliability Requirements
 - All tests must pass consistently
@@ -82,50 +85,89 @@ Test functionality in different execution environments.
 ### Test Structure
 ```
 tests/
-├── __init__.py
-├── test_environment_detector.py      # Environment detection tests
-├── test_compat_layer.py             # Main compatibility layer tests
-├── test_adapters.py                 # Adapter implementation tests
-├── test_integration.py              # Integration tests
-├── fixtures/                       # Test data and fixtures
-│   ├── sample_images/              # PNG files with metadata
-│   ├── config_files/               # Sample configuration files
-│   └── mock_webui/                 # Mock WebUI modules
-└── utils/                          # Test utilities
-    ├── mock_helpers.py             # Mock object helpers
-    └── test_base.py                # Base test classes
+├── test_environment_detector.py      # ✅ Environment detection tests (implemented)
+├── test_compat_layer.py             # ✅ Main compatibility layer tests (implemented)
+├── test_adapters.py                 # ✅ Adapter implementation tests (implemented)
+├── test_module_compatibility.py     # ✅ Module compatibility tests (implemented)
+├── test_integration.py              # ✅ Integration tests (implemented)
+├── test_ui_adapter.py               # ✅ UI adapter tests (implemented)
+├── test_main.py                     # ✅ Main program tests (implemented)
+├── test_cli.py                      # ✅ CLI function tests (implemented)
+├── test_path_manager_verification.py # ✅ Path manager verification tests (implemented)
+└── test_webui_function_simulation.py # ✅ WebUI function simulation tests (implemented)
 ```
 
-### Test Data
-- **Sample Images**: PNG files with various metadata formats
-- **Configuration Files**: Valid and invalid configuration examples
-- **Mock Data**: Simulated WebUI state and responses
+### Test Coverage Analysis
+```bash
+# Run test coverage analysis
+pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
+
+# Run tests for specific modules
+pytest tests/test_environment_detector.py --cov=scripts.civitai_manager_libs.compat.environment_detector
+pytest tests/test_compat_layer.py --cov=scripts.civitai_manager_libs.compat.compat_layer
+pytest tests/test_adapters.py --cov=scripts.civitai_manager_libs.compat.webui_adapters --cov=scripts.civitai_manager_libs.compat.standalone_adapters
+```
 
 ## Running Tests
 
 ### Local Testing
 ```bash
+# Install test dependencies
+pip install pytest pytest-cov pytest-mock
+
 # Run all tests
-python -m unittest discover tests/
+pytest tests/ -v
 
-# Run specific test file
-python -m unittest tests.test_environment_detector
+# Run specific test modules
+pytest tests/test_environment_detector.py -v
+pytest tests/test_compat_layer.py -v
+pytest tests/test_adapters.py -v
+pytest tests/test_integration.py -v
 
-# Run with coverage (requires coverage.py)
-coverage run -m unittest discover tests/
-coverage report -m
+# Run test coverage analysis
+pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
+
+# Run specific type of tests
+pytest tests/test_integration.py::TestIntegration::test_full_webui_compatibility -v
+pytest tests/test_integration.py::TestIntegration::test_full_standalone_functionality -v
 ```
 
 ### Continuous Integration
-Tests should be run automatically on:
-- Pull requests
-- Main branch commits
-- Release preparations
+The project already includes a basic test suite. It is recommended to add the following CI/CD configuration:
 
-### Test Environments
-Tests should run in:
-- Python 3.8+ environments
-- Simulated WebUI and standalone environments
+```yaml
+# .github/workflows/test.yml
+name: Test Compatibility Layer
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-mock
+    
+    - name: Run tests
+      run: |
+        pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=xml
+    
+    - name: Upload coverage to codecov
+      uses: codecov/codecov-action@v3
+```
 
 ## Mocking Strategy
 
@@ -143,25 +185,35 @@ class TestWebUIAdapter(unittest.TestCase):
     })
     def test_webui_functionality(self):
         # Test with mocked WebUI modules
-        pass
+        from civitai_manager_libs.compat.webui_adapters.webui_path_manager import WebUIPathManager
+        path_manager = WebUIPathManager()
+        base_path = path_manager.get_script_path()
+        self.assertIsNotNone(base_path)
 ```
 
 ### Environment Mocking
 ```python
 from unittest.mock import patch
-from civitai_manager_libs.compat import EnvironmentDetector
+from civitai_manager_libs.compat.environment_detector import EnvironmentDetector
+from civitai_manager_libs.compat.compat_layer import get_compatibility_layer, reset_compatibility_layer
 
 class TestEnvironmentSpecific(unittest.TestCase):
     
+    def setUp(self):
+        reset_compatibility_layer()
+        EnvironmentDetector.reset_cache()
+    
     def test_webui_mode(self):
         with patch.object(EnvironmentDetector, 'detect_environment', return_value='webui'):
-            # Test WebUI-specific behavior
-            pass
+            compat = get_compatibility_layer()
+            self.assertTrue(compat.is_webui_mode())
+            self.assertFalse(compat.is_standalone_mode())
     
     def test_standalone_mode(self):
         with patch.object(EnvironmentDetector, 'detect_environment', return_value='standalone'):
-            # Test standalone-specific behavior
-            pass
+            compat = get_compatibility_layer()
+            self.assertTrue(compat.is_standalone_mode())
+            self.assertFalse(compat.is_webui_mode())
 ```
 
 ## Test Best Practices
