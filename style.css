@@ -5,3 +5,7 @@
 .block.padded.cs_vpadding {
     padding: 10px 10px !important;
 }
+
+.dark {
+    --block-background-fill: var(--neutral-900);
+}

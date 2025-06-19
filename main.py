@@ -97,7 +97,7 @@ class CivitaiShortcutApp:
                     css = f.read()
 
             with gr.Blocks(
-                title="Civitai Shortcut - Standalone", theme=gr.themes.Soft(), css=css
+                title="Civitai Shortcut - Standalone", theme="SebastianBravo/simci_css", css=css
             ) as app:
                 # Create main UI
                 create_civitai_shortcut_ui(self.compat_layer)
