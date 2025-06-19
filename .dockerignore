@@ -1,4 +1,4 @@
-﻿# Created by https://www.toptal.com/developers/gitignore/api/python
+# Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
 ### Python ###
@@ -175,38 +175,17 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-**/__pycache__
-sc_gallery
-sc_infos
-sc_thumb_images
-CivitaiShortCut.json
-CivitaiShortCutBackupUrl.json
-CivitaiShortCutClassification.json
-CivitaiShortCutRecipeCollection.json
-CivitaiShortCutSetting.json
-*.log
-
-# Ignore all files in data/models subfolders except .gitkeep
-data/models/ControlNet/*
-!data/models/ControlNet/.gitkeep
-data/models/embeddings/*
-!data/models/embeddings/.gitkeep
-data/models/hypernetworks/*
-!data/models/hypernetworks/.gitkeep
-data/models/Lora/*
-!data/models/Lora/.gitkeep
-data/models/Stable-diffusion/*
-!data/models/Stable-diffusion/.gitkeep
-data/models/VAE/*
-!data/models/VAE/.gitkeep
-data/models/LyCORIS/*
-!data/models/LyCORIS/.gitkeep
-data/models/Poses/*
-!data/models/Poses/.gitkeep
-data/models/Other/*
-!data/models/Other/.gitkeep
-data/models/Unkonwn/*
-!data/models/Unkonwn/.gitkeep
-.coverage
-setting.json
-model_folders.json
+**/.hadolint.yml
+**/node_modules
+**/*.log
+**/.git
+**/.gitignore
+**/.env
+**/.github
+**/.vscode
+**/bin
+**/obj
+**/dist
+/data
+Civitai*.json
+**/docs
