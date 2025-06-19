@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 class IPathManager(ABC):
     """Abstract interface for path management across different execution modes."""
 
+    @abstractmethod
     def get_base_path(self) -> str:
         """
         Get the base path of the application or extension.
@@ -21,6 +22,7 @@ class IPathManager(ABC):
         """
         pass
 
+    @abstractmethod
     def get_extension_path(self) -> str:
         """
         Get the extension directory path.
@@ -30,6 +32,32 @@ class IPathManager(ABC):
 
         Returns:
             str: The extension directory path.
+        """
+        pass
+
+    @abstractmethod
+    def ensure_directories(self) -> bool:
+        """
+        Ensure that all required directories for the application or extension exist.
+
+        This should create any necessary directories for operation, such as data, models, and config folders.
+
+        Returns:
+            bool: True if all directories exist or were created successfully, False otherwise.
+        """
+        pass
+
+    @abstractmethod
+    def get_model_path(self, model_type: str, model_name: str) -> str:
+        """
+        Get the full path to a specific model file by type and name.
+
+        Args:
+            model_type: The type of model (e.g., 'Stable-diffusion', 'Lora', etc.)
+            model_name: The filename of the model (with extension)
+
+        Returns:
+            str: The absolute path to the model file.
         """
         pass
 

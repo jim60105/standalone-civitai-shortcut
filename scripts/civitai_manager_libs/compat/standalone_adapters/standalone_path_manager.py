@@ -97,19 +97,18 @@ class StandalonePathManager(IPathManager):
         self.ensure_directory_exists(full_path)
         return full_path
 
-    def get_model_path(self, model_type: str) -> str:
+    def get_model_path(self, model_type: str, model_name: str) -> str:
         """
-        Get model path for specific model type.
-
-        Alias for get_model_folder_path for compatibility.
+        Get the full path to a specific model file by type and name.
 
         Args:
-            model_type: Type of model
+            model_type: The type of model (e.g., 'Stable-diffusion', 'Lora', etc.)
+            model_name: The filename of the model (with extension)
 
         Returns:
-            Path to the model folder.
+            str: The absolute path to the model file.
         """
-        return self.get_model_folder_path(model_type)
+        return os.path.join(self.get_model_folder_path(model_type), model_name)
 
     def get_config_path(self) -> str:
         """Get configuration file path."""
@@ -262,11 +261,14 @@ class StandalonePathManager(IPathManager):
         """Enable or disable debug mode."""
         self._debug_mode = enabled
 
-    def ensure_directories(self) -> None:
+    def ensure_directories(self) -> bool:
         """
         Ensure all required directories for standalone mode exist.
 
         Creates models, outputs, logs, cache, config, and user data folders.
+
+        Returns:
+            bool: True if all directories exist or were created successfully, False otherwise.
         """
         from scripts.civitai_manager_libs import util
 
@@ -278,11 +280,14 @@ class StandalonePathManager(IPathManager):
             self.get_user_data_path(),
             os.path.dirname(self.get_config_path()),
         ]
+        success = True
         for d in required_dirs:
             if self.ensure_directory_exists(d):
                 util.printD(f"StandalonePathManager: Ensured directory exists: {d}")
             else:
                 util.printD(f"StandalonePathManager: Failed to create directory: {d}", force=True)
+                success = False
+        return success
 
     def _detect_base_path(self) -> str:
         """Detect the base path for the application with enhanced logic."""

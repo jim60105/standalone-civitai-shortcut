@@ -11,7 +11,41 @@ from ..interfaces.iconfig_manager import IConfigManager
 
 
 class WebUIConfigManager(IConfigManager):
-    """Configuration manager implementation using WebUI modules and local storage."""
+    """
+    WebUI configuration manager implementation using AUTOMATIC1111 WebUI modules and local storage.
+
+    This class provides configuration management compatible with the AUTOMATIC1111 WebUI
+    environment. It implements the IConfigManager interface for unified configuration access,
+    supporting both persistent storage and runtime configuration cache. All configuration values
+    are loaded from and saved to a JSON file, with support for WebUI-specific model folder
+    resolution.
+    """
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Alias for get_config().
+
+        Args:
+            key (str): The configuration key identifier.
+            default (Any, optional): Value to return if the key does not exist. Defaults to None.
+
+        Returns:
+            Any: The configuration value if found, otherwise the default value.
+        """
+        return self.get_config(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        """
+        Alias for set_config().
+
+        Args:
+            key (str): The configuration key identifier.
+            value (Any): The value to set for the configuration key.
+
+        Returns:
+            None
+        """
+        self.set_config(key, value)
 
     def __init__(self):
         """Initialize the WebUI configuration manager."""

@@ -38,6 +38,47 @@ class WebUIPathManager(IPathManager):
     Path manager implementation using WebUI modules.
 
     Provides path management for AUTOMATIC1111 WebUI extension mode.
+    Implements directory and model path utilities for compatibility layer.
+    """
+
+    def ensure_directories(self) -> bool:
+        """
+        Ensure all required directories for WebUI mode exist.
+
+        Creates models, outputs, config, and user data folders as needed.
+
+        Returns:
+            bool: True if all directories exist or were created successfully, False otherwise.
+        """
+        required_dirs = [
+            self.get_models_path(),
+            self.get_output_dir(),
+            os.path.dirname(self.get_config_path()),
+            self.get_user_data_path(),
+        ]
+        success = True
+        for d in required_dirs:
+            if not self.ensure_directory_exists(d):
+                success = False
+        return success
+
+    def get_model_path(self, model_type: str, model_name: str) -> str:
+        """
+        Get the full path to a specific model file by type and name.
+
+        Args:
+            model_type: The type of model (e.g., 'Stable-diffusion', 'Lora', etc.)
+            model_name: The filename of the model (with extension)
+
+        Returns:
+            str: The absolute path to the model file.
+        """
+        return os.path.join(self.get_model_folder_path(model_type), model_name)
+
+    """
+    Path manager implementation using WebUI modules.
+
+    Provides path management for AUTOMATIC1111 WebUI extension mode.
     """
 
     def get_base_path(self) -> str:

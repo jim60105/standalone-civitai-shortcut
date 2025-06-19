@@ -9,7 +9,27 @@ from ..interfaces.isampler_provider import ISamplerProvider
 
 
 class WebUISamplerProvider(ISamplerProvider):
-    """Sampler provider implementation using WebUI modules."""
+    """
+    Sampler provider implementation using WebUI modules.
+
+    Provides sampler and upscaler information compatible with AUTOMATIC1111 WebUI.
+    """
+
+    def get_txt2img_samplers(self) -> List[str]:
+        """
+        Get list of samplers for txt2img from WebUI using visible_samplers().
+
+        Returns:
+            List[str]: List of sampler names for txt2img.
+        """
+        # In AUTOMATIC1111, txt2img uses the same visible samplers as img2img
+        return self.get_samplers()
+
+    """
+    Sampler provider implementation using WebUI modules.
+
+    Provides sampler and upscaler information compatible with AUTOMATIC1111 WebUI.
+    """
 
     def get_samplers(self) -> List[str]:
         """Get list of available samplers from WebUI using visible_samplers()."""

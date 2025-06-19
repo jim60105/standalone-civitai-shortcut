@@ -69,6 +69,22 @@ The compatibility layer provides unified access to functionality across WebUI an
 - **Thread Safety**: Safe with proper locking.
 - **Exceptions**: Should handle and return False on errors.
 
+##### `ensure_directories() -> bool`
+- **Purpose**: Ensures all required directories for the application or extension exist (e.g., data, models, config folders). Creates them if necessary.
+- **Returns**: True if all directories exist or were created successfully.
+- **Thread Safety**: Safe with proper locking.
+- **Exceptions**: Should handle and return False on errors.
+
+##### `get_model_path(model_type: str, model_name: str) -> str`
+- **Purpose**: Returns the absolute path to a specific model file by type and name.
+- **Parameters**:
+  - `model_type`: Model type identifier (e.g., 'Stable-diffusion', 'Lora', etc.)
+  - `model_name`: The filename of the model (with extension)
+- **Returns**: Absolute path to the model file.
+- **Thread Safety**: Safe.
+- **Exceptions**: None (should return a valid path even if the file does not exist).
+
+
 ### IConfigManager
 
 **Purpose**: Manages application configuration across different execution environments.
@@ -78,51 +94,96 @@ The compatibility layer provides unified access to functionality across WebUI an
 #### Methods
 
 ##### `get_config(key: str, default: Any = None) -> Any`
-- **Purpose**: Retrieves a configuration value by key
+- **Purpose**: Retrieve a configuration value by key.
 - **Parameters**:
-  - `key`: Configuration key identifier
-  - `default`: Default value if key doesn't exist
-- **Returns**: Configuration value or default
-- **Thread Safety**: Safe for reads
-- **Exceptions**: Should not raise exceptions, return default instead
+  - `key`: Configuration key identifier.
+  - `default`: Value to return if the key does not exist.
+- **Returns**: Configuration value or default.
+- **Thread Safety**: Safe for reads.
+- **Exceptions**: Should not raise exceptions, return default instead.
 
 ##### `set_config(key: str, value: Any) -> None`
-- **Purpose**: Sets a configuration value
+- **Purpose**: Set a configuration value by key.
 - **Parameters**:
-  - `key`: Configuration key identifier
-  - `value`: Value to set
-- **Thread Safety**: Safe with proper locking
-- **Exceptions**: Should handle errors gracefully
+  - `key`: Configuration key identifier.
+  - `value`: Value to set.
+- **Returns**: None.
+- **Thread Safety**: Safe with proper locking.
+- **Exceptions**: Should handle errors gracefully.
 
 ##### `save_config() -> bool`
-- **Purpose**: Persists configuration to storage
-- **Returns**: True if saved successfully
-- **Thread Safety**: Safe with proper locking
-- **Exceptions**: Should handle and return False on errors
+- **Purpose**: Persist the current configuration to storage.
+- **Returns**: True if saved successfully, False otherwise.
+- **Thread Safety**: Safe with proper locking.
+- **Exceptions**: Should handle and return False on errors.
 
 ##### `load_config() -> bool`
-- **Purpose**: Loads configuration from storage
-- **Returns**: True if loaded successfully
-- **Thread Safety**: Safe
-- **Exceptions**: Should handle and return False on errors
+- **Purpose**: Load configuration from persistent storage.
+- **Returns**: True if loaded successfully, False otherwise.
+- **Thread Safety**: Safe.
+- **Exceptions**: Should handle and return False on errors.
 
-##### `get_all_config() -> Dict[str, Any]`
-- **Purpose**: Retrieves all configuration values
-- **Returns**: Dictionary of all configuration key-value pairs
-- **Thread Safety**: Safe for reads
-- **Exceptions**: Should return empty dict on errors
+##### `get_all_configs() -> Dict[str, Any]`
+- **Purpose**: Retrieve all configuration key-value pairs.
+- **Returns**: Dictionary of all configuration keys and their values.
+- **Thread Safety**: Safe for reads.
+- **Exceptions**: Should return empty dict on errors.
+
+##### `has_config(key: str) -> bool`
+- **Purpose**: Check if a configuration key exists in the configuration data.
+- **Parameters**:
+  - `key`: Configuration key identifier.
+- **Returns**: True if the key exists, False otherwise.
+- **Thread Safety**: Safe for reads.
+- **Exceptions**: Should not raise exceptions.
 
 ##### `get_model_folders() -> Dict[str, str]`
-- **Purpose**: Retrieves model folder mappings
-- **Returns**: Dictionary mapping model types to folder paths
-- **Thread Safety**: Safe for reads
-- **Exceptions**: Should return empty dict on errors
+- **Purpose**: Retrieve the mapping of model types to their corresponding folder paths.
+- **Returns**: Dictionary mapping model type identifiers to folder paths.
+- **Thread Safety**: Safe for reads.
+- **Exceptions**: Should return empty dict on errors.
 
 ##### `get_embeddings_dir() -> Optional[str]`
-- **Purpose**: Retrieves custom embeddings directory (WebUI mode only)
-- **Returns**: Embeddings directory path or None
-- **Thread Safety**: Safe
-- **Exceptions**: Should return None on errors
+- **Purpose**: Retrieve the embeddings directory path.
+- **Returns**: Embeddings directory path or None.
+- **Thread Safety**: Safe.
+- **Exceptions**: Should return None on errors.
+
+##### `get_hypernetwork_dir() -> Optional[str]`
+- **Purpose**: Retrieve the hypernetwork directory path.
+- **Returns**: Hypernetwork directory path or None.
+- **Thread Safety**: Safe.
+- **Exceptions**: Should return None on errors.
+
+##### `get_ckpt_dir() -> Optional[str]`
+- **Purpose**: Retrieve the checkpoint (Stable Diffusion) directory path.
+- **Returns**: Checkpoint directory path or None.
+- **Thread Safety**: Safe.
+- **Exceptions**: Should return None on errors.
+
+##### `get_lora_dir() -> Optional[str]`
+- **Purpose**: Retrieve the LoRA model directory path.
+- **Returns**: LoRA directory path or None.
+- **Thread Safety**: Safe.
+- **Exceptions**: Should return None on errors.
+
+##### `get(key: str, default: Any = None) -> Any`
+- **Purpose**: Alias for `get_config()`. Retrieve a configuration value by key.
+- **Parameters**:
+  - `key`: Configuration key identifier.
+  - `default`: Value to return if the key does not exist.
+- **Returns**: Configuration value or default.
+- **Thread Safety**: Safe for reads.
+- **Exceptions**: Should not raise exceptions, return default instead.
+
+##### `set(key: str, value: Any) -> None`
+- **Purpose**: Alias for `set_config()`. Set a configuration value by key.
+- **Parameters**:
+  - `key`: Configuration key identifier.
+  - `value`: Value to set.
+- **Returns**: None.
+- **Thread Safety**: Safe with proper locking.
+- **Exceptions**: Should handle errors gracefully.
 
 ### IMetadataProcessor
 
@@ -258,6 +319,12 @@ The compatibility layer provides unified access to functionality across WebUI an
 ##### `get_all_upscalers() -> List[str]`
 - **Purpose**: Returns list of all available upscalers
 - **Returns**: List of all upscaler names
+- **Thread Safety**: Safe
+- **Exceptions**: Should return empty list on errors
+
+##### `get_txt2img_samplers() -> List[str]`
+- **Purpose**: Returns list of samplers available for txt2img
+- **Returns**: List of sampler names for txt2img
 - **Thread Safety**: Safe
 - **Exceptions**: Should return empty list on errors
 

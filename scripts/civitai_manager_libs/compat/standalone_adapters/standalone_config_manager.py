@@ -100,10 +100,11 @@ class OptionInfo:
 
 class StandaloneConfigManager(IConfigManager):
     """
-    Configuration manager implementation following AUTOMATIC1111's Options pattern.
+    Standalone configuration manager implementation following AUTOMATIC1111's Options pattern.
 
     Provides the same API and behavior as the WebUI's configuration system
     for seamless compatibility between standalone and WebUI modes.
+    Implements the IConfigManager interface for unified configuration access.
     """
 
     # Type mapping for value conversion compatibility (matches AUTOMATIC1111)
@@ -320,6 +321,45 @@ class StandaloneConfigManager(IConfigManager):
                 self._log_debug(f"Error in onchange callback for {key}: {e}")
                 setattr(self, key, oldval)
                 return False
+
+        return True
+    
+    def set_option(
+        self, key: str, value: Any, is_api: bool = False, run_callbacks: bool = True
+    ) -> bool:
+        """
+        Set option value with validation and callbacks (exact AUTOMATIC1111 pattern).
+
+        Args:
+            key: Option key
+            value: Value to set
+            is_api: Whether this is an API call
+            run_callbacks: Whether to run onchange callbacks
+
+        Returns:
+            True if the option changed, False otherwise.
+        """
+        oldval = self.data.get(key, None)
+        if oldval == value:
+            return False
+
+        option = self.data_labels.get(key, None)
+        if option and option.do_not_save:
+            return False
+
+        if is_api and option and option.restrict_api:
+            return False
+
+        try:
+            setattr(self, key, value)
+        except RuntimeError:
+            return False
+
+        if run_callbacks and option and option.onchange is not None:
+            try:
+                option.onchange()
+            except Exception:
+                pass
 
         return True
 
@@ -912,13 +952,15 @@ class StandaloneConfigManager(IConfigManager):
 
     def get(self, key: str, default: Any = None) -> Any:
         """
-        Get configuration value (WebUI compatibility method).
+        Alias for get_config().
 
         Args:
-            key: Configuration key
-            default: Default value if key not found
+            key (str): The configuration key identifier.
+            default (Any, optional): Value to return if the key does not exist. Defaults to None.
 
         Returns:
-            Configuration value or default.
+            Any: The configuration value if found, otherwise the default value.
         """
         return self.get_config(key, default)
+
+    # The set() method for IConfigManager is defined earlier in the class. Remove duplicate.

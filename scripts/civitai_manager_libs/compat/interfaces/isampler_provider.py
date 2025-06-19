@@ -61,6 +61,16 @@ class ISamplerProvider(ABC):
         pass
 
     @abstractmethod
+    def get_txt2img_samplers(self) -> List[str]:
+        """
+        Get list of samplers available for txt2img.
+
+        Returns:
+            List[str]: List of sampler names for txt2img.
+        """
+        pass
+
+    @abstractmethod
     def is_sampler_available(self, sampler_name: str) -> bool:
         """
         Check if a specific sampler is available.

@@ -14,11 +14,25 @@ class StandaloneSamplerProvider(ISamplerProvider):
     """
     Enhanced sampler provider implementation for standalone mode.
 
-    Provides comprehensive sampler information including:
-    - Complete sampler list matching AUTOMATIC1111 WebUI
-    - Upscaler information
-    - Configuration management
-    - Validation and compatibility checking.
+    Provides comprehensive sampler and upscaler information, configuration management,
+    and compatibility checking, matching AUTOMATIC1111 WebUI behavior.
+    """
+
+    def get_txt2img_samplers(self) -> List[str]:
+        """
+        Get list of samplers available for txt2img.
+
+        Returns:
+            List[str]: List of sampler names for txt2img.
+        """
+        # In AUTOMATIC1111, txt2img uses the same visible samplers as get_samplers()
+        return self.get_samplers()
+
+    """
+    Enhanced sampler provider implementation for standalone mode.
+
+    Provides comprehensive sampler and upscaler information, configuration management,
+    and compatibility checking, matching AUTOMATIC1111 WebUI behavior.
     """
 
     def __init__(self, config_path: Optional[str] = None):
