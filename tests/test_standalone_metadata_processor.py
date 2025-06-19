@@ -1,5 +1,6 @@
 """
-Unit tests for StandaloneMetadataProcessor
+Unit tests for StandaloneMetadataProcessor.
+
 (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_metadata_processor.py)
 """
 
@@ -17,6 +18,8 @@ from civitai_manager_libs.compat.standalone_adapters.standalone_metadata_process
 
 
 class TestStandaloneMetadataProcessor(unittest.TestCase):
+    """Test class for TestStandaloneMetadataProcessor."""
+
     def setUp(self):
         self.processor = StandaloneMetadataProcessor()
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -31,6 +34,7 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_extract_png_info_success(self):
+        """Test extract png info success."""
         geninfo, params, info_text = self.processor.extract_png_info(self.img_path)
         self.assertIn("prompt", geninfo)
         # Steps 只會在 Negative prompt 字串內
@@ -39,12 +43,14 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.assertIn("parameters", info_text)
 
     def test_extract_png_info_file_not_exist(self):
+        """Test extract png info file not exist."""
         geninfo, params, info_text = self.processor.extract_png_info("/not/exist.png")
         self.assertIsNone(geninfo)
         self.assertIsNone(params)
         self.assertIsNone(info_text)
 
     def test_extract_png_info_invalid_image(self):
+        """Test extract png info invalid image."""
         # 建立一個非圖片檔案
         bad_path = os.path.join(self.temp_dir.name, 'bad.txt')
         with open(bad_path, 'w') as f:
@@ -55,10 +61,12 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.assertIsNone(info_text)
 
     def test_extract_parameters_from_png(self):
+        """Test extract parameters from png."""
         result = self.processor.extract_parameters_from_png(self.img_path)
         self.assertIn("prompt", result)
 
     def test_parse_generation_parameters(self):
+        """Test parse generation parameters."""
         text = "prompt\nNegative prompt: bad\nSteps: 20, Sampler: Euler, Size: 512x512"
         params = self.processor.parse_generation_parameters(text)
         self.assertEqual(params["Steps"], "20")
@@ -68,12 +76,14 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.assertEqual(params["Negative prompt"], "bad")
 
     def test_extract_prompt_from_parameters(self):
+        """Test extract prompt from parameters."""
         text = "prompt\nNegative prompt: bad"
         pos, neg = self.processor.extract_prompt_from_parameters(text)
         self.assertEqual(pos, "prompt")
         self.assertEqual(neg, "bad")
 
     def test_format_parameters_for_display(self):
+        """Test format parameters for display."""
         params = {"Prompt": "p", "Negative prompt": "n", "Steps": "10", "Sampler": "Euler"}
         display = self.processor.format_parameters_for_display(params)
         self.assertIn("p", display)

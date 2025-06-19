@@ -1,5 +1,6 @@
 """
-Unit tests for WebUIParameterProcessor
+Unit tests for WebUIParameterProcessor.
+
 (scripts/civitai_manager_libs/compat/webui_adapters/webui_parameter_processor.py)
 """
 
@@ -16,6 +17,8 @@ from civitai_manager_libs.compat.webui_adapters.webui_parameter_processor import
 
 
 class TestWebUIParameterProcessor(unittest.TestCase):
+    """Test class for TestWebUIParameterProcessor."""
+
     def setUp(self):
         self.proc = WebUIParameterProcessor()
         # Inject dummy modules for patching
@@ -37,6 +40,7 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         sys.modules.update(self._modules_backup)
 
     def test_parse_parameters_webui(self):
+        """Test parse parameters webui."""
         fake_parse = MagicMock(return_value={"Steps": 20})
         with patch('modules.infotext_utils.parse_generation_parameters', fake_parse):
             with patch('modules.infotext_utils', create=True) as m:
@@ -45,6 +49,7 @@ class TestWebUIParameterProcessor(unittest.TestCase):
                 self.assertEqual(result, {"Steps": 20})
 
     def test_parse_parameters_fallback(self):
+        """Test parse parameters fallback."""
         import sys
 
         sys_modules_backup = dict(sys.modules)
@@ -62,6 +67,7 @@ class TestWebUIParameterProcessor(unittest.TestCase):
             sys.modules.update(sys_modules_backup)
 
     def test_format_parameters(self):
+        """Test format parameters."""
         params = {"prompt": "p", "negative_prompt": "n", "steps": 10, "sampler_name": "Euler"}
         out = self.proc.format_parameters(params)
         self.assertIn("p", out)
@@ -70,18 +76,21 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         self.assertIn("Sampler: Euler", out)
 
     def test_extract_prompt_and_negative(self):
+        """Test extract prompt and negative."""
         text = "good\nNegative prompt: bad\nSteps: 10"
         pos, neg = self.proc.extract_prompt_and_negative(text)
         self.assertEqual(pos, "good")
         self.assertEqual(neg, "bad")
 
     def test_merge_parameters(self):
+        """Test merge parameters."""
         base = {"a": 1, "b": 2}
         override = {"b": 3, "c": 4}
         merged = self.proc.merge_parameters(base, override)
         self.assertEqual(merged, {"a": 1, "b": 3, "c": 4})
 
     def test_split_parameter_line(self):
+        """Test split parameter line."""
         line = "Steps: 20, Sampler: Euler, Size: 512x512"
         pairs = self.proc._split_parameter_line(line)
         self.assertIn(("Steps", "20"), pairs)
@@ -89,11 +98,13 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         self.assertIn(("Size", "512x512"), pairs)
 
     def test_normalize_parameter_key(self):
+        """Test normalize parameter key."""
         self.assertEqual(self.proc._normalize_parameter_key("CFG scale"), "cfg_scale")
         self.assertEqual(self.proc._normalize_parameter_key("Model Hash"), "model_hash")
         self.assertEqual(self.proc._normalize_parameter_key("Custom Key"), "custom_key")
 
     def test_parse_parameter_value(self):
+        """Test parse parameter value."""
         self.assertEqual(self.proc._parse_parameter_value("steps", "10"), 10)
         self.assertEqual(self.proc._parse_parameter_value("cfg_scale", "2.5"), 2.5)
         self.assertEqual(
@@ -102,6 +113,7 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         self.assertEqual(self.proc._parse_parameter_value("other", "abc"), "abc")
 
     def test_format_parameter_key(self):
+        """Test format parameter key."""
         self.assertEqual(self.proc._format_parameter_key("cfg_scale"), "CFG scale")
         self.assertEqual(self.proc._format_parameter_key("sampler_name"), "Sampler")
         self.assertEqual(self.proc._format_parameter_key("custom_key"), "Custom Key")

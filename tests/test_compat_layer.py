@@ -1,5 +1,5 @@
 """
-Test Compatibility Layer
+Test Compatibility Layer.
 
 Unit tests for the main compatibility layer functionality.
 """

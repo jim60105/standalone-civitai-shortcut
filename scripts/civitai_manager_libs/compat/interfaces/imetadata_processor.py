@@ -1,5 +1,4 @@
-"""
-Metadata Processor Interface
+"""Metadata Processor Interface.
 
 Provides unified access to image metadata processing across execution modes.
 """
@@ -28,7 +27,7 @@ class IMetadataProcessor(ABC):
             Tuple[Optional[str], Optional[Dict[str, Any]], Optional[str]]:
                 - info1: Basic info text
                 - generate_data: Generation parameters as dictionary
-                - info3: Additional info text
+                - info3: Additional info text.
         """
         pass
 
@@ -41,7 +40,7 @@ class IMetadataProcessor(ABC):
             image_path (str): Path to the PNG image file
 
         Returns:
-            Optional[str]: Parameters string or None if not found
+            Optional[str]: Parameters string or None if not found.
         """
         pass
 
@@ -54,7 +53,7 @@ class IMetadataProcessor(ABC):
             parameters_text (str): Raw parameters text
 
         Returns:
-            Dict[str, Any]: Parsed parameters as key-value pairs
+            Dict[str, Any]: Parsed parameters as key-value pairs.
         """
         pass
 
@@ -80,6 +79,6 @@ class IMetadataProcessor(ABC):
             parameters (Dict[str, Any]): Parameters dictionary
 
         Returns:
-            str: Formatted parameters string
+            str: Formatted parameters string.
         """
         pass

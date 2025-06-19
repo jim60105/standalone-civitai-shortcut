@@ -1,5 +1,4 @@
-"""
-WebUI Configuration Manager
+"""WebUI Configuration Manager.
 
 Provides configuration management using AUTOMATIC1111 WebUI modules.
 """
@@ -76,7 +75,8 @@ class WebUIConfigManager(IConfigManager):
 
     def get_model_folders(self) -> Dict[str, str]:
         """
-        Get model folder configurations from WebUI,
+        Get model folder configurations from WebUI.
+
         using absolute or mocked paths if available.
         """
         model_folders = {

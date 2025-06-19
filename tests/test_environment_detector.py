@@ -1,5 +1,5 @@
 """
-Test Environment Detector
+Test Environment Detector.
 
 Unit tests for the environment detection functionality.
 """

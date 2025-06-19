@@ -1,5 +1,4 @@
-"""
-UI Bridge Interface
+"""UI Bridge Interface.
 
 Provides unified UI integration across WebUI and standalone execution modes.
 """
@@ -17,7 +16,7 @@ class IUIBridge(ABC):
         Register UI tabs with the host application.
 
         Args:
-            callback (Callable): Function that returns UI components
+            callback (Callable): Function that returns UI components.
         """
         pass
 
@@ -30,7 +29,7 @@ class IUIBridge(ABC):
             targets (List[str]): List of target names (e.g., ['txt2img', 'img2img'])
 
         Returns:
-            Any: UI components for send-to functionality
+            Any: UI components for send-to functionality.
         """
         pass
 
@@ -42,7 +41,7 @@ class IUIBridge(ABC):
         Args:
             buttons (Any): The send-to buttons created by create_send_to_buttons
             image_component (Any): The image component to bind
-            text_component (Any): The text component to bind
+            text_component (Any): The text component to bind.
         """
         pass
 
@@ -53,7 +52,7 @@ class IUIBridge(ABC):
 
         Args:
             ui_callback (Callable): Function that creates the UI
-            **kwargs: Additional launch parameters
+            **kwargs: Additional launch parameters.
         """
         pass
 
@@ -63,7 +62,7 @@ class IUIBridge(ABC):
         Check if running in WebUI mode.
 
         Returns:
-            bool: True if in WebUI mode, False if standalone
+            bool: True if in WebUI mode, False if standalone.
         """
         pass
 
@@ -71,6 +70,7 @@ class IUIBridge(ABC):
     def interrupt_generation(self) -> None:
         """
         Interrupt ongoing generation process.
+
         Only applicable in WebUI mode.
         """
         pass
@@ -79,6 +79,7 @@ class IUIBridge(ABC):
     def request_restart(self) -> None:
         """
         Request application restart.
+
         Only applicable in WebUI mode.
         """
         pass
@@ -93,6 +94,6 @@ class IUIBridge(ABC):
             default (Any): Default value if key doesn't exist
 
         Returns:
-            Any: Configuration value
+            Any: Configuration value.
         """
         pass

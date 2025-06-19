@@ -1,6 +1,4 @@
-"""
-Tests for UI adapter functionality
-"""
+"""Tests for UI adapter functionality."""
 
 import unittest
 import sys
@@ -30,10 +28,10 @@ except ImportError as e:
 
 
 class TestUIAdapter(unittest.TestCase):
-    """Test cases for UI adapter"""
+    """Test cases for UI adapter."""
 
     def setUp(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         if create_civitai_shortcut_ui is None:
             self.skipTest("ui_adapter module not available")
 
@@ -43,7 +41,7 @@ class TestUIAdapter(unittest.TestCase):
     @patch('ui_adapter._inject_compatibility_layer')
     @patch('ui_adapter._initialize_components')
     def test_create_civitai_shortcut_ui(self, mock_init, mock_inject, mock_gr):
-        """Test UI creation"""
+        """Test UI creation."""
         # Setup mocks
         mock_tabs = MagicMock()
         mock_gr.Tabs.return_value.__enter__.return_value = mock_tabs
@@ -66,7 +64,7 @@ class TestUIAdapter(unittest.TestCase):
         mock_init.assert_called_once_with(self.mock_compat_layer)
 
     def test_inject_compatibility_layer(self):
-        """Test compatibility layer injection"""
+        """Test compatibility layer injection."""
         mock_module = MagicMock()
         mock_module.set_compatibility_layer = MagicMock()
 
@@ -82,7 +80,7 @@ class TestUIAdapter(unittest.TestCase):
     @patch('ui_adapter.model')
     @patch('ui_adapter.util')
     def test_initialize_components(self, mock_util, mock_model, mock_setting):
-        """Test component initialization"""
+        """Test component initialization."""
         _initialize_components(self.mock_compat_layer)
 
         mock_setting.init.assert_called_once()
@@ -91,7 +89,7 @@ class TestUIAdapter(unittest.TestCase):
 
     @patch('ui_adapter.gr')
     def test_create_standalone_settings_ui(self, mock_gr):
-        """Test standalone settings UI creation"""
+        """Test standalone settings UI creation."""
         # Setup config manager mock
         self.mock_compat_layer.config_manager.get.return_value = 'test_value'
 
@@ -101,7 +99,7 @@ class TestUIAdapter(unittest.TestCase):
         self.mock_compat_layer.config_manager.get.assert_called()
 
     def test_on_civitai_tabs_select(self):
-        """Test tab selection handling"""
+        """Test tab selection handling."""
         # Mock event data
         mock_event = MagicMock()
         mock_event.index = 0
@@ -114,7 +112,7 @@ class TestUIAdapter(unittest.TestCase):
             self.assertEqual(result[0], "test_time")
 
     def test_tab_selection_indices(self):
-        """Test different tab selection indices"""
+        """Test different tab selection indices."""
         with patch('ui_adapter.datetime') as mock_datetime, patch('ui_adapter.gr') as mock_gr:
 
             mock_datetime.datetime.now.return_value = "test_time"
@@ -135,16 +133,16 @@ class TestUIAdapter(unittest.TestCase):
 
 
 class TestUIComponents(unittest.TestCase):
-    """Test cases for UI components functionality"""
+    """Test cases for UI components functionality."""
 
     def setUp(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         if create_civitai_shortcut_ui is None:
             self.skipTest("ui_adapter module not available")
 
     @patch('ui_adapter.gr')
     def test_settings_ui_components(self, mock_gr):
-        """Test settings UI component creation"""
+        """Test settings UI component creation."""
         mock_compat_layer = MagicMock()
         mock_compat_layer.config_manager.get.return_value = 'default_value'
 
@@ -171,7 +169,7 @@ class TestUIComponents(unittest.TestCase):
         self.assertTrue(mock_gr.Button.called)
 
     def test_settings_save_function(self):
-        """Test settings save functionality"""
+        """Test settings save functionality."""
         mock_compat_layer = MagicMock()
 
         with patch('ui_adapter.gr') as mock_gr:
@@ -185,7 +183,7 @@ class TestUIComponents(unittest.TestCase):
             self.assertTrue(mock_gr.Button.called)
 
     def test_settings_reset_function(self):
-        """Test settings reset functionality"""
+        """Test settings reset functionality."""
         mock_compat_layer = MagicMock()
 
         with patch('ui_adapter.gr') as mock_gr:
@@ -196,16 +194,16 @@ class TestUIComponents(unittest.TestCase):
 
 
 class TestUIIntegration(unittest.TestCase):
-    """Test cases for UI integration"""
+    """Test cases for UI integration."""
 
     def setUp(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         if create_civitai_shortcut_ui is None:
             self.skipTest("ui_adapter module not available")
 
     @patch('ui_adapter.gr')
     def test_ui_structure(self, mock_gr):
-        """Test UI structure creation"""
+        """Test UI structure creation."""
         mock_compat_layer = MagicMock()
 
         # Mock all the action modules
@@ -231,7 +229,7 @@ class TestUIIntegration(unittest.TestCase):
                 self.assertTrue(mock_gr.Row.called)
 
     def test_error_handling_in_initialization(self):
-        """Test error handling during initialization"""
+        """Test error handling during initialization."""
         mock_compat_layer = MagicMock()
 
         with patch('ui_adapter.setting') as mock_setting:
@@ -243,7 +241,7 @@ class TestUIIntegration(unittest.TestCase):
                 mock_print.assert_called()
 
     def test_module_injection_error_handling(self):
-        """Test error handling during module injection"""
+        """Test error handling during module injection."""
         mock_compat_layer = MagicMock()
 
         # Test with module that doesn't have set_compatibility_layer

@@ -1,5 +1,4 @@
-"""
-Fallback path configuration for compatibility layer.
+"""Fallback path configuration for compatibility layer.
 
 This module provides fallback paths when WebUI modules are not available.
 """

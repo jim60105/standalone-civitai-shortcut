@@ -1,5 +1,4 @@
-"""
-WebUI Parameter Processor
+"""WebUI Parameter Processor.
 
 Provides parameter processing using AUTOMATIC1111 WebUI modules.
 """

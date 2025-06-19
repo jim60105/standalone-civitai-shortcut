@@ -17,6 +17,7 @@ def bridge():
 
 
 def test_basic_ui_bridge_methods(bridge):
+    """Test basic ui bridge methods."""
     assert bridge.is_webui_mode() is False
     assert bridge.interrupt_generation() is None
     assert bridge.request_restart() is None
@@ -24,6 +25,7 @@ def test_basic_ui_bridge_methods(bridge):
 
 
 def test_save_parameters_for_export(tmp_path, bridge, monkeypatch):
+    """Test save parameters for export."""
     monkeypatch.chdir(tmp_path)
     text = 'sample parameters'
     bridge._save_parameters_for_export(text)
@@ -34,6 +36,7 @@ def test_save_parameters_for_export(tmp_path, bridge, monkeypatch):
 
 
 def test_create_send_to_buttons_without_gradio(monkeypatch, bridge):
+    """Test create send to buttons without gradio."""
     # Simulate gradio import failure
     monkeypatch.setitem(sys.modules, 'gradio', None)
     buttons = bridge.create_send_to_buttons(['A', 'B'])

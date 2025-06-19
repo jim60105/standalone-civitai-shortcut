@@ -28,6 +28,7 @@ def patch_working_dirs(monkeypatch, tmp_path):
 
 
 def test_webui_config_manager_crud_and_paths(tmp_path):
+    """Test webui config manager crud and paths."""
     manager = WebUIConfigManager()
     # Initially empty
     assert manager.get_config('k') is None
@@ -55,6 +56,7 @@ def test_webui_config_manager_crud_and_paths(tmp_path):
 
 
 def test_get_config_file_path_fallback(tmp_path, monkeypatch):
+    """Test get config file path fallback."""
     # Remove modules.scripts to force fallback
     monkeypatch.delitem(sys.modules, 'modules.scripts', raising=False)
     manager = WebUIConfigManager()

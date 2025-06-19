@@ -1,5 +1,7 @@
 """
-Unit tests for WebUIUIBridge (scripts/civitai_manager_libs/compat/webui_adapters/webui_ui_bridge.py)
+Unit tests for WebUIUIBridge.
+
+(scripts/civitai_manager_libs/compat/webui_adapters/webui_ui_bridge.py)
 """
 
 import sys
@@ -13,6 +15,8 @@ from civitai_manager_libs.compat.webui_adapters.webui_ui_bridge import WebUIUIBr
 
 
 class TestWebUIUIBridge(unittest.TestCase):
+    """Test class for TestWebUIUIBridge."""
+
     def setUp(self):
         self.bridge = WebUIUIBridge()
         # Inject dummy modules for patching
@@ -37,16 +41,19 @@ class TestWebUIUIBridge(unittest.TestCase):
         sys.modules.update(self._modules_backup)
 
     def test_register_ui_tabs_webui(self):
+        """Test register ui tabs webui."""
         with patch('modules.script_callbacks.on_ui_tabs') as cb:
             self.bridge.register_ui_tabs(lambda: None)
             cb.assert_called_once()
 
     def test_register_ui_tabs_importerror(self):
+        """Test register ui tabs importerror."""
         with patch('modules.script_callbacks.on_ui_tabs', side_effect=ImportError):
             # Should not raise
             self.bridge.register_ui_tabs(lambda: None)
 
     def test_create_send_to_buttons_webui(self):
+        """Test create send to buttons webui."""
         fake_create = MagicMock(return_value={'A': 1})
         with patch('modules.infotext_utils.create_buttons', fake_create):
             with patch('modules.infotext_utils', create=True) as m:
@@ -55,6 +62,7 @@ class TestWebUIUIBridge(unittest.TestCase):
                 self.assertEqual(result, {'A': 1})
 
     def test_create_send_to_buttons_fallback(self):
+        """Test create send to buttons fallback."""
         with patch('modules.infotext_utils.create_buttons', side_effect=ImportError):
             with patch.object(
                 self.bridge, '_create_simple_buttons', return_value={'B': 2}
@@ -64,6 +72,7 @@ class TestWebUIUIBridge(unittest.TestCase):
                 fallback.assert_called_once()
 
     def test_bind_send_to_buttons_webui(self):
+        """Test bind send to buttons webui."""
         fake_bind = MagicMock()
         with patch('modules.infotext_utils.bind_buttons', fake_bind):
             with patch('modules.infotext_utils', create=True) as m:
@@ -72,15 +81,18 @@ class TestWebUIUIBridge(unittest.TestCase):
                 fake_bind.assert_called_once()
 
     def test_bind_send_to_buttons_fallback(self):
+        """Test bind send to buttons fallback."""
         with patch('modules.infotext_utils.bind_buttons', side_effect=ImportError):
             with patch.object(self.bridge, '_bind_simple_buttons') as fallback:
                 self.bridge.bind_send_to_buttons({'B': 2}, None, None)
                 fallback.assert_called_once()
 
     def test_is_webui_mode(self):
+        """Test is webui mode."""
         self.assertTrue(self.bridge.is_webui_mode())
 
     def test_interrupt_generation(self):
+        """Test interrupt generation."""
         fake_state = MagicMock()
         with patch('modules.shared', create=True) as m:
             m.state = fake_state
@@ -88,11 +100,13 @@ class TestWebUIUIBridge(unittest.TestCase):
             fake_state.interrupt.assert_called_once()
 
     def test_interrupt_generation_importerror(self):
+        """Test interrupt generation importerror."""
         with patch('modules.shared', side_effect=ImportError):
             # Should not raise
             self.bridge.interrupt_generation()
 
     def test_request_restart(self):
+        """Test request restart."""
         fake_state = MagicMock()
         with patch('modules.shared', create=True) as m:
             m.state = fake_state
@@ -100,11 +114,13 @@ class TestWebUIUIBridge(unittest.TestCase):
             self.assertTrue(fake_state.need_restart)
 
     def test_request_restart_importerror(self):
+        """Test request restart importerror."""
         with patch('modules.shared', side_effect=ImportError):
             # Should not raise
             self.bridge.request_restart()
 
     def test_get_ui_config(self):
+        """Test get ui config."""
         fake_opts = MagicMock()
         fake_opts.foo = 123
         with patch('modules.shared', create=True) as m:
@@ -113,6 +129,7 @@ class TestWebUIUIBridge(unittest.TestCase):
             self.assertEqual(val, 123)
 
     def test_get_ui_config_importerror(self):
+        """Test get ui config importerror."""
         import sys
 
         sys_modules_backup = dict(sys.modules)
@@ -125,6 +142,7 @@ class TestWebUIUIBridge(unittest.TestCase):
             sys.modules.update(sys_modules_backup)
 
     def test_create_simple_buttons_importerror(self):
+        """Test create simple buttons importerror."""
         # Patch gradio, set Button to raise ImportError
         import gradio
 
@@ -145,6 +163,7 @@ class TestWebUIUIBridge(unittest.TestCase):
                 delattr(gradio, 'Button')
 
     def test_bind_simple_buttons_importerror(self):
+        """Test bind simple buttons importerror."""
         # Should not raise
         self.bridge._bind_simple_buttons(None, None, None)
 

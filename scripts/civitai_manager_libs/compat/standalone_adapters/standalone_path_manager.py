@@ -1,5 +1,4 @@
-"""
-Standalone Path Manager
+"""Standalone Path Manager.
 
 Provides comprehensive path management for standalone execution without WebUI dependencies.
 Enhanced with flexible configuration and cross-platform support.
@@ -21,7 +20,7 @@ class StandalonePathManager(IPathManager):
     - Configurable model folder paths
     - Cross-platform path handling
     - Directory creation and validation
-    - Path normalization and validation
+    - Path normalization and validation.
     """
 
     def __init__(self, base_path: Optional[str] = None, config_path: Optional[str] = None):
@@ -30,7 +29,7 @@ class StandalonePathManager(IPathManager):
 
         Args:
             base_path: Optional custom base path (auto-detected if None)
-            config_path: Optional path to configuration file
+            config_path: Optional path to configuration file.
         """
         self._custom_base_path = base_path
         self._config_path = config_path
@@ -44,6 +43,7 @@ class StandalonePathManager(IPathManager):
     def get_script_path(self) -> str:
         """
         Get the main script path.
+
         In standalone mode, this returns our extension's base path.
         """
         return self._base_path
@@ -51,6 +51,7 @@ class StandalonePathManager(IPathManager):
     def get_user_data_path(self) -> str:
         """
         Get the user data directory path.
+
         In standalone mode, this returns our extension's data directory.
         """
         return str(paths.data_path)
@@ -75,7 +76,7 @@ class StandalonePathManager(IPathManager):
             model_type: Type of model (case-insensitive)
 
         Returns:
-            Absolute path to the model folder
+            Absolute path to the model folder.
         """
         # Normalize model type for lookup
         normalized_type = self._normalize_model_type(model_type)
@@ -99,13 +100,14 @@ class StandalonePathManager(IPathManager):
     def get_model_path(self, model_type: str) -> str:
         """
         Get model path for specific model type.
+
         Alias for get_model_folder_path for compatibility.
 
         Args:
             model_type: Type of model
 
         Returns:
-            Path to the model folder
+            Path to the model folder.
         """
         return self.get_model_folder_path(model_type)
 
@@ -124,7 +126,7 @@ class StandalonePathManager(IPathManager):
             path: Directory path to ensure exists
 
         Returns:
-            True if directory exists or was created successfully
+            True if directory exists or was created successfully.
         """
         try:
             if not os.path.exists(path):
@@ -171,7 +173,7 @@ class StandalonePathManager(IPathManager):
             path: Path to validate
 
         Returns:
-            True if path is valid and accessible
+            True if path is valid and accessible.
         """
         try:
             # Check if path exists
@@ -194,7 +196,7 @@ class StandalonePathManager(IPathManager):
             full_path: Absolute path
 
         Returns:
-            Path relative to base directory
+            Path relative to base directory.
         """
         try:
             return os.path.relpath(full_path, self._base_path)
@@ -209,7 +211,7 @@ class StandalonePathManager(IPathManager):
             path: Path to resolve (may be relative or absolute)
 
         Returns:
-            Absolute path
+            Absolute path.
         """
         if os.path.isabs(path):
             return path
@@ -221,7 +223,7 @@ class StandalonePathManager(IPathManager):
         Get all configured model paths.
 
         Returns:
-            Dictionary mapping model types to their paths
+            Dictionary mapping model types to their paths.
         """
         result = {}
         for model_type in self._model_folders:
@@ -239,7 +241,7 @@ class StandalonePathManager(IPathManager):
             save_config: Whether to save the configuration to file
 
         Returns:
-            True if successfully added
+            True if successfully added.
         """
         try:
             self._model_folders[model_type] = folder_path
@@ -263,6 +265,7 @@ class StandalonePathManager(IPathManager):
     def ensure_directories(self) -> None:
         """
         Ensure all required directories for standalone mode exist.
+
         Creates models, outputs, logs, cache, config, and user data folders.
         """
         from scripts.civitai_manager_libs import util
@@ -395,7 +398,7 @@ class StandalonePathManager(IPathManager):
             model_type: Raw model type string
 
         Returns:
-            Normalized model type
+            Normalized model type.
         """
         # Basic normalization
         normalized = model_type.strip()

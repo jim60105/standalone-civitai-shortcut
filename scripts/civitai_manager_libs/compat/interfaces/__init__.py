@@ -1,5 +1,4 @@
-"""
-Abstract interfaces for Civitai Shortcut compatibility layer.
+"""Abstract interfaces for Civitai Shortcut compatibility layer.
 
 This module defines the core interfaces that enable the application to run
 in both AUTOMATIC1111 WebUI mode and standalone mode.

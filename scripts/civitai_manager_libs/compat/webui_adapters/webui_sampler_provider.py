@@ -1,5 +1,4 @@
-"""
-WebUI Sampler Provider
+"""WebUI Sampler Provider.
 
 Provides sampler information using AUTOMATIC1111 WebUI modules.
 Compatible with the actual AUTOMATIC1111 implementation.

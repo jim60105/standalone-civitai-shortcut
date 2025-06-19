@@ -1,5 +1,4 @@
-"""
-WebUI Metadata Processor
+"""WebUI Metadata Processor.
 
 Provides metadata processing using AUTOMATIC1111 WebUI modules.
 """

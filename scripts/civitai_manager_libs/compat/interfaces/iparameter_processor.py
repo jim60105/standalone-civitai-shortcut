@@ -1,5 +1,4 @@
-"""
-Parameter Processor Interface
+"""Parameter Processor Interface.
 
 Provides unified parameter processing across execution modes.
 """
@@ -20,7 +19,7 @@ class IParameterProcessor(ABC):
             text (str): Raw parameters text
 
         Returns:
-            Dict[str, Any]: Parsed parameters as key-value pairs
+            Dict[str, Any]: Parsed parameters as key-value pairs.
         """
         pass
 
@@ -33,7 +32,7 @@ class IParameterProcessor(ABC):
             params (Dict[str, Any]): Parameters dictionary
 
         Returns:
-            str: Formatted parameters string
+            str: Formatted parameters string.
         """
         pass
 
@@ -62,6 +61,6 @@ class IParameterProcessor(ABC):
             override_params (Dict[str, Any]): Override parameters
 
         Returns:
-            Dict[str, Any]: Merged parameters
+            Dict[str, Any]: Merged parameters.
         """
         pass

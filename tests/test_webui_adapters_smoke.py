@@ -40,6 +40,7 @@ def patch_webui_modules(monkeypatch, tmp_path):
 
 
 def test_webui_config_manager(tmp_path):
+    """Test webui config manager."""
     manager = WebUIConfigManager()
     # Test folder access - just check they're strings
     folders = manager.get_model_folders()
@@ -52,6 +53,7 @@ def test_webui_config_manager(tmp_path):
 
 
 def test_webui_path_manager():
+    """Test webui path manager."""
     pm = WebUIPathManager()
     script = pm.get_script_path()
     assert isinstance(script, str)
@@ -65,6 +67,7 @@ def test_webui_path_manager():
 
 
 def test_webui_sampler_provider():
+    """Test webui sampler provider."""
     sp = WebUISamplerProvider()
     samplers = sp.get_samplers()
     assert isinstance(samplers, list)
@@ -75,6 +78,7 @@ def test_webui_sampler_provider():
 
 
 def test_webui_metadata_and_parameter_processors(tmp_path):
+    """Test webui metadata and parameter processors."""
     # Create dummy png for metadata
     png = tmp_path / 'img.png'
     png.write_bytes(b'')
@@ -89,6 +93,7 @@ def test_webui_metadata_and_parameter_processors(tmp_path):
 
 
 def test_webui_ui_bridge(tmp_path):
+    """Test webui ui bridge."""
     ub = WebUIUIBridge()
     assert ub.is_webui_mode() is True
     # create_send_to_buttons may return dict or None

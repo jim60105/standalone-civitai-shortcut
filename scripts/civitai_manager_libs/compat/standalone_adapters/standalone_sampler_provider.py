@@ -1,5 +1,4 @@
-"""
-Standalone Sampler Provider
+"""Standalone Sampler Provider.
 
 Provides comprehensive sampler information for standalone execution without WebUI dependencies.
 Enhanced with full sampler compatibility matching AUTOMATIC1111 WebUI implementation.
@@ -19,7 +18,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
     - Complete sampler list matching AUTOMATIC1111 WebUI
     - Upscaler information
     - Configuration management
-    - Validation and compatibility checking
+    - Validation and compatibility checking.
     """
 
     def __init__(self, config_path: Optional[str] = None):
@@ -27,7 +26,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
         Initialize the standalone sampler provider.
 
         Args:
-            config_path: Optional path to custom sampler configuration
+            config_path: Optional path to custom sampler configuration.
         """
         self._config_path = config_path
         self._samplers_data = self._load_samplers_config()
@@ -123,7 +122,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
             sampler_name: Name or alias of the sampler
 
         Returns:
-            Dictionary with sampler information or None if not found
+            Dictionary with sampler information or None if not found.
         """
         for sampler in self._samplers_data["samplers"]:
             # Check name (case-insensitive)
@@ -144,7 +143,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
             sampler_name: Name of the sampler
 
         Returns:
-            List of aliases for the sampler
+            List of aliases for the sampler.
         """
         sampler_info = self.get_sampler_info(sampler_name)
         return sampler_info.get("aliases", []) if sampler_info else []
@@ -157,7 +156,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
             sampler_name: Name of the sampler to validate
 
         Returns:
-            True if sampler is valid and available
+            True if sampler is valid and available.
         """
         return self.is_sampler_available(sampler_name)
 
@@ -169,7 +168,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
             sampler_name: Input sampler name (may be an alias)
 
         Returns:
-            Normalized sampler name
+            Normalized sampler name.
         """
         # Handle scheduler combinations first
         if " " in sampler_name:
@@ -192,7 +191,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
             category: Category to filter by (e.g., 'ancestral', 'karras', 'dpm')
 
         Returns:
-            List of sampler names in the specified category
+            List of sampler names in the specified category.
         """
         if not category:
             return self.get_samplers()

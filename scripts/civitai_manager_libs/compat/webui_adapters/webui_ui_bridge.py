@@ -1,5 +1,4 @@
-"""
-WebUI UI Bridge
+"""WebUI UI Bridge.
 
 Provides UI integration using AUTOMATIC1111 WebUI modules.
 """

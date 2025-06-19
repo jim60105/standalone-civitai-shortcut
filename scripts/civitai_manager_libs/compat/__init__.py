@@ -1,5 +1,4 @@
-"""
-Compatibility Layer Package
+"""Compatibility Layer Package.
 
 Provides unified access to functionality across WebUI and standalone execution modes.
 """

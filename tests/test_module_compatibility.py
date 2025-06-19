@@ -1,5 +1,5 @@
 """
-Module Compatibility Regression Tests
+Module Compatibility Regression Tests.
 
 This test suite verifies that the module compatibility modifications work correctly
 in both WebUI and standalone modes.
@@ -23,21 +23,21 @@ from civitai_manager_libs.module_compatibility import (
 
 
 class TestModuleCompatibility(unittest.TestCase):
-    """Test module compatibility modifications"""
+    """Test module compatibility modifications."""
 
     def setUp(self):
-        """Set up test environment"""
+        """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Clean up test environment"""
+        """Clean up test environment."""
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_conditional_import_manager_webui_detection(self):
-        """Test WebUI detection in conditional import manager"""
+        """Test WebUI detection in conditional import manager."""
         manager = ConditionalImportManager()
 
         # Test when WebUI is not available
@@ -52,7 +52,7 @@ class TestModuleCompatibility(unittest.TestCase):
             self.assertTrue(manager.is_webui_available())
 
     def test_conditional_import_manager_try_import(self):
-        """Test try_import functionality"""
+        """Test try_import functionality."""
         manager = ConditionalImportManager()
 
         # Test successful import
@@ -68,7 +68,7 @@ class TestModuleCompatibility(unittest.TestCase):
             self.assertEqual(result, fallback)
 
     def test_conditional_import_manager_get_webui_module(self):
-        """Test WebUI module retrieval"""
+        """Test WebUI module retrieval."""
         manager = ConditionalImportManager()
 
         # Test when WebUI is not available
@@ -91,7 +91,7 @@ class TestModuleCompatibility(unittest.TestCase):
                 self.assertEqual(result, 'test_value')
 
     def test_conditional_import_manager_get_webui_function(self):
-        """Test WebUI function retrieval"""
+        """Test WebUI function retrieval."""
         manager = ConditionalImportManager()
 
         # Test when function is available
@@ -112,7 +112,7 @@ class TestModuleCompatibility(unittest.TestCase):
     @patch('civitai_manager_libs.compat.compat_layer.CompatibilityLayer')
     @patch('civitai_manager_libs.compat.environment_detector.EnvironmentDetector')
     def test_compatibility_layer_initialization(self, mock_detector, mock_compat_layer):
-        """Test compatibility layer initialization"""
+        """Test compatibility layer initialization."""
         # Mock environment detection
         mock_detector.detect_environment.return_value = 'standalone'
         mock_compat_instance = Mock()
@@ -126,7 +126,7 @@ class TestModuleCompatibility(unittest.TestCase):
         self.assertTrue(True)  # Placeholder assertion
 
     def test_compatibility_status_not_initialized(self):
-        """Test compatibility status when not initialized"""
+        """Test compatibility status when not initialized."""
         with patch('civitai_manager_libs.setting.get_compatibility_layer', return_value=None):
             status = get_compatibility_status()
             self.assertEqual(status['status'], 'not_initialized')
@@ -134,7 +134,7 @@ class TestModuleCompatibility(unittest.TestCase):
             self.assertFalse(status['webui_available'])
 
     def test_compatibility_status_initialized(self):
-        """Test compatibility status when initialized"""
+        """Test compatibility status when initialized."""
         mock_compat = Mock()
         mock_compat.mode = 'webui'
         mock_compat.is_webui_mode.return_value = True
@@ -151,22 +151,22 @@ class TestModuleCompatibility(unittest.TestCase):
 
 
 class TestSettingModuleCompatibility(unittest.TestCase):
-    """Test setting module compatibility modifications"""
+    """Test setting module compatibility modifications."""
 
     def setUp(self):
-        """Set up test environment"""
+        """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Clean up test environment"""
+        """Clean up test environment."""
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @patch('civitai_manager_libs.setting.get_compatibility_layer')
     def test_setting_get_extension_base_path(self, mock_get_compat):
-        """Test extension base path retrieval through compatibility layer"""
+        """Test extension base path retrieval through compatibility layer."""
         from civitai_manager_libs import setting
 
         # Test with compatibility layer
@@ -182,7 +182,7 @@ class TestSettingModuleCompatibility(unittest.TestCase):
 
     @patch('civitai_manager_libs.setting.get_compatibility_layer')
     def test_setting_load_data_with_compatibility(self, mock_get_compat):
-        """Test load_data function with compatibility layer"""
+        """Test load_data function with compatibility layer."""
         from civitai_manager_libs import setting
 
         # Mock compatibility layer
@@ -202,10 +202,10 @@ class TestSettingModuleCompatibility(unittest.TestCase):
 
 
 class TestUtilModuleCompatibility(unittest.TestCase):
-    """Test util module compatibility modifications"""
+    """Test util module compatibility modifications."""
 
     def test_util_printD_with_compatibility_layer(self):
-        """Test printD function with compatibility layer"""
+        """Test printD function with compatibility layer."""
         from civitai_manager_libs import util
 
         # Mock compatibility layer with debug enabled
@@ -218,7 +218,7 @@ class TestUtilModuleCompatibility(unittest.TestCase):
                 mock_print.assert_called_once()
 
     def test_util_printD_without_compatibility_layer(self):
-        """Test printD function without compatibility layer"""
+        """Test printD function without compatibility layer."""
         from civitai_manager_libs import util
 
         with patch.object(util, 'get_compatibility_layer', return_value=None):

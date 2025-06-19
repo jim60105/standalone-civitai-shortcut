@@ -16,6 +16,7 @@ def spp():
 
 
 def test_parse_format_merge_and_validate(spp):
+    """Test parse format merge and validate."""
     text = (
         "prompt text\n"
         "Negative prompt: neg_text\n"
@@ -40,6 +41,7 @@ def test_parse_format_merge_and_validate(spp):
 
 
 def test_internal_helpers(spp):
+    """Test internal helpers."""
     assert spp._is_parameter_line('Steps: 1')
     assert not spp._is_parameter_line('no params here')
     pairs = spp._split_parameter_line('a:1, b:2, c:3')

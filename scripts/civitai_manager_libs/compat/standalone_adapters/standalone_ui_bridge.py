@@ -1,5 +1,4 @@
-"""
-Standalone UI Bridge
+"""Standalone UI Bridge.
 
 Provides UI integration for standalone execution without WebUI dependencies.
 """

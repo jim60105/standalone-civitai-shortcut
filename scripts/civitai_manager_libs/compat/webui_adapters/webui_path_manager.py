@@ -1,5 +1,4 @@
-"""
-WebUI Path Manager
+"""WebUI Path Manager.
 
 Provides path management using AUTOMATIC1111 WebUI modules.
 """
@@ -68,8 +67,8 @@ class WebUIPathManager(IPathManager):
         }
 
     def get_script_path(self) -> str:
-        """
-        Gets the absolute path to the main WebUI script directory.
+        """Get the absolute path to the main WebUI script directory.
+
         This follows AUTOMATIC1111's paths_internal.script_path pattern.
         """
         if WEBUI_AVAILABLE and webui_script_path:
@@ -77,8 +76,8 @@ class WebUIPathManager(IPathManager):
         return str(paths.script_path)
 
     def get_user_data_path(self) -> str:
-        """
-        Gets the data path from WebUI.
+        """Get the data path from WebUI.
+
         This follows AUTOMATIC1111's paths_internal.data_path pattern.
         """
         if WEBUI_AVAILABLE and webui_data_path:
@@ -86,8 +85,8 @@ class WebUIPathManager(IPathManager):
         return str(paths.data_path)
 
     def get_models_path(self) -> str:
-        """
-        Gets the main models path from the WebUI.
+        """Get the main models path from the WebUI.
+
         This follows AUTOMATIC1111's paths_internal.models_path pattern.
         """
         if WEBUI_AVAILABLE and webui_models_path:
@@ -95,8 +94,8 @@ class WebUIPathManager(IPathManager):
         return str(paths.models_path)
 
     def get_extensions_dir(self) -> str:
-        """
-        Gets the extensions directory path.
+        """Get the extensions directory path.
+
         This follows AUTOMATIC1111's paths_internal.extensions_dir pattern.
         """
         if WEBUI_AVAILABLE and extensions_dir:
@@ -104,8 +103,8 @@ class WebUIPathManager(IPathManager):
         return os.path.join(self.get_user_data_path(), "extensions")
 
     def get_extensions_builtin_dir(self) -> str:
-        """
-        Gets the built-in extensions directory path.
+        """Get the built-in extensions directory path.
+
         This follows AUTOMATIC1111's paths_internal.extensions_builtin_dir pattern.
         """
         if WEBUI_AVAILABLE and extensions_builtin_dir:
@@ -113,8 +112,8 @@ class WebUIPathManager(IPathManager):
         return os.path.join(self.get_script_path(), "extensions-builtin")
 
     def get_output_dir(self) -> str:
-        """
-        Gets the default output directory path.
+        """Get the default output directory path.
+
         This follows AUTOMATIC1111's paths_internal.default_output_dir pattern.
         """
         if WEBUI_AVAILABLE and default_output_dir:
@@ -122,22 +121,22 @@ class WebUIPathManager(IPathManager):
         return os.path.join(self.get_user_data_path(), "outputs")
 
     def get_model_folder_path(self, model_type: str) -> str:
-        """
-        Get specific model folder path.
+        """Get specific model folder path.
+
         Uses WebUI's standard model directory structure.
         """
         return os.path.join(self.get_models_path(), model_type)
 
     def get_config_path(self) -> str:
-        """
-        Get configuration file path.
+        """Get configuration file path.
+
         Stores in the data directory following WebUI patterns.
         """
         return os.path.join(self.get_user_data_path(), "setting.json")
 
     def ensure_directory_exists(self, path: str) -> bool:
-        """
-        Ensure directory exists.
+        """Ensure directory exists.
+
         Uses os.makedirs with exist_ok=True following WebUI patterns.
         """
         try:
@@ -147,7 +146,5 @@ class WebUIPathManager(IPathManager):
             return False
 
     def is_webui_available(self) -> bool:
-        """
-        Check if running within AUTOMATIC1111 WebUI environment.
-        """
+        """Check if running within AUTOMATIC1111 WebUI environment."""
         return WEBUI_AVAILABLE

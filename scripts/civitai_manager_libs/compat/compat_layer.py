@@ -1,5 +1,4 @@
-"""
-Main Compatibility Layer
+"""Main Compatibility Layer.
 
 This module provides the main CompatibilityLayer class that unifies access
 to all functionality across WebUI and standalone execution modes.
@@ -20,8 +19,9 @@ from .interfaces import (
 
 class CompatibilityLayer:
     """
-    Main compatibility layer that provides unified access to all functionality
-    across WebUI and standalone modes.
+    Main compatibility layer that provides unified access.
+
+    to all functionality across WebUI and standalone modes.
     """
 
     def __init__(self, mode: Optional[EnvironmentType] = None):
@@ -29,7 +29,7 @@ class CompatibilityLayer:
         Initialize the compatibility layer.
 
         Args:
-            mode (Optional[EnvironmentType]): Force specific mode, auto-detect if None
+            mode (Optional[EnvironmentType]): Force specific mode, auto-detect if None.
         """
         if mode is None:
             self.mode = EnvironmentDetector.detect_environment()
@@ -176,7 +176,7 @@ def get_compatibility_layer(
         mode (Optional[EnvironmentType]): Force specific mode, auto-detect if None
 
     Returns:
-        CompatibilityLayer: The compatibility layer instance
+        CompatibilityLayer: The compatibility layer instance.
     """
     global _compat_layer
 

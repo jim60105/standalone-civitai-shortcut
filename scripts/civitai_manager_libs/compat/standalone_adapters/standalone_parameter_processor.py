@@ -1,5 +1,4 @@
-"""
-Standalone Parameter Processor
+"""Standalone Parameter Processor.
 
 Provides parameter processing for standalone execution without WebUI dependencies.
 """

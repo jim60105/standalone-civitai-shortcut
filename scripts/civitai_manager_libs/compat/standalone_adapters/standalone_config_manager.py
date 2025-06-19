@@ -1,5 +1,4 @@
-"""
-Standalone Configuration Manager
+"""Standalone Configuration Manager.
 
 Provides configuration management compatible with AUTOMATIC1111 WebUI's Options system.
 Implements the same architecture and patterns used in modules/options.py for maximum compatibility.
@@ -36,6 +35,24 @@ class OptionInfo:
         category_id=None,
         do_not_save=False,
     ):
+        """
+        Initialize OptionInfo with configuration option metadata.
+
+        Args:
+            default: The default value for the option.
+            label: The label for the option in the UI.
+            component: The UI component type.
+            component_args: Arguments for the UI component.
+            onchange: Callback for when the option changes.
+            section: Section grouping for the option.
+            refresh: Callback for refreshing the option.
+            comment_before: Comment to display before the option.
+            comment_after: Comment to display after the option.
+            infotext: Additional information text.
+            restrict_api: Whether to restrict API access to this option.
+            category_id: Category identifier for the option.
+            do_not_save: If True, the option will not be saved.
+        """
         self.default = default
         self.label = label
         self.component = component
@@ -108,7 +125,7 @@ class StandaloneConfigManager(IConfigManager):
         Initialize the standalone configuration manager.
 
         Args:
-            config_file_path: Optional custom path to configuration file
+            config_file_path: Optional custom path to configuration file.
         """
         # Core data structures (following AUTOMATIC1111 pattern exactly)
         self.data_labels: Dict[str, OptionInfo] = {}
@@ -135,7 +152,7 @@ class StandaloneConfigManager(IConfigManager):
 
         Args:
             key: Attribute/configuration key
-            value: Value to set
+            value: Value to set.
         """
         # Handle built-in fields normally
         if key in self.builtin_fields:
@@ -176,7 +193,7 @@ class StandaloneConfigManager(IConfigManager):
             item: Attribute/configuration key
 
         Returns:
-            Attribute value or configuration value or default
+            Attribute value or configuration value or default.
         """
         # Handle built-in fields
         if item in self.builtin_fields:
@@ -202,7 +219,7 @@ class StandaloneConfigManager(IConfigManager):
             default: Default value if key doesn't exist
 
         Returns:
-            Configuration value or default
+            Configuration value or default.
         """
         # Support dot notation for nested access
         if "." in key:
@@ -223,7 +240,7 @@ class StandaloneConfigManager(IConfigManager):
 
         Args:
             key: Configuration key (supports dot notation for nested setting)
-            value: Value to set
+            value: Value to set.
         """
         # Apply validation if needed
         value = self._validate_config_value(key, value)
@@ -255,7 +272,7 @@ class StandaloneConfigManager(IConfigManager):
             value: Value to validate
 
         Returns:
-            Validated/clamped value
+            Validated/clamped value.
         """
         # Server port validation
         if "port" in key.lower() and isinstance(value, (int, float)):
@@ -278,7 +295,7 @@ class StandaloneConfigManager(IConfigManager):
             run_callbacks: Whether to run onchange callbacks
 
         Returns:
-            True if the option changed, False otherwise
+            True if the option changed, False otherwise.
         """
         oldval = self.data.get(key, None)
         if oldval == value:
@@ -314,7 +331,7 @@ class StandaloneConfigManager(IConfigManager):
             key: Configuration key
 
         Returns:
-            Default value or None
+            Default value or None.
         """
         data_label = self.data_labels.get(key)
         if data_label is None:
@@ -326,7 +343,7 @@ class StandaloneConfigManager(IConfigManager):
         Save configuration to file (exact AUTOMATIC1111 pattern).
 
         Args:
-            filename: Configuration file path
+            filename: Configuration file path.
         """
         try:
             # Ensure directory exists
@@ -347,7 +364,7 @@ class StandaloneConfigManager(IConfigManager):
         Load configuration from file (exact AUTOMATIC1111 pattern).
 
         Args:
-            filename: Configuration file path
+            filename: Configuration file path.
         """
         try:
             if os.path.exists(filename):
@@ -385,7 +402,7 @@ class StandaloneConfigManager(IConfigManager):
 
         Args:
             key: Option key
-            info: Option information and metadata
+            info: Option information and metadata.
         """
         self.data_labels[key] = info
         if key not in self.data and not info.do_not_save:
@@ -398,7 +415,7 @@ class StandaloneConfigManager(IConfigManager):
         Args:
             key: Option key
             func: Callback function
-            call: Whether to call the function immediately
+            call: Whether to call the function immediately.
         """
         item = self.data_labels.get(key)
         if item:
@@ -415,7 +432,7 @@ class StandaloneConfigManager(IConfigManager):
             y: Second value
 
         Returns:
-            True if types are compatible
+            True if types are compatible.
         """
         if x is None or y is None:
             return True
@@ -434,7 +451,7 @@ class StandaloneConfigManager(IConfigManager):
             value: Value to cast
 
         Returns:
-            Casted value
+            Casted value.
         """
         if key not in self.data_labels:
             return value
@@ -461,7 +478,7 @@ class StandaloneConfigManager(IConfigManager):
         Dump configuration as JSON string (exact AUTOMATIC1111 pattern).
 
         Returns:
-            JSON string representation of configuration
+            JSON string representation of configuration.
         """
         d = {k: self.data.get(k, v.default) for k, v in self.data_labels.items()}
         d["_comments_before"] = {
@@ -692,7 +709,7 @@ class StandaloneConfigManager(IConfigManager):
             path: New path for the model type
 
         Returns:
-            True if updated successfully
+            True if updated successfully.
         """
         try:
             # Map legacy names to internal keys
@@ -727,7 +744,7 @@ class StandaloneConfigManager(IConfigManager):
         Reset configuration to default values.
 
         Returns:
-            True if reset successfully
+            True if reset successfully.
         """
         try:
             # Reset data to defaults from data_labels
@@ -746,7 +763,7 @@ class StandaloneConfigManager(IConfigManager):
             export_path: Path to export configuration
 
         Returns:
-            True if exported successfully
+            True if exported successfully.
         """
         try:
             self.save(export_path)
@@ -764,7 +781,7 @@ class StandaloneConfigManager(IConfigManager):
             merge: If True, merge with existing config; if False, replace
 
         Returns:
-            True if imported successfully
+            True if imported successfully.
         """
         try:
             with open(import_path, "r", encoding="utf-8") as f:
@@ -786,7 +803,7 @@ class StandaloneConfigManager(IConfigManager):
         Get information about the configuration.
 
         Returns:
-            Dictionary with configuration metadata
+            Dictionary with configuration metadata.
         """
         return {
             "config_file_path": self._config_file_path,
@@ -821,7 +838,7 @@ class StandaloneConfigManager(IConfigManager):
         Save configuration to file (legacy method for backward compatibility).
 
         Returns:
-            True if saved successfully
+            True if saved successfully.
         """
         try:
             self.save(self._config_file_path)
@@ -835,7 +852,7 @@ class StandaloneConfigManager(IConfigManager):
         Load configuration from file (legacy method for backward compatibility).
 
         Returns:
-            True if loaded successfully
+            True if loaded successfully.
         """
         try:
             self.load(self._config_file_path)
@@ -902,6 +919,6 @@ class StandaloneConfigManager(IConfigManager):
             default: Default value if key not found
 
         Returns:
-            Configuration value or default
+            Configuration value or default.
         """
         return self.get_config(key, default)

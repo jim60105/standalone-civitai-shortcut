@@ -1,5 +1,4 @@
-"""
-Standalone Adapters Package
+"""Standalone Adapters Package.
 
 Contains adapters that provide implementations without WebUI dependencies.
 """

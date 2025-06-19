@@ -1,5 +1,4 @@
-"""
-Environment Detection for Civitai Shortcut
+"""Environment Detection for Civitai Shortcut.
 
 Provides automatic detection of execution environment (WebUI vs Standalone).
 """
@@ -24,7 +23,7 @@ class EnvironmentDetector:
 
         Returns:
             EnvironmentType: 'webui' if running in AUTOMATIC1111 environment,
-                           'standalone' if running independently
+                           'standalone' if running independently.
         """
         if cls._cached_environment is not None:
             return cls._cached_environment
@@ -65,7 +64,7 @@ class EnvironmentDetector:
         Check for specific markers that indicate WebUI environment.
 
         Returns:
-            bool: True if WebUI markers are found
+            bool: True if WebUI markers are found.
         """
         # Check for webui.py in the current working directory or parent directories
         current_dir = os.getcwd()
@@ -98,7 +97,7 @@ class EnvironmentDetector:
         Check if currently running in WebUI mode.
 
         Returns:
-            bool: True if in WebUI mode
+            bool: True if in WebUI mode.
         """
         return cls.detect_environment() == "webui"
 
@@ -108,7 +107,7 @@ class EnvironmentDetector:
         Check if currently running in standalone mode.
 
         Returns:
-            bool: True if in standalone mode
+            bool: True if in standalone mode.
         """
         return cls.detect_environment() == "standalone"
 
@@ -118,7 +117,7 @@ class EnvironmentDetector:
         Force a specific environment type (mainly for testing).
 
         Args:
-            env_type (EnvironmentType): The environment type to force
+            env_type (EnvironmentType): The environment type to force.
         """
         cls._cached_environment = env_type
 
@@ -133,7 +132,7 @@ class EnvironmentDetector:
         Get detailed environment information for debugging.
 
         Returns:
-            dict: Environment information including detection details
+            dict: Environment information including detection details.
         """
         env_type = cls.detect_environment()
 

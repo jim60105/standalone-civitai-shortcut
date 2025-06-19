@@ -1,6 +1,4 @@
-"""
-Unit tests for StandaloneConfigManager.
-"""
+"""Unit tests for StandaloneConfigManager."""
 
 import sys
 import os
@@ -16,6 +14,8 @@ from civitai_manager_libs.compat.standalone_adapters.standalone_config_manager i
 
 
 class TestStandaloneConfigManager(unittest.TestCase):
+    """Test class for TestStandaloneConfigManager."""
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.config_path = os.path.join(self.temp_dir.name, 'test_config.json')
@@ -24,11 +24,13 @@ class TestStandaloneConfigManager(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_init_and_default_options(self):
+        """Test init and default options."""
         mgr = StandaloneConfigManager(config_file_path=self.config_path)
         self.assertIsInstance(mgr.data, dict)
         self.assertIsInstance(mgr.data_labels, dict)
 
     def test_set_and_get_config(self):
+        """Test set and get config."""
         mgr = StandaloneConfigManager(config_file_path=self.config_path)
         # Add a new option
         mgr.data_labels['foo'] = OptionInfo(default=123)
@@ -38,6 +40,7 @@ class TestStandaloneConfigManager(unittest.TestCase):
         self.assertEqual(mgr.data['foo'], 456)
 
     def test_save_and_load(self):
+        """Test save and load."""
         mgr = StandaloneConfigManager(config_file_path=self.config_path)
         mgr.data_labels['bar'] = OptionInfo(default='abc')
         mgr.data['bar'] = 'abc'
@@ -48,6 +51,7 @@ class TestStandaloneConfigManager(unittest.TestCase):
         self.assertEqual(mgr2.bar, 'xyz')
 
     def test_onchange_callback(self):
+        """Test onchange callback."""
         called = {}
 
         def cb():
@@ -60,6 +64,7 @@ class TestStandaloneConfigManager(unittest.TestCase):
         self.assertTrue(called.get('ok'))
 
     def test_do_not_save(self):
+        """Test do not save."""
         mgr = StandaloneConfigManager(config_file_path=self.config_path)
         mgr.data_labels['tmp'] = OptionInfo(default=5, do_not_save=True)
         mgr.data['tmp'] = 5
@@ -68,6 +73,7 @@ class TestStandaloneConfigManager(unittest.TestCase):
         self.assertEqual(mgr.data['tmp'], 5)
 
     def test_invalid_component_args(self):
+        """Test invalid component args."""
         mgr = StandaloneConfigManager(config_file_path=self.config_path)
         mgr.data_labels['hidden'] = OptionInfo(default=1, component_args={'visible': False})
         mgr.data['hidden'] = 1
@@ -75,6 +81,7 @@ class TestStandaloneConfigManager(unittest.TestCase):
             mgr.hidden = 2
 
     def test_corrupted_config_file(self):
+        """Test corrupted config file."""
         # Write invalid JSON
         with open(self.config_path, 'w') as f:
             f.write('{invalid json')

@@ -1,5 +1,4 @@
-"""
-Sampler Provider Interface
+"""Sampler Provider Interface.
 
 Provides unified access to sampler information across execution modes.
 """
@@ -17,7 +16,7 @@ class ISamplerProvider(ABC):
         Get list of available samplers.
 
         Returns:
-            List[str]: List of sampler names
+            List[str]: List of sampler names.
         """
         pass
 
@@ -27,7 +26,7 @@ class ISamplerProvider(ABC):
         Get list of samplers available for img2img.
 
         Returns:
-            List[str]: List of sampler names for img2img
+            List[str]: List of sampler names for img2img.
         """
         pass
 
@@ -37,7 +36,7 @@ class ISamplerProvider(ABC):
         Get list of available upscale modes.
 
         Returns:
-            List[str]: List of upscale mode names
+            List[str]: List of upscale mode names.
         """
         pass
 
@@ -47,7 +46,7 @@ class ISamplerProvider(ABC):
         Get list of available SD upscalers.
 
         Returns:
-            List[str]: List of SD upscaler names
+            List[str]: List of SD upscaler names.
         """
         pass
 
@@ -57,7 +56,7 @@ class ISamplerProvider(ABC):
         Get combined list of all upscaler options.
 
         Returns:
-            List[str]: Combined list of upscale modes and SD upscalers
+            List[str]: Combined list of upscale modes and SD upscalers.
         """
         pass
 
@@ -70,7 +69,7 @@ class ISamplerProvider(ABC):
             sampler_name (str): Name of the sampler to check
 
         Returns:
-            bool: True if sampler is available
+            bool: True if sampler is available.
         """
         pass
 
@@ -80,6 +79,6 @@ class ISamplerProvider(ABC):
         Get the default sampler name.
 
         Returns:
-            str: Default sampler name
+            str: Default sampler name.
         """
         pass

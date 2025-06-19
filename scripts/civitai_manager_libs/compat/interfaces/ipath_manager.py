@@ -1,5 +1,4 @@
-"""
-Path Manager Interface
+"""Path Manager Interface.
 
 Provides unified access to path information across WebUI and standalone modes.
 """
@@ -14,11 +13,12 @@ class IPathManager(ABC):
     def get_script_path(self) -> str:
         """
         Get the main script path.
+
         In WebUI mode, this returns the WebUI's script_path.
         In standalone mode, this returns our extension's base path.
 
         Returns:
-            str: The script path
+            str: The script path.
         """
         pass
 
@@ -26,11 +26,12 @@ class IPathManager(ABC):
     def get_user_data_path(self) -> str:
         """
         Get the user data directory path.
+
         In WebUI mode, this returns the WebUI's data_path.
         In standalone mode, this returns our extension's data directory.
 
         Returns:
-            str: The user data directory path
+            str: The user data directory path.
         """
         pass
 
@@ -38,11 +39,12 @@ class IPathManager(ABC):
     def get_models_path(self) -> str:
         """
         Get the models directory path.
+
         In WebUI mode, this returns the WebUI's models_path.
         In standalone mode, this returns our extension's models directory.
 
         Returns:
-            str: The models directory path
+            str: The models directory path.
         """
         pass
 
@@ -55,7 +57,7 @@ class IPathManager(ABC):
             model_type: The type of model (e.g., 'Stable-diffusion', 'Lora', etc.)
 
         Returns:
-            str: The model folder path
+            str: The model folder path.
         """
         pass
 
@@ -65,7 +67,7 @@ class IPathManager(ABC):
         Get the configuration file path.
 
         Returns:
-            str: The configuration file path
+            str: The configuration file path.
         """
         pass
 
@@ -78,6 +80,6 @@ class IPathManager(ABC):
             path: The directory path to ensure exists
 
         Returns:
-            bool: True if directory exists or was created successfully, False otherwise
+            bool: True if directory exists or was created successfully, False otherwise.
         """
         pass

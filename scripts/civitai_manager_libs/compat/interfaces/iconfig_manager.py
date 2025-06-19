@@ -1,5 +1,4 @@
-"""
-Configuration Manager Interface
+"""Configuration Manager Interface.
 
 Provides unified access to configuration management across execution modes.
 """
@@ -21,7 +20,7 @@ class IConfigManager(ABC):
             default (Any): Default value if key doesn't exist
 
         Returns:
-            Any: The configuration value
+            Any: The configuration value.
         """
         pass
 
@@ -32,7 +31,7 @@ class IConfigManager(ABC):
 
         Args:
             key (str): The configuration key
-            value (Any): The value to set
+            value (Any): The value to set.
         """
         pass
 
@@ -42,7 +41,7 @@ class IConfigManager(ABC):
         Save the configuration to persistent storage.
 
         Returns:
-            bool: True if saved successfully
+            bool: True if saved successfully.
         """
         pass
 
@@ -52,7 +51,7 @@ class IConfigManager(ABC):
         Load configuration from persistent storage.
 
         Returns:
-            bool: True if loaded successfully
+            bool: True if loaded successfully.
         """
         pass
 
@@ -62,7 +61,7 @@ class IConfigManager(ABC):
         Get all configuration values.
 
         Returns:
-            Dict[str, Any]: Dictionary of all configuration values
+            Dict[str, Any]: Dictionary of all configuration values.
         """
         pass
 
@@ -75,7 +74,7 @@ class IConfigManager(ABC):
             key (str): The configuration key to check
 
         Returns:
-            bool: True if key exists
+            bool: True if key exists.
         """
         pass
 
@@ -85,7 +84,7 @@ class IConfigManager(ABC):
         Get model folder configurations.
 
         Returns:
-            Dict[str, str]: Mapping of model types to folder paths
+            Dict[str, str]: Mapping of model types to folder paths.
         """
         pass
 
@@ -95,7 +94,7 @@ class IConfigManager(ABC):
         Get embeddings directory path.
 
         Returns:
-            Optional[str]: Embeddings directory path or None
+            Optional[str]: Embeddings directory path or None.
         """
         pass
 
@@ -105,7 +104,7 @@ class IConfigManager(ABC):
         Get hypernetwork directory path.
 
         Returns:
-            Optional[str]: Hypernetwork directory path or None
+            Optional[str]: Hypernetwork directory path or None.
         """
         pass
 
@@ -115,7 +114,7 @@ class IConfigManager(ABC):
         Get checkpoint directory path.
 
         Returns:
-            Optional[str]: Checkpoint directory path or None
+            Optional[str]: Checkpoint directory path or None.
         """
         pass
 
@@ -125,6 +124,6 @@ class IConfigManager(ABC):
         Get LoRA directory path.
 
         Returns:
-            Optional[str]: LoRA directory path or None
+            Optional[str]: LoRA directory path or None.
         """
         pass

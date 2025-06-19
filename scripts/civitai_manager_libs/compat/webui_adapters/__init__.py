@@ -1,5 +1,4 @@
-"""
-WebUI Adapters Package
+"""WebUI Adapters Package.
 
 Contains adapters that provide implementations using AUTOMATIC1111 WebUI modules.
 """

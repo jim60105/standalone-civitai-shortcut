@@ -1,5 +1,4 @@
-"""
-Standalone Metadata Processor
+"""Standalone Metadata Processor.
 
 Provides metadata processing for standalone execution using PIL.
 Enhanced to fully replicate AUTOMATIC1111 WebUI PNG info processing.
@@ -24,6 +23,7 @@ except ImportError:
 class StandaloneMetadataProcessor(IMetadataProcessor):
     """
     Enhanced metadata processor implementation for standalone mode using PIL.
+
     Fully replicates AUTOMATIC1111 WebUI functionality.
     """
 
@@ -66,7 +66,7 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
             Tuple containing:
             - Generation parameters text
             - Raw metadata dictionary
-            - Formatted display info
+            - Formatted display info.
         """
         if not os.path.isfile(image_path):
             return None, None, None
@@ -294,7 +294,7 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
         return self.PARAM_LINE_DELIM.join(lines)
 
     def _log_debug(self, message: str) -> None:
-        """Internal debug logging."""
+        """Log internal debug."""
         if self._debug_mode:
             print(f"[{self._logger_name}] {message}")
 

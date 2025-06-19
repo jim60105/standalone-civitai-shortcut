@@ -1,5 +1,5 @@
 """
-Integration Tests for Module Compatibility
+Integration Tests for Module Compatibility.
 
 This test suite verifies that all modules work together correctly
 after the compatibility modifications.
@@ -17,23 +17,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
 
 class TestIntegration(unittest.TestCase):
-    """Integration tests for module compatibility"""
+    """Integration tests for module compatibility."""
 
     def setUp(self):
-        """Set up test environment"""
+        """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Clean up test environment"""
+        """Clean up test environment."""
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @patch('civitai_manager_libs.compat.environment_detector.EnvironmentDetector')
     @patch('civitai_manager_libs.compat.compat_layer.CompatibilityLayer')
     def test_full_webui_compatibility(self, mock_compat_layer, mock_detector):
-        """Test full WebUI compatibility"""
+        """Test full WebUI compatibility."""
         # Mock WebUI environment
         mock_detector.detect_environment.return_value = 'webui'
         mock_compat_instance = Mock()
@@ -67,7 +67,7 @@ class TestIntegration(unittest.TestCase):
     @patch('civitai_manager_libs.compat.environment_detector.EnvironmentDetector')
     @patch('civitai_manager_libs.compat.compat_layer.CompatibilityLayer')
     def test_full_standalone_functionality(self, mock_compat_layer, mock_detector):
-        """Test full standalone mode functionality"""
+        """Test full standalone mode functionality."""
         # Mock standalone environment
         mock_detector.detect_environment.return_value = 'standalone'
         mock_compat_instance = Mock()
@@ -99,7 +99,7 @@ class TestIntegration(unittest.TestCase):
             self.fail(f"Standalone functionality initialization failed: {e}")
 
     def test_mode_switching(self):
-        """Test environment detection and mode switching"""
+        """Test environment detection and mode switching."""
         from civitai_manager_libs.compat.environment_detector import EnvironmentDetector
 
         # Test WebUI detection when modules are available
@@ -111,7 +111,7 @@ class TestIntegration(unittest.TestCase):
             self.assertIn(env, ['webui', 'standalone'])
 
     def test_png_info_processing_fallback(self):
-        """Test PNG info processing with fallback mechanisms"""
+        """Test PNG info processing with fallback mechanisms."""
         from civitai_manager_libs import ishortcut_action
 
         # Mock compatibility layer that doesn't have metadata processor
@@ -135,7 +135,7 @@ class TestIntegration(unittest.TestCase):
                     self.assertEqual(result, 'test parameters')
 
     def test_sampler_choices_fallback(self):
-        """Test sampler choices with fallback mechanisms"""
+        """Test sampler choices with fallback mechanisms."""
         from civitai_manager_libs import prompt_ui
 
         # Mock compatibility layer without sampler provider
@@ -156,7 +156,7 @@ class TestIntegration(unittest.TestCase):
                 self.assertIn("DPM++ 2M", result)
 
     def test_setting_module_paths(self):
-        """Test setting module path handling with compatibility layer"""
+        """Test setting module path handling with compatibility layer."""
         from civitai_manager_libs import setting
 
         # Mock compatibility layer with path manager
@@ -173,7 +173,7 @@ class TestIntegration(unittest.TestCase):
             self.assertEqual(setting.extension_base, '/test/extension/path')
 
     def test_error_handling_graceful_degradation(self):
-        """Test that modules gracefully degrade when compatibility layer fails"""
+        """Test that modules gracefully degrade when compatibility layer fails."""
         from civitai_manager_libs import util
 
         # Test with None compatibility layer

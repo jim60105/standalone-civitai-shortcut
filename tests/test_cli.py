@@ -1,6 +1,4 @@
-"""
-Tests for command line interface functionality
-"""
+"""Tests for command line interface functionality."""
 
 import unittest
 import sys
@@ -23,31 +21,31 @@ except ImportError as e:
 
 
 class TestCommandLineInterface(unittest.TestCase):
-    """Test cases for command line interface"""
+    """Test cases for command line interface."""
 
     def setUp(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         if create_argument_parser is None:
             self.skipTest("main module not available")
         self.parser = create_argument_parser()
 
     def test_help_output(self):
-        """Test help output contains expected information"""
+        """Test help output contains expected information."""
         with self.assertRaises(SystemExit):
             self.parser.parse_args(['--help'])
 
     def test_version_output(self):
-        """Test version output"""
+        """Test version output."""
         with self.assertRaises(SystemExit):
             self.parser.parse_args(['--version'])
 
     def test_invalid_port(self):
-        """Test invalid port number handling"""
+        """Test invalid port number handling."""
         with self.assertRaises(SystemExit):
             self.parser.parse_args(['--port', 'invalid'])
 
     def test_port_range_validation(self):
-        """Test port range validation"""
+        """Test port range validation."""
         # Valid port
         args = self.parser.parse_args(['--port', '8080'])
         self.assertEqual(args.port, 8080)
@@ -61,7 +59,7 @@ class TestCommandLineInterface(unittest.TestCase):
         self.assertEqual(args.port, 65535)
 
     def test_config_file_path_validation(self):
-        """Test config file path validation"""
+        """Test config file path validation."""
         # Create temporary config file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump({"test": "config"}, f)
@@ -74,7 +72,7 @@ class TestCommandLineInterface(unittest.TestCase):
             os.unlink(temp_config)
 
     def test_boolean_flags(self):
-        """Test boolean flag handling"""
+        """Test boolean flag handling."""
         # Test individual flags
         args = self.parser.parse_args(['--share'])
         self.assertTrue(args.share)
@@ -90,14 +88,14 @@ class TestCommandLineInterface(unittest.TestCase):
         self.assertFalse(args.debug)
 
     def test_multiple_boolean_flags(self):
-        """Test multiple boolean flags together"""
+        """Test multiple boolean flags together."""
         args = self.parser.parse_args(['--share', '--debug', '--quiet'])
         self.assertTrue(args.share)
         self.assertTrue(args.debug)
         self.assertTrue(args.quiet)
 
     def test_path_arguments(self):
-        """Test path argument parsing"""
+        """Test path argument parsing."""
         models_path = '/custom/models'
         output_path = '/custom/output'
 
@@ -107,7 +105,7 @@ class TestCommandLineInterface(unittest.TestCase):
         self.assertEqual(args.output_path, output_path)
 
     def test_complex_argument_combination(self):
-        """Test complex argument combinations"""
+        """Test complex argument combinations."""
         args = self.parser.parse_args(
             [
                 '--host',
@@ -135,10 +133,10 @@ class TestCommandLineInterface(unittest.TestCase):
 
 
 class TestConfigurationOverrides(unittest.TestCase):
-    """Test cases for configuration overrides"""
+    """Test cases for configuration overrides."""
 
     def setUp(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         if apply_cli_overrides is None:
             self.skipTest("main module not available")
 
@@ -147,7 +145,7 @@ class TestConfigurationOverrides(unittest.TestCase):
         self.mock_app.compat_layer.config_manager = self.mock_config_manager
 
     def test_no_overrides(self):
-        """Test when no overrides are specified"""
+        """Test when no overrides are specified."""
         import argparse
 
         args = argparse.Namespace(
@@ -168,7 +166,7 @@ class TestConfigurationOverrides(unittest.TestCase):
         self.mock_config_manager.set.assert_any_call('server.share', False)
 
     def test_path_overrides(self):
-        """Test path configuration overrides"""
+        """Test path configuration overrides."""
         import argparse
 
         args = argparse.Namespace(
@@ -187,7 +185,7 @@ class TestConfigurationOverrides(unittest.TestCase):
         self.mock_config_manager.set.assert_any_call('paths.output', '/custom/output')
 
     def test_debug_override(self):
-        """Test debug mode override"""
+        """Test debug mode override."""
         import argparse
 
         args = argparse.Namespace(
@@ -208,7 +206,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             mock_logging.getLogger.return_value.setLevel.assert_called()
 
     def test_quiet_override(self):
-        """Test quiet mode override"""
+        """Test quiet mode override."""
         import argparse
 
         args = argparse.Namespace(
@@ -228,7 +226,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             mock_logging.getLogger.return_value.setLevel.assert_called_with(mock_logging.WARNING)
 
     def test_server_overrides(self):
-        """Test server configuration overrides"""
+        """Test server configuration overrides."""
         import argparse
 
         args = argparse.Namespace(
@@ -248,7 +246,7 @@ class TestConfigurationOverrides(unittest.TestCase):
         self.mock_config_manager.set.assert_any_call('server.share', True)
 
     def test_all_overrides(self):
-        """Test all configuration overrides together"""
+        """Test all configuration overrides together."""
         import argparse
 
         args = argparse.Namespace(
@@ -279,15 +277,15 @@ class TestConfigurationOverrides(unittest.TestCase):
 
 
 class TestArgumentValidation(unittest.TestCase):
-    """Test cases for argument validation"""
+    """Test cases for argument validation."""
 
     def setUp(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         if create_argument_parser is None:
             self.skipTest("main module not available")
 
     def test_host_validation(self):
-        """Test host argument validation"""
+        """Test host argument validation."""
         parser = create_argument_parser()
 
         # Valid hosts
@@ -297,7 +295,7 @@ class TestArgumentValidation(unittest.TestCase):
             self.assertEqual(args.host, host)
 
     def test_port_validation(self):
-        """Test port argument validation"""
+        """Test port argument validation."""
         parser = create_argument_parser()
 
         # Valid ports
@@ -307,7 +305,7 @@ class TestArgumentValidation(unittest.TestCase):
             self.assertEqual(args.port, port)
 
     def test_config_file_extension(self):
-        """Test config file extension handling"""
+        """Test config file extension handling."""
         parser = create_argument_parser()
 
         # Should accept various config file extensions
