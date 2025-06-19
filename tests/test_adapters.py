@@ -179,7 +179,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7.5, Seed: 123456789, Size: 512x768"""
         self.assertIn('Negative prompt: test negative', formatted)
         self.assertIn('Steps: 25', formatted)
 
-
         # Test parameter merging
         base_params = {'steps': 20, 'cfg_scale': 7.5}
         override_params = {'steps': 30, 'sampler_name': 'DPM++ 2M'}

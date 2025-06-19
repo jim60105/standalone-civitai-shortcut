@@ -103,6 +103,7 @@ Steps: 20, Sampler: DPM++ 2M, CFG scale: 7"""
         self.assertEqual(result["Sampler"], "DPM++ 2M")
         self.assertEqual(result["CFG scale"], "7")
 
+
 class TestParameterParser(unittest.TestCase):
     """Test the standalone parameter parser."""
 

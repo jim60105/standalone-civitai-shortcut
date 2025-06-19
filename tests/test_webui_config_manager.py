@@ -13,12 +13,14 @@ from civitai_manager_libs.compat.webui_adapters.webui_config_manager import WebU
 def patch_working_dirs(monkeypatch, tmp_path):
     # Simulate extension base and shared modules
     fake_scripts = types.SimpleNamespace(basedir=lambda: str(tmp_path))
-    fake_shared = types.SimpleNamespace(cmd_opts=types.SimpleNamespace(
-        embeddings_dir=str(tmp_path / 'emb'),
-        hypernetwork_dir=str(tmp_path / 'hyper'),
-        ckpt_dir=str(tmp_path / 'ckpt'),
-        lora_dir=str(tmp_path / 'lora'),
-    ))
+    fake_shared = types.SimpleNamespace(
+        cmd_opts=types.SimpleNamespace(
+            embeddings_dir=str(tmp_path / 'emb'),
+            hypernetwork_dir=str(tmp_path / 'hyper'),
+            ckpt_dir=str(tmp_path / 'ckpt'),
+            lora_dir=str(tmp_path / 'lora'),
+        )
+    )
     monkeypatch.setitem(sys.modules, 'modules.scripts', fake_scripts)
     monkeypatch.setitem(sys.modules, 'modules.shared', fake_shared)
     monkeypatch.chdir(tmp_path)

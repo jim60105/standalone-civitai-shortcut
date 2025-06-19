@@ -1,11 +1,16 @@
 """
 Unit tests for StandaloneSamplerProvider (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_sampler_provider.py)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
-from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider import StandaloneSamplerProvider
+from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider import (
+    StandaloneSamplerProvider,
+)
+
 
 class TestStandaloneSamplerProvider(unittest.TestCase):
     def setUp(self):
@@ -63,6 +68,7 @@ class TestStandaloneSamplerProvider(unittest.TestCase):
         if samplers:
             norm = self.provider.normalize_sampler_name(samplers[0])
             self.assertIsInstance(norm, str)
+
 
 if __name__ == '__main__':
     unittest.main()

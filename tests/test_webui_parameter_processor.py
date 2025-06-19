@@ -1,13 +1,18 @@
 """
 Unit tests for WebUIParameterProcessor (scripts/civitai_manager_libs/compat/webui_adapters/webui_parameter_processor.py)
 """
+
 import sys
 import os
 import types
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
 from unittest.mock import patch, MagicMock
-from civitai_manager_libs.compat.webui_adapters.webui_parameter_processor import WebUIParameterProcessor
+from civitai_manager_libs.compat.webui_adapters.webui_parameter_processor import (
+    WebUIParameterProcessor,
+)
+
 
 class TestWebUIParameterProcessor(unittest.TestCase):
     def setUp(self):
@@ -40,6 +45,7 @@ class TestWebUIParameterProcessor(unittest.TestCase):
 
     def test_parse_parameters_fallback(self):
         import sys
+
         sys_modules_backup = dict(sys.modules)
         sys.modules.pop('modules.infotext_utils', None)
         sys.modules.pop('modules', None)
@@ -68,7 +74,6 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         self.assertEqual(pos, "good")
         self.assertEqual(neg, "bad")
 
-
     def test_merge_parameters(self):
         base = {"a": 1, "b": 2}
         override = {"b": 3, "c": 4}
@@ -91,8 +96,7 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         self.assertEqual(self.proc._parse_parameter_value("steps", "10"), 10)
         self.assertEqual(self.proc._parse_parameter_value("cfg_scale", "2.5"), 2.5)
         self.assertEqual(
-            self.proc._parse_parameter_value("size", "128x256"),
-            {"width": 128, "height": 256}
+            self.proc._parse_parameter_value("size", "128x256"), {"width": 128, "height": 256}
         )
         self.assertEqual(self.proc._parse_parameter_value("other", "abc"), "abc")
 

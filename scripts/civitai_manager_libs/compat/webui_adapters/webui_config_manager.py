@@ -99,11 +99,14 @@ class WebUIConfigManager(IConfigManager):
         # Override with WebUI command line options if available
         try:
             import importlib
+
             shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
+
             def _as_str(val):
                 # Convert MagicMock or any non-str to str for test compatibility
                 return str(val) if not isinstance(val, str) else val
+
             if cmd_opts:
                 if hasattr(cmd_opts, "embeddings_dir") and cmd_opts.embeddings_dir:
                     model_folders["TextualInversion"] = _as_str(cmd_opts.embeddings_dir)
@@ -123,6 +126,7 @@ class WebUIConfigManager(IConfigManager):
         """Get embeddings directory from WebUI."""
         try:
             import importlib
+
             shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "embeddings_dir"):
@@ -135,6 +139,7 @@ class WebUIConfigManager(IConfigManager):
         """Get hypernetwork directory from WebUI."""
         try:
             import importlib
+
             shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "hypernetwork_dir"):
@@ -147,6 +152,7 @@ class WebUIConfigManager(IConfigManager):
         """Get checkpoint directory from WebUI."""
         try:
             import importlib
+
             shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "ckpt_dir"):
@@ -159,6 +165,7 @@ class WebUIConfigManager(IConfigManager):
         """Get LoRA directory from WebUI."""
         try:
             import importlib
+
             shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "lora_dir"):
@@ -171,6 +178,7 @@ class WebUIConfigManager(IConfigManager):
         """Get the path to the configuration file."""
         try:
             import importlib
+
             scripts = importlib.import_module("modules.scripts")
             extension_base = scripts.basedir()
             return os.path.join(extension_base, "setting.json")

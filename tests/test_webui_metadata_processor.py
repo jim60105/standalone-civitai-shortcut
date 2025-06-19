@@ -1,14 +1,19 @@
 """
 Unit tests for WebUIMetadataProcessor (scripts/civitai_manager_libs/compat/webui_adapters/webui_metadata_processor.py)
 """
+
 import sys
 import os
 import types
 from unittest.mock import MagicMock
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
 from unittest.mock import patch, MagicMock
-from civitai_manager_libs.compat.webui_adapters.webui_metadata_processor import WebUIMetadataProcessor
+from civitai_manager_libs.compat.webui_adapters.webui_metadata_processor import (
+    WebUIMetadataProcessor,
+)
+
 
 class TestWebUIMetadataProcessor(unittest.TestCase):
     def setUp(self):
@@ -34,7 +39,9 @@ class TestWebUIMetadataProcessor(unittest.TestCase):
         sys.modules.update(self._modules_backup)
 
     def test_extract_png_info_webui_success(self):
-        sys.modules['modules.extras'].run_pnginfo = MagicMock(return_value=("info1", {"parameters": "p"}, "info3"))
+        sys.modules['modules.extras'].run_pnginfo = MagicMock(
+            return_value=("info1", {"parameters": "p"}, "info3")
+        )
         with patch('modules.extras.run_pnginfo') as mock_run:
             mock_run.return_value = ("info1", {"parameters": "p"}, "info3")
             geninfo, params, info3 = self.processor.extract_png_info('fake.png')
@@ -44,13 +51,17 @@ class TestWebUIMetadataProcessor(unittest.TestCase):
 
     def test_extract_png_info_webui_fail_fallback(self):
         with patch('modules.extras.run_pnginfo', side_effect=ImportError):
-            with patch.object(self.processor, '_extract_png_info_fallback', return_value=(None, None, None)) as fallback:
+            with patch.object(
+                self.processor, '_extract_png_info_fallback', return_value=(None, None, None)
+            ) as fallback:
                 result = self.processor.extract_png_info('fake.png')
                 self.assertEqual(result, (None, None, None))
                 fallback.assert_called_once()
 
     def test_extract_parameters_from_png(self):
-        with patch.object(self.processor, 'extract_png_info', return_value=(None, {"parameters": "abc"}, None)):
+        with patch.object(
+            self.processor, 'extract_png_info', return_value=(None, {"parameters": "abc"}, None)
+        ):
             self.assertEqual(self.processor.extract_parameters_from_png('f.png'), "abc")
         with patch.object(self.processor, 'extract_png_info', return_value=("info1", None, None)):
             self.assertEqual(self.processor.extract_parameters_from_png('f.png'), "info1")
@@ -68,11 +79,14 @@ class TestWebUIMetadataProcessor(unittest.TestCase):
     def test_parse_generation_parameters_fallback(self):
         # No modules.infotext_utils, fallback to local
         import sys
+
         sys_modules_backup = dict(sys.modules)
         sys.modules.pop('modules.infotext_utils', None)
         sys.modules.pop('modules', None)
         try:
-            result = self.processor.parse_generation_parameters("prompt\nNegative prompt: bad\nSteps: 10, Sampler: Euler")
+            result = self.processor.parse_generation_parameters(
+                "prompt\nNegative prompt: bad\nSteps: 10, Sampler: Euler"
+            )
             self.assertIn("prompt", result)
             self.assertIn("negative_prompt", result)
             self.assertIn("steps", result)

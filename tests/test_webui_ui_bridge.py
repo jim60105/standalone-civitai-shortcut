@@ -1,13 +1,16 @@
 """
 Unit tests for WebUIUIBridge (scripts/civitai_manager_libs/compat/webui_adapters/webui_ui_bridge.py)
 """
+
 import sys
 import os
 import types
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
 from unittest.mock import patch, MagicMock
 from civitai_manager_libs.compat.webui_adapters.webui_ui_bridge import WebUIUIBridge
+
 
 class TestWebUIUIBridge(unittest.TestCase):
     def setUp(self):
@@ -53,7 +56,9 @@ class TestWebUIUIBridge(unittest.TestCase):
 
     def test_create_send_to_buttons_fallback(self):
         with patch('modules.infotext_utils.create_buttons', side_effect=ImportError):
-            with patch.object(self.bridge, '_create_simple_buttons', return_value={'B': 2}) as fallback:
+            with patch.object(
+                self.bridge, '_create_simple_buttons', return_value={'B': 2}
+            ) as fallback:
                 result = self.bridge.create_send_to_buttons(['B'])
                 self.assertEqual(result, {'B': 2})
                 fallback.assert_called_once()
@@ -109,6 +114,7 @@ class TestWebUIUIBridge(unittest.TestCase):
 
     def test_get_ui_config_importerror(self):
         import sys
+
         sys_modules_backup = dict(sys.modules)
         sys.modules.pop('modules.shared', None)
         try:
@@ -121,11 +127,13 @@ class TestWebUIUIBridge(unittest.TestCase):
     def test_create_simple_buttons_importerror(self):
         # Patch gradio, set Button to raise ImportError
         import gradio
+
         orig_button = getattr(gradio, 'Button', None)
-        
+
         class Dummy:
             def __init__(*a, **kw):
                 raise ImportError()
+
         setattr(gradio, 'Button', Dummy)
         try:
             val = self.bridge._create_simple_buttons(['A'])

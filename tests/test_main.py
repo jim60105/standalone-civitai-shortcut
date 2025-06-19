@@ -14,12 +14,7 @@ sys.path.insert(0, project_root)
 
 # Import after path setup to avoid import errors
 try:
-    from main import (
-        CivitaiShortcutApp,
-        create_argument_parser,
-        apply_cli_overrides,
-        main
-    )
+    from main import CivitaiShortcutApp, create_argument_parser, apply_cli_overrides, main
 except ImportError as e:
     # Handle import errors gracefully in test environment
     print(f"Warning: Could not import main module: {e}")
@@ -40,9 +35,9 @@ class TestCivitaiShortcutApp(unittest.TestCase):
     def test_app_initialization(self, mock_compat_layer):
         """Test application initialization"""
         mock_compat_layer.return_value = MagicMock()
-        
+
         app = CivitaiShortcutApp()
-        
+
         self.assertIsNotNone(app)
         self.assertIsNotNone(app.logger)
         mock_compat_layer.assert_called_once_with(mode='standalone')
@@ -51,9 +46,9 @@ class TestCivitaiShortcutApp(unittest.TestCase):
     def test_app_initialization_with_config(self, mock_compat_layer):
         """Test application initialization with custom config"""
         mock_compat_layer.return_value = MagicMock()
-        
+
         app = CivitaiShortcutApp(config_path=self.test_config_path)
-        
+
         self.assertIsNotNone(app)
         self.assertEqual(app.config_path, self.test_config_path)
 
@@ -65,10 +60,10 @@ class TestCivitaiShortcutApp(unittest.TestCase):
         mock_compat_layer.return_value = MagicMock()
         mock_blocks_instance = MagicMock()
         mock_blocks.return_value.__enter__.return_value = mock_blocks_instance
-        
+
         app = CivitaiShortcutApp()
         result = app.create_interface()
-        
+
         self.assertEqual(result, mock_blocks_instance)
         mock_create_ui.assert_called_once_with(app.compat_layer)
 
@@ -83,7 +78,7 @@ class TestArgumentParser(unittest.TestCase):
     def test_default_arguments(self):
         """Test parsing with default arguments"""
         args = self.parser.parse_args([])
-        
+
         self.assertEqual(args.host, '127.0.0.1')
         self.assertEqual(args.port, 7860)
         self.assertFalse(args.share)
@@ -124,14 +119,10 @@ class TestArgumentParser(unittest.TestCase):
 
     def test_multiple_arguments(self):
         """Test parsing multiple arguments"""
-        args = self.parser.parse_args([
-            '--host', '0.0.0.0',
-            '--port', '8080',
-            '--share',
-            '--debug',
-            '--config', 'config.json'
-        ])
-        
+        args = self.parser.parse_args(
+            ['--host', '0.0.0.0', '--port', '8080', '--share', '--debug', '--config', 'config.json']
+        )
+
         self.assertEqual(args.host, '0.0.0.0')
         self.assertEqual(args.port, 8080)
         self.assertTrue(args.share)
@@ -157,11 +148,11 @@ class TestCliOverrides(unittest.TestCase):
             quiet=False,
             host='127.0.0.1',
             port=7860,
-            share=False
+            share=False,
         )
-        
+
         apply_cli_overrides(self.mock_app, args)
-        
+
         self.mock_config_manager.set.assert_any_call('paths.models', '/custom/models')
 
     def test_apply_debug_mode(self):
@@ -173,12 +164,12 @@ class TestCliOverrides(unittest.TestCase):
             quiet=False,
             host='127.0.0.1',
             port=7860,
-            share=False
+            share=False,
         )
-        
+
         with patch('main.logging') as mock_logging:
             apply_cli_overrides(self.mock_app, args)
-            
+
             self.mock_config_manager.set.assert_any_call('debug.enabled', True)
             mock_logging.getLogger.return_value.setLevel.assert_called_with(mock_logging.DEBUG)
 
@@ -191,11 +182,11 @@ class TestCliOverrides(unittest.TestCase):
             quiet=False,
             host='0.0.0.0',
             port=8080,
-            share=True
+            share=True,
         )
-        
+
         apply_cli_overrides(self.mock_app, args)
-        
+
         self.mock_config_manager.set.assert_any_call('server.host', '0.0.0.0')
         self.mock_config_manager.set.assert_any_call('server.port', 8080)
         self.mock_config_manager.set.assert_any_call('server.share', True)
@@ -215,18 +206,18 @@ class TestMainFunction(unittest.TestCase):
         mock_args.port = 7860
         mock_args.share = False
         mock_args.debug = False
-        
+
         mock_parser.return_value.parse_args.return_value = mock_args
         mock_app_instance = MagicMock()
         mock_app.return_value = mock_app_instance
-        
+
         # Mock sys.argv to avoid actual argument parsing
         with patch('sys.argv', ['main.py']):
             try:
                 main()
             except SystemExit:
                 pass  # Expected when mocking
-        
+
         # Verify application was created and configured
         mock_app.assert_called_once()
         mock_app_instance.create_interface.assert_called_once()
@@ -235,11 +226,11 @@ class TestMainFunction(unittest.TestCase):
     def test_main_function_keyboard_interrupt(self, mock_parser):
         """Test main function handles KeyboardInterrupt"""
         mock_parser.return_value.parse_args.side_effect = KeyboardInterrupt()
-        
+
         with patch('sys.exit') as mock_exit:
             with patch('builtins.print') as mock_print:
                 main()
-                
+
                 mock_print.assert_called_with("\nApplication stopped")
                 mock_exit.assert_called_with(0)
 

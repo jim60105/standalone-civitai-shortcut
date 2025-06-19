@@ -1,14 +1,19 @@
 """
 Unit tests for StandaloneMetadataProcessor (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_metadata_processor.py)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
 import tempfile
 from PIL import Image, PngImagePlugin
 
-from civitai_manager_libs.compat.standalone_adapters.standalone_metadata_processor import StandaloneMetadataProcessor
+from civitai_manager_libs.compat.standalone_adapters.standalone_metadata_processor import (
+    StandaloneMetadataProcessor,
+)
+
 
 class TestStandaloneMetadataProcessor(unittest.TestCase):
     def setUp(self):
@@ -60,7 +65,6 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.assertEqual(params["Size-1"], "512")
         self.assertEqual(params["Size-2"], "512")
         self.assertEqual(params["Negative prompt"], "bad")
-
 
     def test_extract_prompt_from_parameters(self):
         text = "prompt\nNegative prompt: bad"

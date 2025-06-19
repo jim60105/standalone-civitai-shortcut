@@ -11,9 +11,11 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
+
 class TestCompatPaths(unittest.TestCase):
     def test_paths_are_path_objects_and_exist(self):
         from civitai_manager_libs.compat import paths
+
         # All should be Path objects
         self.assertIsInstance(paths.script_path, Path)
         self.assertIsInstance(paths.data_path, Path)
@@ -26,6 +28,7 @@ class TestCompatPaths(unittest.TestCase):
 
     def test_paths_string_equivalence(self):
         from civitai_manager_libs.compat import paths
+
         # The string version should match the Path version
         self.assertEqual(str(paths.data_path), os.path.join(str(paths.script_path), "data"))
         self.assertEqual(str(paths.models_path), os.path.join(str(paths.data_path), "models"))

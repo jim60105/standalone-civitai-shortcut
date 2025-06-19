@@ -1,12 +1,15 @@
 """
 Unit tests for WebUIPathManager (scripts/civitai_manager_libs/compat/webui_adapters/webui_path_manager.py)
 """
+
 import sys
 import os
 import tempfile
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
 from civitai_manager_libs.compat.webui_adapters.webui_path_manager import WebUIPathManager
+
 
 class TestWebUIPathManager(unittest.TestCase):
     def setUp(self):
@@ -55,6 +58,7 @@ class TestWebUIPathManager(unittest.TestCase):
         new_dir = os.path.join(self.temp_dir.name, 'ensure_dir')
         self.assertTrue(self.manager.ensure_directory_exists(new_dir))
         self.assertTrue(os.path.isdir(new_dir))
+
 
 if __name__ == '__main__':
     unittest.main()

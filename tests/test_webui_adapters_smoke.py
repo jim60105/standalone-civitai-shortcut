@@ -10,8 +10,12 @@ import pytest
 from civitai_manager_libs.compat.webui_adapters.webui_config_manager import WebUIConfigManager
 from civitai_manager_libs.compat.webui_adapters.webui_path_manager import WebUIPathManager
 from civitai_manager_libs.compat.webui_adapters.webui_sampler_provider import WebUISamplerProvider
-from civitai_manager_libs.compat.webui_adapters.webui_metadata_processor import WebUIMetadataProcessor
-from civitai_manager_libs.compat.webui_adapters.webui_parameter_processor import WebUIParameterProcessor
+from civitai_manager_libs.compat.webui_adapters.webui_metadata_processor import (
+    WebUIMetadataProcessor,
+)
+from civitai_manager_libs.compat.webui_adapters.webui_parameter_processor import (
+    WebUIParameterProcessor,
+)
 from civitai_manager_libs.compat.webui_adapters.webui_ui_bridge import WebUIUIBridge
 
 
@@ -19,12 +23,14 @@ from civitai_manager_libs.compat.webui_adapters.webui_ui_bridge import WebUIUIBr
 def patch_webui_modules(monkeypatch, tmp_path):
     # Simulate WebUI modules.scripts and modules.shared(cmd_opts)
     fake_scripts = types.SimpleNamespace(basedir=lambda: str(tmp_path))
-    fake_shared = types.SimpleNamespace(cmd_opts=types.SimpleNamespace(
-        embeddings_dir=str(tmp_path / 'emb'),
-        hypernetwork_dir=str(tmp_path / 'hyper'),
-        ckpt_dir=str(tmp_path / 'ckpt'),
-        lora_dir=str(tmp_path / 'lora'),
-    ))
+    fake_shared = types.SimpleNamespace(
+        cmd_opts=types.SimpleNamespace(
+            embeddings_dir=str(tmp_path / 'emb'),
+            hypernetwork_dir=str(tmp_path / 'hyper'),
+            ckpt_dir=str(tmp_path / 'ckpt'),
+            lora_dir=str(tmp_path / 'lora'),
+        )
+    )
     monkeypatch.setitem(sys.modules, 'modules.scripts', fake_scripts)
     monkeypatch.setitem(sys.modules, 'modules.shared', fake_shared)
     # Create paths

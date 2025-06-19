@@ -1,12 +1,17 @@
 """
 Unit tests for StandalonePathManager (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_path_manager.py)
 """
+
 import sys
 import os
 import tempfile
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
-from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import StandalonePathManager
+from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import (
+    StandalonePathManager,
+)
+
 
 class TestStandalonePathManager(unittest.TestCase):
     def setUp(self):
@@ -68,6 +73,7 @@ class TestStandalonePathManager(unittest.TestCase):
     def test_get_config_path(self):
         config_path = self.manager.get_config_path()
         self.assertTrue(config_path.endswith('setting.json'))
+
 
 if __name__ == '__main__':
     unittest.main()

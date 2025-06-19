@@ -266,6 +266,7 @@ class StandalonePathManager(IPathManager):
         Creates models, outputs, logs, cache, config, and user data folders.
         """
         from scripts.civitai_manager_libs import util
+
         required_dirs = [
             self.get_models_path(),
             self.get_output_path(),

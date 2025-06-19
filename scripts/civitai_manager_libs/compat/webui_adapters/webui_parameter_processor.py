@@ -73,7 +73,7 @@ class WebUIParameterProcessor(IParameterProcessor):
         for line in lines:
             if line.strip().lower().startswith("negative prompt:"):
                 negative_found = True
-                negative_prompt = line[len("negative prompt:"):].strip()
+                negative_prompt = line[len("negative prompt:") :].strip()
             elif not negative_found and not self._is_parameter_line(line):
                 positive_lines.append(line)
             elif negative_found and not self._is_parameter_line(line):

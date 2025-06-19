@@ -1,15 +1,19 @@
 """
 Unit tests for StandaloneConfigManager.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest
 import tempfile
 
 from civitai_manager_libs.compat.standalone_adapters.standalone_config_manager import (
-    StandaloneConfigManager, OptionInfo
+    StandaloneConfigManager,
+    OptionInfo,
 )
+
 
 class TestStandaloneConfigManager(unittest.TestCase):
     def setUp(self):

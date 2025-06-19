@@ -76,7 +76,7 @@ class WebUIMetadataProcessor(IMetadataProcessor):
         for i, line in enumerate(lines):
             if line.strip().lower().startswith("negative prompt:"):
                 negative_start = i
-                negative_prompt = line[len("negative prompt:"):].strip()
+                negative_prompt = line[len("negative prompt:") :].strip()
                 break
 
         # Everything before negative prompt is positive prompt

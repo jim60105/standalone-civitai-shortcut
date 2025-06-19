@@ -896,11 +896,11 @@ class StandaloneConfigManager(IConfigManager):
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get configuration value (WebUI compatibility method).
-        
+
         Args:
             key: Configuration key
             default: Default value if key not found
-            
+
         Returns:
             Configuration value or default
         """

@@ -56,7 +56,7 @@ class TestIntegration(unittest.TestCase):
 
         # Test module initialization
         from civitai_manager_libs.module_compatibility import initialize_compatibility_layer
-        
+
         try:
             initialize_compatibility_layer(mock_compat_instance)
             # If no exception is raised, the test passes
@@ -90,7 +90,7 @@ class TestIntegration(unittest.TestCase):
 
         # Test module initialization
         from civitai_manager_libs.module_compatibility import initialize_compatibility_layer
-        
+
         try:
             initialize_compatibility_layer(mock_compat_instance)
             # If no exception is raised, the test passes
@@ -101,7 +101,7 @@ class TestIntegration(unittest.TestCase):
     def test_mode_switching(self):
         """Test environment detection and mode switching"""
         from civitai_manager_libs.compat.environment_detector import EnvironmentDetector
-        
+
         # Test WebUI detection when modules are available
         with patch('importlib.import_module') as mock_import:
             # Mock successful import of WebUI modules
@@ -113,38 +113,42 @@ class TestIntegration(unittest.TestCase):
     def test_png_info_processing_fallback(self):
         """Test PNG info processing with fallback mechanisms"""
         from civitai_manager_libs import ishortcut_action
-        
+
         # Mock compatibility layer that doesn't have metadata processor
         mock_compat = Mock()
         mock_compat.metadata_processor = None
-        
+
         with patch.object(ishortcut_action, 'get_compatibility_layer', return_value=mock_compat):
-            with patch('civitai_manager_libs.conditional_imports.import_manager') as mock_import_manager:
+            with patch(
+                'civitai_manager_libs.conditional_imports.import_manager'
+            ) as mock_import_manager:
                 # Mock WebUI module not available
                 mock_import_manager.get_webui_module.return_value = None
-                
+
                 # Mock PIL fallback
                 with patch('PIL.Image.open') as mock_image_open:
                     mock_img = Mock()
                     mock_img.text = {'parameters': 'test parameters'}
                     mock_image_open.return_value.__enter__.return_value = mock_img
-                    
+
                     result = ishortcut_action.on_civitai_hidden_change('test_image.png', 0)
                     self.assertEqual(result, 'test parameters')
 
     def test_sampler_choices_fallback(self):
         """Test sampler choices with fallback mechanisms"""
         from civitai_manager_libs import prompt_ui
-        
+
         # Mock compatibility layer without sampler provider
         mock_compat = Mock()
         mock_compat.sampler_provider = None
-        
+
         with patch.object(prompt_ui, 'get_compatibility_layer', return_value=mock_compat):
-            with patch('civitai_manager_libs.conditional_imports.import_manager') as mock_import_manager:
+            with patch(
+                'civitai_manager_libs.conditional_imports.import_manager'
+            ) as mock_import_manager:
                 # Mock WebUI module not available
                 mock_import_manager.get_webui_module.return_value = None
-                
+
                 result = prompt_ui._get_sampler_choices()
                 # Should return fallback sampler list
                 self.assertIsInstance(result, list)
@@ -154,24 +158,24 @@ class TestIntegration(unittest.TestCase):
     def test_setting_module_paths(self):
         """Test setting module path handling with compatibility layer"""
         from civitai_manager_libs import setting
-        
+
         # Mock compatibility layer with path manager
         mock_compat = Mock()
         mock_path_manager = Mock()
         mock_path_manager.get_base_path.return_value = '/test/extension/path'
         mock_compat.path_manager = mock_path_manager
-        
+
         with patch.object(setting, 'get_compatibility_layer', return_value=mock_compat):
             # Reset and test initialization
             setting.extension_base = ""
             setting._initialize_extension_base()
-            
+
             self.assertEqual(setting.extension_base, '/test/extension/path')
 
     def test_error_handling_graceful_degradation(self):
         """Test that modules gracefully degrade when compatibility layer fails"""
         from civitai_manager_libs import util
-        
+
         # Test with None compatibility layer
         with patch.object(util, 'get_compatibility_layer', return_value=None):
             # Should not raise exception, just use fallback behavior
