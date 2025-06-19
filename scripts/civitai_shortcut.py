@@ -25,7 +25,7 @@ from scripts.civitai_manager_libs.module_compatibility import initialize_compati
 
 # Initialize compatibility layer for all modules
 def initialize_civitai_shortcut():
-    """Initialize Civitai Shortcut with compatibility layer"""
+    """Initialize Civitai Shortcut with compatibility layer."""
     try:
         from scripts.civitai_manager_libs.compat.compat_layer import CompatibilityLayer
         from scripts.civitai_manager_libs.compat.environment_detector import EnvironmentDetector
