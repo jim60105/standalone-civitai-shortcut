@@ -40,7 +40,8 @@ class IPathManager(ABC):
         """
         Ensure that all required directories for the application or extension exist.
 
-        This should create any necessary directories for operation, such as data, models, and config folders.
+        This should create any necessary directories for operation, such as data, models, and config
+        folders.
 
         Returns:
             bool: True if all directories exist or were created successfully, False otherwise.
@@ -48,16 +49,15 @@ class IPathManager(ABC):
         pass
 
     @abstractmethod
-    def get_model_path(self, model_type: str, model_name: str) -> str:
+    def get_model_path(self, model_type: str) -> str:
         """
-        Get the full path to a specific model file by type and name.
+        Get the directory path for a specific model type.
 
         Args:
             model_type: The type of model (e.g., 'Stable-diffusion', 'Lora', etc.)
-            model_name: The filename of the model (with extension)
 
         Returns:
-            str: The absolute path to the model file.
+            str: The absolute path to the model type directory.
         """
         pass
 
