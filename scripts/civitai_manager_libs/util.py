@@ -9,7 +9,8 @@ import subprocess
 
 from .conditional_imports import import_manager
 
-from . import setting
+
+EXTENSIONS_NAME = "Civitai Shortcut"
 
 try:
     from tqdm import tqdm
@@ -22,6 +23,7 @@ except ImportError:
 def get_compatibility_layer():
     """Get compatibility layer"""
     try:
+        from . import setting
         return setting.get_compatibility_layer()
     except AttributeError:
         return None
@@ -46,7 +48,7 @@ def printD(msg, force=False):
         debug_enabled = compat.config_manager.get('debug.enabled', False)
 
     if debug_enabled or force:
-        print(f"{setting.Extensions_Name}: {msg}")
+        print(f"{EXTENSIONS_NAME}: {msg}")
 
 
 def calculate_sha256(filname):
@@ -234,6 +236,7 @@ def write_json(contents, path):
 
 
 def scan_folder_for_info(folder):
+    from . import setting
     info_list = search_file([folder], None, [setting.info_ext])
 
     if not info_list:
@@ -247,6 +250,7 @@ def get_download_image_folder(ms_foldername):
     if not ms_foldername:
         return
 
+    from . import setting
     if not setting.download_images_folder:
         return
 
@@ -265,6 +269,7 @@ def make_download_image_folder(ms_foldername):
     if not ms_foldername:
         return
 
+    from . import setting
     if not setting.download_images_folder:
         return
 
@@ -294,6 +299,7 @@ def make_download_model_folder(
     if "model" not in version_info.keys():
         return
 
+    from . import setting
     content_type = version_info['model']['type']
     model_folder = setting.generate_type_basefolder(content_type)
 
@@ -314,6 +320,7 @@ def make_download_model_folder(
 
     if vs_folder:
         if not vs_foldername or len(vs_foldername.strip()) <= 0:
+            from . import setting
             vs_foldername = setting.generate_version_foldername(
                 ms_foldername, version_info['name'], version_info['id']
             )

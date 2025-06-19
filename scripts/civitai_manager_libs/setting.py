@@ -14,6 +14,7 @@ root_path = os.getcwd()
 def set_compatibility_layer(compat_layer):
     """Set compatibility layer (called by main program)."""
     global _compat_layer
+    from . import util
     util.printD("[setting] set_compatibility_layer: Setting compatibility layer.")
     _compat_layer = compat_layer
     _initialize_extension_base()
@@ -23,6 +24,7 @@ def get_compatibility_layer():
     """Get compatibility layer."""
     global _compat_layer
     if _compat_layer is None:
+        from . import util
         util.printD(
             "[setting] get_compatibility_layer: Compatibility layer is None, auto-detecting."
         )
@@ -32,14 +34,17 @@ def get_compatibility_layer():
             from .compat.environment_detector import EnvironmentDetector
 
             env = EnvironmentDetector.detect_environment()
+            from . import util
             util.printD(f"[setting] get_compatibility_layer: Detected environment: {env}")
             _compat_layer = CompatibilityLayer(mode=env)
             _initialize_extension_base()
         except ImportError as e:
+            from . import util
             util.printD(f"[setting] get_compatibility_layer: ImportError occurred: {e}")
             # Final fallback - use current directory
             pass
     else:
+        from . import util
         util.printD("[setting] get_compatibility_layer: Returning existing compatibility layer.")
     return _compat_layer
 
@@ -47,10 +52,12 @@ def get_compatibility_layer():
 def _initialize_extension_base():
     """Initialize extension base path."""
     global extension_base
+    from . import util
     util.printD("[setting] _initialize_extension_base: Initializing extension base path.")
     compat = get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
         extension_base = compat.path_manager.get_base_path()
+        from . import util
         util.printD(
             f"[setting] _initialize_extension_base: Set extension_base from compat.path_manager: "
             f"{extension_base}"
@@ -59,6 +66,7 @@ def _initialize_extension_base():
         # Fallback to current directory structure
         current_dir = os.path.dirname(os.path.abspath(__file__))
         extension_base = os.path.dirname(os.path.dirname(current_dir))
+        from . import util
         util.printD(
             f"[setting] _initialize_extension_base: Fallback extension_base: " f"{extension_base}"
         )
