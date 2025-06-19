@@ -36,9 +36,7 @@ def get_compatibility_layer():
         _compat_layer = setting.get_compatibility_layer()
     return _compat_layer
 
-
-
-def on_ui(refresh_sc_browser:gr.Textbox(), recipe_input):
+def on_ui(refresh_sc_browser, recipe_input):
     with gr.Column(scale=3):    
         with gr.Accordion("#", open=True) as model_title_name:            
             versions_list = gr.Dropdown(label="Model Version", choices=[setting.NORESULT], interactive=True, value=setting.NORESULT)             
