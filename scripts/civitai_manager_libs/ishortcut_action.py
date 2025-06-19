@@ -575,7 +575,7 @@ def on_download_model_click(model_id, version_id, file_name, vs_folder, vs_folde
     if version_id and model_id:    
         # 프리뷰이미지와 파일 모두를 다운 받는다.
         if cs_foldername == setting.CREATE_MODEL_FOLDER:
-            msg = downloader.download_file_thread(file_name, version_id, True, vs_folder, vs_foldername, None, ms_foldername)
+            msg = downloader.download_file_thread(file_name, version_id, True, vs_folder, vs_foldername.encode('utf-8'), None, ms_foldername)
         else:
             msg = downloader.download_file_thread(file_name, version_id, False, False, None , cs_foldername, ms_foldername)
             
