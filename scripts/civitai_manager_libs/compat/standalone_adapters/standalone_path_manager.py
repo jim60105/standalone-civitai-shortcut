@@ -256,6 +256,30 @@ class StandalonePathManager(IPathManager):
             self._log_debug(f"Error adding model folder {model_type}: {e}")
             return False
 
+    def set_debug_mode(self, enabled: bool):
+        """Enable or disable debug mode."""
+        self._debug_mode = enabled
+
+    def ensure_directories(self) -> None:
+        """
+        Ensure all required directories for standalone mode exist.
+        Creates models, outputs, logs, cache, config, and user data folders.
+        """
+        from scripts.civitai_manager_libs import util
+        required_dirs = [
+            self.get_models_path(),
+            self.get_output_path(),
+            self.get_logs_path(),
+            self.get_cache_path(),
+            self.get_user_data_path(),
+            os.path.dirname(self.get_config_path()),
+        ]
+        for d in required_dirs:
+            if self.ensure_directory_exists(d):
+                util.printD(f"StandalonePathManager: Ensured directory exists: {d}")
+            else:
+                util.printD(f"StandalonePathManager: Failed to create directory: {d}", force=True)
+
     def _detect_base_path(self) -> str:
         """Detect the base path for the application with enhanced logic."""
         if self._custom_base_path:
@@ -410,7 +434,3 @@ class StandalonePathManager(IPathManager):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
             print(f"StandalonePathManager: {message}")
-
-    def set_debug_mode(self, enabled: bool):
-        """Enable or disable debug mode."""
-        self._debug_mode = enabled

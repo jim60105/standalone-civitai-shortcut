@@ -125,7 +125,6 @@ Tests should be run automatically on:
 ### Test Environments
 Tests should run in:
 - Python 3.8+ environments
-- With and without optional dependencies (PIL, gradio)
 - Simulated WebUI and standalone environments
 
 ## Mocking Strategy
@@ -339,20 +338,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, '3.10', '3.11']
+        python-version: ['3.11']
     
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.11
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pillow  # Optional dependency
-        # Don't install gradio to test standalone mode
     
     - name: Run tests
       run: |

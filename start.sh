@@ -36,18 +36,6 @@ fi
 # Check dependencies
 echo -e "${YELLOW}Checking dependencies...${NC}"
 
-# Check if requirements.txt exists
-if [[ ! -f "requirements.txt" ]]; then
-    echo -e "${YELLOW}Creating basic requirements.txt...${NC}"
-    cat > requirements.txt << EOF
-gradio>=3.41.2
-requests>=2.25.0
-Pillow>=8.0.0
-numpy>=1.20.0
-packaging>=20.0
-EOF
-fi
-
 # Check if gradio is installed
 if ! python3 -c "import gradio" &> /dev/null; then
     echo -e "${YELLOW}Installing dependencies...${NC}"

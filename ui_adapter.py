@@ -6,12 +6,7 @@ providing compatibility layer injection and proper initialization.
 """
 
 import sys
-
-# Import Gradio for UI creation
-try:
-    import gradio as gr
-except ImportError:
-    gr = None
+import gradio as gr
 
 # Core modules for initialization
 import datetime

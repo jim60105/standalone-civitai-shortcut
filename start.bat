@@ -29,18 +29,6 @@ if defined VIRTUAL_ENV (
 REM Check dependencies
 echo Checking dependencies...
 
-REM Check if requirements.txt exists
-if not exist "requirements.txt" (
-    echo Creating basic requirements.txt...
-    (
-        echo gradio^>=3.41.2
-        echo requests^>=2.25.0
-        echo Pillow^>=8.0.0
-        echo numpy^>=1.20.0
-        echo packaging^>=20.0
-    ) > requirements.txt
-)
-
 REM Check if gradio is installed
 python -c "import gradio" >nul 2>&1
 if errorlevel 1 (

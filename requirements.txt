@@ -1,15 +1,15 @@
 # Civitai Shortcut Standalone Mode Requirements
 
-# Core dependencies
-# Support gradio 3.41.2 and 4.40.0, but not gradio 5.x
-gradio>=3.41.2,<5.0.0
+gradio==3.41.2
 requests>=2.25.0
-Pillow>=8.0.0
-numpy>=1.20.0
+Pillow==9.5.0
+pillow-avif-plugin==1.4.3
+numpy==1.26.2
 packaging>=20.0
+pydantic==2.8.2
 
 # Additional utilities
-tqdm>=4.60.0
+tqdm==4.66.1
 python-dateutil>=2.8.0
 
 # Development dependencies (optional)

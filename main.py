@@ -144,8 +144,15 @@ class CivitaiShortcutApp:
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
+            self.app.queue()
             # Launch the application
-            self.app.launch(server_name=host, server_port=port, share=share, debug=debug, **kwargs)
+            self.app.launch(
+                server_name=host,
+                server_port=port,
+                share=share,
+                debug=debug,
+                **kwargs
+            )
 
         except KeyboardInterrupt:
             self.logger.info("Application stopped by user")
