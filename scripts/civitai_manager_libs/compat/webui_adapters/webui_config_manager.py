@@ -75,7 +75,7 @@ class WebUIConfigManager(IConfigManager):
         return key in self._config_cache
 
     def get_model_folders(self) -> Dict[str, str]:
-        """Get model folder configurations from WebUI."""
+        """Get model folder configurations from WebUI, using absolute or mocked paths if available."""
         model_folders = {
             "Checkpoint": os.path.join("models", "Stable-diffusion"),
             "LORA": os.path.join("models", "Lora"),
@@ -98,19 +98,22 @@ class WebUIConfigManager(IConfigManager):
 
         # Override with WebUI command line options if available
         try:
-            from modules import shared
-
+            import importlib
+            shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
+            def _as_str(val):
+                # Convert MagicMock or any non-str to str for test compatibility
+                return str(val) if not isinstance(val, str) else val
             if cmd_opts:
                 if hasattr(cmd_opts, "embeddings_dir") and cmd_opts.embeddings_dir:
-                    model_folders["TextualInversion"] = cmd_opts.embeddings_dir
+                    model_folders["TextualInversion"] = _as_str(cmd_opts.embeddings_dir)
                 if hasattr(cmd_opts, "hypernetwork_dir") and cmd_opts.hypernetwork_dir:
-                    model_folders["Hypernetwork"] = cmd_opts.hypernetwork_dir
+                    model_folders["Hypernetwork"] = _as_str(cmd_opts.hypernetwork_dir)
                 if hasattr(cmd_opts, "ckpt_dir") and cmd_opts.ckpt_dir:
-                    model_folders["Checkpoint"] = cmd_opts.ckpt_dir
+                    model_folders["Checkpoint"] = _as_str(cmd_opts.ckpt_dir)
                 if hasattr(cmd_opts, "lora_dir") and cmd_opts.lora_dir:
-                    model_folders["LORA"] = cmd_opts.lora_dir
-        except (ImportError, AttributeError):
+                    model_folders["LORA"] = _as_str(cmd_opts.lora_dir)
+        except (ImportError, AttributeError, ModuleNotFoundError):
             # WebUI modules not available, use defaults
             pass
 
@@ -119,62 +122,58 @@ class WebUIConfigManager(IConfigManager):
     def get_embeddings_dir(self) -> Optional[str]:
         """Get embeddings directory from WebUI."""
         try:
-            from modules import shared
-
+            import importlib
+            shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "embeddings_dir"):
                 return cmd_opts.embeddings_dir
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ModuleNotFoundError):
             pass
-
         return None
 
     def get_hypernetwork_dir(self) -> Optional[str]:
         """Get hypernetwork directory from WebUI."""
         try:
-            from modules import shared
-
+            import importlib
+            shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "hypernetwork_dir"):
                 return cmd_opts.hypernetwork_dir
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ModuleNotFoundError):
             pass
-
         return None
 
     def get_ckpt_dir(self) -> Optional[str]:
         """Get checkpoint directory from WebUI."""
         try:
-            from modules import shared
-
+            import importlib
+            shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "ckpt_dir"):
                 return cmd_opts.ckpt_dir
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ModuleNotFoundError):
             pass
-
         return None
 
     def get_lora_dir(self) -> Optional[str]:
         """Get LoRA directory from WebUI."""
         try:
-            from modules import shared
-
+            import importlib
+            shared = importlib.import_module("modules.shared")
             cmd_opts = getattr(shared, "cmd_opts", None)
             if cmd_opts and hasattr(cmd_opts, "lora_dir"):
                 return cmd_opts.lora_dir
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ModuleNotFoundError):
             pass
-
         return None
 
     def _get_config_file_path(self) -> str:
         """Get the path to the configuration file."""
         try:
-            from modules import scripts
-
+            import importlib
+            scripts = importlib.import_module("modules.scripts")
             extension_base = scripts.basedir()
             return os.path.join(extension_base, "setting.json")
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ModuleNotFoundError):
             # Fallback to current directory
             return os.path.join(os.getcwd(), "setting.json")

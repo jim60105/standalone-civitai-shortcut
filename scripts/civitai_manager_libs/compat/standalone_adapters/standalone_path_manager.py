@@ -34,9 +34,9 @@ class StandalonePathManager(IPathManager):
         """
         self._custom_base_path = base_path
         self._config_path = config_path
+        self._debug_mode = False
         self._base_path = self._detect_base_path()
         self._model_folders = self._load_model_folders_config()
-        self._debug_mode = False
 
         # Ensure essential directories exist
         self._ensure_essential_directories()

@@ -30,3 +30,6 @@ data/models/Other/*
 !data/models/Other/.gitkeep
 data/models/Unkonwn/*
 !data/models/Unkonwn/.gitkeep
+.coverage
+setting.json
+model_folders.json
