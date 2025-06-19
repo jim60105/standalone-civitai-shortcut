@@ -49,30 +49,13 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"vadimcn.vscode-lldb",
-				"fill-labs.dependi",
-				"LittleFoxTeam.vscode-python-test-adapter",
-				"hbenl.vscode-test-explorer",
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
-				"ms-vscode-remote.remote-containers",
-				"donjayamanne.python-extension-pack",
-				"ms-python.black-formatter",
-				"ms-python.flake8"
+				"ms-vscode-remote.remote-containers"
 			],
 			"settings": {
 				"chat.tools.autoApprove": true,
-				"[python]": {
-					"editor.defaultFormatter": "ms-python.black-formatter"
-				},
-				"flake8.args": [
-					"--max-line-length=100",
-					"--ignore=E131,E302"
-				],
-				"black-formatter.args": [
-					"--line-length=100",
-					"--skip-string-normalization"
-				]
+				
 			}
 		}
 	},
