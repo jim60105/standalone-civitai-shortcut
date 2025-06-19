@@ -10,51 +10,64 @@ The compatibility layer provides unified access to functionality across WebUI an
 
 ### IPathManager
 
+
 **Purpose**: Manages file and directory paths across different execution environments.
 
 **Location**: `interfaces/ipath_manager.py`
 
 #### Methods
 
+##### `get_base_path() -> str`
+- **Purpose**: Returns the base path of the application or extension. In standalone mode, this is the root directory of the extension. In WebUI mode, this is the root directory of the WebUI environment.
+- **Returns**: Absolute path to the base directory.
+- **Thread Safety**: Safe.
+- **Exceptions**: None (should always return a valid path).
+
+##### `get_extension_path() -> str`
+- **Purpose**: Returns the path to the extension directory. In standalone mode, this is the same as the base path. In WebUI mode, this is the directory where the extension is installed.
+- **Returns**: Absolute path to the extension directory.
+- **Thread Safety**: Safe.
+- **Exceptions**: None (should always return a valid path).
+
 ##### `get_script_path() -> str`
-- **Purpose**: Returns the main script path (WebUI script_path or extension base path)
-- **Returns**: Absolute path to the script directory
-- **Thread Safety**: Safe
-- **Exceptions**: None (should always return a valid path)
+- **Purpose**: Returns the main script path (WebUI script_path or extension base path).
+- **Returns**: Absolute path to the script directory.
+- **Thread Safety**: Safe.
+- **Exceptions**: None (should always return a valid path).
 
 ##### `get_user_data_path() -> str`
-- **Purpose**: Returns the user data directory path (WebUI data_path or extension data directory)
-- **Returns**: Absolute path to the user data directory
-- **Thread Safety**: Safe
-- **Exceptions**: None
+- **Purpose**: Returns the user data directory path (WebUI data_path or extension data directory).
+- **Returns**: Absolute path to the user data directory.
+- **Thread Safety**: Safe.
+- **Exceptions**: None.
 
 ##### `get_models_path() -> str`
-- **Purpose**: Returns the models storage directory path (WebUI models_path or extension models directory)
-- **Returns**: Absolute path to the models directory
-- **Thread Safety**: Safe
-- **Exceptions**: None
+- **Purpose**: Returns the models storage directory path (WebUI models_path or extension models directory).
+- **Returns**: Absolute path to the models directory.
+- **Thread Safety**: Safe.
+- **Exceptions**: None.
 
 ##### `get_model_folder_path(model_type: str) -> str`
-- **Purpose**: Returns the directory path for a specific model type
+- **Purpose**: Returns the directory path for a specific model type.
 - **Parameters**:
-  - `model_type`: Model type identifier (e.g., 'Stable-diffusion', 'Lora', 'ControlNet')
-- **Returns**: Absolute path to the model type directory
-- **Thread Safety**: Safe
-- **Exceptions**: None (should return default path if type unknown)
+  - `model_type`: Model type identifier (e.g., 'Stable-diffusion', 'Lora', 'ControlNet').
+- **Returns**: Absolute path to the model type directory.
+- **Thread Safety**: Safe.
+- **Exceptions**: None (should return default path if type unknown).
 
 ##### `get_config_path() -> str`
-- **Purpose**: Returns the configuration file path
-- **Returns**: Absolute path to the configuration file
-- **Thread Safety**: Safe
-- **Exceptions**: None
+- **Purpose**: Returns the configuration file path.
+- **Returns**: Absolute path to the configuration file.
+- **Thread Safety**: Safe.
+- **Exceptions**: None.
 
 ##### `ensure_directory_exists(path: str) -> bool`
-- **Purpose**: Ensures a directory exists, creating it if necessary
+- **Purpose**: Ensures a directory exists, creating it if necessary.
 - **Parameters**:
-  - `path`: Directory path to ensure exists
-- **Returns**: True if directory exists or was created successfully
-- **Thread Safety**: Safe with proper locking
-- **Exceptions**: Should handle and return False on errors
+  - `path`: Directory path to ensure exists.
+- **Returns**: True if directory exists or was created successfully.
+- **Thread Safety**: Safe with proper locking.
+- **Exceptions**: Should handle and return False on errors.
 
 ### IConfigManager
 

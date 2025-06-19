@@ -9,6 +9,30 @@ from abc import ABC, abstractmethod
 class IPathManager(ABC):
     """Abstract interface for path management across different execution modes."""
 
+    def get_base_path(self) -> str:
+        """
+        Get the base path of the application or extension.
+
+        In standalone mode, this is the root directory of the extension.
+        In WebUI mode, this is the root directory of the WebUI environment.
+
+        Returns:
+            str: The base directory path.
+        """
+        pass
+
+    def get_extension_path(self) -> str:
+        """
+        Get the extension directory path.
+
+        In standalone mode, this is the same as the base path.
+        In WebUI mode, this is the directory where the extension is installed.
+
+        Returns:
+            str: The extension directory path.
+        """
+        pass
+
     @abstractmethod
     def get_script_path(self) -> str:
         """

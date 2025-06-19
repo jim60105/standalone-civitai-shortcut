@@ -34,7 +34,53 @@ except (ImportError, ModuleNotFoundError):
 
 
 class WebUIPathManager(IPathManager):
-    """Path manager implementation using WebUI modules."""
+    """
+    Path manager implementation using WebUI modules.
+
+    Provides path management for AUTOMATIC1111 WebUI extension mode.
+    """
+
+    def get_base_path(self) -> str:
+        """
+        Get the base path of the application or extension.
+
+        In WebUI mode, this is the root directory of the WebUI environment.
+        In standalone mode, this would be the extension's root directory.
+
+        Returns:
+            str: The base directory path.
+        """
+        if WEBUI_AVAILABLE and webui_script_path:
+            # The root of the WebUI environment is the parent of script_path
+            return os.path.dirname(webui_script_path)
+        return os.path.dirname(str(paths.script_path))
+
+    def get_extension_path(self) -> str:
+        """
+        Get the extension directory path.
+
+        In WebUI mode, this is the directory where the extension is installed.
+        In standalone mode, this would be the same as the base path.
+
+        Returns:
+            str: The extension directory path.
+        """
+        # Try to find the extension directory by searching extensions_dir and extensions_builtin_dir
+        if WEBUI_AVAILABLE and extensions_dir:
+            # Check if this extension is in the user extensions directory
+            this_file = os.path.abspath(__file__)
+            for ext_dir in [extensions_dir, extensions_builtin_dir]:
+                if ext_dir and this_file.startswith(os.path.abspath(ext_dir)):
+                    # Return the extension's root directory
+                    # e.g.,
+                    #   /path/to/extensions/my-extension/scripts/civitai_manager_libs/
+                    #   compat/webui_adapters/webui_path_manager.py
+                    #   -> /path/to/extensions/my-extension
+                    rel_path = os.path.relpath(this_file, ext_dir)
+                    ext_root = os.path.join(ext_dir, rel_path.split(os.sep)[0])
+                    return os.path.abspath(ext_root)
+        # Fallback: use the parent of the script_path (same as base path)
+        return self.get_base_path()
 
     def validate_path(self, path: str) -> bool:
         """Validate if the given path exists and is a directory."""
