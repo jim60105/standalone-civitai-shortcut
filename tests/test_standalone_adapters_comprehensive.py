@@ -283,13 +283,6 @@ class TestStandaloneParameterProcessor:
         assert isinstance(pos, str)
         assert isinstance(neg, str)
 
-    def test_parameter_validation(self):
-        """Test parameter validation."""
-        processor = StandaloneParameterProcessor()
-        
-        test_params = {"steps": 20, "sampler": "Euler"}
-        validated = processor.validate_parameters(test_params)
-        assert isinstance(validated, dict)
 
     def test_parameter_merging(self):
         """Test parameter merging."""

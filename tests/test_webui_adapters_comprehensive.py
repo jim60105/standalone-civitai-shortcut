@@ -306,20 +306,6 @@ class TestWebUIParameterProcessorExtensive:
             assert isinstance(pos, str)
             assert isinstance(neg, str)
 
-    def test_parameter_validation_detailed(self):
-        """Test detailed parameter validation."""
-        processor = WebUIParameterProcessor()
-        
-        test_params = [
-            {"steps": 20, "cfg_scale": 7.0},
-            {"steps": "invalid", "cfg_scale": "also_invalid"},
-            {},
-            {"sampler_name": "Euler", "seed": 12345}
-        ]
-        
-        for params in test_params:
-            validated = processor.validate_parameters(params)
-            assert isinstance(validated, dict)
 
     def test_parameter_merging_comprehensive(self):
         """Test comprehensive parameter merging."""

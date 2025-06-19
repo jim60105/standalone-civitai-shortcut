@@ -244,27 +244,6 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
 
         return res
 
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate and normalize parameters."""
-        validated = parameters.copy()
-
-        # Validate steps
-        if 'steps' in validated:
-            steps = int(validated['steps'])
-            validated['steps'] = max(1, min(150, steps))
-
-        # Validate CFG scale
-        if 'cfg_scale' in validated:
-            cfg = float(validated['cfg_scale'])
-            validated['cfg_scale'] = max(1.0, min(30.0, cfg))
-
-        # Validate seed
-        if 'seed' in validated:
-            seed = int(validated['seed'])
-            validated['seed'] = max(-1, min(2**32 - 1, seed))
-
-        return validated
-
     def extract_prompt_from_parameters(self, parameters_text: str) -> Tuple[str, str]:
         """Get positive and negative prompts."""
         params = self.parse_generation_parameters(parameters_text)

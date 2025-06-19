@@ -96,43 +96,6 @@ class StandaloneParameterProcessor(IParameterProcessor):
 
         return positive_prompt, negative_prompt
 
-    def validate_parameters(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate and sanitize parameters."""
-        validated = {}
-
-        for key, value in params.items():
-            if value is None:
-                continue
-
-            # Validate specific parameter types
-            if key in ["steps", "width", "height", "batch_size", "n_iter"]:
-                try:
-                    validated[key] = int(value)
-                    # Ensure reasonable bounds
-                    if key == "steps":
-                        validated[key] = max(1, min(150, validated[key]))
-                    elif key in ["width", "height"]:
-                        validated[key] = max(64, min(2048, validated[key]))
-                    elif key in ["batch_size", "n_iter"]:
-                        validated[key] = max(1, min(8, validated[key]))
-                except (ValueError, TypeError):
-                    continue
-            elif key in ["cfg_scale", "denoising_strength"]:
-                try:
-                    validated[key] = float(value)
-                    # Ensure reasonable bounds
-                    if key == "cfg_scale":
-                        validated[key] = max(1.0, min(30.0, validated[key]))
-                    elif key == "denoising_strength":
-                        validated[key] = max(0.0, min(1.0, validated[key]))
-                except (ValueError, TypeError):
-                    continue
-            else:
-                # String parameters
-                validated[key] = str(value)
-
-        return validated
-
     def merge_parameters(
         self, base_params: Dict[str, Any], override_params: Dict[str, Any]
     ) -> Dict[str, Any]:

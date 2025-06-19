@@ -4,24 +4,22 @@ Test interface implementations to ensure they work correctly.
 These tests verify that the abstract interfaces can be implemented
 and that their methods can be called without causing immediate errors.
 """
+
+import pytest
+from typing import Dict, Any, List, Tuple, Optional
+from scripts.civitai_manager_libs.compat.interfaces.iconfig_manager import IConfigManager
+from scripts.civitai_manager_libs.compat.interfaces.imetadata_processor import IMetadataProcessor
+from scripts.civitai_manager_libs.compat.interfaces.iparameter_processor import IParameterProcessor
+from scripts.civitai_manager_libs.compat.interfaces.ipath_manager import IPathManager
+from scripts.civitai_manager_libs.compat.interfaces.isampler_provider import ISamplerProvider
+from scripts.civitai_manager_libs.compat.interfaces.iui_bridge import IUIBridge
 import sys
 import os
-from typing import Dict, Any, List, Tuple, Optional
 
-# Add the scripts directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from civitai_manager_libs.compat.interfaces import (
-    iconfig_manager,
-    imetadata_processor,
-    iparameter_processor,
-    ipath_manager,
-    isampler_provider,
-    iui_bridge
-)
 
-
-class DummyConfigManager(iconfig_manager.IConfigManager):
+class DummyConfigManager(IConfigManager):
     """Dummy implementation for testing interface compliance."""
 
     def get_config(self, key: str, default: Any = None) -> Any:
@@ -58,7 +56,7 @@ class DummyConfigManager(iconfig_manager.IConfigManager):
         return None
 
 
-class DummyMetadataProcessor(imetadata_processor.IMetadataProcessor):
+class DummyMetadataProcessor(IMetadataProcessor):
     """Dummy implementation for testing interface compliance."""
 
     def extract_png_info(
@@ -79,7 +77,7 @@ class DummyMetadataProcessor(imetadata_processor.IMetadataProcessor):
         return {}
 
 
-class DummyParameterProcessor(iparameter_processor.IParameterProcessor):
+class DummyParameterProcessor(IParameterProcessor):
     """Dummy implementation for testing interface compliance."""
 
     def parse_parameters(self, text: str) -> Dict[str, Any]:
@@ -91,16 +89,13 @@ class DummyParameterProcessor(iparameter_processor.IParameterProcessor):
     def extract_prompt_and_negative(self, text: str) -> Tuple[str, str]:
         return "", ""
 
-    def validate_parameters(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        return params
-
     def merge_parameters(
         self, base_params: Dict[str, Any], override_params: Dict[str, Any]
     ) -> Dict[str, Any]:
         return {**base_params, **override_params}
 
 
-class DummyPathManager(ipath_manager.IPathManager):
+class DummyPathManager(IPathManager):
     """Dummy implementation for testing interface compliance."""
 
     def get_script_path(self) -> str:
@@ -131,7 +126,7 @@ class DummyPathManager(ipath_manager.IPathManager):
         return {}
 
 
-class DummySamplerProvider(isampler_provider.ISamplerProvider):
+class DummySamplerProvider(ISamplerProvider):
     """Dummy implementation for testing interface compliance."""
 
     def get_samplers(self) -> List[str]:
@@ -156,7 +151,7 @@ class DummySamplerProvider(isampler_provider.ISamplerProvider):
         return "Euler"
 
 
-class DummyUIBridge(iui_bridge.IUIBridge):
+class DummyUIBridge(IUIBridge):
     """Dummy implementation for testing interface compliance."""
 
     def register_ui_tabs(self, callback) -> None:
@@ -219,7 +214,6 @@ def test_iparameter_processor_methods_execute_pass():
     assert isinstance(dp.format_parameters({}), str)
     pos, neg = dp.extract_prompt_and_negative('')
     assert isinstance(pos, str) and isinstance(neg, str)
-    assert isinstance(dp.validate_parameters({}), dict)
     assert isinstance(dp.merge_parameters({}, {}), dict)
 
 
@@ -259,3 +253,33 @@ def test_iui_bridge_methods_execute_pass():
     result = ub.launch_standalone(lambda: None)
     assert result is None
     assert ub.is_webui_mode() is False
+
+
+def test_iconfig_manager_not_implemented():
+    with pytest.raises(TypeError):
+        IConfigManager()
+
+
+def test_imetadata_processor_not_implemented():
+    with pytest.raises(TypeError):
+        IMetadataProcessor()
+
+
+def test_iparameter_processor_not_implemented():
+    with pytest.raises(TypeError):
+        IParameterProcessor()
+
+
+def test_ipath_manager_not_implemented():
+    with pytest.raises(TypeError):
+        IPathManager()
+
+
+def test_isampler_provider_not_implemented():
+    with pytest.raises(TypeError):
+        ISamplerProvider()
+
+
+def test_iui_bridge_not_implemented():
+    with pytest.raises(TypeError):
+        IUIBridge()

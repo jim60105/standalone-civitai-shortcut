@@ -179,16 +179,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7.5, Seed: 123456789, Size: 512x768"""
         self.assertIn('Negative prompt: test negative', formatted)
         self.assertIn('Steps: 25', formatted)
 
-        # Test parameter validation
-        invalid_params = {
-            'steps': 200,  # Too high
-            'cfg_scale': 50,  # Too high
-            'width': 32,  # Too low
-        }
-        validated = param_processor.validate_parameters(invalid_params)
-        self.assertLessEqual(validated['steps'], 150)
-        self.assertLessEqual(validated['cfg_scale'], 30)
-        self.assertGreaterEqual(validated['width'], 64)
 
         # Test parameter merging
         base_params = {'steps': 20, 'cfg_scale': 7.5}

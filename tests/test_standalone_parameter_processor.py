@@ -35,18 +35,6 @@ def test_parse_format_merge_and_validate(spp):
     assert 'Negative prompt: neg_text' in formatted
     assert 'Steps: 10' in formatted
 
-    validated = spp.validate_parameters({
-        'steps': 0, 'width': 0, 'height': 5000,
-        'batch_size': 0, 'n_iter': 0,
-        'cfg_scale': 0.5, 'denoising_strength': 2.0
-    })
-    assert validated['steps'] == 1
-    assert validated['width'] == 64
-    assert validated['height'] == 2048
-    assert validated['batch_size'] == 1
-    assert validated['n_iter'] == 1
-    assert validated['cfg_scale'] == 1.0
-    assert validated['denoising_strength'] == 1.0
 
     merged = spp.merge_parameters({'a': 1}, {'b': 2})
     assert merged == {'a': 1, 'b': 2}

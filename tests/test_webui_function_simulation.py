@@ -103,27 +103,6 @@ Steps: 20, Sampler: DPM++ 2M, CFG scale: 7"""
         self.assertEqual(result["Sampler"], "DPM++ 2M")
         self.assertEqual(result["CFG scale"], "7")
 
-    def test_parameter_validation(self):
-        """Test parameter validation functionality."""
-        test_params = {
-            "steps": 20,
-            "cfg_scale": 7.5,
-            "seed": 123456789,
-            "size": {"width": 512, "height": 768},
-            "invalid_steps": 999,  # Should be limited
-            "invalid_cfg": 50.0,  # Should be limited
-        }
-
-        validated = self.processor.validate_parameters(test_params)
-
-        # Valid parameters should pass through
-        self.assertEqual(validated["steps"], 20)
-        self.assertEqual(validated["cfg_scale"], 7.5)
-
-        # Size should be preserved if valid
-        self.assertIn("size", validated)
-
-
 class TestParameterParser(unittest.TestCase):
     """Test the standalone parameter parser."""
 

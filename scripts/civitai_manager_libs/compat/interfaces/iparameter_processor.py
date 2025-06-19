@@ -51,19 +51,6 @@ class IParameterProcessor(ABC):
         pass
 
     @abstractmethod
-    def validate_parameters(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate and sanitize parameters.
-
-        Args:
-            params (Dict[str, Any]): Parameters to validate
-
-        Returns:
-            Dict[str, Any]: Validated parameters
-        """
-        pass
-
-    @abstractmethod
     def merge_parameters(
         self, base_params: Dict[str, Any], override_params: Dict[str, Any]
     ) -> Dict[str, Any]:
