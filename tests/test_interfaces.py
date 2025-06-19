@@ -55,6 +55,13 @@ class DummyConfigManager(IConfigManager):
     def get_lora_dir(self) -> Optional[str]:
         return None
 
+    # Alias methods
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.get_config(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        self.set_config(key, value)
+
 
 class DummyMetadataProcessor(IMetadataProcessor):
     """Dummy implementation for testing interface compliance."""
@@ -98,6 +105,18 @@ class DummyParameterProcessor(IParameterProcessor):
 class DummyPathManager(IPathManager):
     """Dummy implementation for testing interface compliance."""
 
+    def get_base_path(self) -> str:
+        return "/dummy/base"
+
+    def get_extension_path(self) -> str:
+        return "/dummy/extension"
+
+    def ensure_directories(self) -> bool:
+        return True
+
+    def get_model_path(self, model_type: str) -> str:
+        return f"/dummy/models/{model_type}"
+
     def get_script_path(self) -> str:
         return "/dummy/script"
 
@@ -115,15 +134,6 @@ class DummyPathManager(IPathManager):
 
     def ensure_directory_exists(self, path: str) -> bool:
         return True
-
-    def validate_path(self, path: str) -> bool:
-        return True
-
-    def add_model_folder(self, model_type: str, path: str, save_config: bool = True) -> bool:
-        return True
-
-    def get_all_model_paths(self) -> Dict[str, str]:
-        return {}
 
 
 class DummySamplerProvider(ISamplerProvider):
@@ -143,6 +153,9 @@ class DummySamplerProvider(ISamplerProvider):
 
     def get_all_upscalers(self) -> List[str]:
         return ["None", "Lanczos", "ESRGAN_4x"]
+
+    def get_txt2img_samplers(self) -> List[str]:
+        return ["Euler", "Heun"]
 
     def is_sampler_available(self, sampler_name: str) -> bool:
         return sampler_name in ["Euler", "Heun"]
@@ -182,17 +195,28 @@ class DummyUIBridge(IUIBridge):
 def test_iconfig_manager_methods_execute_pass():
     """Test that IConfigManager interface methods can be called."""
     dm = DummyConfigManager()
+    # Core config operations
     assert dm.get_config('x') is None
     dm.set_config('x', 1)
     assert dm.save_config() is True
     assert dm.load_config() is True
+
+    # Bulk retrieval and existence checks
     assert isinstance(dm.get_all_configs(), dict)
     assert dm.has_config('x') is False
     assert isinstance(dm.get_model_folders(), dict)
+
+    # Optional directories
     assert dm.get_embeddings_dir() is None
     assert dm.get_hypernetwork_dir() is None
     assert dm.get_ckpt_dir() is None
     assert dm.get_lora_dir() is None
+
+    # Alias methods for convenience
+    # get() should fallback to get_config()
+    assert dm.get('any', default=123) is None
+    # set() should call set_config without error
+    dm.set('foo', 'bar')
 
 
 def test_imetadata_processor_methods_execute_pass(tmp_path):
@@ -220,15 +244,23 @@ def test_iparameter_processor_methods_execute_pass():
 def test_ipath_manager_methods_execute_pass(tmp_path):
     """Test that IPathManager interface methods can be called."""
     pm = DummyPathManager()
+    # Base and extension paths
+    assert isinstance(pm.get_base_path(), str)
+    assert isinstance(pm.get_extension_path(), str)
+
+    # Directory management
+    assert pm.ensure_directories() is True
+
+    # Model path access
+    assert isinstance(pm.get_model_path('Lora'), str)
+
+    # Core path accessors
     assert isinstance(pm.get_script_path(), str)
     assert isinstance(pm.get_user_data_path(), str)
     assert isinstance(pm.get_models_path(), str)
     assert isinstance(pm.get_model_folder_path('Lora'), str)
     assert isinstance(pm.get_config_path(), str)
     assert pm.ensure_directory_exists(str(tmp_path)) is True
-    assert pm.validate_path(str(tmp_path)) is True
-    assert pm.add_model_folder('Test', str(tmp_path)) is True
-    assert isinstance(pm.get_all_model_paths(), dict)
 
 
 def test_isampler_provider_methods_execute_pass():
@@ -236,6 +268,7 @@ def test_isampler_provider_methods_execute_pass():
     sp = DummySamplerProvider()
     assert isinstance(sp.get_samplers(), list)
     assert isinstance(sp.get_samplers_for_img2img(), list)
+    assert isinstance(sp.get_txt2img_samplers(), list)
     assert isinstance(sp.get_upscale_modes(), list)
     assert isinstance(sp.get_sd_upscalers(), list)
     assert isinstance(sp.get_all_upscalers(), list)
