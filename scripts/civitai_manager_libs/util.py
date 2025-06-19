@@ -29,6 +29,15 @@ def get_compatibility_layer():
 
 def printD(msg, force=False):
     """Debug message output with compatibility layer support"""
+    import inspect
+
+    # If called from setting.py during initialization, avoid recursion
+    stack = inspect.stack()
+    for frame in stack:
+        if frame.filename.endswith("setting.py"):
+            print(f"[CivitaiShortcut] {msg}")
+            return
+
     compat = get_compatibility_layer()
 
     # Check debug mode through compatibility layer
