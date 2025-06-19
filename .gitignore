@@ -8,3 +8,25 @@ CivitaiShortCutClassification.json
 CivitaiShortCutRecipeCollection.json
 CivitaiShortCutSetting.json
 *.log
+
+# Ignore all files in data/models subfolders except .gitkeep
+data/models/ControlNet/*
+!data/models/ControlNet/.gitkeep
+data/models/embeddings/*
+!data/models/embeddings/.gitkeep
+data/models/hypernetworks/*
+!data/models/hypernetworks/.gitkeep
+data/models/Lora/*
+!data/models/Lora/.gitkeep
+data/models/Stable-diffusion/*
+!data/models/Stable-diffusion/.gitkeep
+data/models/VAE/*
+!data/models/VAE/.gitkeep
+data/models/LyCORIS/*
+!data/models/LyCORIS/.gitkeep
+data/models/Poses/*
+!data/models/Poses/.gitkeep
+data/models/Other/*
+!data/models/Other/.gitkeep
+data/models/Unkonwn/*
+!data/models/Unkonwn/.gitkeep
