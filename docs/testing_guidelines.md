@@ -6,58 +6,60 @@ This document provides guidelines for testing the Civitai Shortcut compatibility
 
 The compatibility layer requires comprehensive testing to ensure functionality works correctly across both WebUI and standalone modes. This document outlines testing strategies, requirements, and best practices.
 
-## Test Categories
+## Test Categories & Structure
 
-### 1. Unit Tests
-Test individual components in isolation.
+### Unit Tests
 
-#### Environment Detection Tests
-- Test automatic environment detection
-- Test forced environment modes
-- Test caching behavior
-- Test environment markers detection
+- Environment detection (auto, forced, cache, markers)
+- Interface implementation (public methods, error/fallback, parameter validation, thread safety)
+- Compatibility layer (creation, singleton, mode switching, property access)
 
-#### Interface Implementation Tests
-- Test all public methods of each adapter
-- Test error handling and fallback behavior
-- Test parameter validation
-- Test thread safety where applicable
+### Integration Tests
 
-#### Compatibility Layer Tests
-- Test component creation and initialization
-- Test singleton behavior
-- Test mode switching
-- Test property access
+- Cross-component (path/config, metadata/parameter, UI bridge/sampler)
+- End-to-end (model download, parameter extraction, UI component binding)
 
-### 2. Integration Tests
-Test component interactions and workflows.
+### Environment-Specific Tests
 
-#### Cross-Component Tests
-- Test path manager with config manager
-- Test metadata processor with parameter processor
-- Test UI bridge with sampler provider
+- WebUI mode (mock modules, WebUI features, graceful degradation)
+- Standalone mode (pure standalone, fallback, config management)
 
-#### End-to-End Workflows
-- Test complete model download workflow
-- Test parameter extraction and processing
-- Test UI component creation and binding
+### Test Files & Coverage
 
-### 3. Environment-Specific Tests
-Test functionality in different execution environments.
+| Test File | Coverage Target | Description |
+|------------------------------------|-----------------|-----------------------------------|
+| test_environment_detector.py | 100% | Environment detection |
+| test_compat_layer.py | 95% | Core interfaces |
+| test_adapters.py | 95% | Path/config/metadata adapters |
+| test_module_compatibility.py | 90% | Module compatibility |
+| test_integration.py | 85% | Integration tests |
+| test_ui_adapter.py | 85% | UI bridge |
+| test_main.py, test_cli.py, ... | - | Other tests |
 
-#### WebUI Mode Tests
-- Test with mock WebUI modules
-- Test WebUI-specific functionality
-- Test graceful degradation when WebUI features unavailable
+### Test Execution
 
-#### Standalone Mode Tests
-- Test pure standalone functionality
-- Test fallback implementations
-- Test configuration management
+```bash
+# Install test dependencies
+pip install pytest pytest-cov pytest-mock
+
+# Run all tests
+pytest tests/ -v
+# Run specific test modules
+pytest tests/test_environment_detector.py -v
+pytest tests/test_compat_layer.py -v
+pytest tests/test_adapters.py -v
+pytest tests/test_integration.py -v
+# Run test coverage analysis
+pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
+# Run specific type of tests
+pytest tests/test_integration.py::TestIntegration::test_full_webui_compatibility -v
+pytest tests/test_integration.py::TestIntegration::test_full_standalone_functionality -v
+```
 
 ## Test Requirements
 
 ### Coverage Requirements
+
 - **Environment Detection**: 100% line coverage (implemented in `test_environment_detector.py`)
 - **Core Interfaces**: 95% line coverage (implemented in `test_compat_layer.py`)
 - **Path Management**: 95% line coverage (implemented in `test_adapters.py`)
@@ -68,6 +70,7 @@ Test functionality in different execution environments.
 - **Integration Tests**: 85% line coverage (implemented in `test_integration.py`)
 
 ### Performance Requirements
+
 - Environment detection should complete in < 10ms
 - Path operations should complete in < 5ms
 - Configuration operations should complete in < 20ms
@@ -75,6 +78,7 @@ Test functionality in different execution environments.
 - Application startup should complete in < 3 seconds
 
 ### Reliability Requirements
+
 - All tests must pass consistently
 - No flaky tests (intermittent failures)
 - Tests must be independent (no order dependencies)
@@ -83,6 +87,7 @@ Test functionality in different execution environments.
 ## Testing Infrastructure
 
 ### Test Structure
+
 ```
 tests/
 ├── test_environment_detector.py      # ✅ Environment detection tests (implemented)
@@ -97,133 +102,69 @@ tests/
 └── test_webui_function_simulation.py # ✅ WebUI function simulation tests (implemented)
 ```
 
-### Test Coverage Analysis
-```bash
-# Run test coverage analysis
-pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
-
-# Run tests for specific modules
-pytest tests/test_environment_detector.py --cov=scripts.civitai_manager_libs.compat.environment_detector
-pytest tests/test_compat_layer.py --cov=scripts.civitai_manager_libs.compat.compat_layer
-pytest tests/test_adapters.py --cov=scripts.civitai_manager_libs.compat.webui_adapters --cov=scripts.civitai_manager_libs.compat.standalone_adapters
-```
-
-## Running Tests
-
-### Local Testing
-```bash
-# Install test dependencies
-pip install pytest pytest-cov pytest-mock
-
-# Run all tests
-pytest tests/ -v
-
-# Run specific test modules
-pytest tests/test_environment_detector.py -v
-pytest tests/test_compat_layer.py -v
-pytest tests/test_adapters.py -v
-pytest tests/test_integration.py -v
-
-# Run test coverage analysis
-pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
-
-# Run specific type of tests
-pytest tests/test_integration.py::TestIntegration::test_full_webui_compatibility -v
-pytest tests/test_integration.py::TestIntegration::test_full_standalone_functionality -v
-```
-
-### Continuous Integration
-The project already includes a basic test suite. It is recommended to add the following CI/CD configuration:
-
-```yaml
-# .github/workflows/test.yml
-name: Test Compatibility Layer
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
-    
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-mock
-    
-    - name: Run tests
-      run: |
-        pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=xml
-    
-    - name: Upload coverage to codecov
-      uses: codecov/codecov-action@v3
-```
-
 ## Mocking Strategy
 
-### WebUI Module Mocking
+- Use unittest.mock for mocking WebUI modules and environment detection.
+- Example:
+
 ```python
-import unittest
 from unittest.mock import patch, MagicMock
-
-class TestWebUIAdapter(unittest.TestCase):
-    
-    @patch.dict('sys.modules', {
-        'modules.scripts': MagicMock(),
-        'modules.shared': MagicMock(),
-        'modules.extras': MagicMock()
-    })
-    def test_webui_functionality(self):
-        # Test with mocked WebUI modules
-        from civitai_manager_libs.compat.webui_adapters.webui_path_manager import WebUIPathManager
-        path_manager = WebUIPathManager()
-        base_path = path_manager.get_script_path()
-        self.assertIsNotNone(base_path)
-```
-
-### Environment Mocking
-```python
-from unittest.mock import patch
 from civitai_manager_libs.compat.environment_detector import EnvironmentDetector
-from civitai_manager_libs.compat.compat_layer import get_compatibility_layer, reset_compatibility_layer
+from civitai_manager_libs.compat.compat_layer import get_compatibility_layer
 
-class TestEnvironmentSpecific(unittest.TestCase):
-    
-    def setUp(self):
-        reset_compatibility_layer()
-        EnvironmentDetector.reset_cache()
-    
-    def test_webui_mode(self):
-        with patch.object(EnvironmentDetector, 'detect_environment', return_value='webui'):
-            compat = get_compatibility_layer()
-            self.assertTrue(compat.is_webui_mode())
-            self.assertFalse(compat.is_standalone_mode())
-    
-    def test_standalone_mode(self):
-        with patch.object(EnvironmentDetector, 'detect_environment', return_value='standalone'):
-            compat = get_compatibility_layer()
-            self.assertTrue(compat.is_standalone_mode())
-            self.assertFalse(compat.is_webui_mode())
+@patch.dict('sys.modules', {'modules.scripts': MagicMock(), 'modules.shared': MagicMock()})
+def test_webui_functionality():
+    from civitai_manager_libs.compat.webui_adapters.webui_path_manager import WebUIPathManager
+    assert WebUIPathManager().get_script_path() is not None
+
+with patch.object(EnvironmentDetector, 'detect_environment', return_value='webui'):
+    compat = get_compatibility_layer()
+    assert compat.is_webui_mode()
 ```
 
 ## Test Best Practices
 
+### 0. Public API Docstring Example
+
+All public API functions must include a clear, concise English docstring following the [PEP 257](https://peps.python.org/pep-0257/) convention. This ensures that Intellisense and documentation tools provide helpful information to users and developers.
+
+**Example:**
+
+```python
+def download_model(model_id: str, save_path: str, overwrite: bool = False) -> bool:
+    """
+    Download a model file from Civitai and save it to the specified path.
+
+    Args:
+        model_id (str): The unique identifier of the model to download.
+        save_path (str): The local file path where the model will be saved.
+        overwrite (bool, optional): Whether to overwrite the file if it already exists. Defaults to False.
+
+    Returns:
+        bool: True if the download succeeds, False otherwise.
+
+    Raises:
+        ValueError: If the model_id is invalid or save_path is not writable.
+        NetworkError: If the download fails due to network issues.
+    """
+    # ...function implementation...
+```
+
+**Guidelines:**
+
+- Always describe the function's purpose in the first line.
+- List and describe all arguments and return values.
+- Document possible exceptions.
+- Use English for all docstrings and comments.
+
 ### 1. Test Independence
+
 - Each test should be independent
 - Use setUp() and tearDown() for test fixtures
 - Reset global state between tests
 
 ### 2. Clear Test Names
+
 ```python
 def test_detect_environment_with_webui_modules_available(self):
     """Test environment detection when WebUI modules are available."""
@@ -235,6 +176,7 @@ def test_config_save_with_invalid_path(self):
 ```
 
 ### 3. Comprehensive Error Testing
+
 ```python
 def test_extract_png_info_with_nonexistent_file(self):
     """Test PNG info extraction with non-existent file."""
@@ -250,6 +192,7 @@ def test_config_load_with_corrupted_file(self):
 ```
 
 ### 4. Performance Testing
+
 ```python
 import time
 import unittest
@@ -266,6 +209,7 @@ class TestPerformance(unittest.TestCase):
 ```
 
 ### 5. Thread Safety Testing
+
 ```python
 import threading
 import unittest
@@ -294,7 +238,9 @@ class TestThreadSafety(unittest.TestCase):
 ## Test Data Management
 
 ### Sample Images
+
 Create PNG files with embedded metadata:
+
 ```python
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
@@ -307,6 +253,7 @@ def create_test_image_with_metadata():
 ```
 
 ### Configuration Files
+
 ```json
 {
   "valid_config.json": {
@@ -323,24 +270,28 @@ def create_test_image_with_metadata():
 ## Error Scenarios to Test
 
 ### File System Errors
+
 - Non-existent directories
 - Permission denied errors
 - Disk full conditions
 - Network unavailable (for remote resources)
 
 ### Configuration Errors
+
 - Missing configuration files
 - Corrupted JSON files
 - Invalid configuration values
 - Version compatibility issues
 
 ### Environment Errors
+
 - Missing optional dependencies
 - Partial WebUI installations
 - Version mismatches
 - Import failures
 
 ### Data Errors
+
 - Corrupted image files
 - Invalid metadata formats
 - Unsupported file types
@@ -349,6 +300,7 @@ def create_test_image_with_metadata():
 ## Debugging Tests
 
 ### Test Debugging
+
 ```python
 import logging
 import unittest
@@ -364,6 +316,7 @@ class TestWithDebug(unittest.TestCase):
 ```
 
 ### Test Isolation
+
 ```python
 import unittest
 from civitai_manager_libs.compat import reset_compatibility_layer
@@ -377,35 +330,6 @@ class TestIsolated(unittest.TestCase):
         reset_compatibility_layer()
 ```
 
-## Continuous Integration Integration
-
-### GitHub Actions Example
-```yaml
-name: Test Compatibility Layer
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.11']
-    
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-    
-    - name: Run tests
-      run: |
-        python -m unittest discover tests/
-```
+______________________________________________________________________
 
 This comprehensive testing approach ensures the compatibility layer works reliably across all supported environments and use cases.
