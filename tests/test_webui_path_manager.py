@@ -1,5 +1,6 @@
 """
-Unit tests for WebUIPathManager (scripts/civitai_manager_libs/compat/webui_adapters/webui_path_manager.py)
+Unit tests for WebUIPathManager
+(scripts/civitai_manager_libs/compat/webui_adapters/webui_path_manager.py)
 """
 
 import sys

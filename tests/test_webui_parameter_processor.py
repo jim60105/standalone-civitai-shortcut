@@ -1,5 +1,6 @@
 """
-Unit tests for WebUIParameterProcessor (scripts/civitai_manager_libs/compat/webui_adapters/webui_parameter_processor.py)
+Unit tests for WebUIParameterProcessor
+(scripts/civitai_manager_libs/compat/webui_adapters/webui_parameter_processor.py)
 """
 
 import sys

@@ -45,7 +45,8 @@ class WebUIPathManager(IPathManager):
 
     def add_model_folder(self, model_type: str, folder_path: str) -> bool:
         """Add a model folder mapping (no-op for WebUI, but returns True if path is valid)."""
-        # WebUI mode does not persistently store custom model folder mappings, but for test compatibility, accept valid paths
+        # WebUI mode does not persistently store custom model folder mappings.
+        # For test compatibility, accept valid paths
         if self.validate_path(folder_path):
             return True
         try:

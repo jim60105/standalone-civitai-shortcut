@@ -1,11 +1,11 @@
 """
-Unit tests for WebUIMetadataProcessor (scripts/civitai_manager_libs/compat/webui_adapters/webui_metadata_processor.py)
+Unit tests for WebUIMetadataProcessor
+(scripts/civitai_manager_libs/compat/webui_adapters/webui_metadata_processor.py)
 """
 
 import sys
 import os
 import types
-from unittest.mock import MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 import unittest

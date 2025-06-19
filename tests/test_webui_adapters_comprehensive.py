@@ -7,7 +7,6 @@ These tests aim to achieve high coverage for the WebUI adapter implementations.
 import os
 import sys
 from unittest.mock import patch, MagicMock
-from typing import Dict, Any
 
 # Add the scripts directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))

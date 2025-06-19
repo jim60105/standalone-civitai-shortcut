@@ -4,8 +4,6 @@ import sys
 # Ensure scripts folder is in path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-import sys as _sys
-import types
 
 import pytest
 from civitai_manager_libs.compat.standalone_adapters.standalone_ui_bridge import (
@@ -37,6 +35,6 @@ def test_save_parameters_for_export(tmp_path, bridge, monkeypatch):
 
 def test_create_send_to_buttons_without_gradio(monkeypatch, bridge):
     # Simulate gradio import failure
-    monkeypatch.setitem(_sys.modules, 'gradio', None)
+    monkeypatch.setitem(sys.modules, 'gradio', None)
     buttons = bridge.create_send_to_buttons(['A', 'B'])
     assert buttons is None

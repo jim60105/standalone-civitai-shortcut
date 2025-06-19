@@ -10,7 +10,7 @@ import sys
 import os
 import tempfile
 import shutil
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 # Add the script directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))

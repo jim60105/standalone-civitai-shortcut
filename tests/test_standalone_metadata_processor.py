@@ -1,5 +1,6 @@
 """
-Unit tests for StandaloneMetadataProcessor (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_metadata_processor.py)
+Unit tests for StandaloneMetadataProcessor
+(scripts/civitai_manager_libs/compat/standalone_adapters/standalone_metadata_processor.py)
 """
 
 import sys

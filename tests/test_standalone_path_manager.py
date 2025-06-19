@@ -1,5 +1,6 @@
 """
-Unit tests for StandalonePathManager (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_path_manager.py)
+Unit tests for StandalonePathManager
+(scripts/civitai_manager_libs/compat/standalone_adapters/standalone_path_manager.py)
 """
 
 import sys

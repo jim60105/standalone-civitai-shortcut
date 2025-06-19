@@ -1,11 +1,11 @@
 import os
 import sys
-import types
 
 # Ensure scripts folder in path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
 import pytest
+import types
 
 from civitai_manager_libs.compat.webui_adapters.webui_config_manager import WebUIConfigManager
 from civitai_manager_libs.compat.webui_adapters.webui_path_manager import WebUIPathManager

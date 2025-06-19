@@ -261,7 +261,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             share=True,
         )
 
-        with patch('main.logging') as mock_logging:
+        with patch('main.logging'):
             apply_cli_overrides(self.mock_app, args)
 
             # Check all overrides were applied

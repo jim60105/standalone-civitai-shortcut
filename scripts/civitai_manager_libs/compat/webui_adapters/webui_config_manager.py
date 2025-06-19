@@ -75,7 +75,10 @@ class WebUIConfigManager(IConfigManager):
         return key in self._config_cache
 
     def get_model_folders(self) -> Dict[str, str]:
-        """Get model folder configurations from WebUI, using absolute or mocked paths if available."""
+        """
+        Get model folder configurations from WebUI,
+        using absolute or mocked paths if available.
+        """
         model_folders = {
             "Checkpoint": os.path.join("models", "Stable-diffusion"),
             "LORA": os.path.join("models", "Lora"),

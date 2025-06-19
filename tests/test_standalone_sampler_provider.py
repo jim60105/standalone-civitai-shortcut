@@ -1,5 +1,6 @@
 """
-Unit tests for StandaloneSamplerProvider (scripts/civitai_manager_libs/compat/standalone_adapters/standalone_sampler_provider.py)
+Unit tests for StandaloneSamplerProvider
+(scripts/civitai_manager_libs/compat/standalone_adapters/standalone_sampler_provider.py)
 """
 
 import sys
