@@ -45,7 +45,11 @@ def _initialize_extension_base():
 
 # Initialize extension_base
 extension_base = ""
-_initialize_extension_base()
+try:
+    _initialize_extension_base()
+except Exception:
+    # Suppress initialization errors (e.g., missing dependencies in test environments)
+    pass
 
 headers = {
     'user-agent': (

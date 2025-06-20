@@ -974,8 +974,43 @@ def on_recipe_create_btn_click(
     recipe_image=None,
     recipe_shortcuts=None,
 ):
+    """
+    Handle recipe creation button click with name validation.
+
+    Shows warning message if recipe name is empty, whitespace-only,
+    or set to default value.
+
+    Args:
+        recipe_name (str): The name of the recipe to create
+        recipe_desc (str): Description of the recipe
+        recipe_prompt (str): Prompt text for generation
+        recipe_negative (str): Negative prompt text
+        recipe_option (str): Additional prompt options string
+        recipe_classification (str): Classification/category for the recipe
+        recipe_image (PIL.Image, optional): Preview image for the recipe
+        recipe_shortcuts (list, optional): Shortcuts associated with the recipe
+
+    Returns:
+        tuple: UI update values for recipe creation state
+
+    Raises:
+        gr.Warning: When recipe name validation fails
+    """
     current_time = datetime.datetime.now()
     s_classification = setting.PLACEHOLDER
+    # Validate recipe name before creating
+    if not recipe_name or not recipe_name.strip() or recipe_name == setting.NEWRECIPE:
+        gr.Warning("Please enter a recipe name before creating.")
+        return (
+            gr.update(value=""),
+            gr.update(
+                choices=[setting.PLACEHOLDER] + recipe.get_classifications(), value=s_classification
+            ),
+            gr.update(label=setting.NEWRECIPE),
+            gr.update(visible=True),
+            gr.update(visible=False),
+            gr.update(visible=False),
+        )
     if recipe_name and len(recipe_name.strip()) > 0 and recipe_name != setting.NEWRECIPE:
         pmt = dict()
         pmt['prompt'] = recipe_prompt
