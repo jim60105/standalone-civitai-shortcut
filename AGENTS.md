@@ -23,7 +23,7 @@
   * Ensure compatibility with both AUTOMATIC1111 WebUI extension mode and standalone execution mode.
   * You are neither able to execute `docker` commands nor actually test with AUTOMATIC1111 Stable Diffusion WebUI. Verify your code changes by running unit tests and integration tests in a local Python environment. Ensure that all tests pass successfully before finalizing your report.
   * Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Use the `.flake8` configuration file in the root directory for linting.
-  * Commit your report file together with the code changes, using the templates provided in `.github/reports/`.
+  * Write a report following `.github/reports/README.md` and `.github/reports/REPORT_TEMPLATE.md`. Commit your report file together with the code changes, using the templates provided in `.github/reports/`.
   * Git commit after completing your work, using the conventional commit format for the title and a brief description in the body. Always commit with `--signoff` and `--no-gpg-sign`. Write the commit in English.
 
 ---
