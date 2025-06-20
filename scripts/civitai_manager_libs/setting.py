@@ -619,8 +619,36 @@ def set_imagefn_and_shortcutid_for_recipe_image(shortcutid, image_fn):
 
 
 def get_modelid_from_shortcutname(sc_name):
-    if sc_name:
-        return sc_name[sc_name.rfind(':') + 1 :]
+    """Extract model ID from shortcut name.
+
+    Args:
+        sc_name: Shortcut name in format "name:id", or list containing shortcut name
+
+    Returns:
+        str: Model ID if found, None otherwise
+    """
+    if not sc_name:
+        return None
+
+    # Handle case where sc_name is a list (from Gradio SelectData)
+    if isinstance(sc_name, list):
+        if len(sc_name) > 1:
+            sc_name = sc_name[1]  # Use second element (shortcut name)
+        elif len(sc_name) == 1:
+            sc_name = sc_name[0]  # Use first element
+        else:
+            return None
+
+    # Ensure sc_name is a string
+    if not isinstance(sc_name, str):
+        return None
+
+    # Extract model ID from "name:id" format
+    colon_pos = sc_name.rfind(':')
+    if colon_pos != -1:
+        return sc_name[colon_pos + 1 :]
+
+    return None
 
 
 def set_shortcutname(modelname, modelid):

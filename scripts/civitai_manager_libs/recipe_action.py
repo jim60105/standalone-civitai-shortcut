@@ -1191,7 +1191,15 @@ def on_reference_sc_gallery_select(evt: gr.SelectData, shortcuts):
     current_time = datetime.datetime.now()
 
     if evt.value:
-        shortcut = evt.value
+        # evt.value can be either a string or a list [image_url, shortcut_name]
+        if isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        elif isinstance(evt.value, str):
+            shortcut = evt.value
+        else:
+            util.printD(f"[RECIPE] Unexpected evt.value format: {evt.value}")
+            return shortcuts, current_time
+
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
 
         if not shortcuts:
@@ -1206,7 +1214,15 @@ def on_reference_sc_gallery_select(evt: gr.SelectData, shortcuts):
 
 def on_reference_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=True):
     if evt.value:
-        shortcut = evt.value
+        # evt.value can be either a string or a list [image_url, shortcut_name]
+        if isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        elif isinstance(evt.value, str):
+            shortcut = evt.value
+        else:
+            util.printD(f"[RECIPE] Unexpected evt.value format: {evt.value}")
+            return shortcuts, gr.update(visible=False), gr.update(visible=True), None
+
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
         current_time = datetime.datetime.now()
 
