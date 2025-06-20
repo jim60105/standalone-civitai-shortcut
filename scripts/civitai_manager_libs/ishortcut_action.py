@@ -869,7 +869,11 @@ def on_civitai_hidden_change(hidden, index):
 
     if compat and hasattr(compat, 'metadata_processor'):
         try:
-            return compat.metadata_processor.extract_png_info(hidden)
+            # extract_png_info returns (geninfo, generation_params, info_text)
+            # We need the first element (geninfo) which contains the parameters string
+            result = compat.metadata_processor.extract_png_info(hidden)
+            if result and result[0]:
+                return result[0]
         except Exception as e:
             util.printD(f"Error processing PNG info through compatibility layer: {e}")
 
@@ -878,7 +882,7 @@ def on_civitai_hidden_change(hidden, index):
     if extras_module and hasattr(extras_module, 'run_pnginfo'):
         try:
             info1, info2, info3 = extras_module.run_pnginfo(hidden)
-            return info2
+            return info1  # Return the parameters string, not the dictionary
         except Exception as e:
             util.printD(f"Error processing PNG info through WebUI: {e}")
 

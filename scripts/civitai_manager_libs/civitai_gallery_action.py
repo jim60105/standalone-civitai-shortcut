@@ -360,17 +360,20 @@ def on_civitai_hidden_change(hidden, index):
                 result = compat.metadata_processor.extract_png_info(temp_path)
                 os.remove(temp_path)
                 util.printD(f"[civitai_gallery_action] Removed temp file: {temp_path}")
-                return result
+                # Return the first element (geninfo) from the tuple
+                return result[0] if result and result[0] else ""
             elif isinstance(hidden, str) and os.path.isfile(hidden):
-                return compat.metadata_processor.extract_png_info(hidden)
+                result = compat.metadata_processor.extract_png_info(hidden)
+                return result[0] if result and result[0] else ""
             else:
                 util.printD(
                     f"[civitai_gallery_action] Unsupported hidden type for standalone: {type(hidden)}"
                 )
-                return None
+                return ""
         # WebUI mode: pass through
         if compat and hasattr(compat, 'metadata_processor'):
-            return compat.metadata_processor.extract_png_info(hidden)
+            result = compat.metadata_processor.extract_png_info(hidden)
+            return result[0] if result and result[0] else ""
     except Exception as e:
         util.printD(f"Error processing PNG info through compatibility layer: {e}")
     finally:
@@ -378,6 +381,7 @@ def on_civitai_hidden_change(hidden, index):
             os.remove(temp_path)
             util.printD(f"[civitai_gallery_action] Cleaned up temp file: {temp_path}")
 
+    return ""
     # Fallback: Try WebUI direct access
     extras_module = import_manager.get_webui_module('extras')
     if extras_module and hasattr(extras_module, 'run_pnginfo'):

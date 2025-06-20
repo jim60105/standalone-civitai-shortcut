@@ -847,7 +847,13 @@ def on_recipe_generate_data_change(recipe_img):
 
         if compat and hasattr(compat, 'metadata_processor'):
             try:
-                generate_data = compat.metadata_processor.extract_png_info(recipe_img)
+                # extract_png_info returns (geninfo, generation_params, info_text)
+                # We need the first element (geninfo) which contains the parameters string
+                result = compat.metadata_processor.extract_png_info(recipe_img)
+                if result and result[0]:
+                    generate_data = result[0]
+                    data_len = len(generate_data) if generate_data else 0
+                    util.printD(f"[RECIPE] Extracted via compatibility layer: {data_len} chars")
             except Exception as e:
                 util.printD(f"Error processing PNG info through compatibility layer: {e}")
 
@@ -856,14 +862,17 @@ def on_recipe_generate_data_change(recipe_img):
             extras_module = import_manager.get_webui_module('extras')
             if extras_module and hasattr(extras_module, 'run_pnginfo'):
                 try:
-                    info1, generate_data, info3 = extras_module.run_pnginfo(recipe_img)
+                    info1, generate_data_dict, info3 = extras_module.run_pnginfo(recipe_img)
+                    # WebUI run_pnginfo returns info1 as the parameters string
+                    generate_data = info1
+                    data_len = len(generate_data) if generate_data else 0
+                    util.printD(f"[RECIPE] Extracted parameters via WebUI: {data_len} chars")
                 except Exception as e:
                     util.printD(f"Error processing PNG info through WebUI: {e}")
 
         # Final fallback: Try basic PIL extraction
         if not generate_data:
             try:
-                from PIL import Image
                 import io
 
                 if isinstance(recipe_img, str):
@@ -872,6 +881,9 @@ def on_recipe_generate_data_change(recipe_img):
                 elif hasattr(recipe_img, 'read'):
                     with Image.open(io.BytesIO(recipe_img.read())) as img:
                         generate_data = img.text.get('parameters', '')
+
+                if generate_data:
+                    util.printD(f"[RECIPE] Extracted via PIL fallback: {len(generate_data)} chars")
             except Exception as e:
                 util.printD(f"Error in PNG info fallback processing: {e}")
 
