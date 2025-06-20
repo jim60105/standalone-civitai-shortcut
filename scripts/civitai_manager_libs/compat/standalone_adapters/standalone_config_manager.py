@@ -323,7 +323,7 @@ class StandaloneConfigManager(IConfigManager):
                 return False
 
         return True
-    
+
     def set_option(
         self, key: str, value: Any, is_api: bool = False, run_callbacks: bool = True
     ) -> bool:

@@ -47,6 +47,7 @@ class StandalonePathManager(IPathManager):
         In standalone mode, this returns our extension's base path.
         """
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_script_path: {self._base_path}")
         return self._base_path
 
@@ -58,18 +59,21 @@ class StandalonePathManager(IPathManager):
         """
         result = str(paths.data_path)
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_user_data_path: {result}")
         return result
 
     def get_base_path(self) -> str:
         """Get the base path for standalone mode."""
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_base_path: {self._base_path}")
         return self._base_path
 
     def get_extension_path(self) -> str:
         """Get extension path (same as base path in standalone mode)."""
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_extension_path: {self._base_path}")
         return self._base_path
 
@@ -77,6 +81,7 @@ class StandalonePathManager(IPathManager):
         """Get models directory path."""
         result = str(paths.models_path)
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_models_path: {result}")
         return result
 
@@ -108,6 +113,7 @@ class StandalonePathManager(IPathManager):
         # Ensure the directory exists
         self.ensure_directory_exists(full_path)
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_model_folder_path({model_type}): {full_path}")
         return full_path
 
@@ -123,6 +129,7 @@ class StandalonePathManager(IPathManager):
         """
         result = self.get_model_folder_path(model_type)
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_model_path({model_type}): {result}")
         return result
 
@@ -133,6 +140,7 @@ class StandalonePathManager(IPathManager):
         else:
             result = os.path.join(self._base_path, "setting.json")
         from scripts.civitai_manager_libs import util
+
         util.printD(f"[standalone_path_manager] get_config_path: {result}")
         return result
 

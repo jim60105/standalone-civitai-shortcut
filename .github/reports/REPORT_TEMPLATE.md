@@ -48,17 +48,11 @@ date: "[YYYY-MM-DDTHH:MM:SSZ]"
 
 ### 4.1 程式碼品質檢查
 ```bash
-# 格式化檢查
-cargo fmt -- --check
-
-# Clippy 警告檢查
-cargo clippy -- -D warnings
-
-# 建置測試
-cargo build
-
-# 單元測試
-cargo test
+black --line-length=100 --skip-string-normalization tests
+black --line-length=100 --skip-string-normalization scripts/civitai_manager_libs/compat
+flake8 tests
+flake8 scripts/civitai_manager_libs/compat
+pytest -v
 ```
 
 ### 4.2 功能測試
@@ -66,7 +60,7 @@ cargo test
 
 ### 4.3 覆蓋率測試（如適用）
 ```bash
-cargo llvm-cov --all-features --workspace --html
+pytest --cov=scripts/civitai_manager_libs/compat --cov-report=term --cov-report=html
 ```
 
 ## 五、影響評估
@@ -102,6 +96,6 @@ cargo llvm-cov --all-features --workspace --html
 
 | 檔案路徑 | 異動類型 | 描述 |
 |---------|----------|------|
-| `src/example.rs` | 新增 | [描述] |
-| `src/other.rs` | 修改 | [描述] |
-| `Cargo.toml` | 修改 | [描述] |
+| `src/example.py` | 新增 | [描述] |
+| `src/other.py` | 修改 | [描述] |
+| `requirements.txt` | 修改 | [描述] |

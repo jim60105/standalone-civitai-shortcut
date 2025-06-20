@@ -12,6 +12,7 @@ from ..interfaces.ipath_manager import IPathManager
 # 測試環境下 mock modules
 if 'pytest' in sys.modules or 'unittest' in sys.modules:
     import types
+
     sys.modules['modules'] = types.ModuleType('modules')
     sys.modules['modules.paths'] = types.ModuleType('modules.paths')
     sys.modules['modules.paths_internal'] = types.ModuleType('modules.paths_internal')
@@ -30,10 +31,10 @@ try:
     from modules import shared
     import sys
     import importlib.util
+
     # 正確匯入 util (兩層父目錄)
     util_spec = importlib.util.spec_from_file_location(
-        "util",
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py")
+        "util", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py")
     )
     util = importlib.util.module_from_spec(util_spec)
     util_spec.loader.exec_module(util)

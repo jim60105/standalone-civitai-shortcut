@@ -1,10 +1,10 @@
-# SubX 專案報告範本使用指南
+# Civitai Shortcut 專案報告範本使用指南
 
-本目錄包含 SubX 專案的工作報告範本，用於統一開發進度記錄格式。
+本目錄包含 Civitai Shortcut 專案的工作報告範本，用於統一開發進度記錄格式。
 
 ## 範本檔案
 
-### 1. `REPORT_TEMPLATE.md` - 完整報告範本
+### `REPORT_TEMPLATE.md` - 完整報告範本
 適用於重要功能開發、架構變更、複雜 bug 修復等需要詳細記錄的任務。
 
 **使用時機**：
@@ -13,15 +13,6 @@
 - 複雜功能開發
 - 需要詳細技術文件的變更
 
-### 2. `REPORT_TEMPLATE_SIMPLE.md` - 簡化報告範本
-適用於小型修復、簡單功能調整、快速迭代等輕量級變更。
-
-**使用時機**：
-- Bug 修復
-- 小型功能調整
-- 程式碼重構
-- 配置變更
-
 ## 命名規範
 
 報告檔案命名格式：`[編號]-[任務簡稱]-report.md`
@@ -29,8 +20,8 @@
 > 編號是為循序增加的整數，並非任務或 Backlog 編號。請查看現有的報告檔案以獲取最新編號。
 
 **範例**：
-- `01-project-foundation-report.md`
-- `15-ai-service-integration-report.md`
+- `001-project-foundation-report.md`
+- `015-ai-service-integration-report.md`
 
 ## 填寫指南
 
@@ -44,9 +35,9 @@
 使用格式：`【F:檔案路徑†L起始行-L結束行】`
 
 **範例**：
-- `【F:src/config.rs†L1-L17】` - 檔案特定行範圍
-- `【F:Cargo.toml†L41-L43】` - 依賴項變更
-- `【F:src/commands/mod.rs†L1-L2】` - 模組宣告
+- `【F:src/config.py†L1-L17】` - 檔案特定行範圍
+- `【F:requirements.txt†L41-L43】` - 依賴項變更
+- `【F:src/commands/mod.py†L1-L2】` - 模組宣告
 
 ### 任務類型標籤
 - `Backlog` - 計劃性功能開發
@@ -58,10 +49,11 @@
 ### 程式碼品質檢查
 每個報告都應包含標準驗證步驟：
 ```bash
-cargo fmt -- --check
-cargo clippy -- -D warnings  
-cargo build
-cargo test
+black --line-length=100 --skip-string-normalization tests
+black --line-length=100 --skip-string-normalization scripts/civitai_manager_libs/compat
+flake8 tests
+flake8 scripts/civitai_manager_libs/compat
+pytest -v
 ```
 
 ## 品質標準
@@ -73,8 +65,8 @@ cargo test
 4. **一致性**: 遵循範本格式
 
 ### 技術要求
-1. 所有程式碼通過 `cargo fmt` 格式化
-2. 零 `cargo clippy` 警告
+1. 所有程式碼通過 `black` 格式化
+2. 零 `flake8` 警告
 3. 所有測試通過
 4. 適當的程式碼覆蓋率（核心模組 >70%）
 
