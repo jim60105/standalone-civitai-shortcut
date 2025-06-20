@@ -1,5 +1,5 @@
 """
-Civitai Gallery Action Module - Dual Mode Compatible
+Civitai Gallery Action Module - Dual Mode Compatible.
 
 This module has been modified to support both AUTOMATIC1111 and standalone modes
 through the compatibility layer.
@@ -12,7 +12,6 @@ import gradio as gr
 import datetime
 import re
 import threading
-import math
 from PIL import Image
 import tempfile
 
@@ -21,7 +20,7 @@ from .conditional_imports import import_manager
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = lambda iterable, **kwargs: iterable
+    tqdm = lambda iterable, **kwargs: iterable  # noqa: E731
 
 from . import util
 from . import civitai
@@ -34,7 +33,7 @@ _compat_layer = None
 
 
 def set_compatibility_layer(compat_layer):
-    """Set compatibility layer"""
+    """Set compatibility layer."""
     global _compat_layer
     _compat_layer = compat_layer
 
@@ -84,10 +83,14 @@ def on_ui(recipe_input):
                         show_copy_button=True,
                     )
                     try:
-                        send_to_buttons = parameters_copypaste.create_buttons(
-                            ["txt2img", "img2img", "inpaint", "extras"]
+                        parameters_copypaste = import_manager.get_webui_module(
+                            'extras', 'parameters_copypaste'
                         )
-                    except:
+                        if parameters_copypaste:
+                            send_to_buttons = parameters_copypaste.create_buttons(
+                                ["txt2img", "img2img", "inpaint", "extras"]
+                            )
+                    except Exception:
                         pass
                     send_to_recipe = gr.Button(
                         value="Send To Recipe", variant="primary", visible=True
@@ -121,8 +124,10 @@ def on_ui(recipe_input):
         pre_loading = gr.Textbox()
 
     try:
-        parameters_copypaste.bind_buttons(send_to_buttons, hidden, img_file_info)
-    except:
+        parameters_copypaste = import_manager.get_webui_module('extras', 'parameters_copypaste')
+        if parameters_copypaste and 'send_to_buttons' in locals():
+            parameters_copypaste.bind_buttons(send_to_buttons, hidden, img_file_info)
+    except Exception:
         pass
 
     usergal_gallery.select(on_gallery_select, usergal_images, [img_index, hidden, info_tabs])
@@ -260,7 +265,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
         # util.printD(setting.get_image_and_shortcutid_from_recipe_image(recipe_image))
         # recipe_image = civitai_images[int(img_index)]
         return recipe_image
-    except:
+    except Exception:
         return gr.update(visible=False)
 
 
@@ -345,7 +350,7 @@ def on_prev_btn_click(usergal_page_url, paging_information):
 
 
 def on_civitai_hidden_change(hidden, index):
-    """Process PNG info with compatibility layer support"""
+    """Process PNG info with compatibility layer support."""
     compat = CompatibilityLayer.get_compatibility_layer()
 
     temp_path = None
@@ -358,22 +363,22 @@ def on_civitai_hidden_change(hidden, index):
                 hidden.save(temp_path, format="PNG")
                 util.printD(f"[civitai_gallery_action] Saved PIL Image to temp file: {temp_path}")
                 result = compat.metadata_processor.extract_png_info(temp_path)
-                os.remove(temp_path)
-                util.printD(f"[civitai_gallery_action] Removed temp file: {temp_path}")
-                # Return the first element (geninfo) from the tuple
-                return result[0] if result and result[0] else ""
+                if result and result[0]:
+                    return result[0]
             elif isinstance(hidden, str) and os.path.isfile(hidden):
                 result = compat.metadata_processor.extract_png_info(hidden)
-                return result[0] if result and result[0] else ""
+                if result and result[0]:
+                    return result[0]
             else:
                 util.printD(
-                    f"[civitai_gallery_action] Unsupported hidden type for standalone: {type(hidden)}"
+                    f"[civitai_gallery_action] Invalid hidden input for standalone: "
+                    f"{type(hidden)} - {hidden if isinstance(hidden, str) else 'PIL Image'}"
                 )
-                return ""
         # WebUI mode: pass through
-        if compat and hasattr(compat, 'metadata_processor'):
+        elif compat and hasattr(compat, 'metadata_processor'):
             result = compat.metadata_processor.extract_png_info(hidden)
-            return result[0] if result and result[0] else ""
+            if result and result[0]:
+                return result[0]
     except Exception as e:
         util.printD(f"Error processing PNG info through compatibility layer: {e}")
     finally:
@@ -381,16 +386,29 @@ def on_civitai_hidden_change(hidden, index):
             os.remove(temp_path)
             util.printD(f"[civitai_gallery_action] Cleaned up temp file: {temp_path}")
 
-    return ""
     # Fallback: Try WebUI direct access
     extras_module = import_manager.get_webui_module('extras')
     if extras_module and hasattr(extras_module, 'run_pnginfo'):
         try:
             info1, info2, info3 = extras_module.run_pnginfo(hidden)
-            return info2
+            return info1  # Return the parameters string, not the dictionary
         except Exception as e:
-            util.printD(f"[civitai_gallery_action] Fallback run_pnginfo error: {e}")
-    return None
+            util.printD(f"Error processing PNG info through WebUI: {e}")
+
+    # Final fallback: Try basic PIL extraction
+    try:
+        import io
+
+        if isinstance(hidden, str):
+            with Image.open(hidden) as img:
+                return img.text.get('parameters', '')
+        elif hasattr(hidden, 'read'):
+            with Image.open(io.BytesIO(hidden.read())) as img:
+                return img.text.get('parameters', '')
+    except Exception as e:
+        util.printD(f"Error in PNG info fallback processing: {e}")
+
+    return ""
 
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):
@@ -634,7 +652,6 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                         image_info["nsfwLevel"]
                     ) > setting.NSFW_levels.index(setting.NSFW_level_user):
                         gallery_img_file = setting.nsfw_disable_image
-                        meta_string = ""
 
                 if os.path.isfile(gallery_img_file):
                     img_url = gallery_img_file
@@ -677,7 +694,7 @@ def get_paging_information(modelId, modelVersionId=None, show_nsfw=False):
 
         try:
             page_url = json_data['metadata']['nextPage']
-        except:
+        except KeyError:
             page_url = None
 
         totalPages = totalPages + 1
@@ -705,12 +722,12 @@ def get_paging_information_working(modelId, modelVersionId=None, show_nsfw=False
         json_data = civitai.request_models(fix_page_url_cursor(page_url))
         try:
             item_list.extend(json_data['items'])
-        except:
+        except KeyError:
             pass
 
         try:
             page_url = json_data['metadata']['nextPage']
-        except:
+        except KeyError:
             page_url = None
 
     images_per_page = setting.usergallery_images_column * setting.usergallery_images_rows_per_page
@@ -761,7 +778,7 @@ def gallery_loading(images_url, progress):
         if not os.path.exists(setting.shortcut_gallery_folder):
             os.makedirs(setting.shortcut_gallery_folder)
 
-        for i, img_url in enumerate(progress.tqdm(images_url, desc=f"Civitai Images Loading")):
+        for i, img_url in enumerate(progress.tqdm(images_url, desc="Civitai Images Loading")):
             result = util.is_url_or_filepath(img_url)
             description_img = setting.get_image_url_to_gallery_file(img_url)
             if result == "filepath":
@@ -781,7 +798,7 @@ def gallery_loading(images_url, progress):
                             with open(description_img, 'wb') as f:
                                 img_r.raw.decode_content = True
                                 shutil.copyfileobj(img_r.raw, f)
-                except:
+                except requests.RequestException:
                     description_img = setting.no_card_preview_image
             else:
                 description_img = setting.no_card_preview_image
@@ -795,8 +812,6 @@ def gallery_loading(images_url, progress):
 
 
 def download_user_gallery_images(model_id, image_urls):
-    base = None
-
     if not model_id:
         return None
 
@@ -818,7 +833,7 @@ def download_user_gallery_images(model_id, image_urls):
 
     if image_urls and len(image_urls) > 0:
         for image_count, img_url in enumerate(
-            tqdm(image_urls, desc=f"Download user gallery image"), start=0
+            tqdm(image_urls, desc="Download user gallery image"), start=0
         ):
 
             result = util.is_url_or_filepath(img_url)
@@ -841,13 +856,14 @@ def download_user_gallery_images(model_id, image_urls):
                             image_id, ext = os.path.splitext(os.path.basename(img_url))
                             description_img = os.path.join(
                                 save_folder,
-                                f'{image_id}{setting.preview_image_suffix}{setting.preview_image_ext}',
+                                f'{image_id}{setting.preview_image_suffix}'
+                                f'{setting.preview_image_ext}',
                             )
                             with open(description_img, 'wb') as f:
                                 img_r.raw.decode_content = True
                                 shutil.copyfileobj(img_r.raw, f)
 
-                except Exception as e:
+                except Exception:
                     pass
     return image_folder
 
