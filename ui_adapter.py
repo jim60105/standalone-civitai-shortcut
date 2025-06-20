@@ -303,6 +303,18 @@ def _on_civitai_tabs_select(evt):
     # Use gr.update if available, otherwise fallback to no-op
     update = getattr(gr, 'update', lambda **kwargs: None)
 
+    if evt is None:
+        util.printD(
+            "[ui_adapter] _on_civitai_tabs_select: evt is None, skipping tab selection logic."
+        )
+        update = getattr(gr, 'update', lambda **kwargs: None)
+        return (
+            update(visible=False),
+            update(visible=False),
+            update(visible=False),
+            update(visible=False),
+        )
+
     if evt.index == 0:
         return (
             current_time,
