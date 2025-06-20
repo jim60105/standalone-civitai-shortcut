@@ -352,7 +352,7 @@ def load_InternetShortcut(path) -> str:
         with open(path, 'r') as f:
             content = f.read()
             # urls = re.findall("(?P<url>https?://[^\s]+)", content)
-            urls = re.findall('(?P<url>https?://[^\s:"]+)', content)
+            urls = re.findall(r'(?P<url>https?://[^\s:"]+)', content)
     except Exception as e:
         printD(e)
         return
@@ -364,11 +364,11 @@ def load_InternetShortcut(path) -> str:
 # width is in number, not string
 # 파일 인포가 있는 원본 이미지 주소이다.
 def get_full_size_image_url(image_url, width):
-    return re.sub('/width=\d+/', '/width=' + str(width) + '/', image_url)
+    return re.sub(r'/width=\d+/', '/width=' + str(width) + '/', image_url)
 
 
 def change_width_from_image_url(image_url, width):
-    return re.sub('/width=\d+/', '/width=' + str(width) + '/', image_url)
+    return re.sub(r'/width=\d+/', '/width=' + str(width) + '/', image_url)
 
 
 def get_model_id_from_url(url):

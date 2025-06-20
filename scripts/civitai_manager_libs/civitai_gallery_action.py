@@ -25,6 +25,7 @@ from . import util
 from . import civitai
 from . import setting
 from . import ishortcut
+from .compat.compat_layer import CompatibilityLayer
 
 # Compatibility layer variables
 _compat_layer = None
@@ -34,14 +35,6 @@ def set_compatibility_layer(compat_layer):
     """Set compatibility layer"""
     global _compat_layer
     _compat_layer = compat_layer
-
-
-def get_compatibility_layer():
-    """Get compatibility layer"""
-    global _compat_layer
-    if _compat_layer is None:
-        _compat_layer = setting.get_compatibility_layer()
-    return _compat_layer
 
 
 def on_ui(recipe_input):
@@ -351,7 +344,7 @@ def on_prev_btn_click(usergal_page_url, paging_information):
 
 def on_civitai_hidden_change(hidden, index):
     """Process PNG info with compatibility layer support"""
-    compat = get_compatibility_layer()
+    compat = CompatibilityLayer.get_compatibility_layer()
 
     if compat and hasattr(compat, 'metadata_processor'):
         try:

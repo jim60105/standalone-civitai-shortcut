@@ -10,24 +10,21 @@ import pytest
 # Add the scripts directory to the path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from civitai_manager_libs.compat.compat_layer import (
-    get_compatibility_layer,
-    reset_compatibility_layer,
-)  # noqa: E402
+from civitai_manager_libs.compat.compat_layer import CompatibilityLayer  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
 def reset_compat():
     """Reset the global compatibility layer before and after each test."""
-    reset_compatibility_layer()
+    CompatibilityLayer.reset_compatibility_layer()
     yield
-    reset_compatibility_layer()
+    CompatibilityLayer.reset_compatibility_layer()
 
 
 @pytest.fixture
 def standalone_compat():
     """Provide a standalone compatibility layer instance."""
-    return get_compatibility_layer("standalone")
+    return CompatibilityLayer.get_compatibility_layer("standalone")
 
 
 def test_path_patterns_and_directory_creation(standalone_compat, tmp_path):

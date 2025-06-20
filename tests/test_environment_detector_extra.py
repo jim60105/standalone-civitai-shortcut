@@ -1,11 +1,7 @@
-"""
-Additional tests for EnvironmentDetector to cover marker detection,
-cache management, and environment info reporting.
-"""
-import os
+"""Extra tests for EnvironmentDetector: marker detection, cache, info reporting."""
+
 import sys
 import types
-import importlib
 
 import pytest
 
@@ -76,6 +72,7 @@ def test_detect_marker_env_var(tmp_path, monkeypatch):
     monkeypatch.setenv('WEBUI_MODE', '1')
     assert EnvironmentDetector.detect_environment() == 'webui'
 
+
 def test_detect_with_modules_scripts(tmp_path, monkeypatch):
     # Simulate AUTOMATIC1111 WebUI environment via modules.scripts.basedir
     fake_scripts = type(sys)('modules.scripts')
@@ -99,6 +96,7 @@ def test_detect_with_modules_scripts(tmp_path, monkeypatch):
     # Should report webui-specific info, even if default values used
     assert 'webui_base_dir' in info
     assert 'webui_cmd_opts' in info
+
 
 def test_detect_modules_scripts_attribute_error(monkeypatch):
     # Simulate modules.scripts present but basedir fails

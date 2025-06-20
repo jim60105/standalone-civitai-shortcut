@@ -13,20 +13,17 @@ from unittest.mock import patch
 # Add the scripts directory to the path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from civitai_manager_libs.compat import (  # noqa: E402, E501
-    get_compatibility_layer,
-    reset_compatibility_layer,
-)
-from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import (  # noqa: E402, E501
+from civitai_manager_libs.compat.compat_layer import CompatibilityLayer  # noqa: E402, E501
+from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import (
     StandalonePathManager,
 )
-from civitai_manager_libs.compat.standalone_adapters.standalone_config_manager import (  # noqa: E402, E501
+from civitai_manager_libs.compat.standalone_adapters.standalone_config_manager import (
     StandaloneConfigManager,
 )
-from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider import (  # noqa: E402, E501
+from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider import (
     StandaloneSamplerProvider,
 )
-from civitai_manager_libs.compat.standalone_adapters.standalone_parameter_processor import (  # noqa: E402, E501
+from civitai_manager_libs.compat.standalone_adapters.standalone_parameter_processor import (
     StandaloneParameterProcessor,
 )
 
@@ -35,13 +32,11 @@ class TestStandaloneAdapters(unittest.TestCase):
     """Test standalone adapter implementations."""
 
     def setUp(self):
-        """Set up test fixtures."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        """Clean up after tests."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -193,16 +188,16 @@ class TestCompatibilityLayerIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
 
     def tearDown(self):
         """Clean up after tests."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
 
     def test_compatibility_layer_standalone_integration(self):
         """Test full integration in standalone mode."""
         # Force standalone mode
-        compat = get_compatibility_layer(mode='standalone')
+        compat = CompatibilityLayer.get_compatibility_layer(mode='standalone')
 
         # Test all components are accessible
         self.assertIsNotNone(compat.path_manager)
@@ -231,7 +226,7 @@ class TestCompatibilityLayerIntegration(unittest.TestCase):
 
     def test_compatibility_layer_mode_consistency(self):
         """Test that mode is consistent across components."""
-        compat = get_compatibility_layer(mode='standalone')
+        compat = CompatibilityLayer.get_compatibility_layer(mode='standalone')
 
         self.assertEqual(compat.mode, 'standalone')
         self.assertTrue(compat.is_standalone_mode())

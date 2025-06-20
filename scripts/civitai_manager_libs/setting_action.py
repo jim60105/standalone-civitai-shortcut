@@ -23,14 +23,6 @@ def set_compatibility_layer(compat_layer):
     _compat_layer = compat_layer
 
 
-def get_compatibility_layer():
-    """Get compatibility layer."""
-    global _compat_layer
-    if _compat_layer is None:
-        _compat_layer = CompatibilityLayer.get_compatibility_layer()
-    return _compat_layer
-
-
 def on_setting_ui():
     with gr.Column():
         with gr.Row():
@@ -560,6 +552,7 @@ def on_reload_btn_click():
 def request_restart():
     try:
         from modules import shared
+
         shared.state.interrupt()
         shared.state.need_restart = True
     except ImportError:
@@ -567,8 +560,10 @@ def request_restart():
         import sys
         import os
         import logging
+
         try:
             import psutil
+
             p = psutil.Process(os.getpid())
             for handler in p.open_files() + p.connections():
                 os.close(handler.fd)

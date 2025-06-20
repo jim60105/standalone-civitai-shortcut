@@ -23,17 +23,6 @@ def set_compatibility_layer(compat_layer):
     _compat_layer = compat_layer
 
 
-def get_compatibility_layer():
-    """Get compatibility layer."""
-    global _compat_layer
-    if _compat_layer is None:
-        try:
-            _compat_layer = CompatibilityLayer.get_compatibility_layer()
-        except ImportError:
-            pass
-    return _compat_layer
-
-
 def on_option_change(option):
     parameters = None
 
@@ -572,7 +561,7 @@ def ui(option):
 
 def _get_sampler_choices():
     """Get sampler choices through compatibility layer"""
-    compat = get_compatibility_layer()
+    compat = CompatibilityLayer.get_compatibility_layer()
 
     if compat and hasattr(compat, 'sampler_provider'):
         try:
@@ -614,7 +603,7 @@ def _get_sampler_choices():
 
 def _get_upscaler_choices():
     """Get upscaler choices through compatibility layer"""
-    compat = get_compatibility_layer()
+    compat = CompatibilityLayer.get_compatibility_layer()
 
     if compat and hasattr(compat, 'config_manager'):
         try:

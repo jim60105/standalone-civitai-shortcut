@@ -27,21 +27,6 @@ def set_compatibility_layer(compat_layer):
     _compat_layer = compat_layer
 
 
-def get_compatibility_layer():
-    """Get compatibility layer."""
-    global _compat_layer
-    if _compat_layer is None:
-        util.printD(
-            "[civitai_shortcut_action] _compat_layer is None, "
-            "calling CompatibilityLayer.get_compatibility_layer()"
-        )
-        from .compat.compat_layer import CompatibilityLayer
-
-        _compat_layer = CompatibilityLayer.get_compatibility_layer()
-    util.printD(f"[civitai_shortcut_action] get_compatibility_layer returns: {_compat_layer}")
-    return _compat_layer
-
-
 def on_shortcut_input_change(shortcut_input):
     util.printD(
         f"[civitai_shortcut_action] on_shortcut_input_change called with "

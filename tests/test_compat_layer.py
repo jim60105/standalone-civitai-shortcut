@@ -9,31 +9,22 @@ import sys
 import os
 from unittest.mock import patch, MagicMock
 
-
 # Add the scripts directory to the path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from civitai_manager_libs.compat.compat_layer import (  # noqa: E402
-    CompatibilityLayer,
-    get_compatibility_layer,
-    reset_compatibility_layer,
-)
-from civitai_manager_libs.compat.environment_detector import (  # noqa: E402
-    EnvironmentDetector,
-)
+from civitai_manager_libs.compat.compat_layer import CompatibilityLayer
+from civitai_manager_libs.compat.environment_detector import EnvironmentDetector
 
 
 class TestCompatibilityLayer(unittest.TestCase):
     """Test cases for CompatibilityLayer class."""
 
     def setUp(self):
-        """Set up test fixtures."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
         EnvironmentDetector.reset_cache()
 
     def tearDown(self):
-        """Clean up after each test."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
         EnvironmentDetector.reset_cache()
 
     def test_init_webui_mode(self):
@@ -131,33 +122,30 @@ class TestCompatibilityLayer(unittest.TestCase):
 
     def test_get_compatibility_layer_singleton(self):
         """Test singleton behavior of get_compatibility_layer."""
-        with patch.object(EnvironmentDetector, 'detect_environment', return_value='standalone'):
-            compat1 = get_compatibility_layer()
-            compat2 = get_compatibility_layer()
+        compat1 = CompatibilityLayer.get_compatibility_layer()
+        compat2 = CompatibilityLayer.get_compatibility_layer()
 
-            # Should be the same instance
-            self.assertIs(compat1, compat2)
+        # Should be the same instance
+        self.assertIs(compat1, compat2)
 
     def test_get_compatibility_layer_mode_change(self):
         """Test that specifying different mode creates new instance."""
-        with patch.object(EnvironmentDetector, 'detect_environment', return_value='standalone'):
-            compat1 = get_compatibility_layer()
-            compat2 = get_compatibility_layer(mode='webui')
+        compat1 = CompatibilityLayer.get_compatibility_layer()
+        compat2 = CompatibilityLayer.get_compatibility_layer(mode='webui')
 
-            # Should be different instances
-            self.assertIsNot(compat1, compat2)
-            self.assertEqual(compat1.mode, 'standalone')
-            self.assertEqual(compat2.mode, 'webui')
+        # Should be different instances
+        self.assertIsNot(compat1, compat2)
+        self.assertEqual(compat1.mode, 'standalone')
+        self.assertEqual(compat2.mode, 'webui')
 
     def test_reset_compatibility_layer(self):
         """Test reset functionality."""
-        with patch.object(EnvironmentDetector, 'detect_environment', return_value='standalone'):
-            compat1 = get_compatibility_layer()
-            reset_compatibility_layer()
-            compat2 = get_compatibility_layer()
+        compat1 = CompatibilityLayer.get_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
+        compat2 = CompatibilityLayer.get_compatibility_layer()
 
-            # Should be different instances after reset
-            self.assertIsNot(compat1, compat2)
+        # Should be different instances after reset
+        self.assertIsNot(compat1, compat2)
 
 
 class TestCompatibilityLayerComponentCreation(unittest.TestCase):
@@ -165,12 +153,12 @@ class TestCompatibilityLayerComponentCreation(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
         EnvironmentDetector.reset_cache()
 
     def tearDown(self):
         """Clean up after each test."""
-        reset_compatibility_layer()
+        CompatibilityLayer.reset_compatibility_layer()
         EnvironmentDetector.reset_cache()
 
     def test_create_webui_components(self):
