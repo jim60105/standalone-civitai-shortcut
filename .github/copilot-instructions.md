@@ -16,6 +16,7 @@
   * Instead of concentrating on backward compatibility, greater importance is given to removing unnecessary designs. When a module is no longer utilized, remove it. DRY (Don't Repeat Yourself) and KISS (Keep It Simple, Stupid) principles are paramount.
   * Any unimplemented code must be marked with `//TODO` comment.
   * Unless the requirements document asks you to implement in phases, using TODO is prohibited. TODO means there is still unfinished work. You are required to complete your work.
+  * Use `pytest` for running tests and makesure this project is testable.
   * Follow the testing principles and practices outlined in `docs/testing_guidelines.md`.
   * Always use `util.printD()` for structured debug output with module identifiers.
   * Ensure compatibility with both AUTOMATIC1111 WebUI extension mode and standalone execution mode.
