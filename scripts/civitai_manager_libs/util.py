@@ -18,37 +18,9 @@ except ImportError:
     # Fallback when tqdm is unavailable
     tqdm = lambda iterable, **kwargs: iterable
 
-
-# Compatibility layer functions
-def get_compatibility_layer():
-    """Get compatibility layer"""
-    try:
-        from . import setting
-        return setting.get_compatibility_layer()
-    except AttributeError:
-        return None
-
-
-def printD(msg, force=False):
-    """Debug message output with compatibility layer support"""
-    import inspect
-
-    # If called from setting.py during initialization, avoid recursion
-    stack = inspect.stack()
-    for frame in stack:
-        if frame.filename.endswith("setting.py"):
-            print(f"[CivitaiShortcut] {msg}")
-            return
-
-    compat = get_compatibility_layer()
-
-    # Check debug mode through compatibility layer
-    debug_enabled = False
-    if compat and hasattr(compat, 'config_manager'):
-        debug_enabled = compat.config_manager.get('debug.enabled', False)
-
-    if debug_enabled or force:
-        print(f"{EXTENSIONS_NAME}: {msg}")
+def printD(msg):
+    """Debug message output with compatibility layer support."""
+    print(f"[Civitai Shortcut] {msg}")
 
 
 def calculate_sha256(filname):
