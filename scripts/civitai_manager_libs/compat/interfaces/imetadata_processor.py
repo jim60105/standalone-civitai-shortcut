@@ -4,7 +4,15 @@ Provides unified access to image metadata processing across execution modes.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple, Optional, Any
+from typing import Dict, Tuple, Optional, Any, Union
+
+try:
+    from PIL import Image
+
+    ImageType = Image.Image
+except ImportError:
+    # Fallback type for systems without PIL
+    ImageType = Any
 
 
 class IMetadataProcessor(ABC):
@@ -12,7 +20,7 @@ class IMetadataProcessor(ABC):
 
     @abstractmethod
     def extract_png_info(
-        self, image_path: str
+        self, image_input: Union[str, 'Image.Image']
     ) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[str]]:
         """
         Extract metadata information from PNG files.
@@ -21,7 +29,7 @@ class IMetadataProcessor(ABC):
         which returns a tuple of (info1, generate_data, info3).
 
         Args:
-            image_path (str): Path to the PNG image file
+            image_input (Union[str, Image.Image]): Path to the PNG image file or PIL Image object
 
         Returns:
             Tuple[Optional[str], Optional[Dict[str, Any]], Optional[str]]:
@@ -32,12 +40,12 @@ class IMetadataProcessor(ABC):
         pass
 
     @abstractmethod
-    def extract_parameters_from_png(self, image_path: str) -> Optional[str]:
+    def extract_parameters_from_png(self, image_input: Union[str, 'Image.Image']) -> Optional[str]:
         """
         Extract generation parameters string from PNG metadata.
 
         Args:
-            image_path (str): Path to the PNG image file
+            image_input (Union[str, Image.Image]): Path to the PNG image file or PIL Image object
 
         Returns:
             Optional[str]: Parameters string or None if not found.

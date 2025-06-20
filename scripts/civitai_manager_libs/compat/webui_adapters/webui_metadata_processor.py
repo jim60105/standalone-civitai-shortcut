@@ -4,7 +4,9 @@ Provides metadata processing using AUTOMATIC1111 WebUI modules.
 """
 
 import os
-from typing import Dict, Tuple, Optional, Any
+import tempfile
+from typing import Dict, Tuple, Optional, Any, Union
+from PIL import Image
 
 from ..interfaces.imetadata_processor import IMetadataProcessor
 
@@ -13,10 +15,24 @@ class WebUIMetadataProcessor(IMetadataProcessor):
     """Metadata processor implementation using WebUI modules."""
 
     def extract_png_info(
-        self, image_path: str
+        self, image_input: Union[str, Image.Image]
     ) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[str]]:
         """Extract metadata from PNG using WebUI modules."""
+        # Handle different input types
+        temp_path = None
+
         try:
+            # Convert PIL Image to temporary file if needed
+            if isinstance(image_input, Image.Image):
+                fd, temp_path = tempfile.mkstemp(suffix=".png", prefix="webui_png_info_")
+                os.close(fd)
+                image_input.save(temp_path, format="PNG")
+                image_path = temp_path
+            elif isinstance(image_input, str):
+                image_path = image_input
+            else:
+                return None, None, None
+
             import modules.extras
 
             # Call WebUI's PNG info extraction
@@ -27,11 +43,29 @@ class WebUIMetadataProcessor(IMetadataProcessor):
                 return None, None, None
         except (ImportError, AttributeError, Exception):
             # Fallback to PIL-based extraction
-            return self._extract_png_info_fallback(image_path)
+            if isinstance(image_input, str):
+                return self._extract_png_info_fallback(image_input)
+            else:
+                # For PIL Image, create temp file and try fallback
+                fd2, temp_path2 = tempfile.mkstemp(suffix=".png", prefix="webui_fallback_")
+                os.close(fd2)
+                try:
+                    image_input.save(temp_path2, format="PNG")
+                    return self._extract_png_info_fallback(temp_path2)
+                finally:
+                    if os.path.exists(temp_path2):
+                        os.remove(temp_path2)
+        finally:
+            # Clean up temp file if created
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
 
-    def extract_parameters_from_png(self, image_path: str) -> Optional[str]:
+    def extract_parameters_from_png(self, image_input: Union[str, Image.Image]) -> Optional[str]:
         """Extract generation parameters from PNG."""
-        info1, generate_data, info3 = self.extract_png_info(image_path)
+        info1, generate_data, info3 = self.extract_png_info(image_input)
 
         # Try to get parameters from generate_data first
         if generate_data and isinstance(generate_data, dict):

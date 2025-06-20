@@ -7,7 +7,7 @@ Enhanced to fully replicate AUTOMATIC1111 WebUI PNG info processing.
 import os
 import json
 import hashlib
-from typing import Dict, Tuple, Optional, Any
+from typing import Dict, Tuple, Optional, Any, Union
 from PIL import Image
 from ..interfaces.imetadata_processor import IMetadataProcessor
 
@@ -54,13 +54,13 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
         return sha256_hash.hexdigest()
 
     def extract_png_info(
-        self, image_path: str
+        self, image_input: Union[str, Image.Image]
     ) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[str]]:
         """
         Extract metadata from image files, replicating A1111's implementation.
 
         Args:
-            image_path: Path to image file
+            image_input: Path to image file or PIL Image object
 
         Returns:
             Tuple containing:
@@ -68,26 +68,50 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
             - Raw metadata dictionary
             - Formatted display info.
         """
-        if not os.path.isfile(image_path):
-            return None, None, None
+        # Handle different input types
+        image = None
+        temp_path = None
 
         try:
-            image = Image.open(image_path)
-        except Exception:
+            if isinstance(image_input, str):
+                # Input is a file path
+                if not os.path.isfile(image_input):
+                    return None, None, None
+                try:
+                    image = Image.open(image_input)
+                except Exception:
+                    return None, None, None
+            elif isinstance(image_input, Image.Image):
+                # Input is already a PIL Image
+                image = image_input
+            else:
+                # Unsupported input type
+                self._log_debug(f"Unsupported image_input type: {type(image_input)}")
+                return None, None, None
+
+            geninfo, items = self._extract_metadata(image)
+
+            if items and items.get("Software", "").startswith("NovelAI"):
+                try:
+                    geninfo = self._process_novelai_metadata(items, image)
+                except Exception:
+                    self._log_debug("Error parsing NovelAI metadata")
+
+            info_text = self._format_info_for_display(geninfo, items)
+            generation_params = self.parse_generation_parameters(geninfo) if geninfo else {}
+
+            return geninfo, generation_params, info_text
+
+        except Exception as e:
+            self._log_debug(f"Error in extract_png_info: {e}")
             return None, None, None
-
-        geninfo, items = self._extract_metadata(image)
-
-        if items and items.get("Software", "").startswith("NovelAI"):
-            try:
-                geninfo = self._process_novelai_metadata(items, image)
-            except Exception:
-                self._log_debug("Error parsing NovelAI metadata")
-
-        info_text = self._format_info_for_display(geninfo, items)
-        generation_params = self.parse_generation_parameters(geninfo) if geninfo else {}
-
-        return geninfo, generation_params, info_text
+        finally:
+            # Clean up temp file if created
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
 
     def _extract_metadata(self, image: Image.Image) -> Tuple[Optional[str], Dict[str, Any]]:
         """Extract metadata from image file."""
@@ -181,9 +205,9 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
             f"ENSD: 31337"
         )
 
-    def extract_parameters_from_png(self, image_path: str) -> Optional[str]:
+    def extract_parameters_from_png(self, image_input: Union[str, Image.Image]) -> Optional[str]:
         """Get parameters string from image metadata."""
-        geninfo, _, _ = self.extract_png_info(image_path)
+        geninfo, _, _ = self.extract_png_info(image_input)
         return geninfo
 
     def parse_generation_parameters(self, parameters_text: str) -> Dict[str, Any]:

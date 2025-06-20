@@ -13,6 +13,8 @@ import datetime
 import re
 import threading
 import math
+from PIL import Image
+import tempfile
 
 from .conditional_imports import import_manager
 
@@ -346,11 +348,35 @@ def on_civitai_hidden_change(hidden, index):
     """Process PNG info with compatibility layer support"""
     compat = CompatibilityLayer.get_compatibility_layer()
 
-    if compat and hasattr(compat, 'metadata_processor'):
-        try:
+    temp_path = None
+    try:
+        # Standalone mode: ensure we pass a file path, not an Image object
+        if compat and compat.is_standalone_mode():
+            if isinstance(hidden, Image.Image):
+                fd, temp_path = tempfile.mkstemp(suffix=".png", prefix="civitai_hidden_")
+                os.close(fd)
+                hidden.save(temp_path, format="PNG")
+                util.printD(f"[civitai_gallery_action] Saved PIL Image to temp file: {temp_path}")
+                result = compat.metadata_processor.extract_png_info(temp_path)
+                os.remove(temp_path)
+                util.printD(f"[civitai_gallery_action] Removed temp file: {temp_path}")
+                return result
+            elif isinstance(hidden, str) and os.path.isfile(hidden):
+                return compat.metadata_processor.extract_png_info(hidden)
+            else:
+                util.printD(
+                    f"[civitai_gallery_action] Unsupported hidden type for standalone: {type(hidden)}"
+                )
+                return None
+        # WebUI mode: pass through
+        if compat and hasattr(compat, 'metadata_processor'):
             return compat.metadata_processor.extract_png_info(hidden)
-        except Exception as e:
-            util.printD(f"Error processing PNG info through compatibility layer: {e}")
+    except Exception as e:
+        util.printD(f"Error processing PNG info through compatibility layer: {e}")
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+            util.printD(f"[civitai_gallery_action] Cleaned up temp file: {temp_path}")
 
     # Fallback: Try WebUI direct access
     extras_module = import_manager.get_webui_module('extras')
@@ -359,23 +385,8 @@ def on_civitai_hidden_change(hidden, index):
             info1, info2, info3 = extras_module.run_pnginfo(hidden)
             return info2
         except Exception as e:
-            util.printD(f"Error processing PNG info through WebUI: {e}")
-
-    # Final fallback: Try basic PIL extraction
-    try:
-        from PIL import Image
-        import io
-
-        if isinstance(hidden, str):
-            with Image.open(hidden) as img:
-                return img.text.get('parameters', '')
-        elif hasattr(hidden, 'read'):
-            with Image.open(io.BytesIO(hidden.read())) as img:
-                return img.text.get('parameters', '')
-    except Exception as e:
-        util.printD(f"Error in PNG info fallback processing: {e}")
-
-    return ""
+            util.printD(f"[civitai_gallery_action] Fallback run_pnginfo error: {e}")
+    return None
 
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):

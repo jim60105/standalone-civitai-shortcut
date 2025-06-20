@@ -91,6 +91,41 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.assertIn("Steps", display)
         self.assertIn("Sampler", display)
 
+    def test_extract_png_info_with_pil_image(self):
+        """Test extract png info with PIL Image input."""
+        # Create a PIL Image with metadata and save it first
+        img = Image.new('RGB', (64, 64), color='blue')
+        meta = PngImagePlugin.PngInfo()
+        meta.add_text("parameters", "test prompt\nNegative prompt: negative test\nSteps: 25")
+
+        temp_path = os.path.join(self.temp_dir.name, 'test_pil.png')
+        img.save(temp_path, pnginfo=meta)
+
+        # Load the saved image as PIL Image
+        pil_image = Image.open(temp_path)
+        geninfo, params, info_text = self.processor.extract_png_info(pil_image)
+
+        self.assertIn("test prompt", geninfo)
+        self.assertIn("Steps", geninfo)
+        self.assertIn("Negative prompt", params)
+
+    def test_extract_parameters_from_png_with_pil_image(self):
+        """Test extract parameters from PNG with PIL Image input."""
+        # Create a PIL Image with metadata
+        img = Image.new('RGB', (64, 64), color='green')
+        meta = PngImagePlugin.PngInfo()
+        meta.add_text("parameters", "pil test prompt\nSteps: 30")
+
+        temp_path = os.path.join(self.temp_dir.name, 'test_params_pil.png')
+        img.save(temp_path, pnginfo=meta)
+
+        # Load as PIL Image and test
+        pil_image = Image.open(temp_path)
+        params = self.processor.extract_parameters_from_png(pil_image)
+
+        self.assertIn("pil test prompt", params)
+        self.assertIn("Steps: 30", params)
+
 
 if __name__ == '__main__':
     unittest.main()
