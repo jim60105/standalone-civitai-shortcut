@@ -1,5 +1,5 @@
 """
-UI Adapter for Civitai Shortcut Standalone Mode
+UI Adapter for Civitai Shortcut Standalone Mode.
 
 This module adapts the existing UI components for standalone execution,
 providing compatibility layer injection and proper initialization.
@@ -12,6 +12,13 @@ import gradio as gr
 import datetime
 
 from scripts.civitai_manager_libs import setting, model, util
+from scripts.civitai_manager_libs import (
+    civitai_shortcut_action,
+    recipe_action,
+    classification_action,
+    setting_action,
+    scan_action,
+)
 
 
 def create_civitai_shortcut_ui(compat_layer):
@@ -26,15 +33,6 @@ def create_civitai_shortcut_ui(compat_layer):
 
     # Initialize components
     _initialize_components(compat_layer)
-
-    # Import action modules after injection
-    from scripts.civitai_manager_libs import (
-        civitai_shortcut_action,
-        recipe_action,
-        classification_action,
-        setting_action,
-        scan_action,
-    )
 
     # Create main UI structure
     with gr.Tabs(elem_id="civitai_shortcut_tabs_container") as civitai_tabs:
@@ -207,7 +205,7 @@ def _create_standalone_settings_ui(compat_layer):
             cache_size_val,
             debug_enabled_val,
         ):
-            """Save standalone settings"""
+            """Save standalone settings."""
             try:
                 settings_map = {
                     'server.host': host,
@@ -230,7 +228,7 @@ def _create_standalone_settings_ui(compat_layer):
                 return gr.update(value=f"❌ Error saving configuration: {e}", visible=True)
 
         def reset_settings():
-            """Reset settings to defaults"""
+            """Reset settings to defaults."""
             try:
                 compat_layer.config_manager.reset_to_defaults()
                 return (

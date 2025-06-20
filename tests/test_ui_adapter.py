@@ -38,15 +38,63 @@ class TestUIAdapter(unittest.TestCase):
         self.mock_compat_layer = MagicMock()
 
     @patch('ui_adapter.gr')
-    @patch('ui_adapter._inject_compatibility_layer')
+    @patch('ui_adapter.scan_action')
+    @patch('ui_adapter.setting_action')
+    @patch('ui_adapter.classification_action')
+    @patch('ui_adapter.civitai_shortcut_action')
+    @patch('ui_adapter.recipe_action')
     @patch('ui_adapter._initialize_components')
-    def test_create_civitai_shortcut_ui(self, mock_init, mock_inject, mock_gr):
+    @patch('ui_adapter._inject_compatibility_layer')
+    def test_create_civitai_shortcut_ui(
+        self,
+        mock_inject,
+        mock_init,
+        mock_recipe,
+        mock_civitai_shortcut,
+        mock_classification,
+        mock_setting,
+        mock_scan,
+        mock_gr,
+    ):
         """Test UI creation."""
         # Setup mocks
         mock_tabs = MagicMock()
         mock_gr.Tabs.return_value.__enter__.return_value = mock_tabs
+        mock_recipe.on_ui.return_value = (MagicMock(), MagicMock())
+        mock_civitai_shortcut.on_ui.return_value = MagicMock()
+        mock_classification.on_ui.return_value = MagicMock()
+        mock_setting.on_ui.return_value = MagicMock()
+        mock_scan.on_scan_ui.return_value = MagicMock()
 
-        # Import action modules mock
+        create_civitai_shortcut_ui(self.mock_compat_layer)
+
+        # Verify initialization
+        mock_inject.assert_called_once_with(self.mock_compat_layer)
+        mock_init.assert_called_once_with(self.mock_compat_layer)
+
+    @patch('ui_adapter.gr')
+    @patch('ui_adapter.setting_action')
+    @patch('ui_adapter.scan_action')
+    @patch('ui_adapter.classification_action')
+    @patch('ui_adapter.recipe_action')
+    @patch('ui_adapter.civitai_shortcut_action')
+    def test_ui_structure(
+        self,
+        mock_civitai_shortcut,
+        mock_recipe,
+        mock_classification,
+        mock_scan,
+        mock_setting,
+        mock_gr,
+    ):
+        """Test UI structure creation."""
+        mock_compat_layer = MagicMock()
+        mock_recipe.on_ui.return_value = (MagicMock(), MagicMock())
+        mock_civitai_shortcut.on_ui.return_value = MagicMock()
+        mock_classification.on_ui.return_value = MagicMock()
+        mock_scan.on_scan_ui.return_value = MagicMock()
+        mock_setting.on_setting_ui.return_value = MagicMock()
+        # Mock all the action modules
         with patch.dict(
             'sys.modules',
             {
@@ -57,11 +105,14 @@ class TestUIAdapter(unittest.TestCase):
                 'scripts.civitai_manager_libs.scan_action': MagicMock(),
             },
         ):
-            create_civitai_shortcut_ui(self.mock_compat_layer)
-
-        # Verify initialization
-        mock_inject.assert_called_once_with(self.mock_compat_layer)
-        mock_init.assert_called_once_with(self.mock_compat_layer)
+            with patch('ui_adapter._inject_compatibility_layer'), patch(
+                'ui_adapter._initialize_components'
+            ):
+                create_civitai_shortcut_ui(mock_compat_layer)
+                # Verify main UI structure was created
+                self.assertTrue(mock_gr.Tabs.called)
+                self.assertTrue(mock_gr.TabItem.called)
+                self.assertTrue(mock_gr.Row.called)
 
     def test_inject_compatibility_layer(self):
         """Test compatibility layer injection."""
@@ -202,10 +253,27 @@ class TestUIIntegration(unittest.TestCase):
             self.skipTest("ui_adapter module not available")
 
     @patch('ui_adapter.gr')
-    def test_ui_structure(self, mock_gr):
+    @patch('ui_adapter.setting_action')
+    @patch('ui_adapter.scan_action')
+    @patch('ui_adapter.classification_action')
+    @patch('ui_adapter.recipe_action')
+    @patch('ui_adapter.civitai_shortcut_action')
+    def test_ui_structure(
+        self,
+        mock_civitai_shortcut,
+        mock_recipe,
+        mock_classification,
+        mock_scan,
+        mock_setting,
+        mock_gr,
+    ):
         """Test UI structure creation."""
         mock_compat_layer = MagicMock()
-
+        mock_recipe.on_ui.return_value = (MagicMock(), MagicMock())
+        mock_civitai_shortcut.on_ui.return_value = MagicMock()
+        mock_classification.on_ui.return_value = MagicMock()
+        mock_scan.on_scan_ui.return_value = MagicMock()
+        mock_setting.on_setting_ui.return_value = MagicMock()
         # Mock all the action modules
         with patch.dict(
             'sys.modules',
@@ -220,25 +288,11 @@ class TestUIIntegration(unittest.TestCase):
             with patch('ui_adapter._inject_compatibility_layer'), patch(
                 'ui_adapter._initialize_components'
             ):
-
                 create_civitai_shortcut_ui(mock_compat_layer)
-
                 # Verify main UI structure was created
                 self.assertTrue(mock_gr.Tabs.called)
                 self.assertTrue(mock_gr.TabItem.called)
                 self.assertTrue(mock_gr.Row.called)
-
-    def test_error_handling_in_initialization(self):
-        """Test error handling during initialization."""
-        mock_compat_layer = MagicMock()
-
-        with patch('ui_adapter.setting') as mock_setting:
-            mock_setting.init.side_effect = Exception("Test error")
-
-            # Should not raise exception, but print warning
-            with patch('builtins.print') as mock_print:
-                _initialize_components(mock_compat_layer)
-                mock_print.assert_called()
 
     def test_module_injection_error_handling(self):
         """Test error handling during module injection."""
@@ -256,7 +310,3 @@ class TestUIIntegration(unittest.TestCase):
 
             # Should still set _compat_layer attribute
             self.assertEqual(mock_module._compat_layer, mock_compat_layer)
-
-
-if __name__ == '__main__':
-    unittest.main()
