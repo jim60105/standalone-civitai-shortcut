@@ -105,7 +105,9 @@ def on_civitai_tabs_select(evt: gr.SelectData):
 def civitai_shortcut_ui():
     """Create the main Civitai Shortcut UI with dual-mode support."""
     # Setup UI components for dual-mode
-    compat_layer = _compatibility_layer or setting.get_compatibility_layer()
+    from scripts.civitai_manager_libs.compat.compat_layer import CompatibilityLayer
+
+    compat_layer = _compatibility_layer or CompatibilityLayer.get_compatibility_layer()
 
     # Initialize enhanced UI components for standalone mode
     if compat_layer and compat_layer.mode == 'standalone':

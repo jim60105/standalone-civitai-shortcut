@@ -24,6 +24,8 @@ class CompatibilityLayer:
     to all functionality across WebUI and standalone modes.
     """
 
+    _compat_layer: Optional["CompatibilityLayer"] = None
+
     def __init__(self, mode: Optional[EnvironmentType] = None):
         """
         Initialize the compatibility layer.
@@ -161,33 +163,27 @@ class CompatibilityLayer:
 
             return StandaloneParameterProcessor()
 
+    @staticmethod
+    def get_compatibility_layer(
+        mode: Optional[EnvironmentType] = None,
+    ) -> "CompatibilityLayer":
+        """
+        Get the global compatibility layer instance.
 
-# Global compatibility layer instance
-_compat_layer: Optional[CompatibilityLayer] = None
+        Args:
+            mode (Optional[EnvironmentType]): Force specific mode, auto-detect if None
 
+        Returns:
+            CompatibilityLayer: The compatibility layer instance.
+        """
+        if CompatibilityLayer._compat_layer is None or (
+            mode is not None and CompatibilityLayer._compat_layer.mode != mode
+        ):
+            CompatibilityLayer._compat_layer = CompatibilityLayer(mode)
+        return CompatibilityLayer._compat_layer
 
-def get_compatibility_layer(
-    mode: Optional[EnvironmentType] = None,
-) -> CompatibilityLayer:
-    """
-    Get the global compatibility layer instance.
-
-    Args:
-        mode (Optional[EnvironmentType]): Force specific mode, auto-detect if None
-
-    Returns:
-        CompatibilityLayer: The compatibility layer instance.
-    """
-    global _compat_layer
-
-    if _compat_layer is None or (mode is not None and _compat_layer.mode != mode):
-        _compat_layer = CompatibilityLayer(mode)
-
-    return _compat_layer
-
-
-def reset_compatibility_layer() -> None:
-    """Reset the global compatibility layer instance."""
-    global _compat_layer
-    _compat_layer = None
-    EnvironmentDetector.reset_cache()
+    @staticmethod
+    def reset_compatibility_layer() -> None:
+        """Reset the global compatibility layer instance."""
+        CompatibilityLayer._compat_layer = None
+        EnvironmentDetector.reset_cache()

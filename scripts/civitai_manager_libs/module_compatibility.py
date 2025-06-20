@@ -14,6 +14,7 @@ from . import ishortcut_action
 from . import civitai_gallery_action
 from . import setting_action
 from . import prompt_ui
+from .compat.compat_layer import CompatibilityLayer
 
 
 def initialize_compatibility_layer(compat_layer):
@@ -51,7 +52,7 @@ def get_compatibility_status():
     Returns:
         dict: Status information about compatibility layer
     """
-    compat_layer = setting.get_compatibility_layer()
+    compat_layer = CompatibilityLayer.get_compatibility_layer()
 
     if not compat_layer:
         return {"status": "not_initialized", "mode": "unknown", "webui_available": False}

@@ -1,9 +1,9 @@
 import os
 import json
 
-
 from . import util
 from .conditional_imports import import_manager
+from .compat.compat_layer import CompatibilityLayer
 
 # Compatibility layer variables
 _compat_layer = None
@@ -20,38 +20,12 @@ def set_compatibility_layer(compat_layer):
     _initialize_extension_base()
 
 
-def get_compatibility_layer():
-    """Get compatibility layer."""
-    global _compat_layer
-    if _compat_layer is None:
-
-        util.printD(
-            "[setting] get_compatibility_layer: Compatibility layer is None, auto-detecting."
-        )
-        # Auto-detect and initialize (fallback)
-        try:
-            from .compat.compat_layer import CompatibilityLayer
-            from .compat.environment_detector import EnvironmentDetector
-
-            env = EnvironmentDetector.detect_environment()
-
-            util.printD(f"[setting] get_compatibility_layer: Detected environment: {env}")
-            _compat_layer = CompatibilityLayer(mode=env)
-            _initialize_extension_base()
-        except ImportError as e:
-
-            util.printD(f"[setting] get_compatibility_layer: ImportError occurred: {e}")
-            # Final fallback - use current directory
-            pass
-    return _compat_layer
-
-
 def _initialize_extension_base():
     """Initialize extension base path."""
     global extension_base
 
     util.printD("[setting] _initialize_extension_base: Initializing extension base path.")
-    compat = get_compatibility_layer()
+    compat = CompatibilityLayer.get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
         extension_base = compat.path_manager.get_extension_path()
 
@@ -347,7 +321,7 @@ def load_data():
     global civitai_api_key
 
     # Load WebUI specific paths through compatibility layer
-    compat = get_compatibility_layer()
+    compat = CompatibilityLayer.get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
         util.printD("[setting] load_data: Using compat.path_manager for model folders.")
         # Override default model folder paths directly without filesystem check

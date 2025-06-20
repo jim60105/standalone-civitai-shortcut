@@ -18,11 +18,14 @@ from . import setting
 from . import util
 
 _compat_layer = None
+
+
 def set_compatibility_layer(compat_layer):
     """Set compatibility layer."""
     util.printD(f"[civitai_shortcut_action] set_compatibility_layer called with: {compat_layer}")
     global _compat_layer
     _compat_layer = compat_layer
+
 
 def get_compatibility_layer():
     """Get compatibility layer."""
@@ -30,11 +33,14 @@ def get_compatibility_layer():
     if _compat_layer is None:
         util.printD(
             "[civitai_shortcut_action] _compat_layer is None, "
-            "calling setting.get_compatibility_layer()"
+            "calling CompatibilityLayer.get_compatibility_layer()"
         )
-        _compat_layer = setting.get_compatibility_layer()
+        from .compat.compat_layer import CompatibilityLayer
+
+        _compat_layer = CompatibilityLayer.get_compatibility_layer()
     util.printD(f"[civitai_shortcut_action] get_compatibility_layer returns: {_compat_layer}")
     return _compat_layer
+
 
 def on_shortcut_input_change(shortcut_input):
     util.printD(
@@ -46,6 +52,7 @@ def on_shortcut_input_change(shortcut_input):
         return gr.update(visible=False), gr.update(selected=None), gr.update(visible=False)
     util.printD("[civitai_shortcut_action] shortcut_input is valid, returning values")
     return shortcut_input, gr.update(selected="Shortcut"), None
+
 
 def on_ui(recipe_input, shortcut_input, civitai_tabs):
     util.printD(
@@ -177,8 +184,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
             - setting.shortcut_browser_screen_split_ratio
         )
         util.printD(
-            f"[civitai_shortcut_action] Creating secondary UI column with scale: "
-            f"{scale_val}"
+            f"[civitai_shortcut_action] Creating secondary UI column with scale: " f"{scale_val}"
         )
         with gr.Tabs() as civitai_information_tabs:
             util.printD("[civitai_shortcut_action] Creating civitai_information_tabs")
@@ -241,9 +247,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     util.printD("[civitai_shortcut_action] Binding scan_new_version_btn.click event handler")
     sc_gallery.select(on_sc_gallery_select, None, [sc_modelid], show_progress=False)
     util.printD("[civitai_shortcut_action] Binding sc_gallery.select event handler")
-    sc_new_version_gallery.select(
-        on_sc_gallery_select, None, [sc_modelid], show_progress=False
-    )
+    sc_new_version_gallery.select(on_sc_gallery_select, None, [sc_modelid], show_progress=False)
     util.printD("[civitai_shortcut_action] Binding sc_new_version_gallery.select event handler")
     civitai_shortcut_tabs.select(
         on_civitai_shortcut_tabs_select,
@@ -290,6 +294,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
 
     return refresh_sc_browser, refresh_civitai_information
 
+
 def on_refresh_NSFW_change():
     util.printD(
         f"[civitai_shortcut_action] on_refresh_NSFW_change called. "
@@ -301,10 +306,10 @@ def on_refresh_NSFW_change():
     else:
         return gr.update(value="Off"), gr.update(visible=False, value=setting.NSFW_level_user)
 
+
 def on_nsfw_filter(enable, level):
     util.printD(
-        f"[civitai_shortcut_action] on_nsfw_filter called with enable: {enable}, "
-        f"level: {level}"
+        f"[civitai_shortcut_action] on_nsfw_filter called with enable: {enable}, " f"level: {level}"
     )
     current_time = datetime.datetime.now()
     setting.set_NSFW(True if enable == "On" else False, level)
@@ -315,9 +320,11 @@ def on_nsfw_filter(enable, level):
         current_time,
     )
 
+
 def on_nsfw_save_btn_click():
     util.printD("[civitai_shortcut_action] on_nsfw_save_btn_click called. Saving NSFW settings.")
     setting.save_NSFW()
+
 
 def on_civitai_shortcut_tabs_select(evt: gr.SelectData):
     util.printD(
@@ -335,6 +342,7 @@ def on_civitai_shortcut_tabs_select(evt: gr.SelectData):
     util.printD("[civitai_shortcut_action] Other tab selected, no refresh.")
     return gr.update(visible=False), gr.update(visible=False)
 
+
 def on_civitai_information_tabs_select(evt: gr.SelectData):
     util.printD(
         f"[civitai_shortcut_action] on_civitai_information_tabs_select called with "
@@ -342,6 +350,7 @@ def on_civitai_information_tabs_select(evt: gr.SelectData):
     )
     current_time = datetime.datetime.now()
     return evt.index, current_time
+
 
 # sc_gallery function definition
 def on_sc_gallery_select(evt: gr.SelectData):
@@ -357,6 +366,7 @@ def on_sc_gallery_select(evt: gr.SelectData):
             f"sc_model_id={sc_model_id}"
         )
     return sc_model_id
+
 
 def on_sc_modelid_change(sc_model_id, current_information_tabs):
     util.printD(
@@ -374,6 +384,7 @@ def on_sc_modelid_change(sc_model_id, current_information_tabs):
         return gr.update(visible=False), gr.update(visible=False), sc_model_id
     util.printD("[civitai_shortcut_action] Returning default (all invisible)")
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+
 
 def on_civitai_internet_url_upload(files, register_information_only, progress=gr.Progress()):
     util.printD(
@@ -397,6 +408,7 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
         return gr.update(visible=False), gr.update(visible=False), None
     util.printD(f"[civitai_shortcut_action] Model registered: {model_id}")
     return model_id, current_time, None
+
 
 def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress()):
     util.printD(
@@ -423,6 +435,8 @@ def on_civitai_internet_url_txt_upload(url, register_information_only, progress=
         return model_id, current_time, None
     util.printD("[civitai_shortcut_action] URL is empty or None, returning fallback updates.")
     return gr.update(visible=False), None, gr.update(visible=True)
+
+
 def on_update_modelfolder_btn_click():
     util.printD(
         "[civitai_shortcut_action] on_update_modelfolder_btn_click called. "
@@ -431,6 +445,7 @@ def on_update_modelfolder_btn_click():
     model.update_downloaded_model()
     current_time = datetime.datetime.now()
     return current_time
+
 
 # 새 버전이 있는지 스캔한다
 def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
@@ -475,6 +490,7 @@ def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
         util.printD("[civitai_shortcut_action] No outdated models found.")
     return gr.update(value=result)
 
+
 def get_shortcut_list(shortcut_types=None, downloaded_sc=False):
     util.printD(
         f"[civitai_shortcut_action] get_shortcut_list called with shortcut_types: "
@@ -493,26 +509,20 @@ def get_shortcut_list(shortcut_types=None, downloaded_sc=False):
                 if str(mid) in model.Downloaded_Models.keys():
                     downloaded_list.append(short)
             shortcut_list = downloaded_list
-            util.printD(
-                f"[civitai_shortcut_action] Filtered downloaded models: {shortcut_list}"
-            )
+            util.printD(f"[civitai_shortcut_action] Filtered downloaded models: {shortcut_list}")
         else:
             util.printD("[civitai_shortcut_action] No Downloaded_Models found, returning None")
             shortcut_list = None
     return shortcut_list
+
+
 def is_latest(modelid: str) -> bool:
-    util.printD(
-        f"[civitai_shortcut_action] is_latest called with modelid: {modelid}"
-    )
+    util.printD(f"[civitai_shortcut_action] is_latest called with modelid: {modelid}")
     if not modelid:
-        util.printD(
-            "[civitai_shortcut_action] modelid is None or empty, returning False"
-        )
+        util.printD("[civitai_shortcut_action] modelid is None or empty, returning False")
         return False
     if str(modelid) in model.Downloaded_Models.keys():
-        util.printD(
-            f"[civitai_shortcut_action] modelid {modelid} found in Downloaded_Models"
-        )
+        util.printD(f"[civitai_shortcut_action] modelid {modelid} found in Downloaded_Models")
         version_info = civitai.get_latest_version_info_by_model_id(str(modelid))
         util.printD(
             f"[civitai_shortcut_action] get_latest_version_info_by_model_id returned: "
@@ -537,11 +547,13 @@ def is_latest(modelid: str) -> bool:
     )
     return False
 
+
 def setup_ui_copypaste(compat_layer):
     util.printD(
         f"[civitai_shortcut_action] setup_ui_copypaste called with compat_layer: {compat_layer}"
     )
     from .ui_components import ParameterCopyPaste
+
     return ParameterCopyPaste(mode=compat_layer.mode)
 
 
@@ -571,6 +583,7 @@ def create_parameter_components(copypaste, gr=gr):
     util.printD(f"[civitai_shortcut_action] Registering copypaste components: {components}")
     copypaste.register_copypaste_components(components)
     return components
+
 
 # def update_shortcut_information(modelid):
 #     if not modelid:
