@@ -344,7 +344,15 @@ def on_sc_gallery_select(evt: gr.SelectData):
     )
     sc_model_id = None
     if evt.value:
-        shortcut = evt.value
+        # evt.value can be either a string or a list [image_url, shortcut_name]
+        if isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        elif isinstance(evt.value, str):
+            shortcut = evt.value
+        else:
+            util.printD(f"[civitai_shortcut_action] Unexpected evt.value format: {evt.value}")
+            return None
+
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
         util.printD(
             f"[civitai_shortcut_action] Gallery select: shortcut={shortcut}, "
