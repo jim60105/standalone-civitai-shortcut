@@ -46,6 +46,8 @@ class StandalonePathManager(IPathManager):
 
         In standalone mode, this returns our extension's base path.
         """
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_script_path: {self._base_path}")
         return self._base_path
 
     def get_user_data_path(self) -> str:
@@ -54,19 +56,29 @@ class StandalonePathManager(IPathManager):
 
         In standalone mode, this returns our extension's data directory.
         """
-        return str(paths.data_path)
+        result = str(paths.data_path)
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_user_data_path: {result}")
+        return result
 
     def get_base_path(self) -> str:
         """Get the base path for standalone mode."""
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_base_path: {self._base_path}")
         return self._base_path
 
     def get_extension_path(self) -> str:
         """Get extension path (same as base path in standalone mode)."""
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_extension_path: {self._base_path}")
         return self._base_path
 
     def get_models_path(self) -> str:
         """Get models directory path."""
-        return str(paths.models_path)
+        result = str(paths.models_path)
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_models_path: {result}")
+        return result
 
     def get_model_folder_path(self, model_type: str) -> str:
         """
@@ -95,6 +107,8 @@ class StandalonePathManager(IPathManager):
 
         # Ensure the directory exists
         self.ensure_directory_exists(full_path)
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_model_folder_path({model_type}): {full_path}")
         return full_path
 
     def get_model_path(self, model_type: str) -> str:
@@ -107,14 +121,20 @@ class StandalonePathManager(IPathManager):
         Returns:
             str: The absolute path to the model type directory.
         """
-        return self.get_model_folder_path(model_type)
+        result = self.get_model_folder_path(model_type)
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_model_path({model_type}): {result}")
+        return result
 
     def get_config_path(self) -> str:
         """Get configuration file path."""
         if self._config_path:
-            return self._config_path
-
-        return os.path.join(self._base_path, "setting.json")
+            result = self._config_path
+        else:
+            result = os.path.join(self._base_path, "setting.json")
+        from scripts.civitai_manager_libs import util
+        util.printD(f"[standalone_path_manager] get_config_path: {result}")
+        return result
 
     def ensure_directory_exists(self, path: str) -> bool:
         """

@@ -45,7 +45,6 @@ def get_compatibility_layer():
             pass
     else:
         from . import util
-        util.printD("[setting] get_compatibility_layer: Returning existing compatibility layer.")
     return _compat_layer
 
 

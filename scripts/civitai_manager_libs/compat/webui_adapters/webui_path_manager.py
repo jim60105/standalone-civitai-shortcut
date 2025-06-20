@@ -19,9 +19,22 @@ try:
         default_output_dir,
     )
     from modules import shared
+    from .. import util
+
+    util.printD(f"[webui_path_manager] webui_models_path: {webui_models_path}")
+    util.printD(f"[webui_path_manager] webui_script_path: {webui_script_path}")
+    util.printD(f"[webui_path_manager] webui_data_path: {webui_data_path}")
+    util.printD(f"[webui_path_manager] extensions_dir: {extensions_dir}")
+    util.printD(f"[webui_path_manager] extensions_builtin_dir: {extensions_builtin_dir}")
+    util.printD(f"[webui_path_manager] default_output_dir: {default_output_dir}")
+    util.printD('[webui_path_manager] Successfully imported WebUI modules.')
 
     WEBUI_AVAILABLE = True
-except (ImportError, ModuleNotFoundError):
+except (ImportError, ModuleNotFoundError) as e:
+    from .. import util
+
+    util.printD(f'[webui_path_manager] Failed to import WebUI modules: {e}')
+
     webui_paths = None
     webui_models_path = None
     webui_script_path = None
@@ -152,8 +165,12 @@ class WebUIPathManager(IPathManager):
         This follows AUTOMATIC1111's paths_internal.script_path pattern.
         """
         if WEBUI_AVAILABLE and webui_script_path:
-            return webui_script_path
-        return str(paths.script_path)
+            result = webui_script_path
+        else:
+            result = str(paths.script_path)
+        from .. import util
+        util.printD(f"[webui_path_manager] get_script_path: {result}")
+        return result
 
     def get_user_data_path(self) -> str:
         """Get the data path from WebUI.
@@ -161,8 +178,12 @@ class WebUIPathManager(IPathManager):
         This follows AUTOMATIC1111's paths_internal.data_path pattern.
         """
         if WEBUI_AVAILABLE and webui_data_path:
-            return webui_data_path
-        return str(paths.data_path)
+            result = webui_data_path
+        else:
+            result = str(paths.data_path)
+        from .. import util
+        util.printD(f"[webui_path_manager] get_user_data_path: {result}")
+        return result
 
     def get_models_path(self) -> str:
         """Get the main models path from the WebUI.
@@ -170,8 +191,12 @@ class WebUIPathManager(IPathManager):
         This follows AUTOMATIC1111's paths_internal.models_path pattern.
         """
         if WEBUI_AVAILABLE and webui_models_path:
-            return webui_models_path
-        return str(paths.models_path)
+            result = webui_models_path
+        else:
+            result = str(paths.models_path)
+        from .. import util
+        util.printD(f"[webui_path_manager] get_models_path: {result}")
+        return result
 
     def get_extensions_dir(self) -> str:
         """Get the extensions directory path.
@@ -179,8 +204,12 @@ class WebUIPathManager(IPathManager):
         This follows AUTOMATIC1111's paths_internal.extensions_dir pattern.
         """
         if WEBUI_AVAILABLE and extensions_dir:
-            return extensions_dir
-        return os.path.join(self.get_user_data_path(), "extensions")
+            result = extensions_dir
+        else:
+            result = os.path.join(self.get_user_data_path(), "extensions")
+        from .. import util
+        util.printD(f"[webui_path_manager] get_extensions_dir: {result}")
+        return result
 
     def get_extensions_builtin_dir(self) -> str:
         """Get the built-in extensions directory path.
@@ -188,8 +217,12 @@ class WebUIPathManager(IPathManager):
         This follows AUTOMATIC1111's paths_internal.extensions_builtin_dir pattern.
         """
         if WEBUI_AVAILABLE and extensions_builtin_dir:
-            return extensions_builtin_dir
-        return os.path.join(self.get_script_path(), "extensions-builtin")
+            result = extensions_builtin_dir
+        else:
+            result = os.path.join(self.get_script_path(), "extensions-builtin")
+        from .. import util
+        util.printD(f"[webui_path_manager] get_extensions_builtin_dir: {result}")
+        return result
 
     def get_output_dir(self) -> str:
         """Get the default output directory path.
@@ -197,22 +230,32 @@ class WebUIPathManager(IPathManager):
         This follows AUTOMATIC1111's paths_internal.default_output_dir pattern.
         """
         if WEBUI_AVAILABLE and default_output_dir:
-            return default_output_dir
-        return os.path.join(self.get_user_data_path(), "outputs")
+            result = default_output_dir
+        else:
+            result = os.path.join(self.get_user_data_path(), "outputs")
+        from .. import util
+        util.printD(f"[webui_path_manager] get_output_dir: {result}")
+        return result
 
     def get_model_folder_path(self, model_type: str) -> str:
         """Get specific model folder path.
 
         Uses WebUI's standard model directory structure.
         """
-        return os.path.join(self.get_models_path(), model_type)
+        result = os.path.join(self.get_models_path(), model_type)
+        from .. import util
+        util.printD(f"[webui_path_manager] get_model_folder_path({model_type}): {result}")
+        return result
 
     def get_config_path(self) -> str:
         """Get configuration file path.
 
         Stores in the data directory following WebUI patterns.
         """
-        return os.path.join(self.get_user_data_path(), "setting.json")
+        result = os.path.join(self.get_user_data_path(), "setting.json")
+        from .. import util
+        util.printD(f"[webui_path_manager] get_config_path: {result}")
+        return result
 
     def ensure_directory_exists(self, path: str) -> bool:
         """Ensure directory exists.
