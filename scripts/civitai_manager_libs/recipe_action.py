@@ -788,7 +788,7 @@ def on_recipe_input_change(recipe_input, shortcuts):
             gr.update(value=""),
             recipe_image,
             recipe_image,
-            recipe_image,  # Pass image object to recipe_generate_data for metadata extraction
+            current_time,
             None,
             gr.update(selected="Recipe"),
             gr.update(selected="Prompt"),
