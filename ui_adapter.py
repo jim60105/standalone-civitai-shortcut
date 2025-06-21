@@ -5,19 +5,19 @@ This module adapts the existing UI components for standalone execution,
 providing compatibility layer injection and proper initialization.
 """
 
-import sys
 import gradio as gr
 
 # Core modules for initialization
 import datetime
 
-from scripts.civitai_manager_libs import setting, model, util
 from scripts.civitai_manager_libs import (
+    util,
     civitai_shortcut_action,
     recipe_action,
     classification_action,
     setting_action,
     scan_action,
+    module_compatibility,
 )
 
 
@@ -28,11 +28,8 @@ def create_civitai_shortcut_ui(compat_layer):
     Args:
         compat_layer: The compatibility layer instance
     """
-    # Inject compatibility layer to all action modules
-    _inject_compatibility_layer(compat_layer)
-
-    # Initialize components
-    _initialize_components(compat_layer)
+    # Initialize compatibility layer for all modules
+    module_compatibility.initialize_compatibility_layer(compat_layer)
 
     # Create main UI structure
     with gr.Tabs(elem_id="civitai_shortcut_tabs_container") as civitai_tabs:
@@ -77,47 +74,6 @@ def create_civitai_shortcut_ui(compat_layer):
                 refresh_setting,
             ],
         )
-
-
-def _inject_compatibility_layer(compat_layer):
-    """
-    Inject compatibility layer into all action modules.
-
-    Args:
-        compat_layer: The compatibility layer instance
-    """
-    modules_to_inject = [
-        'scripts.civitai_manager_libs.civitai_shortcut_action',
-        'scripts.civitai_manager_libs.civitai_gallery_action',
-        'scripts.civitai_manager_libs.setting_action',
-        'scripts.civitai_manager_libs.model_action',
-        'scripts.civitai_manager_libs.prompt_ui',
-        'scripts.civitai_manager_libs.setting',
-        'scripts.civitai_manager_libs.ishortcut_action',
-    ]
-
-    for module_name in modules_to_inject:
-        if module_name in sys.modules:
-            module = sys.modules[module_name]
-            if hasattr(module, 'set_compatibility_layer'):
-                module.set_compatibility_layer(compat_layer)
-            # Also set as global variable for modules that expect it
-            setattr(module, '_compat_layer', compat_layer)
-
-
-def _initialize_components(compat_layer):
-    """
-    Initialize core components for standalone mode.
-
-    Args:
-        compat_layer: The compatibility layer instance
-    """
-    try:
-        setting.init()
-        model.update_downloaded_model()
-        util.printD("Civitai Shortcut initialized in standalone mode")
-    except Exception as e:
-        print(f"Warning: Failed to initialize some components: {e}")
 
 
 def _create_standalone_settings_ui(compat_layer):

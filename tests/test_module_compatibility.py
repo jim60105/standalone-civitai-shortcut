@@ -12,15 +12,17 @@ import tempfile
 import shutil
 from unittest.mock import Mock, patch
 
-# Add the script directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+# Add both project root and scripts/ to sys.path for flexible import
+import_path_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+import_path_scripts = os.path.join(import_path_root, 'scripts')
+if import_path_root not in sys.path:
+    sys.path.insert(0, import_path_root)
+if import_path_scripts not in sys.path:
+    sys.path.insert(0, import_path_scripts)
 
-from civitai_manager_libs.compat.compat_layer import CompatibilityLayer
-from civitai_manager_libs.conditional_imports import ConditionalImportManager
-from civitai_manager_libs.module_compatibility import (
-    initialize_compatibility_layer,
-    get_compatibility_status,
-)
+import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs.conditional_imports import ConditionalImportManager
+from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
 
 
 class TestModuleCompatibility(unittest.TestCase):
@@ -130,26 +132,7 @@ class TestModuleCompatibility(unittest.TestCase):
         # This is a basic test - in practice we'd need to verify each module received the layer
         self.assertTrue(True)  # Placeholder assertion
 
-    def test_compatibility_status_not_initialized(self):
-        """Test compatibility status when not initialized."""
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=None):
-            status = get_compatibility_status()
-            self.assertEqual(status['status'], 'not_initialized')
-            self.assertEqual(status['mode'], 'unknown')
-            self.assertFalse(status['webui_available'])
-
-    def test_compatibility_status_initialized(self):
-        """Test compatibility status when initialized."""
-        mock_compat = Mock()
-        mock_compat.mode = 'webui'
-        mock_compat.is_webui_mode.return_value = True
-        mock_compat.is_standalone_mode.return_value = False
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
-            status = get_compatibility_status()
-            self.assertEqual(status['status'], 'initialized')
-            self.assertEqual(status['mode'], 'webui')
-            self.assertTrue(status['webui_available'])
-            self.assertFalse(status['standalone_mode'])
+    # Removed compatibility status tests due to refactor: get_compatibility_status no longer exists.
 
 
 class TestSettingModuleCompatibility(unittest.TestCase):
@@ -168,23 +151,31 @@ class TestSettingModuleCompatibility(unittest.TestCase):
 
     def test_setting_get_extension_base_path(self):
         """Test extension base path retrieval through compatibility layer."""
-        from civitai_manager_libs import setting
-
-        mock_compat = Mock()
-        mock_compat.path_manager.get_base_path.return_value = '/test/path'
-        mock_compat.path_manager.get_extension_path.return_value = '/test/path'
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
+        # Patch get_compatibility_layer 目標需用完整路徑
+        patch_path = (
+            'scripts.civitai_manager_libs.compat.compat_layer'
+            '.CompatibilityLayer.get_compatibility_layer'
+        )
+        with patch(patch_path) as mock_get_layer:
+            mock_compat = Mock()
+            mock_compat.path_manager.get_base_path.return_value = '/test/path'
+            mock_compat.path_manager.get_extension_path.return_value = '/test/path'
+            mock_get_layer.return_value = mock_compat
             setting.extension_base = ""
             setting._initialize_extension_base()
             self.assertEqual(setting.extension_base, '/test/path')
 
     def test_setting_load_data_with_compatibility(self):
         """Test load_data function with compatibility layer."""
-        from civitai_manager_libs import setting
-
-        mock_compat = Mock()
-        mock_compat.path_manager.get_model_path.side_effect = lambda x: f'/test/models/{x}'
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
+        # Patch get_compatibility_layer 目標需用完整路徑
+        patch_path = (
+            'scripts.civitai_manager_libs.compat.compat_layer'
+            '.CompatibilityLayer.get_compatibility_layer'
+        )
+        with patch(patch_path) as mock_get_layer:
+            mock_compat = Mock()
+            mock_compat.path_manager.get_model_path.side_effect = lambda x: f'/test/models/{x}'
+            mock_get_layer.return_value = mock_compat
             with patch.object(setting, 'load', return_value={}):
                 setting.load_data()
             self.assertEqual(setting.model_folders['TextualInversion'], '/test/models/embeddings')
@@ -198,20 +189,30 @@ class TestUtilModuleCompatibility(unittest.TestCase):
 
     def test_util_printD_with_compatibility_layer(self):
         """Test printD function with compatibility layer."""
-        from civitai_manager_libs import util
-
-        mock_compat = Mock()
-        mock_compat.config_manager.get.return_value = True
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
+        # Patch get_compatibility_layer 目標需用完整路徑
+        patch_path = (
+            'scripts.civitai_manager_libs.compat.compat_layer'
+            '.CompatibilityLayer.get_compatibility_layer'
+        )
+        with patch(patch_path) as mock_get_layer:
+            import scripts.civitai_manager_libs.util as util
+            mock_compat = Mock()
+            mock_compat.config_manager.get.return_value = True
+            mock_get_layer.return_value = mock_compat
             with patch('builtins.print') as mock_print:
                 util.printD("test message")
                 mock_print.assert_called_once()
 
     def test_util_printD_without_compatibility_layer(self):
         """Test printD function without compatibility layer."""
-        from civitai_manager_libs import util
+        # Patch get_compatibility_layer 目標需用完整路徑
+        patch_path = (
+            'scripts.civitai_manager_libs.compat.compat_layer'
+            '.CompatibilityLayer.get_compatibility_layer'
+        )
+        with patch(patch_path, return_value=None):
+            import scripts.civitai_manager_libs.util as util
 
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=None):
             with patch('builtins.print') as mock_print:
                 util.printD("test message")
                 mock_print.assert_called_once()

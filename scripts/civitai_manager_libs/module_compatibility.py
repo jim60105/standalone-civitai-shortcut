@@ -5,16 +5,9 @@ This module provides initialization functions to set up compatibility layer
 for all modules that need it.
 """
 
+import sys
 from . import setting
 from . import util
-from . import civitai_shortcut_action
-from . import model_action
-from . import recipe_action
-from . import ishortcut_action
-from . import civitai_gallery_action
-from . import setting_action
-from . import prompt_ui
-from .compat.compat_layer import CompatibilityLayer
 
 
 def initialize_compatibility_layer(compat_layer):
@@ -28,13 +21,23 @@ def initialize_compatibility_layer(compat_layer):
     setting.set_compatibility_layer(compat_layer)
 
     # Set compatibility layer for action modules
-    civitai_shortcut_action.set_compatibility_layer(compat_layer)
-    model_action.set_compatibility_layer(compat_layer)
-    recipe_action.set_compatibility_layer(compat_layer)
-    ishortcut_action.set_compatibility_layer(compat_layer)
-    civitai_gallery_action.set_compatibility_layer(compat_layer)
-    setting_action.set_compatibility_layer(compat_layer)
-    prompt_ui.set_compatibility_layer(compat_layer)
+    modules_to_inject = [
+        'scripts.civitai_manager_libs.setting',
+        'scripts.civitai_manager_libs.setting_action',
+        'scripts.civitai_manager_libs.civitai_shortcut_action',
+        'scripts.civitai_manager_libs.civitai_gallery_action',
+        'scripts.civitai_manager_libs.model_action',
+        'scripts.civitai_manager_libs.ishortcut_action',
+        'scripts.civitai_manager_libs.prompt_ui',
+    ]
+
+    for module_name in modules_to_inject:
+        if module_name in sys.modules:
+            module = sys.modules[module_name]
+            if hasattr(module, 'set_compatibility_layer'):
+                module.set_compatibility_layer(compat_layer)
+            # Also set as global variable for modules that expect it
+            setattr(module, '_compat_layer', compat_layer)
 
     # Initialize settings with compatibility layer; ignore errors to support mock layers
     try:
@@ -43,23 +46,3 @@ def initialize_compatibility_layer(compat_layer):
         pass
 
     util.printD("Compatibility layer initialized for all modules")
-
-
-def get_compatibility_status():
-    """
-    Get the status of compatibility layer initialization.
-
-    Returns:
-        dict: Status information about compatibility layer
-    """
-    compat_layer = CompatibilityLayer.get_compatibility_layer()
-
-    if not compat_layer:
-        return {"status": "not_initialized", "mode": "unknown", "webui_available": False}
-
-    return {
-        "status": "initialized",
-        "mode": compat_layer.mode,
-        "webui_available": compat_layer.is_webui_mode(),
-        "standalone_mode": compat_layer.is_standalone_mode(),
-    }
