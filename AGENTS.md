@@ -24,56 +24,33 @@
   * Ensure compatibility with both AUTOMATIC1111 WebUI extension mode and standalone execution mode.
   * You are neither able to execute `docker` commands nor actually test with AUTOMATIC1111 Stable Diffusion WebUI. Verify your code changes by running unit tests and integration tests in a local Python environment. Ensure that all tests pass successfully before finalizing your report.
   * Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Use the `.flake8` configuration file in the root directory for linting.
-  * Write a report following `.github/reports/README.md` and `.github/reports/REPORT_TEMPLATE.md`. Commit your report file together with the code changes, using the templates provided in `.github/reports/`.
+  * Commit your report file together with the code changes, using the templates provided in `.github/reports/`.
   * Git commit after completing your work, using the conventional commit format for the title and a brief description in the body. Always commit with `--signoff` and `--no-gpg-sign`. Write the commit in English.
 
 ---
 
-# Detailed Guidelines for Product Backlogs
+# Project Planning Structure
 
-Each product backlog entry encapsulates the complete technical design and implementation blueprint for transitioning from WebUI-dependent extension to dual-mode (WebUI + Standalone) application:
+The project development planning is organized in the `.github/plans` directory with the following structure:
 
-1. **[Dependency Analysis and Mapping](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/001-dependency-analysis-and-mapping.md)**
+## Backlogs
+The `backlogs` folder contains detailed technical specifications and implementation guidelines for each development phase. These serve as comprehensive references for completed features and ongoing development:
 
-   * Complete analysis of AUTOMATIC1111 WebUI dependencies and creation of functionality mapping table
+* **[Backlogs Directory](.github/plans/**/)**
+  * Each directory represents a specific backlog plan.
+  * Contains numbered implementation guides from project foundation to deployment
+  * Each backlog includes complete technical design and implementation details
+  * Serves as historical reference for completed development work
 
-2. **[Abstract Interface Design](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/002-abstract-interface-design.md)**
+## Bug Reports and Enhancements
+The `bugs` folder contains identified issues, enhancements, and optimization opportunities:
 
-   * Design and implementation of compatibility layer architecture for dual-mode execution
+* **[Bugs Directory](.github/plans/bugs/)**
+  * Contains detailed bug reports and enhancement requests
+  * Each item includes problem description, reproduction steps, and proposed solutions
+  * Serves as task queue for ongoing maintenance and improvements
 
-3. **[WebUI Function Simulation](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/003-webui-function-simulation.md)**
-
-   * Implementation of WebUI-equivalent functionality for standalone mode operation
-
-4. **[Standalone Entry Point](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/004-standalone-entry-point.md)**
-
-   * Development of independent application entry point and command-line interface
-
-5. **[Module Dependency Modification](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/005-module-dependency-modification.md)**
-
-   * Refactoring existing modules to utilize the new compatibility layer architecture
-
-6. **[UI Components Dual-Mode Adaptation](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/006-ui-components-dual-mode-adaptation.md)**
-
-   * Adaptation of all Gradio UI components for both WebUI integration and standalone execution
-
-7. **[Testing and Quality Assurance](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/007-testing-and-quality-assurance.md)**
-
-   * Comprehensive testing framework for both execution modes and quality validation
-
-8. **[Deployment and Distribution Preparation](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/008-deployment-and-distribution-preparation.md)**
-
-   * Docker containerization, CI/CD pipeline setup, and distribution package preparation
-
-9. **[Documentation and User Guide](.github/plans/civitai-shortcut-independent-execution-development-plan/backlogs/009-documentation-and-user-guide.md)**
-
-   * Docker deployment documentation and comprehensive user guides for both execution modes
-
-# Work Report Protocol
-
-Development progress for this project is systematically tracked within the `.github/reports` directory. Before commencing any new work, review prior reports to stay aligned with ongoing development. Treat all past reports as immutable references—do not edit or revise them under any circumstance. Upon the completion of each task, you are required to generate a new comprehensive work report. Refer to the naming conventions of existing files to determine an appropriate filename.
-
-Your report must include a detailed account of the work performed, encompassing all relevant code modifications and corresponding test outcomes.
+---
 
 ## Project Overview
 
@@ -206,10 +183,17 @@ tests/                        # Test suite
 
 ## Debugging and Logging
 
-* Use `util.printD()` for structured debug output.
+* Use `util.printD()` for debug output.
 * All debug messages should be prefixed with module identifiers.
 * Network failures must yield detailed error diagnostics.
 * File I/O exceptions should include full path context in logs.
+
+# Work Report Protocol
+
+Development progress for this project is systematically tracked within the `.github/reports` directory. Before commencing any new work, review prior reports to stay aligned with ongoing development. Treat all past reports as immutable references—do not edit or revise them under any circumstance. Upon the completion of each task, you are required to generate a new comprehensive work report. Refer to the naming conventions of existing files to determine an appropriate filename. 
+
+Your report must include a detailed account of the work performed, encompassing all relevant code modifications and corresponding test outcomes.
+Please write the report in complete accordance with `.github/reports/README.md` and `.github/reports/REPORT_TEMPLATE.md`.
 
 ---
 

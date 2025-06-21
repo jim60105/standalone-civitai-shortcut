@@ -25,6 +25,31 @@
   * Write a report following `.github/reports/README.md` and `.github/reports/REPORT_TEMPLATE.md`. Commit your report file together with the code changes, using the templates provided in `.github/reports/`.
   * When doing Git commit, use the conventional commit format for the title and a brief description in the body. Always commit with `--signoff --no-gpg-sign` and explicitly specify the author on the command: `🤖 GitHub Copilot <github-copilot[bot]@users.noreply.github.com>`. Write the commit in English.
 
+---
+
+# Project Planning Structure
+
+The project development planning is organized in the `.github/plans` directory with the following structure:
+
+## Backlogs
+The `backlogs` folder contains detailed technical specifications and implementation guidelines for each development phase. These serve as comprehensive references for completed features and ongoing development:
+
+* **[Backlogs Directory](.github/plans/**/)**
+  * Each directory represents a specific backlog plan.
+  * Contains numbered implementation guides from project foundation to deployment
+  * Each backlog includes complete technical design and implementation details
+  * Serves as historical reference for completed development work
+
+## Bug Reports and Enhancements
+The `bugs` folder contains identified issues, enhancements, and optimization opportunities:
+
+* **[Bugs Directory](.github/plans/bugs/)**
+  * Contains detailed bug reports and enhancement requests
+  * Each item includes problem description, reproduction steps, and proposed solutions
+  * Serves as task queue for ongoing maintenance and improvements
+
+---
+
 ## Project Overview
 
 This repository contains a custom script extension purpose-built for the [AUTOMATIC1111 Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui). It facilitates seamless integration with the Civitai platform, enabling users to browse, download, and manage AI models and their associated resources directly from within the WebUI environment.
@@ -160,6 +185,13 @@ tests/                        # Test suite
 * All debug messages should be prefixed with module identifiers.
 * Network failures must yield detailed error diagnostics.
 * File I/O exceptions should include full path context in logs.
+
+# Work Report Protocol
+
+Development progress for this project is systematically tracked within the `.github/reports` directory. Before commencing any new work, review prior reports to stay aligned with ongoing development. Treat all past reports as immutable references—do not edit or revise them under any circumstance. Upon the completion of each task, you are required to generate a new comprehensive work report. Refer to the naming conventions of existing files to determine an appropriate filename. 
+
+Your report must include a detailed account of the work performed, encompassing all relevant code modifications and corresponding test outcomes.
+Please write the report in complete accordance with `.github/reports/README.md` and `.github/reports/REPORT_TEMPLATE.md`.
 
 ---
 
