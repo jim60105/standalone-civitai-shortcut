@@ -114,7 +114,7 @@ model_folders = {
     'Other': os.path.join("models", "Other"),
     'VAE': os.path.join("models", "VAE"),
     'ANLORA': os.path.join("extensions", "sd-webui-additional-networks", "models", "lora"),
-    'Unknown': os.path.join("models", "Unkonwn"),
+    'Unknown': os.path.join("models", "Unknown"),
 }
 
 # UI 쪽에서 변환할때 쓰인다.

@@ -206,8 +206,8 @@ data/models/Poses/*
 !data/models/Poses/.gitkeep
 data/models/Other/*
 !data/models/Other/.gitkeep
-data/models/Unkonwn/*
-!data/models/Unkonwn/.gitkeep
+data/models/Unknown/*
+!data/models/Unknown/.gitkeep
 outputs
 .coverage
 setting.json
