@@ -539,17 +539,32 @@ def on_personal_note_save_click(modelid, note):
 
 
 def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
+    util.printD("[ISHORTCUT] on_send_to_recipe_click called")
+    util.printD(f"[ISHORTCUT]   model_id: {repr(model_id)}")
+    util.printD(f"[ISHORTCUT]   img_file_info: {repr(img_file_info)}")
+    util.printD(f"[ISHORTCUT]   img_index: {repr(img_index)}")
+    util.printD(f"[ISHORTCUT]   civitai_images: {repr(civitai_images)}")
+    
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
         # reference shortcut id를 넣어줄수 있다.
         recipe_image = setting.set_imagefn_and_shortcutid_for_recipe_image(
             model_id, civitai_images[int(img_index)]
         )
-        # util.printD(recipe_image)
-        # util.printD(setting.get_image_and_shortcutid_from_recipe_image(recipe_image))
-        # recipe_image = civitai_images[int(img_index)]
-        return recipe_image
-    except:
+        util.printD(f"[ISHORTCUT]   recipe_image: {repr(recipe_image)}")
+        
+        # Pass parsed generation parameters directly when available
+        if img_file_info:
+            result = f"{recipe_image}\n{img_file_info}"
+            util.printD(f"[ISHORTCUT] Returning combined data: {repr(result)}")
+            return result
+        else:
+            util.printD(
+                f"[ISHORTCUT] No img_file_info, returning recipe_image only: {repr(recipe_image)}"
+            )
+            return recipe_image
+    except Exception as e:
+        util.printD(f"[ISHORTCUT] Exception in on_send_to_recipe_click: {e}")
         return gr.update(visible=False)
 
 

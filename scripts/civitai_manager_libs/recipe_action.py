@@ -284,11 +284,15 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     recipe_drop_image_upload = recipe_drop_image.upload(
         fn=on_recipe_drop_image_upload,
         inputs=[recipe_drop_image],
-        outputs=[
-            recipe_image,
-            recipe_generate_data,
-        ],
+        outputs=[recipe_image, recipe_generate_data],
         show_progress=False,
+    )
+
+    # Process PNG info asynchronously on generate_data change
+    recipe_generate_data_change = recipe_generate_data.change(
+        fn=on_recipe_generate_data_change,
+        inputs=[recipe_drop_image],
+        outputs=[recipe_prompt, recipe_negative, recipe_option, recipe_output],
     )
 
     # shortcut information 에서 넘어올때는 새로운 레시피를 만든다.
@@ -304,6 +308,10 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
             civitai_tabs,
             recipe_prompt_tabs,
             recipe_reference_tabs,
+            recipe_prompt,
+            recipe_negative,
+            recipe_option,
+            recipe_output,
             # 새 레시피 상태로 만든다.
             recipe_name,
             recipe_desc,
@@ -316,18 +324,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
             reference_gallery,
             refresh_reference_gallery,
         ],
-        cancels=recipe_drop_image_upload,
-    )
-
-    recipe_generate_data.change(
-        fn=on_recipe_generate_data_change,
-        inputs=[recipe_drop_image],
-        outputs=[
-            recipe_prompt,
-            recipe_negative,
-            recipe_option,
-            recipe_output,
-        ],
+        cancels=[recipe_drop_image_upload, recipe_generate_data_change],
     )
 
     refresh_recipe.change(
@@ -674,6 +671,8 @@ def on_recipe_prompt_tabs_select(evt: gr.SelectData):
 
 
 def analyze_prompt(generate_data):
+    util.printD(f"[RECIPE] analyze_prompt called with: {repr(generate_data)}")
+    
     positivePrompt = None
     negativePrompt = None
     options = None
@@ -682,25 +681,37 @@ def analyze_prompt(generate_data):
     if generate_data:
         generate = None
         try:
+            util.printD("[RECIPE] Calling prompt.parse_data")
             generate = prompt.parse_data(generate_data)
-        except:
-            pass
+            util.printD(f"[RECIPE] prompt.parse_data returned: {generate}")
+        except Exception as e:
+            util.printD(f"[RECIPE] Exception in prompt.parse_data: {e}")
 
         if generate:
             if "options" in generate:
                 options = [f"{k}:{v}" for k, v in generate['options'].items()]
                 if options:
                     options = ", ".join(options)
+                util.printD(f"[RECIPE] Processed options: {repr(options)}")
 
             if 'prompt' in generate:
                 positivePrompt = generate['prompt']
+                util.printD(f"[RECIPE] Extracted positive prompt: {repr(positivePrompt)}")
 
             if 'negativePrompt' in generate:
                 negativePrompt = generate['negativePrompt']
+                util.printD(f"[RECIPE] Extracted negative prompt: {repr(negativePrompt)}")
+        else:
+            util.printD("[RECIPE] generate is None after parse_data")
 
         gen_string = generate_prompt(positivePrompt, negativePrompt, options)
+        util.printD(f"[RECIPE] Generated string: {repr(gen_string)}")
+    else:
+        util.printD("[RECIPE] generate_data is empty")
 
-    return positivePrompt, negativePrompt, options, gen_string
+    result = (positivePrompt, negativePrompt, options, gen_string)
+    util.printD(f"[RECIPE] analyze_prompt returning: {result}")
+    return result
 
 
 def generate_prompt(prompt, negativePrompt, Options):
@@ -768,67 +779,113 @@ def get_recipe_information(select_name):
 
 
 def on_recipe_input_change(recipe_input, shortcuts):
+    util.printD(f"[RECIPE] on_recipe_input_change called with: {repr(recipe_input)}")
+    
     current_time = datetime.datetime.now()
+    param_data = None
     if recipe_input:
+        util.printD("[RECIPE] recipe_input is not empty, processing...")
         shortcuts = None
         recipe_image = None
-        # recipe_input의 넘어오는 데이터 형식을 [shortcut_id:파일네임] 으로 하면
-        # reference_shortcuts 에 shortcut id를 넣어줄수 있다.
+        positivePrompt = None
+        negativePrompt = None
+        options = None
+        gen_string = None
+        # recipe_input may include both image info and parsed parameters separated by newline
         try:
-            shortcutid, recipe_image = setting.get_imagefn_and_shortcutid_from_recipe_image(
-                recipe_input
-            )
-            if shortcutid:
-                shortcuts = list()
-                shortcuts.append(shortcutid)
-        except:
-            pass
+            if isinstance(recipe_input, str) and '\n' in recipe_input:
+                util.printD("[RECIPE] Found newline in recipe_input, splitting...")
+                first_line, param_data = recipe_input.split('\n', 1)
+                util.printD(f"[RECIPE] first_line: {repr(first_line)}")
+                util.printD(f"[RECIPE] param_data: {repr(param_data)}")
+                
+                shortcutid, image_fn = first_line.split(':', 1)
+                recipe_image = image_fn
+                util.printD(f"[RECIPE] shortcutid: {repr(shortcutid)}, image_fn: {repr(image_fn)}")
+                
+                util.printD("[RECIPE] Calling analyze_prompt with param_data...")
+                positivePrompt, negativePrompt, options, gen_string = analyze_prompt(param_data)
+                util.printD("[RECIPE] analyze_prompt results:")
+                util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
+                util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
+                util.printD(f"[RECIPE]   options: {repr(options)}")
+                util.printD(f"[RECIPE]   gen_string: {repr(gen_string)}")
+                
+                shortcuts = [shortcutid]
+            else:
+                util.printD(
+                    "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
+                )
+                shortcutid, recipe_image = setting.get_imagefn_and_shortcutid_from_recipe_image(
+                    recipe_input
+                )
+                if shortcutid:
+                    shortcuts = [shortcutid]
+        except Exception as e:
+            util.printD(f"[RECIPE] Exception in recipe_input processing: {e}")
+
+        util.printD("[RECIPE] Final values before return:")
+        util.printD(f"[RECIPE]   recipe_image: {repr(recipe_image)}")
+        util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
+        util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
+        util.printD(f"[RECIPE]   options: {repr(options)}")
+        util.printD(f"[RECIPE]   param_data: {repr(param_data)}")
+        util.printD(f"[RECIPE]   shortcuts: {shortcuts}")
 
         return (
-            gr.update(value=""),
-            recipe_image,
-            recipe_image,
-            current_time,
-            None,
-            gr.update(selected="Recipe"),
-            gr.update(selected="Prompt"),
-            gr.update(selected="reference_image"),
-            gr.update(value=""),
-            gr.update(value=""),
+            gr.update(value=""),  # selected_recipe_name
+            recipe_image,  # recipe_drop_image
+            recipe_image,  # recipe_image
+            current_time,  # recipe_generate_data
+            None,  # recipe_input
+            gr.update(selected="Recipe"),  # civitai_tabs
+            gr.update(selected="Prompt"),  # recipe_prompt_tabs
+            gr.update(selected="reference_image"),  # recipe_reference_tabs
+            gr.update(value=positivePrompt or ""),  # recipe_prompt
+            gr.update(value=negativePrompt or ""),  # recipe_negative
+            gr.update(value=options or ""),  # recipe_option
+            gr.update(value=param_data or ""),  # recipe_output (raw generate info)
+            gr.update(value=""),  # recipe_name
+            gr.update(value=""),  # recipe_desc
             gr.update(
                 choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
                 value=setting.PLACEHOLDER,
-            ),
-            gr.update(label=setting.NEWRECIPE),
-            gr.update(visible=True),
-            gr.update(visible=False),
-            shortcuts,
-            None,
-            None,
-            current_time,
+            ),  # recipe_classification
+            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+            gr.update(visible=True),  # recipe_create_btn
+            gr.update(visible=False),  # recipe_update_btn
+            shortcuts or [],  # reference_shortcuts
+            None,  # reference_modelid
+            [],  # reference_gallery
+            current_time,  # refresh_reference_gallery
         )
 
     return (
-        gr.update(visible=False),
-        gr.update(visible=True),
-        gr.update(visible=True),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(selected="Recipe"),
-        gr.update(selected="Prompt"),
-        gr.update(selected="reference_image"),
-        gr.update(value=""),
-        gr.update(value=""),
+        gr.update(visible=False),  # selected_recipe_name
+        gr.update(visible=True),  # recipe_drop_image
+        gr.update(visible=True),  # recipe_image
+        gr.update(visible=False),  # recipe_generate_data
+        gr.update(visible=False),  # recipe_input
+        gr.update(selected="Recipe"),  # civitai_tabs
+        gr.update(selected="Prompt"),  # recipe_prompt_tabs
+        gr.update(selected="reference_image"),  # recipe_reference_tabs
+        gr.update(value=""),  # recipe_prompt
+        gr.update(value=""),  # recipe_negative
+        gr.update(value=""),  # recipe_option
+        gr.update(value=""),  # recipe_output
+        gr.update(value=""),  # recipe_name
+        gr.update(value=""),  # recipe_desc
         gr.update(
-            choices=[setting.PLACEHOLDER] + recipe.get_classifications(), value=setting.PLACEHOLDER
-        ),
-        gr.update(label=setting.NEWRECIPE),
-        gr.update(visible=True),
-        gr.update(visible=False),
-        shortcuts,
-        None,
-        None,
-        gr.update(visible=False),
+            choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+            value=setting.PLACEHOLDER,
+        ),  # recipe_classification
+        gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+        gr.update(visible=True),  # recipe_create_btn
+        gr.update(visible=False),  # recipe_update_btn
+        [],  # reference_shortcuts
+        None,  # reference_modelid
+        [],  # reference_gallery
+        current_time,  # refresh_reference_gallery
     )
 
 
