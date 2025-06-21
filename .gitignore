@@ -208,6 +208,7 @@ data/models/Other/*
 !data/models/Other/.gitkeep
 data/models/Unkonwn/*
 !data/models/Unkonwn/.gitkeep
+outputs
 .coverage
 setting.json
 model_folders.json

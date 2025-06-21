@@ -1,9 +1,11 @@
 # Civitai Shortcut Standalone Mode Requirements
 
+setuptools==69.5.1
 gradio==3.41.2
+audioop-lts<1.0; python_version >= "3.13" #it provides support for 'audioop' module removed in latest python version used by pydub
 requests>=2.25.0
-Pillow==9.5.0
-pillow-avif-plugin==1.4.3
+Pillow>=9.5.0
+pillow-avif-plugin>=1.4.3
 numpy==1.26.2
 packaging>=20.0
 pydantic==2.8.2
