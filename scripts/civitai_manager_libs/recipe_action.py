@@ -672,7 +672,7 @@ def on_recipe_prompt_tabs_select(evt: gr.SelectData):
 
 def analyze_prompt(generate_data):
     util.printD(f"[RECIPE] analyze_prompt called with: {repr(generate_data)}")
-    
+
     positivePrompt = None
     negativePrompt = None
     options = None
@@ -780,99 +780,77 @@ def get_recipe_information(select_name):
 
 def on_recipe_input_change(recipe_input, shortcuts):
     util.printD(f"[RECIPE] on_recipe_input_change called with: {repr(recipe_input)}")
-    
+
+    # If recipe_input is an empty string, return immediately with no UI update (keep all states)
+    if recipe_input is None or recipe_input == "":
+        util.printD(
+            "[RECIPE] on_recipe_input_change received empty string, returning without changes."
+        )
+        return tuple(gr.update() for _ in range(22))
+
     current_time = datetime.datetime.now()
     param_data = None
-    if recipe_input:
-        util.printD("[RECIPE] recipe_input is not empty, processing...")
-        shortcuts = None
-        recipe_image = None
-        positivePrompt = None
-        negativePrompt = None
-        options = None
-        gen_string = None
-        # recipe_input may include both image info and parsed parameters separated by newline
-        try:
-            if isinstance(recipe_input, str) and '\n' in recipe_input:
-                util.printD("[RECIPE] Found newline in recipe_input, splitting...")
-                first_line, param_data = recipe_input.split('\n', 1)
-                util.printD(f"[RECIPE] first_line: {repr(first_line)}")
-                util.printD(f"[RECIPE] param_data: {repr(param_data)}")
-                
-                shortcutid, image_fn = first_line.split(':', 1)
-                recipe_image = image_fn
-                util.printD(f"[RECIPE] shortcutid: {repr(shortcutid)}, image_fn: {repr(image_fn)}")
-                
-                util.printD("[RECIPE] Calling analyze_prompt with param_data...")
-                positivePrompt, negativePrompt, options, gen_string = analyze_prompt(param_data)
-                util.printD("[RECIPE] analyze_prompt results:")
-                util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
-                util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
-                util.printD(f"[RECIPE]   options: {repr(options)}")
-                util.printD(f"[RECIPE]   gen_string: {repr(gen_string)}")
-                
+    util.printD("[RECIPE] recipe_input is not empty, processing...")
+    shortcuts = None
+    recipe_image = None
+    positivePrompt = None
+    negativePrompt = None
+    options = None
+    gen_string = None
+    # recipe_input may include both image info and parsed parameters separated by newline
+    try:
+        if isinstance(recipe_input, str) and '\n' in recipe_input:
+            util.printD("[RECIPE] Found newline in recipe_input, splitting...")
+            first_line, param_data = recipe_input.split('\n', 1)
+            util.printD(f"[RECIPE] first_line: {repr(first_line)}")
+            util.printD(f"[RECIPE] param_data: {repr(param_data)}")
+
+            shortcutid, image_fn = first_line.split(':', 1)
+            recipe_image = image_fn
+            util.printD(f"[RECIPE] shortcutid: {repr(shortcutid)}, image_fn: {repr(image_fn)}")
+
+            util.printD("[RECIPE] Calling analyze_prompt with param_data...")
+            positivePrompt, negativePrompt, options, gen_string = analyze_prompt(param_data)
+            util.printD("[RECIPE] analyze_prompt results:")
+            util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
+            util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
+            util.printD(f"[RECIPE]   options: {repr(options)}")
+            util.printD(f"[RECIPE]   gen_string: {repr(gen_string)}")
+
+            shortcuts = [shortcutid]
+        else:
+            util.printD(
+                "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
+            )
+            shortcutid, recipe_image = setting.get_imagefn_and_shortcutid_from_recipe_image(
+                recipe_input
+            )
+            if shortcutid:
                 shortcuts = [shortcutid]
-            else:
-                util.printD(
-                    "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
-                )
-                shortcutid, recipe_image = setting.get_imagefn_and_shortcutid_from_recipe_image(
-                    recipe_input
-                )
-                if shortcutid:
-                    shortcuts = [shortcutid]
-        except Exception as e:
-            util.printD(f"[RECIPE] Exception in recipe_input processing: {e}")
+    except Exception as e:
+        util.printD(f"[RECIPE] Exception in recipe_input processing: {e}")
 
-        util.printD("[RECIPE] Final values before return:")
-        util.printD(f"[RECIPE]   recipe_image: {repr(recipe_image)}")
-        util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
-        util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
-        util.printD(f"[RECIPE]   options: {repr(options)}")
-        util.printD(f"[RECIPE]   param_data: {repr(param_data)}")
-        util.printD(f"[RECIPE]   shortcuts: {shortcuts}")
-
-        return (
-            gr.update(value=""),  # selected_recipe_name
-            recipe_image,  # recipe_drop_image
-            recipe_image,  # recipe_image
-            current_time,  # recipe_generate_data
-            None,  # recipe_input
-            gr.update(selected="Recipe"),  # civitai_tabs
-            gr.update(selected="Prompt"),  # recipe_prompt_tabs
-            gr.update(selected="reference_image"),  # recipe_reference_tabs
-            gr.update(value=positivePrompt or ""),  # recipe_prompt
-            gr.update(value=negativePrompt or ""),  # recipe_negative
-            gr.update(value=options or ""),  # recipe_option
-            gr.update(value=param_data or ""),  # recipe_output (raw generate info)
-            gr.update(value=""),  # recipe_name
-            gr.update(value=""),  # recipe_desc
-            gr.update(
-                choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                value=setting.PLACEHOLDER,
-            ),  # recipe_classification
-            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
-            gr.update(visible=True),  # recipe_create_btn
-            gr.update(visible=False),  # recipe_update_btn
-            shortcuts or [],  # reference_shortcuts
-            None,  # reference_modelid
-            [],  # reference_gallery
-            current_time,  # refresh_reference_gallery
-        )
+    util.printD("[RECIPE] Final values before return:")
+    util.printD(f"[RECIPE]   recipe_image: {repr(recipe_image)}")
+    util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
+    util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
+    util.printD(f"[RECIPE]   options: {repr(options)}")
+    util.printD(f"[RECIPE]   param_data: {repr(param_data)}")
+    util.printD(f"[RECIPE]   shortcuts: {shortcuts}")
 
     return (
-        gr.update(visible=False),  # selected_recipe_name
-        gr.update(visible=True),  # recipe_drop_image
-        gr.update(visible=True),  # recipe_image
-        gr.update(visible=False),  # recipe_generate_data
-        gr.update(visible=False),  # recipe_input
+        gr.update(value=""),  # selected_recipe_name
+        recipe_image,  # recipe_drop_image
+        recipe_image,  # recipe_image
+        gr.update(),  # recipe_generate_data
+        gr.update(),  # recipe_input
         gr.update(selected="Recipe"),  # civitai_tabs
         gr.update(selected="Prompt"),  # recipe_prompt_tabs
         gr.update(selected="reference_image"),  # recipe_reference_tabs
-        gr.update(value=""),  # recipe_prompt
-        gr.update(value=""),  # recipe_negative
-        gr.update(value=""),  # recipe_option
-        gr.update(value=""),  # recipe_output
+        gr.update(value=positivePrompt or ""),  # recipe_prompt
+        gr.update(value=negativePrompt or ""),  # recipe_negative
+        gr.update(value=options or ""),  # recipe_option
+        gr.update(value=param_data or ""),  # recipe_output (raw generate info)
         gr.update(value=""),  # recipe_name
         gr.update(value=""),  # recipe_desc
         gr.update(
@@ -882,8 +860,8 @@ def on_recipe_input_change(recipe_input, shortcuts):
         gr.update(label=setting.NEWRECIPE),  # recipe_title_name
         gr.update(visible=True),  # recipe_create_btn
         gr.update(visible=False),  # recipe_update_btn
-        [],  # reference_shortcuts
-        None,  # reference_modelid
+        shortcuts or [],  # reference_shortcuts
+        gr.update(),  # reference_modelid
         [],  # reference_gallery
         current_time,  # refresh_reference_gallery
     )

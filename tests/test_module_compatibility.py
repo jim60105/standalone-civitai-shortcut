@@ -196,6 +196,7 @@ class TestUtilModuleCompatibility(unittest.TestCase):
         )
         with patch(patch_path) as mock_get_layer:
             import scripts.civitai_manager_libs.util as util
+
             mock_compat = Mock()
             mock_compat.config_manager.get.return_value = True
             mock_get_layer.return_value = mock_compat
