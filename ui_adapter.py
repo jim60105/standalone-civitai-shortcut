@@ -88,17 +88,12 @@ def _inject_compatibility_layer(compat_layer):
     """
     modules_to_inject = [
         'scripts.civitai_manager_libs.civitai_shortcut_action',
-        'scripts.civitai_manager_libs.recipe_action',
-        'scripts.civitai_manager_libs.classification_action',
+        'scripts.civitai_manager_libs.civitai_gallery_action',
         'scripts.civitai_manager_libs.setting_action',
-        'scripts.civitai_manager_libs.scan_action',
         'scripts.civitai_manager_libs.model_action',
+        'scripts.civitai_manager_libs.prompt_ui',
         'scripts.civitai_manager_libs.setting',
-        'scripts.civitai_manager_libs.model',
-        'scripts.civitai_manager_libs.ishortcut',
-        'scripts.civitai_manager_libs.recipe',
-        'scripts.civitai_manager_libs.classification',
-        'scripts.civitai_manager_libs.util',
+        'scripts.civitai_manager_libs.ishortcut_action',
     ]
 
     for module_name in modules_to_inject:
