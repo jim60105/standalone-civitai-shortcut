@@ -462,8 +462,12 @@ def on_ui(refresh_sc_browser, recipe_input):
     )
 
     # refresh_btn.click(lambda :datetime.datetime.now(),None,refresh_information,cancels=gallery)
-    saved_gallery.select(on_gallery_select, saved_images, [img_index, hidden, info_tabs])
-    hidden.change(on_civitai_hidden_change, [hidden, img_index], [img_file_info])
+    saved_gallery.select(
+        on_gallery_select, saved_images, [img_index, hidden, info_tabs, img_file_info]
+    )
+    # Note: hidden.change is commented out because we handle all PNG info extraction
+    # in on_gallery_select
+    # hidden.change(on_civitai_hidden_change, [hidden, img_index], [img_file_info])
     saved_openfolder.click(on_open_folder_click, [selected_model_id, selected_version_id], None)
     vs_folder.change(lambda x: gr.update(visible=x), vs_folder, vs_foldername)
     change_preview_image.click(
@@ -860,7 +864,102 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
 
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):
-    return evt.index, civitai_images[evt.index], gr.update(selected="Image_Information")
+    """Extract generation parameters from PNG info first, then fallback methods."""
+    selected = civitai_images[evt.index]
+    util.printD(f"[ishortcut_action] on_gallery_select: selected={selected}")
+
+    # Get local file path if URL
+    local_path = selected
+    if isinstance(selected, str) and selected.startswith("http"):
+        from . import setting
+
+        local_path = setting.get_image_url_to_gallery_file(selected)
+        util.printD(
+            f"[ishortcut_action] on_gallery_select: converted URL to local_path={local_path}"
+        )
+
+    # Extract generation parameters - try PNG info first
+    png_info = ""
+    try:
+        if isinstance(local_path, str) and os.path.exists(local_path):
+            # First try to extract PNG info from the image file itself
+            util.printD(f"[ishortcut_action] Trying to extract PNG info from: {local_path}")
+
+            from PIL import Image
+
+            try:
+                with Image.open(local_path) as img:
+                    if hasattr(img, 'text') and img.text:
+                        util.printD(
+                            f"[ishortcut_action] Found PNG text info: {list(img.text.keys())}"
+                        )
+                        # Check for common PNG info keys
+                        for key in [
+                            'parameters',
+                            'Parameters',
+                            'generation_info',
+                            'Generation Info',
+                        ]:
+                            if key in img.text:
+                                png_info = img.text[key]
+                                util.printD(
+                                    f"[ishortcut_action] Extracted PNG info from key "
+                                    f"'{key}': {len(png_info)} chars"
+                                )
+                                break
+                    else:
+                        util.printD("[ishortcut_action] No PNG text info found in image")
+            except Exception as e:
+                util.printD(f"[ishortcut_action] Error reading PNG info: {e}")
+
+            # If no PNG info found, try compatibility layer fallback
+            if not png_info:
+                util.printD("[ishortcut_action] No PNG info found, trying compatibility layer")
+                compat = CompatibilityLayer.get_compatibility_layer()
+
+                if compat and hasattr(compat, 'metadata_processor'):
+                    try:
+                        result = compat.metadata_processor.extract_png_info(local_path)
+                        if result and result[0]:
+                            png_info = result[0]
+                            util.printD(
+                                f"[ishortcut_action] Extracted via compatibility layer: "
+                                f"{len(png_info)} chars"
+                            )
+                    except Exception as e:
+                        util.printD(f"[ishortcut_action] Error with compatibility layer: {e}")
+
+            # Final fallback: WebUI direct access
+            if not png_info:
+                util.printD("[ishortcut_action] Trying WebUI direct access")
+                extras_module = import_manager.get_webui_module('extras')
+                if extras_module and hasattr(extras_module, 'run_pnginfo'):
+                    try:
+                        info1, info2, info3 = extras_module.run_pnginfo(local_path)
+                        if info1:
+                            png_info = info1
+                            util.printD(
+                                f"[ishortcut_action] Extracted via WebUI: {len(png_info)} chars"
+                            )
+                    except Exception as e:
+                        util.printD(f"[ishortcut_action] Error with WebUI: {e}")
+
+            if not png_info:
+                png_info = "No generation parameters found in this image."
+                util.printD("[ishortcut_action] No generation parameters found")
+            else:
+                util.printD(f"[ishortcut_action] Using PNG info: {len(png_info)} chars")
+        else:
+            util.printD(
+                f"[ishortcut_action] local_path is not string or doesn't exist: {local_path}"
+            )
+            png_info = "Image file not accessible."
+    except Exception as e:
+        png_info = f"Error extracting generation parameters: {e}"
+        util.printD(f"[ishortcut_action] Error: {e}")
+
+    util.printD(f"[ishortcut_action] Final png_info length: {len(png_info)} chars")
+    return evt.index, local_path, gr.update(selected="Image_Information"), png_info
 
 
 def on_civitai_hidden_change(hidden, index):
