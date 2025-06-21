@@ -737,7 +737,24 @@ def on_classification_delete_btn_click(select_name):
 
 
 def on_classification_list_select(evt: gr.SelectData):
-    select_name = evt.value
+    # Handle evt.value which can be either a string or a list [image_url, shortcut_name]
+    if isinstance(evt.value, list) and len(evt.value) > 1:
+        select_name = evt.value[1]  # Use the shortcut name (second element)
+    elif isinstance(evt.value, str):
+        select_name = evt.value
+    else:
+        util.printD(
+            f"[CLASSIFICATION] Unexpected evt.value format in "
+            f"on_classification_list_select: {evt.value}"
+        )
+        return (
+            gr.update(value=""),
+            gr.update(value=""),
+            gr.update(value=""),
+            [],
+            gr.update(value=""),
+        )
+
     info = classification.get_classification_info(select_name)
     shortcuts = classification.get_classification_shortcuts(select_name)
 

@@ -905,7 +905,17 @@ def on_refresh_recipe_change():
 
 def on_recipe_gallery_select(evt: gr.SelectData):
     current_time = datetime.datetime.now()
-    select_name = evt.value
+
+    # Handle evt.value which can be either a string or a list [image_url, shortcut_name]
+    if isinstance(evt.value, list) and len(evt.value) > 1:
+        select_name = evt.value[1]  # Use the shortcut name (second element)
+    elif isinstance(evt.value, str):
+        select_name = evt.value
+    else:
+        util.printD(
+            f"[RECIPE] Unexpected evt.value format in on_recipe_gallery_select: " f"{evt.value}"
+        )
+        return ("", "", "", "", "", "", None, [])
 
     description, Prompt, negativePrompt, options, gen_string, classification, imagefile = (
         get_recipe_information(select_name)
