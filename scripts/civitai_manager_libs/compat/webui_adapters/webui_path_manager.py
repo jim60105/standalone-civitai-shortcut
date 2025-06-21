@@ -1,3 +1,4 @@
+# Mock WebUI modules for test compatibility
 """WebUI Path Manager.
 
 Provides path management using AUTOMATIC1111 WebUI modules.
@@ -8,11 +9,14 @@ import sys
 
 from .. import paths
 from ..interfaces.ipath_manager import IPathManager
+from ..environment_detector import EnvironmentDetector
 
-# 測試環境下 mock modules
-if 'pytest' in sys.modules or 'unittest' in sys.modules:
+if (
+    not EnvironmentDetector.is_webui_mode()
+    and ('pytest' in sys.modules or 'unittest' in sys.modules)
+):
     import types
-
+    print("[Civitai Shortcut] [webui_path_manager] Mocking WebUI modules for test environment.")
     sys.modules['modules'] = types.ModuleType('modules')
     sys.modules['modules.paths'] = types.ModuleType('modules.paths')
     sys.modules['modules.paths_internal'] = types.ModuleType('modules.paths_internal')
