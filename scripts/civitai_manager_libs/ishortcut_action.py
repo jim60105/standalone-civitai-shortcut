@@ -463,7 +463,9 @@ def on_ui(refresh_sc_browser, recipe_input):
 
     # refresh_btn.click(lambda :datetime.datetime.now(),None,refresh_information,cancels=gallery)
     saved_gallery.select(
-        on_gallery_select, saved_images, [img_index, hidden, info_tabs, img_file_info]
+        on_gallery_select,
+        [saved_images, selected_model_id],
+        [img_index, hidden, info_tabs, img_file_info],
     )
     # Note: hidden.change is commented out because we handle all PNG info extraction
     # in on_gallery_select
@@ -863,7 +865,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
             # =========================================================
 
 
-def on_gallery_select(evt: gr.SelectData, civitai_images):
+def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
     """Extract generation parameters from PNG info first, then fallback methods."""
     selected = civitai_images[evt.index]
     util.printD(f"[ishortcut_action] on_gallery_select: selected={selected}")
@@ -915,10 +917,9 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
             # If no PNG info found, try compatibility layer fallback
             if not png_info:
                 util.printD("[ishortcut_action] No PNG info found, trying compatibility layer")
-                compat = CompatibilityLayer.get_compatibility_layer()
-
-                if compat and hasattr(compat, 'metadata_processor'):
-                    try:
+                try:
+                    compat = CompatibilityLayer.get_compatibility_layer()
+                    if compat and hasattr(compat, 'metadata_processor'):
                         result = compat.metadata_processor.extract_png_info(local_path)
                         if result and result[0]:
                             png_info = result[0]
@@ -926,23 +927,80 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
                                 f"[ishortcut_action] Extracted via compatibility layer: "
                                 f"{len(png_info)} chars"
                             )
-                    except Exception as e:
-                        util.printD(f"[ishortcut_action] Error with compatibility layer: {e}")
+                except ImportError as e:
+                    util.printD(f"[ishortcut_action] Compatibility layer import error: {e}")
+                except Exception as e:
+                    util.printD(f"[ishortcut_action] Error with compatibility layer: {e}")
 
             # Final fallback: WebUI direct access
             if not png_info:
                 util.printD("[ishortcut_action] Trying WebUI direct access")
-                extras_module = import_manager.get_webui_module('extras')
-                if extras_module and hasattr(extras_module, 'run_pnginfo'):
+                try:
                     try:
+                        extras_module = import_manager.get_webui_module('extras')
+                    except ImportError as e:
+                        util.printD(f"[ishortcut_action] WebUI import error: {e}")
+                        extras_module = None
+                    if extras_module and hasattr(extras_module, 'run_pnginfo'):
                         info1, info2, info3 = extras_module.run_pnginfo(local_path)
                         if info1:
                             png_info = info1
                             util.printD(
                                 f"[ishortcut_action] Extracted via WebUI: {len(png_info)} chars"
                             )
-                    except Exception as e:
-                        util.printD(f"[ishortcut_action] Error with WebUI: {e}")
+                except Exception as e:
+                    util.printD(f"[ishortcut_action] Error with WebUI: {e}")
+
+            # Last resort: Try Civitai API if we have model ID
+            if not png_info and model_id:
+                util.printD("[ishortcut_action] Trying Civitai API as final fallback")
+                try:
+                    # Always add nsfw param for info query
+                    api_url = (
+                        f"https://civitai.com/api/v1/images?limit=20&modelId={model_id}&nsfw=X"
+                    )
+                    util.printD(f"[ishortcut_action] Querying Civitai API: {api_url}")
+
+                    response = civitai.request_models(api_url)
+                    if response and 'items' in response:
+                        util.printD(
+                            f"[ishortcut_action] Found {len(response['items'])} images from API"
+                        )
+                        # Try to match by filename similarity or just use first image with meta
+                        for item in response['items']:
+                            if 'meta' in item and item['meta']:
+                                meta = item['meta']
+                                # Format generation parameters
+                                params = []
+                                if 'prompt' in meta:
+                                    params.append(f"Prompt: {meta['prompt']}")
+                                if 'negativePrompt' in meta:
+                                    params.append(f"Negative prompt: {meta['negativePrompt']}")
+                                if 'sampler' in meta:
+                                    params.append(f"Sampler: {meta['sampler']}")
+                                if 'cfgScale' in meta:
+                                    params.append(f"CFG scale: {meta['cfgScale']}")
+                                if 'steps' in meta:
+                                    params.append(f"Steps: {meta['steps']}")
+                                if 'seed' in meta:
+                                    params.append(f"Seed: {meta['seed']}")
+                                if 'Model' in meta:
+                                    params.append(f"Model: {meta['Model']}")
+                                if 'Size' in meta:
+                                    params.append(f"Size: {meta['Size']}")
+
+                                if params:
+                                    png_info = (
+                                        f"Generated using example parameters from Civitai:\n\n"
+                                        f"{chr(10).join(params)}"
+                                    )
+                                    util.printD(
+                                        f"[ishortcut_action] Using Civitai API fallback: "
+                                        f"{len(png_info)} chars"
+                                    )
+                                    break
+                except Exception as e:
+                    util.printD(f"[ishortcut_action] Error with Civitai API fallback: {e}")
 
             if not png_info:
                 png_info = "No generation parameters found in this image."

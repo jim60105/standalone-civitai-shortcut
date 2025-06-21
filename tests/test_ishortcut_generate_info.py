@@ -50,7 +50,7 @@ class TestIshortcutGenerateInfo:
 
             # Call the function
             img_index, hidden_path, tab_update, png_info = ishortcut_action.on_gallery_select(
-                select_data, civitai_images
+                select_data, civitai_images, "12345"
             )
 
             # Verify results
@@ -83,7 +83,7 @@ class TestIshortcutGenerateInfo:
 
             # Call the function
             img_index, hidden_path, tab_update, png_info = ishortcut_action.on_gallery_select(
-                select_data, civitai_images
+                select_data, civitai_images, "12345"
             )
 
             # Verify results
@@ -122,7 +122,7 @@ class TestIshortcutGenerateInfo:
 
                 # Call the function
                 img_index, hidden_path, tab_update, png_info = ishortcut_action.on_gallery_select(
-                    select_data, civitai_images
+                    select_data, civitai_images, "12345"
                 )
 
                 # Verify results
@@ -161,7 +161,7 @@ class TestIshortcutGenerateInfo:
 
                 # Call the function
                 img_index, hidden_path, tab_update, png_info = ishortcut_action.on_gallery_select(
-                    select_data, civitai_images
+                    select_data, civitai_images, "12345"
                 )
 
                 # Verify results
@@ -184,7 +184,7 @@ class TestIshortcutGenerateInfo:
 
         # Call the function
         img_index, hidden_path, tab_update, png_info = ishortcut_action.on_gallery_select(
-            select_data, civitai_images
+            select_data, civitai_images, "12345"
         )
 
         # Verify error handling
