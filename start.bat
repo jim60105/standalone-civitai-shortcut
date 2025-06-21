@@ -23,7 +23,15 @@ if defined VIRTUAL_ENV (
     echo Using virtual environment: %VIRTUAL_ENV%
 ) else (
     echo Not in a virtual environment
-    echo It's recommended to use a virtual environment
+    echo Creating virtual environment...
+    
+    REM Create virtual environment
+    python -m venv venv
+    
+    REM Activate virtual environment
+    call venv\Scripts\activate.bat
+    
+    echo Virtual environment created and activated: %CD%\venv
 )
 
 REM Check dependencies
@@ -38,10 +46,12 @@ if errorlevel 1 (
     uv --version >nul 2>&1
     if not errorlevel 1 (
         echo Using uv for faster installation...
+        REM uv pip install works in virtual environments without --user
         uv pip install -r requirements.txt
     ) else (
         echo Using pip to install dependencies...
-        python -m pip install -r requirements.txt --user
+        REM Remove --user flag since we're now guaranteed to be in a venv
+        python -m pip install -r requirements.txt
     )
     
     echo Dependencies installed successfully!

@@ -30,7 +30,15 @@ if [[ "$VIRTUAL_ENV" != "" ]]; then
     echo -e "${GREEN}Using virtual environment: ${VIRTUAL_ENV}${NC}"
 else
     echo -e "${YELLOW}Not in a virtual environment${NC}"
-    echo "It's recommended to use a virtual environment"
+    echo "Creating virtual environment..."
+    
+    # Create virtual environment
+    python3 -m venv venv
+    
+    # Activate virtual environment
+    source venv/bin/activate
+    
+    echo -e "${GREEN}Virtual environment created and activated: $(pwd)/venv${NC}"
 fi
 
 # Check dependencies
@@ -43,10 +51,12 @@ if ! python3 -c "import gradio" &> /dev/null; then
     # Try to use uv if available, otherwise fall back to pip
     if command -v uv &> /dev/null; then
         echo -e "${GREEN}Using uv for faster installation...${NC}"
+        # uv pip install works in virtual environments without --user
         uv pip install -r requirements.txt
     else
         echo -e "${GREEN}Using pip to install dependencies...${NC}"
-        python3 -m pip install -r requirements.txt --user
+        # Remove --user flag since we're now guaranteed to be in a venv
+        python3 -m pip install -r requirements.txt
     fi
     
     echo -e "${GREEN}Dependencies installed successfully!${NC}"
