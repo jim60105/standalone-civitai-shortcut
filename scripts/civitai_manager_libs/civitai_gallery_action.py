@@ -31,6 +31,9 @@ from .compat.compat_layer import CompatibilityLayer
 # Compatibility layer variables
 _compat_layer = None
 
+# Global variable to store current page's Civitai image metadata
+_current_page_metadata = {}
+
 
 def set_compatibility_layer(compat_layer):
     """Set compatibility layer."""
@@ -130,7 +133,9 @@ def on_ui(recipe_input):
     except Exception:
         pass
 
-    usergal_gallery.select(on_gallery_select, usergal_images, [img_index, hidden, info_tabs])
+    usergal_gallery.select(
+        on_gallery_select, usergal_images, [img_index, hidden, info_tabs, img_file_info]
+    )
     hidden.change(on_civitai_hidden_change, [hidden, img_index], [img_file_info])
     open_image_folder.click(on_open_image_folder_click, [selected_model_id], None)
 
@@ -412,11 +417,17 @@ def on_civitai_hidden_change(hidden, index):
 
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):
-    """Ensure local file path is passed to hidden for PNG info extraction."""
+    """Extract generation parameters from Civitai API metadata."""
     selected = civitai_images[evt.index]
-    # Debug log for selected image
     util.printD(f"[civitai_gallery_action] on_gallery_select: selected={selected}")
-    # If selected is a URL, convert to local gallery file path
+
+    # Debug: Show available metadata keys
+    util.printD(
+        f"[civitai_gallery_action] Current metadata keys: {list(_current_page_metadata.keys())}"
+    )
+
+    # Get local file path if URL
+    local_path = selected
     if isinstance(selected, str) and selected.startswith("http"):
         from . import setting
 
@@ -424,8 +435,65 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
         util.printD(
             f"[civitai_gallery_action] on_gallery_select: converted URL to local_path={local_path}"
         )
-        return evt.index, local_path, gr.update(selected="Image_Information")
-    return evt.index, selected, gr.update(selected="Image_Information")
+
+    # Extract generation parameters from Civitai metadata
+    png_info = ""
+    try:
+        if isinstance(local_path, str):
+            # Extract UUID from filename
+            import re
+
+            filename = os.path.basename(local_path)
+            util.printD(f"[civitai_gallery_action] Processing filename: {filename}")
+            uuid_match = re.search(
+                r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})', filename
+            )
+            if uuid_match:
+                image_uuid = uuid_match.group(1)
+                util.printD(f"[civitai_gallery_action] Extracted UUID: {image_uuid}")
+
+                # Get metadata from global variable
+                if image_uuid in _current_page_metadata:
+                    image_meta = _current_page_metadata[image_uuid]
+                    util.printD(f"[civitai_gallery_action] Found metadata for UUID: {image_uuid}")
+                    util.printD(
+                        f"[civitai_gallery_action] Metadata keys: {list(image_meta.keys())}"
+                    )
+
+                    if 'meta' in image_meta and image_meta['meta']:
+                        meta = image_meta['meta']
+                        util.printD(f"[civitai_gallery_action] Meta fields: {list(meta.keys())}")
+                        # Format generation parameters
+                        params = []
+                        if 'prompt' in meta:
+                            params.append(f"Prompt: {meta['prompt']}")
+                        if 'negativePrompt' in meta:
+                            params.append(f"Negative prompt: {meta['negativePrompt']}")
+                        if 'sampler' in meta:
+                            params.append(f"Sampler: {meta['sampler']}")
+                        if 'cfgScale' in meta:
+                            params.append(f"CFG scale: {meta['cfgScale']}")
+
+                        png_info = '\n'.join(params)
+                        util.printD(
+                            f"[civitai_gallery_action] Extracted metadata: {len(png_info)} chars"
+                        )
+                    else:
+                        png_info = "No generation parameters available for this image."
+                        util.printD("[civitai_gallery_action] No meta field in image data")
+                else:
+                    png_info = "Image metadata not found in current page data."
+                    util.printD(f"[civitai_gallery_action] UUID {image_uuid} not in metadata")
+            else:
+                png_info = "Could not extract image ID from filename."
+                util.printD(f"[civitai_gallery_action] No UUID in filename: {filename}")
+        else:
+            util.printD(f"[civitai_gallery_action] local_path is not string: {type(local_path)}")
+    except Exception as e:
+        png_info = f"Error extracting generation parameters: {e}"
+        util.printD(f"[civitai_gallery_action] Error: {e}")
+
+    return evt.index, local_path, gr.update(selected="Image_Information"), png_info
 
 
 def on_selected_model_id_change(modelid):
@@ -615,13 +683,13 @@ def download_images(dn_image_list: list):
 
 def load_gallery_page(usergal_page_url, paging_information):
     if usergal_page_url:
-        image_url = get_gallery_information(usergal_page_url, False)
+        images_url, images_list = get_gallery_information(usergal_page_url, False)
 
         current_Page = get_current_page(paging_information, usergal_page_url)
 
         current_time = datetime.datetime.now()
 
-        return current_time, image_url, gr.update(value=current_Page), gr.update(value=None)
+        return current_time, images_url, gr.update(value=current_Page), gr.update(value=None)
 
     return None, None, gr.update(minimum=1, maximum=1, value=1), None
 
@@ -632,12 +700,9 @@ def get_gallery_information(page_url=None, show_nsfw=False):
         modelid, versionid = extract_model_info(page_url)
 
     if modelid:
-        images_url = None
-
         images_url, images_list = get_user_gallery(modelid, page_url, show_nsfw)
-
-        return images_url
-    return None
+        return images_url, images_list
+    return None, None
 
 
 def get_user_gallery(modelid, page_url, show_nsfw):
@@ -672,6 +737,40 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                 images_url.append(img_url)
 
         images_list = {image_info['id']: image_info for image_info in image_data}
+
+        # Store metadata globally for later retrieval by filename
+        global _current_page_metadata
+        _current_page_metadata = {}
+        if image_data:
+            util.printD(f"[civitai_gallery_action] Storing metadata for {len(image_data)} images")
+            for image_info in image_data:
+                if "url" in image_info:
+                    # Extract UUID from URL to create filename mapping
+                    import re
+
+                    url = image_info['url']
+                    uuid_match = re.search(
+                        r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})', url
+                    )
+                    if uuid_match:
+                        image_uuid = uuid_match.group(1)
+                        _current_page_metadata[image_uuid] = image_info
+                        util.printD(
+                            f"[civitai_gallery_action] Stored metadata for UUID: {image_uuid}"
+                        )
+                        # Debug: Check if meta field exists
+                        if 'meta' in image_info:
+                            util.printD(
+                                f"[civitai_gallery_action] UUID {image_uuid} has meta field"
+                            )
+                        else:
+                            util.printD(
+                                f"[civitai_gallery_action] UUID {image_uuid} missing meta field"
+                            )
+
+            util.printD(
+                f"[civitai_gallery_action] Total metadata stored: {len(_current_page_metadata)} items"
+            )
 
     return images_url, images_list
 
