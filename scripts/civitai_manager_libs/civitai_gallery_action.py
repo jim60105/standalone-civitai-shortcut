@@ -412,7 +412,20 @@ def on_civitai_hidden_change(hidden, index):
 
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):
-    return evt.index, civitai_images[evt.index], gr.update(selected="Image_Information")
+    """Ensure local file path is passed to hidden for PNG info extraction."""
+    selected = civitai_images[evt.index]
+    # Debug log for selected image
+    util.printD(f"[civitai_gallery_action] on_gallery_select: selected={selected}")
+    # If selected is a URL, convert to local gallery file path
+    if isinstance(selected, str) and selected.startswith("http"):
+        from . import setting
+
+        local_path = setting.get_image_url_to_gallery_file(selected)
+        util.printD(
+            f"[civitai_gallery_action] on_gallery_select: converted URL to local_path={local_path}"
+        )
+        return evt.index, local_path, gr.update(selected="Image_Information")
+    return evt.index, selected, gr.update(selected="Image_Information")
 
 
 def on_selected_model_id_change(modelid):
