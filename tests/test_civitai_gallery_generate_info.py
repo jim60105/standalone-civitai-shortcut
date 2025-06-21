@@ -2,9 +2,11 @@
 
 from unittest.mock import Mock, patch
 import os
+import sys
 import tempfile
 
-from scripts.civitai_manager_libs import civitai_gallery_action
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
+from civitai_manager_libs import civitai_gallery_action
 
 
 class TestCivitaiGalleryGenerateInfo:
@@ -144,9 +146,7 @@ class TestCivitaiGalleryGenerateInfo:
             }
         ]
 
-        with patch(
-            'scripts.civitai_manager_libs.civitai_gallery_action.get_image_page'
-        ) as mock_get_page:
+        with patch('civitai_manager_libs.civitai_gallery_action.get_image_page') as mock_get_page:
             mock_get_page.return_value = mock_image_data
 
             # Call get_user_gallery

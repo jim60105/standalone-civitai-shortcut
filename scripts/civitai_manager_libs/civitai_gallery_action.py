@@ -136,7 +136,9 @@ def on_ui(recipe_input):
     usergal_gallery.select(
         on_gallery_select, usergal_images, [img_index, hidden, info_tabs, img_file_info]
     )
-    hidden.change(on_civitai_hidden_change, [hidden, img_index], [img_file_info])
+    # Note: hidden.change is commented out because we handle all PNG info extraction
+    # in on_gallery_select
+    # hidden.change(on_civitai_hidden_change, [hidden, img_index], [img_file_info])
     open_image_folder.click(on_open_image_folder_click, [selected_model_id], None)
 
     send_to_recipe.click(
@@ -417,14 +419,9 @@ def on_civitai_hidden_change(hidden, index):
 
 
 def on_gallery_select(evt: gr.SelectData, civitai_images):
-    """Extract generation parameters from Civitai API metadata."""
+    """Extract generation parameters from PNG info first, then Civitai API metadata."""
     selected = civitai_images[evt.index]
     util.printD(f"[civitai_gallery_action] on_gallery_select: selected={selected}")
-
-    # Debug: Show available metadata keys
-    util.printD(
-        f"[civitai_gallery_action] Current metadata keys: {list(_current_page_metadata.keys())}"
-    )
 
     # Get local file path if URL
     local_path = selected
@@ -436,63 +433,124 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
             f"[civitai_gallery_action] on_gallery_select: converted URL to local_path={local_path}"
         )
 
-    # Extract generation parameters from Civitai metadata
+    # Extract generation parameters - try PNG info first, then Civitai metadata
     png_info = ""
     try:
-        if isinstance(local_path, str):
-            # Extract UUID from filename
-            import re
+        if isinstance(local_path, str) and os.path.exists(local_path):
+            # First try to extract PNG info from the image file itself
+            util.printD(f"[civitai_gallery_action] Trying to extract PNG info from: {local_path}")
 
-            filename = os.path.basename(local_path)
-            util.printD(f"[civitai_gallery_action] Processing filename: {filename}")
-            uuid_match = re.search(
-                r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})', filename
-            )
-            if uuid_match:
-                image_uuid = uuid_match.group(1)
-                util.printD(f"[civitai_gallery_action] Extracted UUID: {image_uuid}")
+            from PIL import Image
 
-                # Get metadata from global variable
-                if image_uuid in _current_page_metadata:
-                    image_meta = _current_page_metadata[image_uuid]
-                    util.printD(f"[civitai_gallery_action] Found metadata for UUID: {image_uuid}")
-                    util.printD(
-                        f"[civitai_gallery_action] Metadata keys: {list(image_meta.keys())}"
-                    )
-
-                    if 'meta' in image_meta and image_meta['meta']:
-                        meta = image_meta['meta']
-                        util.printD(f"[civitai_gallery_action] Meta fields: {list(meta.keys())}")
-                        # Format generation parameters
-                        params = []
-                        if 'prompt' in meta:
-                            params.append(f"Prompt: {meta['prompt']}")
-                        if 'negativePrompt' in meta:
-                            params.append(f"Negative prompt: {meta['negativePrompt']}")
-                        if 'sampler' in meta:
-                            params.append(f"Sampler: {meta['sampler']}")
-                        if 'cfgScale' in meta:
-                            params.append(f"CFG scale: {meta['cfgScale']}")
-
-                        png_info = '\n'.join(params)
+            try:
+                with Image.open(local_path) as img:
+                    if hasattr(img, 'text') and img.text:
                         util.printD(
-                            f"[civitai_gallery_action] Extracted metadata: {len(png_info)} chars"
+                            f"[civitai_gallery_action] Found PNG text info: {list(img.text.keys())}"
                         )
+                        # Check for common PNG info keys
+                        for key in [
+                            'parameters',
+                            'Parameters',
+                            'generation_info',
+                            'Generation Info',
+                        ]:
+                            if key in img.text:
+                                png_info = img.text[key]
+                                util.printD(
+                                    f"[civitai_gallery_action] Extracted PNG info from key "
+                                    f"'{key}': {len(png_info)} chars"
+                                )
+                                break
                     else:
-                        png_info = "No generation parameters available for this image."
-                        util.printD("[civitai_gallery_action] No meta field in image data")
+                        util.printD("[civitai_gallery_action] No PNG text info found in image")
+            except Exception as e:
+                util.printD(f"[civitai_gallery_action] Error reading PNG info: {e}")
+
+            # If no PNG info found, try Civitai API metadata
+            if not png_info:
+                util.printD(
+                    "[civitai_gallery_action] No PNG info found, trying Civitai API metadata"
+                )
+                # Debug: Show available metadata keys
+                util.printD(
+                    f"[civitai_gallery_action] Current metadata keys: "
+                    f"{list(_current_page_metadata.keys())}"
+                )
+
+                # Extract UUID from filename
+                import re
+
+                filename = os.path.basename(local_path)
+                util.printD(f"[civitai_gallery_action] Processing filename: {filename}")
+                uuid_match = re.search(
+                    r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})', filename
+                )
+                if uuid_match:
+                    image_uuid = uuid_match.group(1)
+                    util.printD(f"[civitai_gallery_action] Extracted UUID: {image_uuid}")
+
+                    # Get metadata from global variable
+                    if image_uuid in _current_page_metadata:
+                        image_meta = _current_page_metadata[image_uuid]
+                        util.printD(
+                            f"[civitai_gallery_action] Found metadata for UUID: {image_uuid}"
+                        )
+                        util.printD(
+                            f"[civitai_gallery_action] Metadata keys: {list(image_meta.keys())}"
+                        )
+
+                        if 'meta' in image_meta and image_meta['meta']:
+                            meta = image_meta['meta']
+                            util.printD(
+                                f"[civitai_gallery_action] Meta fields: {list(meta.keys())}"
+                            )
+                            # Format generation parameters
+                            params = []
+                            if 'prompt' in meta:
+                                params.append(f"Prompt: {meta['prompt']}")
+                            if 'negativePrompt' in meta:
+                                params.append(f"Negative prompt: {meta['negativePrompt']}")
+                            if 'sampler' in meta:
+                                params.append(f"Sampler: {meta['sampler']}")
+                            if 'cfgScale' in meta:
+                                params.append(f"CFG scale: {meta['cfgScale']}")
+                            if 'steps' in meta:
+                                params.append(f"Steps: {meta['steps']}")
+                            if 'seed' in meta:
+                                params.append(f"Seed: {meta['seed']}")
+                            if 'Model' in meta:
+                                params.append(f"Model: {meta['Model']}")
+                            if 'Size' in meta:
+                                params.append(f"Size: {meta['Size']}")
+
+                            png_info = '\n'.join(params)
+                            util.printD(
+                                f"[civitai_gallery_action] Extracted Civitai metadata: "
+                                f"{len(png_info)} chars"
+                            )
+                        else:
+                            png_info = "No generation parameters available for this image."
+                            util.printD("[civitai_gallery_action] No meta field in image data")
+                    else:
+                        png_info = "Image metadata not found in current page data."
+                        util.printD(f"[civitai_gallery_action] UUID {image_uuid} not in metadata")
                 else:
-                    png_info = "Image metadata not found in current page data."
-                    util.printD(f"[civitai_gallery_action] UUID {image_uuid} not in metadata")
+                    png_info = "Could not extract image ID from filename."
+                    util.printD(f"[civitai_gallery_action] No UUID in filename: {filename}")
             else:
-                png_info = "Could not extract image ID from filename."
-                util.printD(f"[civitai_gallery_action] No UUID in filename: {filename}")
+                util.printD(
+                    f"[civitai_gallery_action] Using PNG info from file: {len(png_info)} chars"
+                )
         else:
-            util.printD(f"[civitai_gallery_action] local_path is not string: {type(local_path)}")
+            util.printD(
+                f"[civitai_gallery_action] local_path is not string or doesn't exist: {local_path}"
+            )
     except Exception as e:
         png_info = f"Error extracting generation parameters: {e}"
         util.printD(f"[civitai_gallery_action] Error: {e}")
 
+    util.printD(f"[civitai_gallery_action] Final png_info length: {len(png_info)} chars")
     return evt.index, local_path, gr.update(selected="Image_Information"), png_info
 
 
@@ -769,7 +827,8 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                             )
 
             util.printD(
-                f"[civitai_gallery_action] Total metadata stored: {len(_current_page_metadata)} items"
+                f"[civitai_gallery_action] Total metadata stored: "
+                f"{len(_current_page_metadata)} items"
             )
 
     return images_url, images_list
