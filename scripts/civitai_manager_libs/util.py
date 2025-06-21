@@ -1,13 +1,10 @@
-import io
 import re
 import os
 import json
-
 import hashlib
 import platform
 import subprocess
-
-from .conditional_imports import import_manager
+from .compat.environment_detector import EnvironmentDetector
 
 
 EXTENSIONS_NAME = "Civitai Shortcut"
@@ -15,8 +12,9 @@ EXTENSIONS_NAME = "Civitai Shortcut"
 try:
     from tqdm import tqdm
 except ImportError:
-    # Fallback when tqdm is unavailable
-    tqdm = lambda iterable, **kwargs: iterable
+    def tqdm(iterable, **kwargs):
+        return iterable
+
 
 def printD(msg):
     """Debug message output with compatibility layer support."""
@@ -135,17 +133,40 @@ def add_number_to_duplicate_files(filenames) -> dict:
 
 
 def open_folder(path):
-    if os.path.exists(path):
-        # Code from ui_common.py
-        if not shared.cmd_opts.hide_ui_dir_config:
-            if platform.system() == "Windows":
-                os.startfile(path)
-            elif platform.system() == "Darwin":
-                subprocess.Popen(["open", path])
-            elif "microsoft-standard-WSL2" in platform.uname().release:
-                subprocess.Popen(["wsl-open", path])
-            else:
-                subprocess.Popen(["xdg-open", path])
+    """
+    Open the given folder in the system file explorer.
+    Compatible with both WebUI and standalone modes.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        if not os.path.exists(path):
+            printD(f"[util.open_folder] Path does not exist: {path}")
+            return False
+        if EnvironmentDetector.is_webui_mode():
+            try:
+                import modules.shared as shared
+                if hasattr(shared, "cmd_opts") and hasattr(shared.cmd_opts, "hide_ui_dir_config"):
+                    if getattr(shared.cmd_opts, "hide_ui_dir_config", False):
+                        printD(
+                            "[util.open_folder] UI directory config is hidden by WebUI settings."
+                        )
+                        return False
+            except Exception as e:
+                printD(f"[util.open_folder] WebUI detection/import failed: {e}")
+        system = platform.system()
+        if system == "Windows":
+            os.startfile(path)
+        elif system == "Darwin":
+            subprocess.Popen(["open", path])
+        elif "microsoft-standard-WSL2" in platform.uname().release:
+            subprocess.Popen(["wsl-open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+        printD(f"[util.open_folder] Opened folder: {path}")
+        return True
+    except Exception as e:
+        printD(f"[util.open_folder] Exception: {e} (path: {path})")
+        return False
 
 
 def get_search_keyword(search: str):
@@ -209,6 +230,7 @@ def write_json(contents, path):
 
 def scan_folder_for_info(folder):
     from . import setting
+
     info_list = search_file([folder], None, [setting.info_ext])
 
     if not info_list:
@@ -223,6 +245,7 @@ def get_download_image_folder(ms_foldername):
         return
 
     from . import setting
+
     if not setting.download_images_folder:
         return
 
@@ -242,6 +265,7 @@ def make_download_image_folder(ms_foldername):
         return
 
     from . import setting
+
     if not setting.download_images_folder:
         return
 
@@ -272,6 +296,7 @@ def make_download_model_folder(
         return
 
     from . import setting
+
     content_type = version_info['model']['type']
     model_folder = setting.generate_type_basefolder(content_type)
 
@@ -293,6 +318,7 @@ def make_download_model_folder(
     if vs_folder:
         if not vs_foldername or len(vs_foldername.strip()) <= 0:
             from . import setting
+
             vs_foldername = setting.generate_version_foldername(
                 ms_foldername, version_info['name'], version_info['id']
             )

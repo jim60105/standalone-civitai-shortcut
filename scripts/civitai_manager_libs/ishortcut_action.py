@@ -778,7 +778,20 @@ def on_model_classification_update_btn_click(model_classification, modelid):
 def on_open_folder_click(mid, vid):
     path = model.get_default_version_folder(vid)
     if path:
-        util.open_folder(path)
+        result = util.open_folder(path)
+        if not result:
+            # 回傳 HTML 超連結，讓使用者自行點擊
+            util.printD(
+                f"[ishortcut_action.on_open_folder_click] Failed to open folder, returning link: {path}"
+            )
+            return gr.HTML(f'<a href="file://{path}" target="_blank">Open folder: {path}</a>')
+        else:
+            util.printD(f"[ishortcut_action.on_open_folder_click] Folder opened: {path}")
+    else:
+        util.printD(
+            f"[ishortcut_action.on_open_folder_click] No folder found for version id: {vid}"
+        )
+    return None
 
 
 def on_change_thumbnail_image_click(mid, img_idx: int, civitai_images):
