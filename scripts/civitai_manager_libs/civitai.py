@@ -1,8 +1,29 @@
 import os
 import json
-import requests
 from . import util
 from . import setting
+
+# Module-level HTTP client instance
+from .http_client import CivitaiHttpClient
+
+_http_client = None
+
+
+def get_http_client():
+    """Get or create HTTP client instance."""
+    global _http_client
+    if _http_client is None:
+        _http_client = CivitaiHttpClient(
+            api_key=setting.civitai_api_key,
+            timeout=setting.http_timeout,
+            max_retries=setting.http_max_retries,
+        )
+    else:
+        # Update API key if changed
+        if _http_client.api_key != setting.civitai_api_key:
+            _http_client.update_api_key(setting.civitai_api_key)
+    return _http_client
+
 
 # Set the URL for the API endpoint
 
@@ -36,38 +57,35 @@ def Url_ImagePage():
 
 
 def request_models(api_url=None):
+    """Request models from Civitai API with robust error handling."""
     util.printD(f"[civitai] request_models() called with api_url: {api_url}")
-    try:
-        with requests.get(api_url) as response:
-            util.printD(f"[civitai] HTTP GET {api_url} status: {response.status_code}")
-            if response.status_code != 200:
-                util.printD(f"[civitai] Request failed with status code: {response.status_code}")
-                return None
-            data = json.loads(response.text)
-            util.printD(f"[civitai] Response data loaded successfully from {api_url}")
-    except Exception as e:
-        util.printD(f"[civitai] Exception in request_models: {e}")
-        return None
+    if not api_url:
+        util.printD("[civitai] request_models: api_url is None or empty")
+        return {'items': [], 'metadata': {}}
+    client = get_http_client()
+    data = client.get_json(api_url)
+    if data is None:
+        util.printD(f"[civitai] request_models: Failed to get data from {api_url}")
+        return {'items': [], 'metadata': {}}
+    util.printD(f"[civitai] Response data loaded successfully from {api_url}")
     return data
 
 
 def get_model_info(id: str) -> dict:
+    """Get model information by model ID."""
     util.printD(f"[civitai] get_model_info() called with id: {id}")
     if not id:
         util.printD("[civitai] get_model_info: id is None or empty")
         return None
-    content = None
-    try:
-        url = Url_ModelId() + str(id)
-        util.printD(f"[civitai] Requesting model info from URL: {url}")
-        with requests.get(url) as response:
-            util.printD(f"[civitai] HTTP GET {url} status: {response.status_code}")
-            content = response.json()
-        if 'id' not in content:
-            util.printD(f"[civitai] get_model_info: 'id' not in response content for id {id}")
-            return None
-    except Exception as e:
-        util.printD(f"[civitai] Exception in get_model_info: {e}")
+    url = Url_ModelId() + str(id)
+    util.printD(f"[civitai] Requesting model info from URL: {url}")
+    client = get_http_client()
+    content = client.get_json(url)
+    if content is None:
+        util.printD(f"[civitai] get_model_info: Failed to get data for id {id}")
+        return None
+    if 'id' not in content:
+        util.printD(f"[civitai] get_model_info: 'id' not in response content for id {id}")
         return None
     util.printD(f"[civitai] get_model_info: Successfully retrieved model info for id {id}")
     return content
@@ -87,57 +105,51 @@ def get_model_info(id: str) -> dict:
 
 
 def get_version_info_by_hash(hash_value) -> dict:
+    """Get version information by hash value."""
     util.printD(f"[civitai] get_version_info_by_hash() called with hash: {hash_value}")
     if not hash_value:
         util.printD("[civitai] get_version_info_by_hash: hash is None or empty")
         return None
-    content = None
-    try:
-        url = f"{Url_Hash()}{hash_value}"
-        util.printD(f"[civitai] Requesting version info by hash from URL: {url}")
-        with requests.get(url) as response:
-            util.printD(f"[civitai] HTTP GET {url} status: {response.status_code}")
-            content = response.json()
-        if 'id' not in content:
-            util.printD(
-                f"[civitai] get_version_info_by_hash: 'id' not in response content for hash "
-                f"{hash_value}"
-            )
-            return None
-    except Exception as e:
-        util.printD(f"[civitai] Exception in get_version_info_by_hash: {e}")
+    url = f"{Url_Hash()}{hash_value}"
+    util.printD(f"[civitai] Requesting version info by hash from URL: {url}")
+    client = get_http_client()
+    content = client.get_json(url)
+    if content is None:
+        util.printD(f"[civitai] get_version_info_by_hash: Failed to get data for hash {hash_value}")
+        return None
+    if 'id' not in content:
+        util.printD(
+            f"[civitai] get_version_info_by_hash: 'id' not in response content for hash {hash_value}"
+        )
         return None
     util.printD(
-        f"[civitai] get_version_info_by_hash: Successfully retrieved version info for hash "
-        f"{hash_value}"
+        f"[civitai] get_version_info_by_hash: Successfully retrieved version info for hash {hash_value}"
     )
     return content
 
 
 def get_version_info_by_version_id(version_id: str) -> dict:
+    """Get version information by version ID."""
     util.printD(f"[civitai] get_version_info_by_version_id() called with version_id: {version_id}")
     if not version_id:
         util.printD("[civitai] get_version_info_by_version_id: version_id is None or empty")
         return None
-    content = None
-    try:
-        url = Url_VersionId() + str(version_id)
-        util.printD("[civitai] Requesting version info from URL: " + url)
-        with requests.get(url) as response:
-            util.printD(f"[civitai] HTTP GET {url} status: {response.status_code}")
-            content = response.json()
-        if 'id' not in content:
-            util.printD(
-                f"[civitai] get_version_info_by_version_id: 'id' not in response content for "
-                f"version_id {version_id}"
-            )
-            return None
-    except Exception as e:
-        util.printD(f"[civitai] Exception in get_version_info_by_version_id: {e}")
+    url = Url_VersionId() + str(version_id)
+    util.printD(f"[civitai] Requesting version info from URL: {url}")
+    client = get_http_client()
+    content = client.get_json(url)
+    if content is None:
+        util.printD(
+            f"[civitai] get_version_info_by_version_id: Failed to get data for version_id {version_id}"
+        )
+        return None
+    if 'id' not in content:
+        util.printD(
+            f"[civitai] get_version_info_by_version_id: 'id' not in response content for version_id {version_id}"
+        )
         return None
     util.printD(
-        f"[civitai] get_version_info_by_version_id: Successfully retrieved version info for "
-        f"version_id {version_id}"
+        f"[civitai] get_version_info_by_version_id: Successfully retrieved version info for version_id {version_id}"
     )
     return content
 

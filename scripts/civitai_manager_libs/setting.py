@@ -61,6 +61,11 @@ headers = {
 }
 
 civitai_api_key = ""
+
+# HTTP client settings
+http_timeout = 20  # seconds
+http_max_retries = 3
+http_retry_delay = 1  # seconds between retries
 Extensions_Name = "Civitai Shortcut"
 Extensions_Version = "v1.6.7"
 
