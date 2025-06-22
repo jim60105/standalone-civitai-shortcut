@@ -221,6 +221,15 @@ gallery_thumbnail_image_style = "scale-down"
 # 다운로드 설정
 download_images_folder = os.path.join("outputs", "download-images")
 
+# Image download settings
+image_download_timeout = 30
+image_download_max_retries = 3
+image_download_cache_enabled = True
+image_download_cache_max_age = 3600  # seconds
+scan_timeout = 30
+scan_max_retries = 2
+preview_image_quality = 85  # JPEG quality for preview images
+
 # Gallery download settings
 gallery_download_batch_size = 5
 gallery_download_timeout = 30

@@ -19,6 +19,22 @@ from PIL import Image
 
 thumbnail_max_size = (400, 400)
 
+from .http_client import CivitaiHttpClient
+
+# Module-level HTTP client for shortcuts
+_shortcut_client = None
+
+
+def get_shortcut_client():
+    """Get or create HTTP client for shortcut operations."""
+    global _shortcut_client
+    if _shortcut_client is None:
+        _shortcut_client = CivitaiHttpClient(
+            timeout=setting.image_download_timeout or 30,
+            max_retries=setting.image_download_max_retries or 3,
+        )
+    return _shortcut_client
+
 
 def get_model_information(modelid: str = None, versionid: str = None, ver_index: int = None):
     # 현재 모델의 정보를 가져온다.
@@ -1120,3 +1136,88 @@ def load() -> dict:
 
     # check for new key
     return json_data
+
+
+def _get_preview_image_url(model_info) -> str:
+    """Extract preview image URL from model info."""
+    try:
+        # Try to get from model versions
+        if 'modelVersions' in model_info and model_info['modelVersions']:
+            for version in model_info['modelVersions']:
+                if 'images' in version and version['images']:
+                    for image in version['images']:
+                        url = image.get('url')
+                        if url:
+                            return url
+        # Try to get from direct images
+        if 'images' in model_info and model_info['images']:
+            for image in model_info['images']:
+                url = image.get('url')
+                if url:
+                    return url
+        return None
+    except Exception as e:
+        util.printD(f"[ishortcut] Error extracting preview URL: {e}")
+        return None
+
+
+def _get_preview_image_path(model_info) -> str:
+    """Generate local path for preview image."""
+    try:
+        model_id = model_info.get('id')
+        if not model_id:
+            return None
+        preview_dir = setting.shortcut_thumbnail_folder
+        os.makedirs(preview_dir, exist_ok=True)
+        filename = f"model_{model_id}_preview.jpg"
+        return os.path.join(preview_dir, filename)
+    except Exception as e:
+        util.printD(f"[ishortcut] Error generating image path: {e}")
+        return None
+
+
+def download_model_preview_image_by_model_info(model_info):
+    """Download model preview image with improved error handling."""
+    if not model_info:
+        util.printD("[ishortcut] download_model_preview_image_by_model_info: model_info is None")
+        return None
+    model_id = model_info.get('id')
+    if not model_id:
+        util.printD("[ishortcut] download_model_preview_image_by_model_info: model_id not found")
+        return None
+    util.printD(f"[ishortcut] Downloading preview image for model: {model_id}")
+    preview_url = _get_preview_image_url(model_info)
+    if not preview_url:
+        util.printD("[ishortcut] No preview image URL found")
+        return None
+    image_path = _get_preview_image_path(model_info)
+    if not image_path:
+        util.printD("[ishortcut] Failed to generate image path")
+        return None
+    if os.path.exists(image_path):
+        util.printD(f"[ishortcut] Preview image already exists: {image_path}")
+        return image_path
+    client = get_shortcut_client()
+    success = util.download_image_safe(preview_url, image_path, client, show_error=False)
+    if success:
+        util.printD(f"[ishortcut] Successfully downloaded preview image: {image_path}")
+        return image_path
+    else:
+        util.printD(f"[ishortcut] Failed to download preview image: {preview_url}")
+        return None
+
+
+def get_preview_image_by_model_info(model_info):
+    """Get preview image, download if not exists."""
+    if not model_info:
+        util.printD("[ishortcut] get_preview_image_by_model_info: model_info is None")
+        return setting.no_card_preview_image
+    image_path = _get_preview_image_path(model_info)
+    if image_path and os.path.exists(image_path):
+        util.printD(f"[ishortcut] Using existing preview image: {image_path}")
+        return image_path
+    downloaded_path = download_model_preview_image_by_model_info(model_info)
+    if downloaded_path:
+        return downloaded_path
+    util.printD("[ishortcut] Using fallback preview image")
+    return setting.no_card_preview_image
