@@ -9,6 +9,7 @@ from typing import Callable, Dict, Optional
 
 import requests
 import gradio as gr
+import os
 
 from . import util, setting
 
@@ -172,3 +173,99 @@ class CivitaiHttpClient:
     def get_stream_response(self, url: str, headers: dict = None) -> Optional[requests.Response]:
         """Get streaming response for custom processing."""
         return self.get_stream(url, headers)
+
+    def download_file_with_resume(
+        self,
+        url: str,
+        filepath: str,
+        progress_callback: Callable = None,
+        headers: dict = None,
+    ) -> bool:
+        """Download file with resume capability and progress tracking."""
+        resume_pos = 0
+        if setting.download_resume_enabled and os.path.exists(filepath):
+            resume_pos = os.path.getsize(filepath)
+            util.printD(f"[http_client] Resuming download from position: {resume_pos}")
+
+        # Prepare headers for resume
+        download_headers = headers.copy() if headers else {}
+        if resume_pos > 0:
+            download_headers["Range"] = f"bytes={resume_pos}-"
+
+        try:
+            response = self.get_stream(url, headers=download_headers)
+            if not response:
+                return False
+
+            total_size = int(response.headers.get("Content-Length", 0))
+            if resume_pos > 0:
+                total_size += resume_pos
+
+            mode = "ab" if resume_pos > 0 else "wb"
+            with open(filepath, mode) as f:
+                downloaded = resume_pos
+                start_time = time.time()
+                for chunk in response.iter_content(chunk_size=setting.download_chunk_size):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if progress_callback:
+                            speed = self._calculate_speed(
+                                downloaded - resume_pos, time.time() - start_time
+                            )
+                            progress_callback(downloaded, total_size, speed)
+
+            final_size = os.path.getsize(filepath)
+            if total_size > 0 and final_size < total_size:
+                util.printD(f"[http_client] Incomplete download: {final_size}/{total_size}")
+                return False
+
+            return True
+
+        except Exception as e:
+            return self._handle_download_error(e, url, filepath)
+
+    def _calculate_speed(self, bytes_downloaded: int, elapsed_time: float) -> str:
+        """Calculate download speed in human-readable format."""
+        if elapsed_time <= 0:
+            return ""
+
+        speed_bps = bytes_downloaded / elapsed_time
+
+        if speed_bps < 1024:
+            return f"{speed_bps:.1f} B/s"
+        elif speed_bps < 1024 * 1024:
+            return f"{speed_bps / 1024:.1f} KB/s"
+        else:
+            return f"{speed_bps / (1024 * 1024):.1f} MB/s"
+
+    def _handle_download_error(self, error: Exception, url: str, filepath: str) -> bool:
+        """Handle download errors with recovery strategies."""
+        if isinstance(error, requests.exceptions.Timeout):
+            util.printD(f"[http_client] Download timeout for {url}")
+            gr.Error("下載超時，請檢查網路連線 💥!", duration=5)
+        elif isinstance(error, requests.exceptions.ConnectionError):
+            util.printD(f"[http_client] Connection error for {url}")
+            gr.Error("網路連線失敗，請檢查網路設定 💥!", duration=5)
+        elif hasattr(error, "response") and error.response:
+            status_code = error.response.status_code
+            if status_code == 403:
+                gr.Error("存取被拒絕，請檢查 API 金鑰 💥!", duration=8)
+            elif status_code == 404:
+                gr.Error("檔案不存在或已被移除 💥!", duration=5)
+            elif status_code >= 500:
+                gr.Error("伺服器錯誤，請稍後再試 💥!", duration=5)
+            else:
+                gr.Error(f"下載失敗 (HTTP {status_code}) 💥!", duration=5)
+        else:
+            util.printD(f"[http_client] Unknown download error: {error}")
+            gr.Error("下載發生未知錯誤 💥!", duration=5)
+
+        # Clean up partial file if empty
+        try:
+            if os.path.exists(filepath) and os.path.getsize(filepath) == 0:
+                os.remove(filepath)
+        except Exception:
+            pass
+
+        return False

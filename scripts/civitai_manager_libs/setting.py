@@ -66,6 +66,15 @@ civitai_api_key = ""
 http_timeout = 20  # seconds
 http_max_retries = 3
 http_retry_delay = 1  # seconds between retries
+
+# Download settings
+download_timeout = 300  # 5 minutes for large files
+download_max_retries = 5
+download_retry_delay = 10  # seconds
+download_chunk_size = 8192  # bytes
+download_max_concurrent = 3  # maximum concurrent downloads
+download_resume_enabled = True
+download_verify_checksum = False  # future feature
 Extensions_Name = "Civitai Shortcut"
 Extensions_Version = "v1.6.7"
 
