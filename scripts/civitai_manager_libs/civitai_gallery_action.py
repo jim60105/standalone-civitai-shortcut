@@ -14,7 +14,6 @@ import time
 import re
 import threading
 from PIL import Image
-import tempfile
 
 from .conditional_imports import import_manager
 
@@ -61,6 +60,79 @@ def _download_single_image(img_url: str, save_path: str) -> bool:
     else:
         util.printD(f"[civitai_gallery_action] Failed to download image: {img_url}")
     return success
+
+
+class GalleryDownloadManager:
+    """Manage gallery image downloads with retry capability."""
+
+    def __init__(self):
+        self.failed_downloads = []
+        self.client = get_http_client()
+
+    def download_with_retry(self, img_url: str, save_path: str, max_retries: int = 2) -> bool:
+        """Download image with retry on failure."""
+        for attempt in range(max_retries + 1):
+            if self.client.download_file(img_url, save_path):
+                return True
+            if attempt < max_retries:
+                util.printD(f"[civitai_gallery_action] Retry {attempt + 1} for: {img_url}")
+                time.sleep(1)
+        self.failed_downloads.append((img_url, save_path))
+        return False
+
+    def retry_failed_downloads(self):
+        """Retry all previously failed downloads."""
+        if not self.failed_downloads:
+            return
+
+        util.printD(
+            f"[civitai_gallery_action] Retrying {len(self.failed_downloads)} failed downloads"
+        )
+
+        retry_list = self.failed_downloads.copy()
+        self.failed_downloads.clear()
+
+        for img_url, save_path in retry_list:
+            self.download_with_retry(img_url, save_path, max_retries=1)
+
+
+def download_images_with_progress(dn_image_list: list, progress_callback=None):
+    """Download images with progress tracking."""
+    if not dn_image_list:
+        return
+
+    total = len(dn_image_list)
+    completed = 0
+    client = get_http_client()
+
+    for img_url in dn_image_list:
+        gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+        if not os.path.isfile(gallery_img_file):
+            client.download_file(img_url, gallery_img_file)
+        completed += 1
+        if progress_callback:
+            progress_callback(completed, total, f"下載圖片 {completed}/{total}")
+
+
+def download_images_batch(
+    dn_image_list: list, batch_size: int = setting.gallery_download_batch_size
+):
+    """Download images in batches to avoid overwhelming the server."""
+    if not dn_image_list:
+        return
+
+    client = get_http_client()
+
+    for i in range(0, len(dn_image_list), batch_size):
+        batch = dn_image_list[i : i + batch_size]
+        util.printD(
+            f"[civitai_gallery_action] Processing batch {i//batch_size + 1}, {len(batch)} images"
+        )
+        for img_url in batch:
+            gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+            if not os.path.isfile(gallery_img_file):
+                client.download_file(img_url, gallery_img_file)
+        time.sleep(0.5)
 
 
 def set_compatibility_layer(compat_layer):

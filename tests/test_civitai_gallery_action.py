@@ -90,3 +90,53 @@ def test_download_user_gallery_images(tmp_path, monkeypatch):
     assert result == str(tmp_path / "modelname")
     user_folder = tmp_path / "modelname" / "user_gallery_images"
     assert user_folder.exists()
+
+
+def test_gallery_download_manager(tmp_path, monkeypatch):
+    # stub client with one failing URL
+    client = DummyClient(fail_urls=["fail"])
+    monkeypatch.setattr(cga, "get_http_client", lambda: client)
+    manager = cga.GalleryDownloadManager()
+    # success case
+    success_dest = tmp_path / "ok.png"
+    assert manager.download_with_retry("ok", str(success_dest), max_retries=1)
+    assert success_dest.exists()
+    # failure case and retry list
+    fail_dest = tmp_path / "fail.png"
+    assert not manager.download_with_retry("fail", str(fail_dest), max_retries=0)
+    assert manager.failed_downloads == [("fail", str(fail_dest))]
+    # retry failed downloads with a working client
+    client2 = DummyClient()
+    monkeypatch.setattr(cga, "get_http_client", lambda: client2)
+    manager.retry_failed_downloads()
+    # failures retried with same client will re-populate failed_downloads
+    assert manager.failed_downloads == [("fail", str(fail_dest))]
+
+
+def test_download_images_with_progress(tmp_path, monkeypatch):
+    urls = ["x", "y"]
+    monkeypatch.setattr(
+        setting, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
+    )
+    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
+    calls = []
+
+    def progress_cb(done, total, msg):
+        calls.append((done, total, msg))
+
+    cga.download_images_with_progress(urls, progress_callback=progress_cb)
+    assert (tmp_path / "x.png").exists()
+    assert (tmp_path / "y.png").exists()
+    assert calls == [(1, 2, "下載圖片 1/2"), (2, 2, "下載圖片 2/2")]
+
+
+def test_download_images_batch(tmp_path, monkeypatch):
+    urls = [str(i) for i in range(7)]
+    monkeypatch.setattr(
+        setting, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
+    )
+    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
+    monkeypatch.setattr(cga.util, "printD", lambda *args, **kwargs: None)
+    cga.download_images_batch(urls, batch_size=3)
+    for u in urls:
+        assert (tmp_path / f"{u}.png").exists()
