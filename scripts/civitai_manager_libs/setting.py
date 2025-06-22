@@ -212,6 +212,11 @@ gallery_thumbnail_image_style = "scale-down"
 # 다운로드 설정
 download_images_folder = os.path.join("outputs", "download-images")
 
+# Gallery download settings
+gallery_download_batch_size = 5
+gallery_download_timeout = 30
+gallery_max_concurrent_downloads = 3
+
 # background thread 설정
 # shortcut_auto_update = True
 shortcut_update_when_start = True

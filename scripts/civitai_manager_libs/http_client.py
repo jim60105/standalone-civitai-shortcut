@@ -168,3 +168,7 @@ class CivitaiHttpClient:
             util.printD(f"[http_client] File write error: {e}")
             gr.Error(f"Failed to write file: {e}")
             return False
+
+    def get_stream_response(self, url: str, headers: dict = None) -> Optional[requests.Response]:
+        """Get streaming response for custom processing."""
+        return self.get_stream(url, headers)

@@ -10,6 +10,7 @@ import shutil
 import requests
 import gradio as gr
 import datetime
+import time
 import re
 import threading
 from PIL import Image
@@ -33,6 +34,33 @@ _compat_layer = None
 
 # Global variable to store current page's Civitai image metadata
 _current_page_metadata = {}
+
+from .http_client import CivitaiHttpClient
+
+_http_client = None
+
+
+def get_http_client():
+    """Get or create HTTP client instance for gallery operations."""
+    global _http_client
+    if _http_client is None:
+        _http_client = CivitaiHttpClient(
+            timeout=setting.http_timeout, max_retries=setting.http_max_retries
+        )
+    return _http_client
+
+
+def _download_single_image(img_url: str, save_path: str) -> bool:
+    """Download a single image with proper error handling."""
+    client = get_http_client()
+    util.printD(f"[civitai_gallery_action] Downloading image from: {img_url}")
+    util.printD(f"[civitai_gallery_action] Saving to: {save_path}")
+    success = client.download_file(img_url, save_path)
+    if success:
+        util.printD(f"[civitai_gallery_action] Successfully downloaded image: {save_path}")
+    else:
+        util.printD(f"[civitai_gallery_action] Failed to download image: {img_url}")
+    return success
 
 
 def set_compatibility_layer(compat_layer):
@@ -267,7 +295,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
     util.printD(f"[CIVITAI_GALLERY]   img_file_info: {repr(img_file_info)}")
     util.printD(f"[CIVITAI_GALLERY]   img_index: {repr(img_index)}")
     util.printD(f"[CIVITAI_GALLERY]   civitai_images: {repr(civitai_images)}")
-    
+
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
         # reference shortcut id를 넣어줄수 있다.
@@ -275,7 +303,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
             model_id, civitai_images[int(img_index)]
         )
         util.printD(f"[CIVITAI_GALLERY]   recipe_image: {repr(recipe_image)}")
-        
+
         # Pass parsed generation parameters directly when available
         if img_file_info:
             result = f"{recipe_image}\n{img_file_info}"
@@ -740,19 +768,37 @@ def pre_loading(usergal_page_url, paging_information):
 
 
 def download_images(dn_image_list: list):
-    if dn_image_list:
-        # for img_url in tqdm(dn_image_list,desc=f"{setting.Extensions_Name} preloading"):
-        for img_url in dn_image_list:
-            gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
-            # util.printD(gallery_img_file)
-            if not os.path.isfile(gallery_img_file):
-                with requests.get(img_url, stream=True) as img_r:
-                    if not img_r.ok:
-                        continue
+    """Download images for gallery with improved error handling."""
+    if not dn_image_list:
+        return
 
-                    with open(gallery_img_file, 'wb') as f:
-                        img_r.raw.decode_content = True
-                        shutil.copyfileobj(img_r.raw, f)
+    client = get_http_client()
+    util.printD(f"[civitai_gallery_action] Starting download of {len(dn_image_list)} images")
+
+    success_count = 0
+    failed_count = 0
+
+    for img_url in dn_image_list:
+        gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+
+        if os.path.isfile(gallery_img_file):
+            util.printD(f"[civitai_gallery_action] Image already exists: {gallery_img_file}")
+            continue
+
+        util.printD(f"[civitai_gallery_action] Downloading image: {img_url}")
+        if client.download_file(img_url, gallery_img_file):
+            success_count += 1
+            util.printD(f"[civitai_gallery_action] Successfully downloaded: {gallery_img_file}")
+        else:
+            failed_count += 1
+            util.printD(f"[civitai_gallery_action] Failed to download: {img_url}")
+
+    util.printD(
+        f"[civitai_gallery_action] Download complete: {success_count} success, {failed_count} failed"
+    )
+
+    if failed_count > 0:
+        gr.Error(f"部分圖片下載失敗 ({failed_count} 個)，請檢查網路連線 💥!", duration=3)
 
 
 def load_gallery_page(usergal_page_url, paging_information):
@@ -971,21 +1017,7 @@ def gallery_loading(images_url, progress):
             if result == "filepath":
                 description_img = img_url
             elif result == "url":
-                try:
-                    with requests.get(img_url, stream=True) as img_r:
-                        if not img_r.ok:
-                            util.printD(
-                                "Get error code: "
-                                + str(img_r.status_code)
-                                + ": proceed to the next file"
-                            )
-                            description_img = setting.no_card_preview_image
-                        else:
-                            # sc_gallery 에 저장한다.
-                            with open(description_img, 'wb') as f:
-                                img_r.raw.decode_content = True
-                                shutil.copyfileobj(img_r.raw, f)
-                except requests.RequestException:
+                if not _download_single_image(img_url, description_img):
                     description_img = setting.no_card_preview_image
             else:
                 description_img = setting.no_card_preview_image
@@ -1029,29 +1061,12 @@ def download_user_gallery_images(model_id, image_urls):
                     description_img = os.path.join(save_folder, os.path.basename(img_url))
                     shutil.copyfile(img_url, description_img)
             elif result == "url":
-                try:
-                    # get image
-                    with requests.get(img_url, stream=True) as img_r:
-                        if not img_r.ok:
-                            util.printD(
-                                "Get error code: "
-                                + str(img_r.status_code)
-                                + ": proceed to the next file"
-                            )
-                        else:
-                            # write to file
-                            image_id, ext = os.path.splitext(os.path.basename(img_url))
-                            description_img = os.path.join(
-                                save_folder,
-                                f'{image_id}{setting.preview_image_suffix}'
-                                f'{setting.preview_image_ext}',
-                            )
-                            with open(description_img, 'wb') as f:
-                                img_r.raw.decode_content = True
-                                shutil.copyfileobj(img_r.raw, f)
-
-                except Exception:
-                    pass
+                image_id, ext = os.path.splitext(os.path.basename(img_url))
+                description_img = os.path.join(
+                    save_folder,
+                    f"{image_id}{setting.preview_image_suffix}{setting.preview_image_ext}",
+                )
+                _download_single_image(img_url, description_img)
     return image_folder
 
 
