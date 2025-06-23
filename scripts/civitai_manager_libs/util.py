@@ -6,7 +6,6 @@ import platform
 import subprocess
 import time
 from .compat.environment_detector import EnvironmentDetector
-from .http_client import CivitaiHttpClient
 from . import setting
 
 
@@ -96,10 +95,12 @@ def update_url(url, param_name, new_value):
     if param_name not in url:
         # If the parameter is not found in the URL, add it to the end with the new value
         if "?" in url:
-            # If there are already other parameters in the URL, add the new parameter with "&" separator
+            # If there are already parameters in the URL,
+            # add the new parameter with "&" separator
             updated_url = url + "&" + param_name + "=" + str(new_value)
         else:
-            # If there are no parameters in the URL, add the new parameter with "?" separator
+            # If there are no parameters in the URL,
+            # add the new parameter with "?" separator
             updated_url = url + "?" + param_name + "=" + str(new_value)
     else:
         # If the parameter is found in the URL, update its value with the new value
@@ -213,7 +214,7 @@ def read_json(path) -> dict:
     try:
         with open(path, 'r') as f:
             contents = json.load(f)
-    except:
+    except Exception:
         return None
 
     return contents
@@ -229,7 +230,7 @@ def write_json(contents, path):
     try:
         with open(path, 'w') as f:
             f.write(json.dumps(contents, indent=4))
-    except Exception as e:
+    except Exception:
         return
 
 
@@ -372,7 +373,7 @@ def write_InternetShortcut(path, url):
     try:
         with open(path, 'w', newline='\r\n') as f:
             f.write(f"[InternetShortcut]\nURL={url}")
-    except:
+    except Exception:
         return False
     return True
 
@@ -465,9 +466,9 @@ def download_image_safe(
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     if client is None:
-        from .http_client import CivitaiHttpClient
+        from .http_client import get_http_client
 
-        client = CivitaiHttpClient()
+        client = get_http_client()
 
     try:
         success = client.download_file(url, save_path)
@@ -539,7 +540,9 @@ def download_with_cache_and_retry(
             printD(f"[cache] Using cached image: {cache_path}")
             return cache_path
 
-    client = CivitaiHttpClient()
+    from .http_client import get_http_client
+
+    client = get_http_client()
     success = client.download_file(url, cache_path)
 
     if success:

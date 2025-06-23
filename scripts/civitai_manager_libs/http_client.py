@@ -8,9 +8,6 @@ import time
 from typing import Callable, Dict, Optional, List
 
 import threading
-import random
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 import requests
 import gradio as gr
@@ -280,144 +277,10 @@ class CivitaiHttpClient:
 # Performance optimization and monitoring extensions
 
 
-class OptimizedHTTPClient(CivitaiHttpClient):
-    """Optimized HTTP client with connection pooling, retries, and monitoring."""
-
-    def __init__(self, api_key: str = None, timeout: int = None, max_retries: int = None):
-        super().__init__(api_key, timeout, max_retries)
-
-        # Connection pool settings
-        self.pool_connections = setting.http_pool_connections
-        self.pool_maxsize = setting.http_pool_maxsize
-        self.pool_block = setting.http_pool_block
-
-        # Monitoring data
-        self._stats = {
-            'total_requests': 0,
-            'successful_requests': 0,
-            'failed_requests': 0,
-            'total_bytes_downloaded': 0,
-            'total_time_spent': 0,
-            'error_counts': {},
-            'active_downloads': {},
-            'request_history': [],
-        }
-        self._stats_lock = threading.Lock()
-
-        # Initialize optimized session
-        self._setup_optimized_session()
-
-    def _setup_optimized_session(self):
-        """Set up requests session with optimized settings and retry strategy."""
-        self.session = requests.Session()
-
-        retry_strategy = Retry(
-            total=self.max_retries,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504, 524],
-            allowed_methods=["HEAD", "GET", "OPTIONS", "POST"],
-        )
-        adapter = HTTPAdapter(
-            pool_connections=self.pool_connections,
-            pool_maxsize=self.pool_maxsize,
-            pool_block=self.pool_block,
-            max_retries=retry_strategy,
-        )
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-        self.session.headers.update(
-            {
-                'User-Agent': f"{setting.Extensions_Name}/{setting.Extensions_Version}",
-                'Accept': 'application/json, image/*, */*',
-                'Accept-Encoding': 'gzip, deflate',
-                'Connection': 'keep-alive',
-            }
-        )
-
-    def _make_request_with_smart_retry(
-        self, method: str, url: str, **kwargs
-    ) -> Optional[requests.Response]:
-        """Make HTTP request with smart retry logic and collect statistics."""
-        start_time = time.time()
-        last_error = None
-
-        for attempt in range(self.max_retries + 1):
-            try:
-                with self._stats_lock:
-                    self._stats['total_requests'] += 1
-
-                response = self.session.request(method, url, timeout=self.timeout, **kwargs)
-                if response.ok:
-                    elapsed = time.time() - start_time
-                    with self._stats_lock:
-                        self._stats['successful_requests'] += 1
-                        self._stats['total_time_spent'] += elapsed
-                    util.printD(
-                        f"[http_client] Request successful: {method} {url} ({response.status_code})"
-                    )
-                    return response
-
-                self._handle_http_error(response, url, attempt)
-                last_error = Exception(f"HTTP {response.status_code}")
-                if not self._should_retry_status(response.status_code):
-                    break
-
-            except (
-                requests.exceptions.Timeout,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.RequestException,
-            ) as e:
-                self._handle_network_error(e, url, attempt)
-                last_error = e
-                if attempt < self.max_retries:
-                    wait = min(self.retry_delay * (2**attempt), 60)
-                    jitter = wait * 0.1 * (random.random() - 0.5)
-                    time.sleep(wait + jitter)
-
-        elapsed = time.time() - start_time
-        with self._stats_lock:
-            self._stats['failed_requests'] += 1
-            self._stats['total_time_spent'] += elapsed
-
-        self._handle_final_failure(last_error, url)
-        return None
-
-    def _should_retry_status(self, status_code: int) -> bool:
-        """Determine if retry should be attempted based on HTTP status code."""
-        if 400 <= status_code < 500 and status_code != 429:
-            return False
-        return status_code >= 500 or status_code == 429
-
-    def _handle_http_error(self, response: requests.Response, url: str, attempt: int):
-        """Handle HTTP errors by logging and updating error counts."""
-        code = response.status_code
-        with self._stats_lock:
-            key = f'http_{code}'
-            self._stats['error_counts'][key] = self._stats['error_counts'].get(key, 0) + 1
-        util.printD(f"[http_client] HTTP {code} error for {url} (attempt {attempt+1})")
-        if code == 429:
-            util.printD("[http_client] Rate limited, retrying later")
-        elif code == 524:
-            util.printD("[http_client] Cloudflare timeout, retrying")
-
-    def _handle_network_error(self, error: Exception, url: str, attempt: int):
-        """Handle network errors by logging and updating error counts."""
-        err_name = type(error).__name__
-        with self._stats_lock:
-            key = f'network_{err_name}'
-            self._stats['error_counts'][key] = self._stats['error_counts'].get(key, 0) + 1
-        util.printD(f"[http_client] Network error for {url} (attempt {attempt+1}): {error}")
-
-    def _handle_final_failure(self, error: Exception, url: str):
-        """Handle the final failure after all retries."""
-        util.printD(f"[http_client] Final failure for {url}: {error}")
-
-
 class ChunkedDownloader:
     """Downloader supporting chunked and parallel file downloads."""
 
-    def __init__(self, client: OptimizedHTTPClient):
+    def __init__(self, client: CivitaiHttpClient):
         self.client = client
         self.chunk_size = setting.http_chunk_size
         self.max_parallel = setting.http_max_parallel_chunks
@@ -535,78 +398,33 @@ class ChunkedDownloader:
             return False
 
 
-class MemoryEfficientDownloader:
-    """Downloader that adapts chunk size based on memory usage."""
+"""
+Cleanup legacy monitoring and cache classes.
+"""
 
-    def __init__(self, max_memory: int = setting.http_max_memory_usage_mb * 1024 * 1024):
-        self.max_memory = max_memory
-        self.active = {}
-        if setting.http_memory_monitor_enabled:
-            monitor = threading.Thread(target=self._monitor_memory, daemon=True)
-            monitor.start()
-
-    def _monitor_memory(self):
-        """Background thread to monitor memory and adjust downloads."""
-        import psutil
-
-        while True:
-            try:
-                proc = psutil.Process()
-                usage = proc.memory_info().rss
-                if usage > self.max_memory:
-                    util.printD(f"[memory_monitor] High memory usage: {usage}")
-                    self._reduce_chunk_sizes()
-                time.sleep(setting.http_memory_check_interval)
-            except Exception as e:
-                util.printD(f"[memory_monitor] Error: {e}")
-                time.sleep(setting.http_memory_check_interval)
-
-    def _reduce_chunk_sizes(self):
-        """Reduce chunk sizes for active downloads when memory is high."""
-        for dl in self.active.values():
-            if hasattr(dl, 'chunk_size'):
-                dl.chunk_size = max(8192, dl.chunk_size // 2)
-                util.printD("[memory_monitor] Reduced chunk size for download")
+# Global HTTP client instance
+_global_http_client = None
+_client_lock = threading.Lock()
 
 
-class IntelligentCache:
-    """LRU cache for HTTP responses with size limit and TTL."""
+def get_http_client() -> CivitaiHttpClient:
+    """Get or create the global HTTP client instance."""
+    global _global_http_client
+    if _global_http_client is None:
+        with _client_lock:
+            if _global_http_client is None:
+                _global_http_client = CivitaiHttpClient(
+                    api_key=setting.civitai_api_key,
+                    timeout=setting.http_timeout,
+                    max_retries=setting.http_max_retries,
+                    retry_delay=setting.http_retry_delay,
+                )
+    else:
+        if _global_http_client.api_key != setting.civitai_api_key:
+            _global_http_client.update_api_key(setting.civitai_api_key)
+    return _global_http_client
 
-    def __init__(self, max_size: int = setting.http_cache_max_size_mb * 1024 * 1024):
-        self.max_size = max_size
-        self.current = 0
-        self.cache: Dict[str, bytes] = {}
-        self.access: Dict[str, float] = {}
-        self.lock = threading.Lock()
 
-    def get(self, key: str) -> Optional[bytes]:
-        """Retrieve data from cache if available."""
-        with self.lock:
-            if key in self.cache:
-                self.access[key] = time.time()
-                util.printD(f"[cache] Hit for {key}")
-                return self.cache[key]
-            util.printD(f"[cache] Miss for {key}")
-        return None
-
-    def put(self, key: str, data: bytes, ttl: int = setting.http_cache_default_ttl):
-        """Store data in cache, evicting LRU items if necessary."""
-        size = len(data)
-        with self.lock:
-            while self.current + size > self.max_size and self.cache:
-                self._evict_lru()
-            self.cache[key] = data
-            self.access[key] = time.time()
-            self.current += size
-            util.printD(f"[cache] Cached {size} bytes for {key}")
-
-    def _evict_lru(self):
-        """Evict the least recently used cache entry."""
-        if not self.access:
-            return
-        oldest = min(self.access, key=self.access.get)
-        data = self.cache.pop(oldest, None)
-        self.access.pop(oldest, None)
-        if data:
-            self.current -= len(data)
-            util.printD(f"[cache] Evicted LRU item: {oldest}")
+def get_chunked_downloader() -> ChunkedDownloader:
+    """Get chunked downloader instance using the global HTTP client."""
+    return ChunkedDownloader(get_http_client())
