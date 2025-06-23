@@ -42,6 +42,60 @@ def _create_path_manager(self) -> IPathManager:
         return StandalonePathManager()
 ```
 
+## HTTP Client Architecture
+
+### Overview
+
+The project uses a centralized HTTP client to handle all communications with the Civitai API. This design provides:
+
+- Unified error handling mechanism
+- Intelligent retry and timeout control
+- Connection pool optimization
+- Caching capabilities
+- Chunked and parallel download support
+
+### Core Components
+
+#### CivitaiHttpClient
+
+```python
+class CivitaiHttpClient:
+    """Centralized HTTP client handling all Civitai API requests."""
+```
+
+**Features**:
+- Bearer token authentication
+- Automatic retry strategy (exponential backoff)
+- Configurable timeouts
+- Streaming download support
+- Error handling and user feedback
+
+#### ChunkedDownloader
+
+```python
+class ChunkedDownloader:
+    """Downloader supporting chunked and parallel file downloads."""
+```
+
+**Features**:
+- Chunked downloads with configurable concurrency
+- Progress callback integration
+- Fallback to sequential download
+
+### Error Handling Strategy
+
+#### HTTP Error Categories
+- **4xx Client Errors**: Request issues (invalid parameters, authentication)
+- **5xx Server Errors**: Server-side failures
+- **Network Errors**: Connection and timeout issues
+- **Application Errors**: File system and permission issues
+
+#### Handling Flow
+
+```
+HTTP Request → Error Detection → Retry Decision → User Feedback → Graceful Degradation
+```
+
 ## Core Components
 
 ### 1. Environment Detection (`environment_detector.py`)
