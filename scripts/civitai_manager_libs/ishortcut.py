@@ -869,7 +869,7 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
 
 def _setup_progress_tracking(all_images_to_download: list, progress=None):
     """
-    Setup progress tracking for image downloads.
+    Setup progress tracking for image downloads with connection keep-alive.
 
     Args:
         all_images_to_download: List of images to download
@@ -883,8 +883,18 @@ def _setup_progress_tracking(all_images_to_download: list, progress=None):
         return all_images_to_download
 
     try:
+        # Send initial progress signal to establish connection
+        if hasattr(progress, 'progress'):
+            progress.progress(0, desc="Preparing image downloads...")
+        
         util.printD("[ishortcut._setup_progress_tracking] Setting up progress tracking")
-        return progress.tqdm(all_images_to_download, desc="downloading model images")
+        
+        # Only use tqdm if we have images to download
+        if hasattr(progress, 'tqdm') and all_images_to_download:
+            return progress.tqdm(all_images_to_download, desc="downloading model images")
+        else:
+            return all_images_to_download
+            
     except (IndexError, TypeError, AttributeError) as e:
         util.printD(
             f"[ishortcut._setup_progress_tracking] Failed to setup progress tracking: {str(e)}"

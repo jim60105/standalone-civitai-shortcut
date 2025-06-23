@@ -144,7 +144,13 @@ class CivitaiShortcutApp:
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
-            self.app.queue()
+            # Configure queue with proper connection management
+            self.app.queue(
+                concurrency_count=3,  # Limit concurrent operations to prevent overload
+                max_size=20,          # Queue size limit to prevent memory issues
+                api_open=False        # Disable API endpoint for security
+            )
+            
             # Launch the application
             self.app.launch(
                 server_name=host,

@@ -1397,6 +1397,10 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
         util.printD("[ishortcut_action] progress does NOT have tqdm method!")
 
     try:
+        # Send initial progress signal to establish connection
+        if hasattr(progress, 'progress'):
+            progress.progress(0, desc="Starting model registration...")
+        
         modelids = list()
         util.printD(f"[ishortcut_action] Initialized empty modelids list: {modelids}")
 
@@ -1408,9 +1412,13 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
             util.printD(f"[ishortcut_action] About to process urls: {urls}")
 
             try:
-                util.printD("[ishortcut_action] Processing URLs without progress iteration")
+                util.printD("[ishortcut_action] Processing URLs with progress keep-alive")
 
                 for i, url in enumerate(urls):
+                    # Update progress to keep connection alive
+                    if hasattr(progress, 'progress'):
+                        progress.progress((i + 1) / len(urls), desc=f"Processing model {i+1}/{len(urls)}...")
+                    
                     util.printD(f"[ishortcut_action] Processing URL #{i}: {url}")
                     util.printD(f"[ishortcut_action] URL type: {type(url)}")
 

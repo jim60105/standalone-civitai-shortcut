@@ -62,13 +62,13 @@ headers = {
 
 civitai_api_key = ""
 
-# HTTP client settings
-http_timeout = 20  # seconds
+# HTTP client settings - adjusted for better connection stability
+http_timeout = 60  # seconds - increased from 20 for long operations
 http_max_retries = 3
-http_retry_delay = 1  # seconds between retries
+http_retry_delay = 2  # seconds between retries - increased for better stability
 
-# Download settings
-download_timeout = 300  # 5 minutes for large files
+# Download settings - extended timeouts for large files
+download_timeout = 600  # 10 minutes for large files - increased from 300
 download_max_retries = 5
 download_retry_delay = 10  # seconds
 download_chunk_size = 8192  # bytes
