@@ -1,7 +1,6 @@
 import os
 import json
 import shutil
-import requests
 import gradio as gr
 import datetime
 
@@ -572,79 +571,26 @@ def write_model_information(modelid: str, register_only_information=False, progr
         except Exception as e:
             return
 
-        # 이미지 다운로드
-        if not register_only_information and len(version_list) > 0:
-            if progress:
-                for image_list in progress.tqdm(version_list, desc="downloading model images"):
-                    dn_count = 0  # 진짜로 다운 받은 이미지를 뜻한다.
-                    for image_count, (vid, url) in enumerate(progress.tqdm(image_list), start=0):
-
-                        # 0이면 전체를 지정수를 넘어가면 스킵한다.
-                        if setting.shortcut_max_download_image_per_version != 0:
-                            if dn_count >= setting.shortcut_max_download_image_per_version:
-                                continue
-
-                        try:
-                            # get image
-                            description_img = setting.get_image_url_to_shortcut_file(
-                                modelid, vid, url
-                            )
-                            if os.path.exists(description_img):
-                                dn_count = dn_count + 1
-                                continue
-
-                            with requests.get(url, stream=True) as img_r:
-                                if not img_r.ok:
-                                    util.printD(
-                                        "Get error code: "
-                                        + str(img_r.status_code)
-                                        + ": proceed to the next file"
-                                    )
-                                    continue
-
-                                # write to file
-                                with open(description_img, 'wb') as f:
-                                    img_r.raw.decode_content = True
-                                    shutil.copyfileobj(img_r.raw, f)
-                                    dn_count = dn_count + 1
-                        except Exception as e:
-                            pass
-            else:
-                for image_list in version_list:
-                    dn_count = 0  # 진짜로 다운 받은 이미지를 뜻한다.
-
-                    for image_count, (vid, url) in enumerate(image_list, start=0):
-
-                        # 0이면 전체를 지정수를 넘어가면 스킵한다.
-                        if setting.shortcut_max_download_image_per_version != 0:
-                            if dn_count >= setting.shortcut_max_download_image_per_version:
-                                continue
-
-                        try:
-                            # get image
-                            description_img = setting.get_image_url_to_shortcut_file(
-                                modelid, vid, url
-                            )
-                            if os.path.exists(description_img):
-                                dn_count = dn_count + 1
-                                continue
-
-                            with requests.get(url, stream=True) as img_r:
-                                if not img_r.ok:
-                                    util.printD(
-                                        "Get error code: "
-                                        + str(img_r.status_code)
-                                        + ": proceed to the next file"
-                                    )
-                                    continue
-
-                                # write to file
-                                with open(description_img, 'wb') as f:
-                                    img_r.raw.decode_content = True
-                                    shutil.copyfileobj(img_r.raw, f)
-                                    dn_count = dn_count + 1
-                        except Exception as e:
-                            pass
+        # 圖片下載 (使用中央化 HTTP 客戶端)
+        if not register_only_information and version_list:
+            client = get_shortcut_client()
+            iter_versions = progress.tqdm(version_list, desc="downloading model images") if progress else version_list
+            for image_list in iter_versions:
+                dn_count = 0
+                iter_images = progress.tqdm(image_list) if progress else image_list
+                for vid, url in iter_images:
+                    # 限制每版本的下載數量
+                    if setting.shortcut_max_download_image_per_version and dn_count >= setting.shortcut_max_download_image_per_version:
+                        continue
+                    try:
+                        description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
+                        if os.path.exists(description_img):
+                            dn_count += 1
+                            continue
+                        if util.download_image_safe(url, description_img, client, show_error=False):
+                            dn_count += 1
+                    except Exception:
+                        pass
 
     return model_info
 
@@ -890,58 +836,26 @@ def delete_thumbnail_image(model_id):
             return
 
 
-def download_thumbnail_image_old(model_id, url):
-    if not model_id or not url:
-        return False
-
-    if not os.path.exists(setting.shortcut_thumbnail_folder):
-        os.makedirs(setting.shortcut_thumbnail_folder)
-
-    try:
-        # get image
-        with requests.get(url, stream=True) as img_r:
-            if not img_r.ok:
-                return False
-
-            shotcut_img = os.path.join(
-                setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-            )
-            with open(shotcut_img, 'wb') as f:
-                img_r.raw.decode_content = True
-                shutil.copyfileobj(img_r.raw, f)
-
-    except Exception as e:
-        return False
-
-    return True
 
 
 def download_thumbnail_image(model_id, url):
-    global thumbnail_max_size
-
+    """Download and generate thumbnail for a shortcut image."""
     if not model_id or not url:
         return False
 
-    if not os.path.exists(setting.shortcut_thumbnail_folder):
-        os.makedirs(setting.shortcut_thumbnail_folder)
-
-    try:
-        # Get image
-        with requests.get(url, stream=True) as img_r:
-            if not img_r.ok:
-                return False
-
-            # Create thumbnail
-            with Image.open(img_r.raw) as image:
-                image.thumbnail(thumbnail_max_size)
-                thumbnail_path = os.path.join(
-                    setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-                )
-                image.save(thumbnail_path)
-
-    except Exception as e:
+    os.makedirs(setting.shortcut_thumbnail_folder, exist_ok=True)
+    thumbnail_path = os.path.join(
+        setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
+    )
+    client = get_shortcut_client()
+    if not util.download_image_safe(url, thumbnail_path, client, show_error=False):
         return False
-
+    try:
+        with Image.open(thumbnail_path) as image:
+            image.thumbnail(thumbnail_max_size)
+            image.save(thumbnail_path)
+    except Exception as e:
+        util.printD(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
     return True
 
 
