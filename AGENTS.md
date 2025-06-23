@@ -19,6 +19,7 @@
   * Any unimplemented code must be marked with `//TODO` comment.
   * Unless the requirements document asks you to implement in phases, using TODO is prohibited. TODO means there is still unfinished work. You are required to complete your work.
   * Use `pytest` for running tests and makesure this project is testable. Always run `pytest` with `|| true` since there's technical issue with `pytest` in the current project setup.
+  * Place tests in the `tests` folder; any test files located in the project root directory are considered temporary and should be deleted.
   * Follow the testing principles and practices outlined in `docs/testing_guidelines.md`.
   * Always use `util.printD()` for structured debug output with module identifiers.
   * Ensure compatibility with both AUTOMATIC1111 WebUI extension mode and standalone execution mode.
@@ -74,6 +75,7 @@ This repository contains a custom script extension purpose-built for the [AUTOMA
 * Function names follow the `snake_case` convention.
 * Class names follow `PascalCase`.
 * Constants use `UPPER_CASE`.
+* Avoid Indent Hadouken, use fail first and early return.
 
 ### File Organization
 
