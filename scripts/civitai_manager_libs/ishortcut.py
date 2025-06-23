@@ -585,11 +585,13 @@ def write_model_information(modelid: str, register_only_information=False, progr
 
             # Download all images with single progress bar
             if all_images_to_download:
-                iter_images = (
-                    progress.tqdm(all_images_to_download, desc="downloading model images")
-                    if progress
-                    else all_images_to_download
-                )
+                # Only use progress.tqdm if progress is available AND list is not empty
+                if progress and all_images_to_download:
+                    iter_images = progress.tqdm(
+                        all_images_to_download, desc="downloading model images"
+                    )
+                else:
+                    iter_images = all_images_to_download
 
                 for vid, url, description_img in iter_images:
                     try:
