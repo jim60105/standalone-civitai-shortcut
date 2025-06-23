@@ -274,7 +274,11 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     civitai_internet_url_txt.change(
         fn=on_civitai_internet_url_txt_upload,
         inputs=[civitai_internet_url_txt, register_information_only],
-        outputs=[sc_modelid, refresh_sc_browser, civitai_internet_url_txt],
+        outputs=[sc_modelid, refresh_sc_browser],
+    ).then(
+        fn=lambda success, timestamp: "" if isinstance(success, str) and success else None,
+        inputs=[sc_modelid, refresh_sc_browser],
+        outputs=[civitai_internet_url_txt],
     )
 
     return refresh_sc_browser, refresh_civitai_information
@@ -403,11 +407,24 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     return model_id, current_time, None
 
 
-def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress()):
+def on_civitai_internet_url_txt_upload(url, register_information_only, progress=None):
     util.printD(
         f"[civitai_shortcut_action] on_civitai_internet_url_txt_upload called with url: {url}, "
         f"register_information_only: {register_information_only}"
     )
+
+    # Create a proper progress object if not provided
+    if progress is None:
+        # Always use MockProgress in standalone mode to avoid Gradio compatibility issues
+
+        class MockProgress:
+            def tqdm(self, iterable, desc=""):
+                return iterable
+
+        progress = MockProgress()
+    else:
+        util.printD(f"[civitai_shortcut_action] Progress object provided: {type(progress)}")
+
     model_id = None
     if url:
         if len(url.strip()) > 0:
@@ -423,11 +440,11 @@ def on_civitai_internet_url_txt_upload(url, register_information_only, progress=
                 "[civitai_shortcut_action] No model_id found after txt upload, "
                 "returning invisible updates."
             )
-            return gr.update(visible=False), gr.update(visible=False), None
+            return gr.update(visible=False), gr.update(visible=False)
         util.printD(f"[civitai_shortcut_action] Model registered from txt: {model_id}")
-        return model_id, current_time, None
+        return model_id, current_time
     util.printD("[civitai_shortcut_action] URL is empty or None, returning fallback updates.")
-    return gr.update(visible=False), None, gr.update(visible=True)
+    return gr.update(visible=False), None
 
 
 def on_update_modelfolder_btn_click():

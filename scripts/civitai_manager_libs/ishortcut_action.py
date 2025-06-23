@@ -544,7 +544,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
     util.printD(f"[ISHORTCUT]   img_file_info: {repr(img_file_info)}")
     util.printD(f"[ISHORTCUT]   img_index: {repr(img_index)}")
     util.printD(f"[ISHORTCUT]   civitai_images: {repr(civitai_images)}")
-    
+
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
         # reference shortcut id를 넣어줄수 있다.
@@ -552,7 +552,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
             model_id, civitai_images[int(img_index)]
         )
         util.printD(f"[ISHORTCUT]   recipe_image: {repr(recipe_image)}")
-        
+
         # Pass parsed generation parameters directly when available
         if img_file_info:
             result = f"{recipe_image}\n{img_file_info}"
@@ -1385,7 +1385,7 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
     modelids = list()
     if urls:
         add_ISC = dict()
-        for url in progress.tqdm(urls, desc=f"Civitai Shortcut"):
+        for url in progress.tqdm(urls, desc="Civitai Shortcut"):
             if url:
                 model_id = util.get_model_id_from_url(url)
                 if model_id:
