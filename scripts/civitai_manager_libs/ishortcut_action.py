@@ -1382,24 +1382,122 @@ def upload_shortcut_by_files(files, register_information_only, progress):
 
 
 def upload_shortcut_by_urls(urls, register_information_only, progress):
-    modelids = list()
-    if urls:
-        add_ISC = dict()
-        for url in progress.tqdm(urls, desc="Civitai Shortcut"):
-            if url:
-                model_id = util.get_model_id_from_url(url)
-                if model_id:
-                    add_ISC = ishortcut.add(add_ISC, model_id, register_information_only, progress)
-                    modelids.append(model_id)
+    util.printD("[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS START ==========")
+    util.printD(f"[ishortcut_action] Function called with urls: {urls}")
+    util.printD(f"[ishortcut_action] urls type: {type(urls)}, length: {len(urls) if urls else 'None'}")
+    util.printD(f"[ishortcut_action] register_information_only: {register_information_only}")
+    util.printD(f"[ishortcut_action] progress: {progress}")
+    util.printD(f"[ishortcut_action] progress type: {type(progress)}")
+    
+    if hasattr(progress, 'tqdm'):
+        util.printD(f"[ishortcut_action] progress.tqdm: {progress.tqdm}")
+    else:
+        util.printD("[ishortcut_action] progress does NOT have tqdm method!")
+    
+    try:
+        modelids = list()
+        util.printD(f"[ishortcut_action] Initialized empty modelids list: {modelids}")
+        
+        if urls:
+            util.printD(f"[ishortcut_action] URLs provided, processing...")
+            add_ISC = dict()
+            util.printD(f"[ishortcut_action] Initialized empty add_ISC dict: {add_ISC}")
+            
+            util.printD(f"[ishortcut_action] About to call progress.tqdm with urls: {urls}")
+            
+            try:
+                tqdm_result = progress.tqdm(urls, desc="Civitai Shortcut")
+                util.printD(f"[ishortcut_action] progress.tqdm returned: {tqdm_result}")
+                util.printD(f"[ishortcut_action] tqdm_result type: {type(tqdm_result)}")
+                
+                for i, url in enumerate(tqdm_result):
+                    util.printD(f"[ishortcut_action] Processing URL #{i}: {url}")
+                    util.printD(f"[ishortcut_action] URL type: {type(url)}")
+                    
+                    if url:
+                        util.printD(f"[ishortcut_action] URL is not None/empty, extracting model_id...")
+                        
+                        try:
+                            model_id = util.get_model_id_from_url(url)
+                            util.printD(f"[ishortcut_action] get_model_id_from_url returned: {model_id}")
+                            
+                            if model_id:
+                                util.printD(f"[ishortcut_action] Valid model_id found, calling ishortcut.add...")
+                                util.printD(f"[ishortcut_action] ishortcut.add params: add_ISC={add_ISC}, model_id={model_id}, register_info_only={register_information_only}")
+                                
+                                try:
+                                    add_ISC = ishortcut.add(add_ISC, model_id, register_information_only, progress)
+                                    util.printD(f"[ishortcut_action] ishortcut.add SUCCESS, returned: {add_ISC}")
+                                    
+                                    modelids.append(model_id)
+                                    util.printD(f"[ishortcut_action] Added model_id to list, modelids now: {modelids}")
+                                    
+                                except Exception as e:
+                                    util.printD(f"[ishortcut_action] EXCEPTION in ishortcut.add: {e}")
+                                    util.printD(f"[ishortcut_action] ishortcut.add exception type: {type(e)}")
+                                    import traceback
+                                    util.printD(f"[ishortcut_action] ishortcut.add traceback: {traceback.format_exc()}")
+                                    raise e
+                            else:
+                                util.printD(f"[ishortcut_action] No model_id extracted from URL: {url}")
+                        except Exception as e:
+                            util.printD(f"[ishortcut_action] EXCEPTION in get_model_id_from_url: {e}")
+                            util.printD(f"[ishortcut_action] get_model_id exception type: {type(e)}")
+                            import traceback
+                            util.printD(f"[ishortcut_action] get_model_id traceback: {traceback.format_exc()}")
+                            raise e
+                    else:
+                        util.printD(f"[ishortcut_action] URL #{i} is None/empty, skipping")
+                        
+            except Exception as e:
+                util.printD(f"[ishortcut_action] EXCEPTION in progress.tqdm loop: {e}")
+                util.printD(f"[ishortcut_action] tqdm loop exception type: {type(e)}")
+                import traceback
+                util.printD(f"[ishortcut_action] tqdm loop traceback: {traceback.format_exc()}")
+                raise e
 
-        ISC = ishortcut.load()
-        if ISC:
-            ISC.update(add_ISC)
+            util.printD(f"[ishortcut_action] Finished processing URLs, loading ISC...")
+            
+            try:
+                ISC = ishortcut.load()
+                util.printD(f"[ishortcut_action] ishortcut.load() returned: {ISC}")
+                util.printD(f"[ishortcut_action] ISC type: {type(ISC)}")
+                
+                if ISC:
+                    util.printD(f"[ishortcut_action] ISC exists, updating with add_ISC...")
+                    ISC.update(add_ISC)
+                    util.printD(f"[ishortcut_action] ISC after update: {ISC}")
+                else:
+                    util.printD(f"[ishortcut_action] ISC is None/empty, using add_ISC directly...")
+                    ISC = add_ISC
+                    util.printD(f"[ishortcut_action] ISC set to add_ISC: {ISC}")
+                    
+                util.printD(f"[ishortcut_action] Saving ISC...")
+                ishortcut.save(ISC)
+                util.printD(f"[ishortcut_action] ISC saved successfully")
+                
+            except Exception as e:
+                util.printD(f"[ishortcut_action] EXCEPTION in ISC load/save: {e}")
+                util.printD(f"[ishortcut_action] ISC exception type: {type(e)}")
+                import traceback
+                util.printD(f"[ishortcut_action] ISC traceback: {traceback.format_exc()}")
+                raise e
         else:
-            ISC = add_ISC
-        ishortcut.save(ISC)
+            util.printD(f"[ishortcut_action] No URLs provided, skipping processing")
 
-    return modelids
+        util.printD(f"[ishortcut_action] Returning modelids: {modelids}")
+        util.printD("[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS END (SUCCESS) ==========")
+        return modelids
+        
+    except Exception as e:
+        util.printD(f"[ishortcut_action] OUTER EXCEPTION in upload_shortcut_by_urls: {e}")
+        util.printD(f"[ishortcut_action] Outer exception type: {type(e)}")
+        import traceback
+        util.printD(f"[ishortcut_action] Outer exception traceback: {traceback.format_exc()}")
+        util.printD("[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS END (EXCEPTION) ==========")
+        
+        # Return empty list on exception
+        return []
 
 
 def scan_downloadedmodel_to_shortcut(progress):
