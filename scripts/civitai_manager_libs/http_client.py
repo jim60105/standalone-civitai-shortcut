@@ -5,7 +5,7 @@ timeout and retry mechanisms.
 
 import json
 import time
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, List
 
 import threading
 import random
@@ -440,7 +440,99 @@ class ChunkedDownloader:
             return self._parallel_download(url, filepath, total, progress_callback)
         return self._sequential_download(url, filepath, total, progress_callback)
 
-    # TODO: implement _fallback_download, _sequential_download, _parallel_download methods
+    def _fallback_download(
+        self, url: str, filepath: str, progress_callback: Optional[Callable] = None
+    ) -> bool:
+        """Fallback to standard download when chunked download is not applicable."""
+        util.printD(f"[chunked_downloader] Fallback to single-stream download: {url}")
+        return self.client.download_file(url, filepath, progress_callback)
+
+    def _sequential_download(
+        self, url: str, filepath: str, total_size: int, progress_callback: Optional[Callable] = None
+    ) -> bool:
+        """Download file sequentially in a single stream."""
+        util.printD(f"[chunked_downloader] Starting sequential download: {url}")
+        downloaded = 0
+        try:
+            response = self.client.session.get(url, stream=True)
+            if not response.ok:
+                util.printD(
+                    f"[chunked_downloader] Sequential download failed: HTTP {response.status_code}"
+                )
+                return False
+            with open(filepath, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=self.chunk_size):
+                    if not chunk:
+                        continue
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if progress_callback:
+                        progress_callback(downloaded, total_size)
+            util.printD(f"[chunked_downloader] Sequential download completed: {filepath}")
+            return True
+        except Exception as e:
+            util.printD(f"[chunked_downloader] Sequential download error: {e}")
+            return False
+
+    def _parallel_download(
+        self, url: str, filepath: str, total_size: int, progress_callback: Optional[Callable] = None
+    ) -> bool:
+        """Download file using parallel chunked requests."""
+        util.printD(f"[chunked_downloader] Starting parallel download: {url}")
+        # divide into chunks
+        chunk_count = self.max_parallel
+        base = total_size // chunk_count
+        ranges = []
+        for i in range(chunk_count):
+            start = i * base
+            end = start + base - 1 if i < chunk_count - 1 else total_size - 1
+            ranges.append((start, end))
+        # progress tracking
+        chunk_progress: List[int] = [0] * chunk_count
+        chunk_files: List[str] = []
+
+        def _download_chunk(idx: int, start: int, end: int):
+            part_file = f"{filepath}.part{idx}"
+            chunk_files.append(part_file)
+            try:
+                headers = {'Range': f'bytes={start}-{end}'}
+                resp = self.client.session.get(url, headers=headers, stream=True)
+                if resp.ok:
+                    with open(part_file, 'wb') as pf:
+                        for data in resp.iter_content(chunk_size=8192):
+                            pf.write(data)
+                            chunk_progress[idx] += len(data)
+                            if progress_callback:
+                                total_dl = sum(chunk_progress)
+                                progress_callback(total_dl, total_size)
+                else:
+                    util.printD(f"[chunked_downloader] Chunk {idx} HTTP {resp.status_code}")
+            except Exception as e:
+                util.printD(f"[chunked_downloader] Chunk {idx} failed: {e}")
+
+        # launch threads
+        threads: List[threading.Thread] = []
+        for i, (s, e) in enumerate(ranges):
+            t = threading.Thread(target=_download_chunk, args=(i, s, e))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+        # combine parts
+        try:
+            with open(filepath, 'wb') as out:
+                for i in range(len(ranges)):
+                    part_file = f"{filepath}.part{i}"
+                    if os.path.exists(part_file):
+                        with open(part_file, 'rb') as pf:
+                            out.write(pf.read())
+                        os.remove(part_file)
+            util.printD(f"[chunked_downloader] Parallel download completed: {filepath}")
+            return True
+        except Exception as e:
+            util.printD(f"[chunked_downloader] Failed to combine chunks: {e}")
+            return False
 
 
 class MemoryEfficientDownloader:
