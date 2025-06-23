@@ -1,0 +1,73 @@
+"""Integration tests for image download functionality."""
+
+import os
+from unittest.mock import patch
+from tests.utils.test_helpers import HTTPClientTestHelper
+
+
+class TestImageDownloadIntegration:
+    """Integration tests for image download."""
+
+    def setup_method(self):
+        """Set up test environment."""
+        self.helper = HTTPClientTestHelper()
+
+    def teardown_method(self):
+        """Clean up test environment."""
+        self.helper.cleanup_temp_environment()
+
+    @patch('civitai_manager_libs.http_client.requests.get')
+    def test_preview_image_download(self, mock_get):
+        """Test model preview image download."""
+        # Arrange
+        test_image_data = b"fake_image_data"
+        mock_response = self.helper.mock_http_response(
+            status_code=200,
+            content=test_image_data,
+            headers={"Content-Type": "image/jpeg"},
+        )
+        mock_get.return_value = mock_response
+
+        model_info = {
+            "id": 12345,
+            "name": "Test Model",
+            "modelVersions": [{"images": [{"url": "http://test.com/image.jpg"}]}],
+        }
+
+        # Act
+        from civitai_manager_libs import ishortcut
+
+        result = ishortcut.download_model_preview_image_by_model_info(model_info)
+
+        # Assert
+        assert result is not None
+        assert os.path.exists(result)
+
+        with open(result, 'rb') as f:
+            assert f.read() == test_image_data
+
+    @patch('civitai_manager_libs.http_client.requests.get')
+    def test_gallery_image_batch_download(self, mock_get):
+        """Test batch download of gallery images."""
+        # Arrange
+        test_urls = [
+            "http://test.com/image1.jpg",
+            "http://test.com/image2.jpg",
+            "http://test.com/image3.jpg",
+        ]
+
+        mock_response = self.helper.mock_http_response(
+            status_code=200,
+            content=b"test_image_data",
+            headers={"Content-Type": "image/jpeg"},
+        )
+        mock_get.return_value = mock_response
+
+        # Act
+        from civitai_manager_libs import civitai_gallery_action
+
+        civitai_gallery_action.download_images(test_urls)
+
+        # Assert
+        mock_get.assert_called()
+        assert mock_get.call_count == len(test_urls)
