@@ -40,7 +40,7 @@ def download_image_file(model_name: str, image_urls: list, progress_gr=None):
         util.printD("[downloader] No image URLs to download")
         return
 
-    client = get_download_client()
+    client = get_http_client()
     success_count = 0
     total_count = len(image_urls)
 
@@ -192,7 +192,7 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
     if width:
         img_url = util.change_width_from_image_url(img_url, width)
     try:
-        client = get_download_client()
+        client = get_http_client()
         return client.download_file_with_resume(
             img_url,
             filepath,

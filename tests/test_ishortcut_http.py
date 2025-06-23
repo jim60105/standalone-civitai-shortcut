@@ -1,5 +1,4 @@
 import os
-import pytest
 
 from scripts.civitai_manager_libs import util
 from scripts.civitai_manager_libs.ishortcut import (
@@ -46,11 +45,6 @@ def test_download_model_preview_image(monkeypatch, tmp_path):
         util,
         'download_image_safe',
         lambda u, p, c, show_error=False: calls.append((u, p)) or True,
-    )
-    # Patch get_shortcut_client to avoid real HTTP client
-    monkeypatch.setattr(
-        'scripts.civitai_manager_libs.ishortcut.get_shortcut_client',
-        lambda: None,
     )
     downloaded = download_model_preview_image_by_model_info(info)
     assert downloaded == str(expected_path)
