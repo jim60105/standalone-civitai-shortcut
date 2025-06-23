@@ -16,8 +16,8 @@ class TestFileDownloadIntegration:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_large_file_download_with_resume(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_large_file_download_with_resume(self, mock_session_get):
         """Test large file download with resume capability."""
         # Arrange
         test_content = b"test content" * 1000  # Simulate large file
@@ -26,7 +26,7 @@ class TestFileDownloadIntegration:
             content=test_content,
             headers={"Content-Length": str(len(test_content))},
         )
-        mock_get.return_value = mock_response
+        mock_session_get.return_value = mock_response
 
         test_file = os.path.join(self.helper.temp_dir, "test_download.bin")
 
@@ -43,14 +43,14 @@ class TestFileDownloadIntegration:
         with open(test_file, 'rb') as f:
             assert f.read() == test_content
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_download_with_insufficient_space(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_download_with_insufficient_space(self, mock_session_get):
         """Test download failure due to insufficient disk space."""
         # This test would need platform-specific implementation
         pass
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_download_with_progress_callback(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_download_with_progress_callback(self, mock_session_get):
         """Test download with progress tracking."""
         # Arrange
         test_content = b"test" * 1000
@@ -59,12 +59,12 @@ class TestFileDownloadIntegration:
             content=test_content,
             headers={"Content-Length": str(len(test_content))},
         )
-        mock_get.return_value = mock_response
+        mock_session_get.return_value = mock_response
 
         progress_calls = []
 
-        def progress_callback(downloaded, total, speed):
-            progress_calls.append((downloaded, total, speed))
+        def progress_callback(progress, status_message):
+            progress_calls.append((progress, status_message))
 
         test_file = os.path.join(self.helper.temp_dir, "test_progress.bin")
 
@@ -76,4 +76,5 @@ class TestFileDownloadIntegration:
         # Assert
         assert success is True
         assert len(progress_calls) > 0
-        assert progress_calls[-1][0] == len(test_content)  # Final progress should be total size
+        # Final progress should indicate completion (fraction == 1.0)
+        assert progress_calls[-1][0] == 1.0

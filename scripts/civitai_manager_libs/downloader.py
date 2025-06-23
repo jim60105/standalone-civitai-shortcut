@@ -196,16 +196,28 @@ class DownloadManager:
 
 
 def add_number_to_duplicate_files(files: list) -> dict:
-    counts, result = {}, {}
+    """Generate unique filenames for duplicate entries keyed by identifier."""
+    result: dict = {}
+    used_names: set = set()
+
     for entry in files:
         if ":" not in entry:
             continue
         key, name = entry.split(":", 1)
-        cnt = counts.get(name, 0)
-        counts[name] = cnt + 1
+        # Skip if key already processed
+        if key in result:
+            continue
+
         base, ext = os.path.splitext(name)
-        new_name = f"{base} ({cnt}){ext}" if cnt else name
+        new_name = name
+        count = 1
+        # Append number suffix until name is unique
+        while new_name in used_names:
+            new_name = f"{base} ({count}){ext}"
+            count += 1
+
         result[key] = new_name
+        used_names.add(new_name)
     return result
 
 

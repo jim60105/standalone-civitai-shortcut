@@ -17,14 +17,14 @@ class TestPerformanceIntegration:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_concurrent_requests(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_concurrent_requests(self, mock_session_get):
         """Test concurrent HTTP requests."""
         # Arrange
         mock_response = self.helper.mock_http_response(
             status_code=200, json_data={"id": 12345, "name": "Test Model"}
         )
-        mock_get.return_value = mock_response
+        mock_session_get.return_value = mock_response
 
         # Act
         from civitai_manager_libs import civitai

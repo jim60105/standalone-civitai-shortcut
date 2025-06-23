@@ -30,13 +30,13 @@ date: "2025-06-23T00:59:33Z"
 - 新增 civitai 模組整合測試：**tests/integration/test_civitai_integration.py** 【F:tests/integration/test_civitai_integration.py†L1-L85】
 
 ### 2.4 錯誤處理端到端測試
-- 新增錯誤處理驗證測試：**tests/integration/test_error_handling.py** 【F:tests/integration/test_error_handling.py†L1-L75】
+- 新增錯誤處理驗證測試：**tests/integration/test_error_handling.py** 【F:tests/integration/test_error_handling.py†L1-L76】
 
 ### 2.5 檔案下載整合測試
-- 新增檔案下載整合測試：**tests/integration/test_file_download_integration.py** 【F:tests/integration/test_file_download_integration.py†L1-L79】
+- 新增檔案下載整合測試：**tests/integration/test_file_download_integration.py** 【F:tests/integration/test_file_download_integration.py†L1-L80】
 
 ### 2.6 圖片下載整合測試
-- 新增圖片下載整合測試：**tests/integration/test_image_download_integration.py** 【F:tests/integration/test_image_download_integration.py†L1-L73】
+- 新增圖片下載整合測試：**tests/integration/test_image_download_integration.py** 【F:tests/integration/test_image_download_integration.py†L1-L75】
 
 ### 2.7 效能與併發請求測試
 - 新增效能與負載測試：**tests/integration/test_performance.py** 【F:tests/integration/test_performance.py†L1-L56】

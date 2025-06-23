@@ -4,7 +4,7 @@
         "test_timeout": 5,
         "test_retry_count": 2,
         "test_download_path": "tests/temp/downloads",
-        "test_cache_path": "tests/temp/cache",
+        "test_cache_path": "tests/temp/cache"
     },
     "mock_responses": {
         "model_info": {
@@ -21,5 +21,5 @@
                 }
             ],
         }
-    },
+    }
 }

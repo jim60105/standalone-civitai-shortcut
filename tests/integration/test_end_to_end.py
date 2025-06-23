@@ -16,8 +16,8 @@ class TestEndToEndRegression:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_complete_model_workflow(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_complete_model_workflow(self, mock_session_get):
         """Test complete model download workflow."""
         # Arrange
         model_response = self.helper.mock_http_response(
@@ -59,7 +59,7 @@ class TestEndToEndRegression:
                 return image_response
             return self.helper.mock_http_response(status_code=404)
 
-        mock_get.side_effect = mock_get_side_effect
+        mock_session_get.side_effect = mock_get_side_effect
 
         # Act & Assert
         # Test 1: Get model info

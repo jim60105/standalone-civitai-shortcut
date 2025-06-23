@@ -16,8 +16,8 @@ class TestImageDownloadIntegration:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_preview_image_download(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_preview_image_download(self, mock_session_get):
         """Test model preview image download."""
         # Arrange
         test_image_data = b"fake_image_data"
@@ -26,7 +26,7 @@ class TestImageDownloadIntegration:
             content=test_image_data,
             headers={"Content-Type": "image/jpeg"},
         )
-        mock_get.return_value = mock_response
+        mock_session_get.return_value = mock_response
 
         model_info = {
             "id": 12345,
@@ -46,8 +46,8 @@ class TestImageDownloadIntegration:
         with open(result, 'rb') as f:
             assert f.read() == test_image_data
 
-    @patch('civitai_manager_libs.http_client.requests.get')
-    def test_gallery_image_batch_download(self, mock_get):
+    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    def test_gallery_image_batch_download(self, mock_session_get):
         """Test batch download of gallery images."""
         # Arrange
         test_urls = [
@@ -61,13 +61,15 @@ class TestImageDownloadIntegration:
             content=b"test_image_data",
             headers={"Content-Type": "image/jpeg"},
         )
-        mock_get.return_value = mock_response
+        mock_session_get.return_value = mock_response
 
-        # Act
-        from civitai_manager_libs import civitai_gallery_action
+        # Act - use isolated gallery folder to ensure downloads occur
+        from civitai_manager_libs import civitai_gallery_action, setting
+
+        setting.shortcut_gallery_folder = self.helper.temp_dir
 
         civitai_gallery_action.download_images(test_urls)
 
         # Assert
-        mock_get.assert_called()
-        assert mock_get.call_count == len(test_urls)
+        mock_session_get.assert_called()
+        assert mock_session_get.call_count == len(test_urls)
