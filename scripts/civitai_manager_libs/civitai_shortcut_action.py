@@ -274,11 +274,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     civitai_internet_url_txt.change(
         fn=on_civitai_internet_url_txt_upload,
         inputs=[civitai_internet_url_txt, register_information_only],
-        outputs=[sc_modelid, refresh_sc_browser],
-    ).then(
-        fn=lambda success, timestamp: "" if isinstance(success, str) and success else None,
-        inputs=[sc_modelid, refresh_sc_browser],
-        outputs=[civitai_internet_url_txt],
+        outputs=[sc_modelid, refresh_sc_browser, civitai_internet_url_txt],
     )
 
     return refresh_sc_browser, refresh_civitai_information
@@ -440,11 +436,11 @@ def on_civitai_internet_url_txt_upload(url, register_information_only, progress=
                 "[civitai_shortcut_action] No model_id found after txt upload, "
                 "returning invisible updates."
             )
-            return gr.update(visible=False), gr.update(visible=False)
+            return gr.update(visible=False), gr.update(visible=False), None
         util.printD(f"[civitai_shortcut_action] Model registered from txt: {model_id}")
-        return model_id, current_time
+        return model_id, current_time, None  # Clear textbox on success
     util.printD("[civitai_shortcut_action] URL is empty or None, returning fallback updates.")
-    return gr.update(visible=False), None
+    return gr.update(visible=False), None, gr.update(visible=True)  # Keep textbox visible
 
 
 def on_update_modelfolder_btn_click():
