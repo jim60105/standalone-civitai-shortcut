@@ -561,28 +561,39 @@ def write_model_information(modelid: str, register_only_information=False, progr
         # 圖片下載 (使用中央化 HTTP 客戶端)
         if not register_only_information and version_list:
             client = get_http_client()
-            iter_versions = (
-                progress.tqdm(version_list, desc="downloading model images")
-                if progress
-                else version_list
-            )
-            for image_list in iter_versions:
-                dn_count = 0
-                iter_images = progress.tqdm(image_list) if progress else image_list
-                for vid, url in iter_images:
-                    # 限制每版本的下載數量
-                    if (
-                        setting.shortcut_max_download_image_per_version
-                        and dn_count >= setting.shortcut_max_download_image_per_version
-                    ):
-                        continue
+
+            # Prepare all images to download with proper progress handling
+            all_images_to_download = []
+
+            # First, collect all images that need to be downloaded
+            for image_list in version_list:
+                images_for_version = []
+                for vid, url in image_list:
+                    description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
+                    if not os.path.exists(description_img):
+                        images_for_version.append((vid, url, description_img))
+
+                if (
+                    setting.shortcut_max_download_image_per_version
+                    and len(images_for_version) > setting.shortcut_max_download_image_per_version
+                ):
+                    images_for_version = images_for_version[
+                        : setting.shortcut_max_download_image_per_version
+                    ]
+
+                all_images_to_download.extend(images_for_version)
+
+            # Download all images with single progress bar
+            if all_images_to_download:
+                iter_images = (
+                    progress.tqdm(all_images_to_download, desc="downloading model images")
+                    if progress
+                    else all_images_to_download
+                )
+
+                for vid, url, description_img in iter_images:
                     try:
-                        description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
-                        if os.path.exists(description_img):
-                            dn_count += 1
-                            continue
-                        if util.download_image_safe(url, description_img, client, show_error=False):
-                            dn_count += 1
+                        util.download_image_safe(url, description_img, client, show_error=False)
                     except Exception:
                         pass
 
