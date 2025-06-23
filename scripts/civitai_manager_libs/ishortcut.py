@@ -878,7 +878,7 @@ def _setup_progress_tracking(all_images_to_download: list, progress=None):
     Returns:
         Iterator with or without progress tracking
     """
-    if not progress:
+    if progress is None:
         util.printD("[ishortcut._setup_progress_tracking] No progress callback provided")
         return all_images_to_download
 
