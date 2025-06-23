@@ -586,10 +586,19 @@ def write_model_information(modelid: str, register_only_information=False, progr
             # Download all images with single progress bar
             if all_images_to_download:
                 # Only use progress.tqdm if progress is available AND list is not empty
-                if progress and all_images_to_download:
-                    iter_images = progress.tqdm(
-                        all_images_to_download, desc="downloading model images"
-                    )
+                # Use try-except to safely check if progress.tqdm can be used
+                try:
+                    has_images = len(all_images_to_download) > 0
+                except (IndexError, TypeError, AttributeError):
+                    has_images = False
+
+                if progress and has_images:
+                    try:
+                        iter_images = progress.tqdm(
+                            all_images_to_download, desc="downloading model images"
+                        )
+                    except (IndexError, TypeError, AttributeError):
+                        iter_images = all_images_to_download
                 else:
                     iter_images = all_images_to_download
 
