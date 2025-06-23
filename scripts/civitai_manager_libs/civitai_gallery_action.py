@@ -34,19 +34,8 @@ _compat_layer = None
 # Global variable to store current page's Civitai image metadata
 _current_page_metadata = {}
 
-from .http_client import CivitaiHttpClient
-
-_http_client = None
-
-
-def get_http_client():
-    """Get or create HTTP client instance for gallery operations."""
-    global _http_client
-    if _http_client is None:
-        _http_client = CivitaiHttpClient(
-            timeout=setting.http_timeout, max_retries=setting.http_max_retries
-        )
-    return _http_client
+# HTTP client factory for gallery operations
+from .http_client import get_http_client
 
 
 def _download_single_image(img_url: str, save_path: str) -> bool:

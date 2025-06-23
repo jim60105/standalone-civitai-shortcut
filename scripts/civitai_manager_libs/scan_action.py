@@ -10,21 +10,13 @@ from . import civitai
 
 from . import ishortcut
 from . import ishortcut_action
-from .http_client import CivitaiHttpClient
-
-
-def get_scan_client():
-    """Get HTTP client for scan operations."""
-    return CivitaiHttpClient(
-        timeout=setting.scan_timeout or 30,
-        max_retries=setting.scan_max_retries or 2,
-    )
+from .http_client import get_http_client
 
 
 def download_scan_image(url: str, save_path: str) -> bool:
     """Download image during scan operation."""
     util.printD(f"[scan_action] Downloading scan image: {url}")
-    client = get_scan_client()
+    client = get_http_client()
     success = client.download_file(url, save_path)
     if success:
         util.printD(f"[scan_action] Scan image downloaded: {save_path}")

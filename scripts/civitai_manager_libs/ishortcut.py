@@ -18,21 +18,8 @@ from PIL import Image
 
 thumbnail_max_size = (400, 400)
 
-from .http_client import CivitaiHttpClient
-
-# Module-level HTTP client for shortcuts
-_shortcut_client = None
-
-
-def get_shortcut_client():
-    """Get or create HTTP client for shortcut operations."""
-    global _shortcut_client
-    if _shortcut_client is None:
-        _shortcut_client = CivitaiHttpClient(
-            timeout=setting.image_download_timeout or 30,
-            max_retries=setting.image_download_max_retries or 3,
-        )
-    return _shortcut_client
+# Use centralized HTTP client factory
+from .http_client import get_http_client
 
 
 def get_model_information(modelid: str = None, versionid: str = None, ver_index: int = None):
@@ -573,14 +560,21 @@ def write_model_information(modelid: str, register_only_information=False, progr
 
         # 圖片下載 (使用中央化 HTTP 客戶端)
         if not register_only_information and version_list:
-            client = get_shortcut_client()
-            iter_versions = progress.tqdm(version_list, desc="downloading model images") if progress else version_list
+            client = get_http_client()
+            iter_versions = (
+                progress.tqdm(version_list, desc="downloading model images")
+                if progress
+                else version_list
+            )
             for image_list in iter_versions:
                 dn_count = 0
                 iter_images = progress.tqdm(image_list) if progress else image_list
                 for vid, url in iter_images:
                     # 限制每版本的下載數量
-                    if setting.shortcut_max_download_image_per_version and dn_count >= setting.shortcut_max_download_image_per_version:
+                    if (
+                        setting.shortcut_max_download_image_per_version
+                        and dn_count >= setting.shortcut_max_download_image_per_version
+                    ):
                         continue
                     try:
                         description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
@@ -836,8 +830,6 @@ def delete_thumbnail_image(model_id):
             return
 
 
-
-
 def download_thumbnail_image(model_id, url):
     """Download and generate thumbnail for a shortcut image."""
     if not model_id or not url:
@@ -847,7 +839,7 @@ def download_thumbnail_image(model_id, url):
     thumbnail_path = os.path.join(
         setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
     )
-    client = get_shortcut_client()
+    client = get_http_client()
     if not util.download_image_safe(url, thumbnail_path, client, show_error=False):
         return False
     try:
@@ -1111,7 +1103,7 @@ def download_model_preview_image_by_model_info(model_info):
     if os.path.exists(image_path):
         util.printD(f"[ishortcut] Preview image already exists: {image_path}")
         return image_path
-    client = get_shortcut_client()
+    client = get_http_client()
     success = util.download_image_safe(preview_url, image_path, client, show_error=False)
     if success:
         util.printD(f"[ishortcut] Successfully downloaded preview image: {image_path}")

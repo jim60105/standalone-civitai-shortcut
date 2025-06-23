@@ -17,24 +17,9 @@ import gradio as gr
 from tqdm import tqdm
 
 from . import util, setting, civitai
-from .http_client import CivitaiHttpClient
 
-
-# Module-level download client instance
-_download_client = None
-
-
-def get_download_client() -> CivitaiHttpClient:
-    """Get or create HTTP client instance optimized for large file downloads."""
-    global _download_client
-    if _download_client is None:
-        _download_client = CivitaiHttpClient(
-            api_key=setting.civitai_api_key,
-            timeout=setting.download_timeout,
-            max_retries=setting.download_max_retries,
-            retry_delay=setting.download_retry_delay,
-        )
-    return _download_client
+# Use centralized HTTP client and chunked downloader factories
+from .http_client import get_http_client, get_chunked_downloader
 
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):
@@ -96,59 +81,20 @@ def download_image_file(model_name: str, image_urls: list, progress_gr=None):
 
 
 def download_file(url: str, file_path: str) -> bool:
-    """Download large files with robust error handling and resume capability."""
-    util.printD(f"[downloader] Starting download: {url} -> {file_path}")
-
-    client = get_download_client()
-
-    def progress_cb(downloaded, total, speed=""):
-        percent = (downloaded / total * 100) if total else 0
-        util.printD(f"[downloader] Progress: {percent:.1f}% ({downloaded}/{total}) {speed}")
-
-    success = client.download_file_with_resume(
-        url,
-        file_path,
-        progress_callback=progress_cb,
-        headers={"Authorization": f"Bearer {setting.civitai_api_key}"},
-    )
-    if success:
-        util.printD(f"[downloader] Successfully downloaded: {file_path}")
-        print(f"{os.path.basename(file_path)} successfully downloaded.")
-    else:
-        util.printD(f"[downloader] Failed to download: {url}")
-        print(f"Error: File download failed. {os.path.basename(file_path)}")
-        gr.Error(f"檔案下載失敗 💥! {os.path.basename(file_path)}", duration=5)
-    return success
+    """Download large files using chunked downloader."""
+    downloader = get_chunked_downloader()
+    return downloader.download_large_file(url, file_path)
 
 
 def download_file_gr(url: str, file_path: str, progress_gr=None) -> bool:
-    """Download files with Gradio progress bar integration."""
-    util.printD(f"[downloader] Starting Gradio download: {url} -> {file_path}")
+    """Download files with Gradio progress integration."""
+    downloader = get_chunked_downloader()
 
-    client = get_download_client()
+    def progress_wrapper(downloaded, total):
+        if progress_gr and hasattr(progress_gr, 'progress'):
+            progress_gr.progress = downloaded / total if total > 0 else 0
 
-    def prog_cb(downloaded, total, speed=""):
-        if progress_gr:
-            progress_gr(
-                downloaded / total if total else 0, f"下載中: {downloaded/total*100:.1f}% {speed}"
-            )
-
-    success = client.download_file_with_resume(
-        url,
-        file_path,
-        progress_callback=prog_cb,
-        headers={"Authorization": f"Bearer {setting.civitai_api_key}"},
-    )
-    if success:
-        util.printD(f"[downloader] Gradio download completed: {file_path}")
-        if progress_gr:
-            progress_gr(1.0, "下載完成 ✅")
-    else:
-        util.printD(f"[downloader] Gradio download failed: {url}")
-        if progress_gr:
-            progress_gr(0, "下載失敗 ❌")
-        gr.Error("檔案下載失敗 💥! 請檢查網路連線和存儲空間", duration=8)
-    return success
+    return downloader.download_large_file(url, file_path, progress_callback=progress_wrapper)
 
 
 class DownloadManager:
@@ -157,7 +103,7 @@ class DownloadManager:
     def __init__(self):
         self.active = {}
         self.history = []
-        self.client = get_download_client()
+        self.client = get_http_client()
 
     def start(self, url: str, file_path: str, progress_cb=None) -> str:
         task_id = f"download_{int(time.time())}_{len(self.active)}"

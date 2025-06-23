@@ -3,26 +3,8 @@ import json
 from . import util
 from . import setting
 
-# Module-level HTTP client instance
-from .http_client import CivitaiHttpClient
-
-_http_client = None
-
-
-def get_http_client():
-    """Get or create HTTP client instance."""
-    global _http_client
-    if _http_client is None:
-        _http_client = CivitaiHttpClient(
-            api_key=setting.civitai_api_key,
-            timeout=setting.http_timeout,
-            max_retries=setting.http_max_retries,
-        )
-    else:
-        # Update API key if changed
-        if _http_client.api_key != setting.civitai_api_key:
-            _http_client.update_api_key(setting.civitai_api_key)
-    return _http_client
+# Module-level HTTP client instance (use centralized factory)
+from .http_client import get_http_client
 
 
 # Set the URL for the API endpoint
