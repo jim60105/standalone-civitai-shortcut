@@ -155,7 +155,11 @@ class CivitaiHttpClient:
         response = self.get_stream(url)
         if not response:
             return False
-        total = int(response.headers.get("content-length", 0))
+        # Handle Content-Length header case-insensitively for streaming downloads
+        header_len = response.headers.get(
+            "content-length", response.headers.get("Content-Length", 0)
+        )
+        total = int(header_len or 0)
         downloaded = 0
         try:
             with open(filepath, "wb") as f:

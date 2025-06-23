@@ -88,13 +88,15 @@ def download_file(url: str, file_path: str) -> bool:
 
 def download_file_gr(url: str, file_path: str, progress_gr=None) -> bool:
     """Download files with Gradio progress integration."""
-    downloader = get_chunked_downloader()
+    # Use HTTP client for streaming download with progress callback
+    client = get_http_client()
 
-    def progress_wrapper(downloaded, total):
-        if progress_gr and hasattr(progress_gr, 'progress'):
-            progress_gr.progress = downloaded / total if total > 0 else 0
+    def progress_wrapper(downloaded: int, total: int) -> None:
+        if progress_gr:
+            fraction = downloaded / total if total > 0 else 0
+            progress_gr(fraction, "")
 
-    return downloader.download_large_file(url, file_path, progress_callback=progress_wrapper)
+    return client.download_file(url, file_path, progress_callback=progress_wrapper)
 
 
 class DownloadManager:

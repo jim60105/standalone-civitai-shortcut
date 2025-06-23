@@ -51,24 +51,29 @@ def test_download_file_uses_chunked_downloader(monkeypatch):
     assert calls == [('http://test', 'path/to/file')]
 
 
-def test_download_file_gr_uses_chunked_downloader(monkeypatch):
+def test_download_file_gr_uses_http_client(monkeypatch):
     calls = []
+    progress_calls = []
 
-    class DummyDownloader:
-        def download_large_file(self, url, file_path, progress_callback=None):
+    class DummyClient:
+        def download_file(self, url, file_path, progress_callback=None):
             calls.append((url, file_path))
             if progress_callback:
+                # Simulate partial progress: downloaded=1, total=2
                 progress_callback(1, 2)
             return True
 
+    # Monkey-patch HTTP client factory for downloader
     monkeypatch.setattr(
-        'scripts.civitai_manager_libs.downloader.get_chunked_downloader', lambda: DummyDownloader()
+        'scripts.civitai_manager_libs.downloader.get_http_client', lambda: DummyClient()
     )
 
-    class Progress:
-        progress = None
+    # Use a callback function to capture progress updates
+    def progress_callback(fraction, status_message):
+        progress_calls.append((fraction, status_message))
 
-    progress = Progress()
-    assert download_file_gr('http://test', 'path/to/file', progress) is True
+    # Execute and verify
+    assert download_file_gr('http://test', 'path/to/file', progress_callback) is True
     assert calls == [('http://test', 'path/to/file')]
-    assert progress.progress == 0.5
+    # Fraction should reflect downloaded/total = 1/2
+    assert progress_calls and progress_calls[-1][0] == 0.5
