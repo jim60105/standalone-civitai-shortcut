@@ -78,6 +78,29 @@ download_verify_checksum = False  # future feature
 Extensions_Name = "Civitai Shortcut"
 Extensions_Version = "v1.6.7"
 
+# HTTP Client Performance Settings
+http_pool_connections = 10
+http_pool_maxsize = 20
+http_pool_block = False
+http_enable_chunked_download = True
+http_max_parallel_chunks = 4
+http_chunk_size = 1024 * 1024  # 1MB
+
+# Monitoring Settings
+http_enable_monitoring = True
+http_stats_retention_hours = 24
+http_performance_log_level = "INFO"
+
+# Cache Settings
+http_cache_enabled = True
+http_cache_max_size_mb = 100
+http_cache_default_ttl = 3600  # 1 hour
+
+# Memory Management
+http_max_memory_usage_mb = 200
+http_memory_monitor_enabled = True
+http_memory_check_interval = 10  # seconds
+
 PLACEHOLDER = "[No Select]"
 NORESULT = "[No Result]"
 NEWRECIPE = "[New Prompt Recipe]"
