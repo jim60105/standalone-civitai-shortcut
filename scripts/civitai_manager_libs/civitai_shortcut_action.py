@@ -335,8 +335,10 @@ def on_civitai_information_tabs_select(evt: gr.SelectData):
         f"[civitai_shortcut_action] on_civitai_information_tabs_select called with "
         f"evt.index: {evt.index}"
     )
-    current_time = datetime.datetime.now()
-    return evt.index, current_time
+    # Only update if this is a genuine user interaction, not an automatic refresh
+    # Return the tab index but use gr.update() for update_informations
+    # to prevent triggering change event
+    return evt.index, gr.update()
 
 
 # sc_gallery function definition
@@ -405,7 +407,9 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     return model_id, current_time, None
 
 
-def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress(track_tqdm=True)):
+def on_civitai_internet_url_txt_upload(
+    url, register_information_only, progress=gr.Progress(track_tqdm=True)
+):
     util.printD("[civitai_shortcut_action] ========== URL UPLOAD HANDLER START ==========")
     util.printD(
         f"[civitai_shortcut_action] on_civitai_internet_url_txt_upload called with url: {url}, "
@@ -560,8 +564,7 @@ def on_civitai_internet_url_txt_upload(url, register_information_only, progress=
         result = (gr.update(visible=False), None, gr.update(visible=True))
         util.printD(f"[civitai_shortcut_action] Returning (exception): {result}")
         util.printD(
-            "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EXCEPTION) "
-            "=========="
+            "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EXCEPTION) " "=========="
         )
         return result
 
