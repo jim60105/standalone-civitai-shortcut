@@ -67,7 +67,7 @@ python main.py --debug
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--host` | Server host address | `127.0.0.1` |
+| `--host` | Server host address | `0.0.0.0` |
 | `--port` | Server port | `7860` |
 | `--share` | Create Gradio public share link | `False` |
 | `--config` | Custom configuration file path | `None` |
@@ -92,7 +92,7 @@ The application creates a default configuration on first run. You can customize 
 ```json
 {
   "server": {
-    "host": "127.0.0.1",
+    "host": "0.0.0.0",
     "port": 7860,
     "share": false
   },
@@ -211,7 +211,7 @@ Application logs are stored in:
 - The application runs a local web server
 - Use `--host 0.0.0.0` only if you want external access
 - Keep your Civitai API key secure
-- Regular users should use `127.0.0.1` (localhost)
+- Regular users should use `0.0.0.0` (localhost)
 
 ## Support
 

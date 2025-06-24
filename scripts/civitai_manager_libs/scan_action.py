@@ -39,7 +39,7 @@ def on_scan_ui():
                             value="This feature targets models that do not have information files available in the saved models. It calculates the hash value and searches for the model in Civitai, registering it as a shortcut. Calculating the hash value can take a significant amount of time.",
                             visible=True,
                         )
-                        with gr.Box(elem_classes="cs_box", visible=False) as scanned_result:
+                        with gr.Group(elem_classes="cs_box", visible=False) as scanned_result:
                             with gr.Column():
                                 scan_models_result = gr.CheckboxGroup(
                                     visible=True, container=True, label="Scanned Model List"

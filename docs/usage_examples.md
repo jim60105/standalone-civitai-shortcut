@@ -261,7 +261,7 @@ if compat.is_standalone_mode():
 from main import CivitaiShortcutApp
 
 app = CivitaiShortcutApp()
-app.launch(host="127.0.0.1", port=7860, share=False, debug=False)
+app.launch(host="0.0.0.0", port=7860, share=False, debug=False)
 ```
 
 ## Sampler Information Examples
