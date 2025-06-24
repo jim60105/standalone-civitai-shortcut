@@ -268,6 +268,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         fn=on_civitai_internet_url_upload,
         inputs=[civitai_internet_url, register_information_only],
         outputs=[sc_modelid, refresh_sc_browser, civitai_internet_url],
+        show_progress=True,
     )
 
     util.printD("[civitai_shortcut_action] Binding civitai_internet_url_txt.change event handler")
@@ -275,6 +276,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         fn=on_civitai_internet_url_txt_upload,
         inputs=[civitai_internet_url_txt, register_information_only],
         outputs=[sc_modelid, refresh_sc_browser, civitai_internet_url_txt],
+        show_progress=True,
     )
 
     return refresh_sc_browser, refresh_civitai_information
@@ -403,7 +405,7 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     return model_id, current_time, None
 
 
-def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress()):
+def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress(track_tqdm=True)):
     util.printD("[civitai_shortcut_action] ========== URL UPLOAD HANDLER START ==========")
     util.printD(
         f"[civitai_shortcut_action] on_civitai_internet_url_txt_upload called with url: {url}, "
@@ -469,6 +471,7 @@ def on_civitai_internet_url_txt_upload(url, register_information_only, progress=
                 )
 
                 try:
+                    # Upload shortcut by URLs, pass user choice for register_only_information
                     modelids = ishortcut_action.upload_shortcut_by_urls(
                         [url], register_information_only, progress
                     )

@@ -97,7 +97,7 @@ class CivitaiShortcutApp:
                     css = f.read()
 
             with gr.Blocks(
-                title="Civitai Shortcut - Standalone", theme="SebastianBravo/simci_css", css=css
+                title="Civitai Shortcut - Standalone", theme="SebastianBravo/simci_css", css=css,
             ) as app:
                 # Create main UI
                 create_civitai_shortcut_ui(self.compat_layer)
@@ -145,7 +145,10 @@ class CivitaiShortcutApp:
             signal.signal(signal.SIGTERM, signal_handler)
 
             # Configure queue with optimized settings for long-running tasks
-            self.app.queue(64)
+            self.app.queue(
+                max_size=64,
+                api_open=False,
+            )
             
             # Launch the application
             self.app.launch(
@@ -153,6 +156,7 @@ class CivitaiShortcutApp:
                 server_port=port,
                 share=share,
                 debug=debug,
+                show_error=debug,
                 **kwargs
             )
 

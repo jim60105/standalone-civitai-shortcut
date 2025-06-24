@@ -850,8 +850,12 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
     # Download each image with improved progress handling
     success_count = 0
     total_images = len(images_to_download)
-
-    for index, (vid, url, description_img) in enumerate(images_to_download):
+    # Use tqdm iterator to keep frontend progress alive
+    if progress_tracker is not None and hasattr(progress_tracker, 'tqdm'):
+        iterable = progress_tracker.tqdm(images_to_download, desc="Downloading images")
+    else:
+        iterable = images_to_download
+    for index, (vid, url, description_img) in enumerate(iterable):
         try:
             # Update progress before each download with robust error handling
             if progress_tracker is not None:
@@ -859,20 +863,29 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
                     current_progress = index / total_images if total_images > 0 else 0
                     desc = f"Downloading image {index + 1}/{total_images}"
 
-                    # Try progress() method first for better control
-                    if hasattr(progress_tracker, 'progress'):
-                        progress_tracker.progress(current_progress, desc=desc)
-                    else:
-                        # Fallback to basic progress update
-                        progress_tracker(current_progress, desc=desc)
+                    # Send progress update via callback, including desc
+                    progress_tracker(current_progress, desc=desc)
                 except Exception as e:
                     util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
 
             util.printD(
                 f"[ishortcut._perform_image_downloads] Downloading: {url} -> {description_img}"
             )
-            util.download_image_safe(url, description_img, client, show_error=True)
-            success_count += 1
+            # Download image with progress callback to avoid UI reset during long downloads
+            try:
+                # progress_tracker is alive because progress is not None
+                def _cb(downloaded, total):
+                    # send progress as (downloaded, total)
+                    progress_tracker((downloaded, total), desc=desc)
+
+                client.download_file(url, description_img, progress_callback=_cb)
+                success_count += 1
+            except Exception as e:
+                util.printD(f"[ishortcut._perform_image_downloads] download_file error: {e}")
+                # fallback to safe download without progress
+                if not util.download_image_safe(url, description_img, client, show_error=True):
+                    continue
+                success_count += 1
 
             # Update progress after successful download with robust error handling
             if progress_tracker is not None:
@@ -880,12 +893,8 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
                     completed_progress = (index + 1) / total_images if total_images > 0 else 1.0
                     desc = f"Downloaded {success_count}/{total_images} images"
 
-                    # Try progress() method first for better control
-                    if hasattr(progress_tracker, 'progress'):
-                        progress_tracker.progress(completed_progress, desc=desc)
-                    else:
-                        # Fallback to basic progress update
-                        progress_tracker(completed_progress, desc=desc)
+                    # Send progress update via callback
+                    progress_tracker(completed_progress, desc=desc)
                 except Exception as e:
                     util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
 
@@ -900,10 +909,7 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
     if progress_tracker is not None:
         try:
             desc = f"Download completed: {success_count}/{total_images}"
-            if hasattr(progress_tracker, 'progress'):
-                progress_tracker.progress(1.0, desc=desc)
-            else:
-                progress_tracker(1.0, desc=desc)
+            progress_tracker(1.0, desc=desc)
         except Exception as e:
             util.printD(f"[ishortcut._perform_image_downloads] Final progress update failed: {e}")
 
@@ -932,29 +938,15 @@ def _setup_progress_tracking(all_images_to_download: list, progress=None):
         total_images = len(all_images_to_download)
 
         # Initialize progress with robust error handling
-        if hasattr(progress, 'progress'):
-            try:
-                # Use progress() method with explicit parameters for better stability
-                progress.progress(
-                    0, total=total_images, unit="images", desc="Initializing image downloads..."
-                )
-                util.printD(
-                    f"[ishortcut._setup_progress_tracking] Initialized with progress() method "
-                    f"for {total_images} images"
-                )
-            except Exception as e:
-                util.printD(
-                    f"[ishortcut._setup_progress_tracking] progress() method failed: {e}, "
-                    f"falling back to basic"
-                )
-                # Fallback to basic progress initialization
-                progress(0, desc=f"Starting download of {total_images} images...")
-        else:
-            # Basic progress initialization
-            progress(0, desc=f"Starting download of {total_images} images...")
+        try:
+            # Send initial progress update including total images
+            progress(0, desc="Initializing image downloads...", total=total_images)
             util.printD(
-                f"[ishortcut._setup_progress_tracking] Initialized with basic method "
-                f"for {total_images} images"
+                f"[ishortcut._setup_progress_tracking] Initialized progress for {total_images} images"
+            )
+        except Exception as e:
+            util.printD(
+                f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}"
             )
 
         return all_images_to_download, progress
