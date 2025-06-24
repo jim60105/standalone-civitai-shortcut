@@ -153,7 +153,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             output_path=None,
             debug=False,
             quiet=False,
-            host='127.0.0.1',
+            host='0.0.0.0',
             port=7860,
             share=False,
         )
@@ -161,7 +161,7 @@ class TestConfigurationOverrides(unittest.TestCase):
         apply_cli_overrides(self.mock_app, args)
 
         # Should still set server settings
-        self.mock_config_manager.set.assert_any_call('server.host', '127.0.0.1')
+        self.mock_config_manager.set.assert_any_call('server.host', '0.0.0.0')
         self.mock_config_manager.set.assert_any_call('server.port', 7860)
         self.mock_config_manager.set.assert_any_call('server.share', False)
 
@@ -174,7 +174,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             output_path='/custom/output',
             debug=False,
             quiet=False,
-            host='127.0.0.1',
+            host='0.0.0.0',
             port=7860,
             share=False,
         )
@@ -193,7 +193,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             output_path=None,
             debug=True,
             quiet=False,
-            host='127.0.0.1',
+            host='0.0.0.0',
             port=7860,
             share=False,
         )
@@ -214,7 +214,7 @@ class TestConfigurationOverrides(unittest.TestCase):
             output_path=None,
             debug=False,
             quiet=True,
-            host='127.0.0.1',
+            host='0.0.0.0',
             port=7860,
             share=False,
         )
@@ -289,7 +289,7 @@ class TestArgumentValidation(unittest.TestCase):
         parser = create_argument_parser()
 
         # Valid hosts
-        valid_hosts = ['127.0.0.1', '0.0.0.0', 'localhost', '192.168.1.1']
+        valid_hosts = ['0.0.0.0', '0.0.0.0', 'localhost', '192.168.1.1']
         for host in valid_hosts:
             args = parser.parse_args(['--host', host])
             self.assertEqual(args.host, host)

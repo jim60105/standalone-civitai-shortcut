@@ -77,7 +77,7 @@ class TestArgumentParser(unittest.TestCase):
         """Test parsing with default arguments."""
         args = self.parser.parse_args([])
 
-        self.assertEqual(args.host, '127.0.0.1')
+        self.assertEqual(args.host, '0.0.0.0')
         self.assertEqual(args.port, 7860)
         self.assertFalse(args.share)
         self.assertFalse(args.debug)
@@ -144,7 +144,7 @@ class TestCliOverrides(unittest.TestCase):
             output_path=None,
             debug=False,
             quiet=False,
-            host='127.0.0.1',
+            host='0.0.0.0',
             port=7860,
             share=False,
         )
@@ -160,7 +160,7 @@ class TestCliOverrides(unittest.TestCase):
             output_path=None,
             debug=True,
             quiet=False,
-            host='127.0.0.1',
+            host='0.0.0.0',
             port=7860,
             share=False,
         )
@@ -200,7 +200,7 @@ class TestMainFunction(unittest.TestCase):
         # Setup mocks
         mock_args = MagicMock()
         mock_args.config = None
-        mock_args.host = '127.0.0.1'
+        mock_args.host = '0.0.0.0'
         mock_args.port = 7860
         mock_args.share = False
         mock_args.debug = False

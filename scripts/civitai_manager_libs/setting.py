@@ -61,8 +61,37 @@ headers = {
 }
 
 civitai_api_key = ""
+
+# HTTP client settings - adjusted for better connection stability
+http_timeout = 60  # seconds - increased from 20 for long operations
+http_max_retries = 3
+http_retry_delay = 2  # seconds between retries - increased for better stability
+
+# Download settings - extended timeouts for large files
+download_timeout = 600  # 10 minutes for large files - increased from 300
+download_max_retries = 5
+download_retry_delay = 10  # seconds
+download_chunk_size = 8192  # bytes
+download_max_concurrent = 3  # maximum concurrent downloads
+download_resume_enabled = True
+download_verify_checksum = False  # future feature
 Extensions_Name = "Civitai Shortcut"
 Extensions_Version = "v1.6.7"
+
+# HTTP Client Performance Settings
+http_pool_connections = 10
+http_pool_maxsize = 20
+http_pool_block = False
+http_enable_chunked_download = True
+http_max_parallel_chunks = 4
+http_chunk_size = 1024 * 1024  # 1MB
+
+# Monitoring Settings (removed per centralized HTTP client migration)
+
+# Cache Settings
+http_cache_enabled = True
+http_cache_max_size_mb = 100
+http_cache_default_ttl = 3600  # 1 hour
 
 PLACEHOLDER = "[No Select]"
 NORESULT = "[No Result]"
@@ -206,6 +235,20 @@ gallery_thumbnail_image_style = "scale-down"
 
 # 다운로드 설정
 download_images_folder = os.path.join("outputs", "download-images")
+
+# Image download settings
+image_download_timeout = 30
+image_download_max_retries = 3
+image_download_cache_enabled = True
+image_download_cache_max_age = 3600  # seconds
+scan_timeout = 30
+scan_max_retries = 2
+preview_image_quality = 85  # JPEG quality for preview images
+
+# Gallery download settings
+gallery_download_batch_size = 5
+gallery_download_timeout = 30
+gallery_max_concurrent_downloads = 3
 
 # background thread 설정
 # shortcut_auto_update = True

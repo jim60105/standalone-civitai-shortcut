@@ -18,6 +18,8 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'scripts'))
 
+os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
+
 
 class CivitaiShortcutApp:
     """Civitai Shortcut standalone application"""
@@ -97,7 +99,8 @@ class CivitaiShortcutApp:
                     css = f.read()
 
             with gr.Blocks(
-                title="Civitai Shortcut - Standalone", theme="SebastianBravo/simci_css", css=css
+                title="Civitai Shortcut - Standalone",
+                css=css,
             ) as app:
                 # Create main UI
                 create_civitai_shortcut_ui(self.compat_layer)
@@ -111,7 +114,7 @@ class CivitaiShortcutApp:
 
     def launch(
         self,
-        host: str = "127.0.0.1",
+        host: str = "0.0.0.0",
         port: int = 7860,
         share: bool = False,
         debug: bool = False,
@@ -144,14 +147,23 @@ class CivitaiShortcutApp:
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
-            self.app.queue()
+            # Configure queue with optimized settings for long-running tasks
+            self.app.queue(
+                max_size=64,
+                status_update_rate="auto",
+                api_open=False,
+            )
+
             # Launch the application
             self.app.launch(
                 server_name=host,
                 server_port=port,
                 share=share,
                 debug=debug,
-                **kwargs
+                show_error=debug,
+                ssl_verify=False,
+                quiet=False,
+                **kwargs,
             )
 
         except KeyboardInterrupt:
@@ -178,7 +190,7 @@ Examples:
 
     # Basic options
     parser.add_argument(
-        '--host', default='127.0.0.1', help='Server host address (default: 127.0.0.1)'
+        '--host', default='0.0.0.0', help='Server host address (default: 0.0.0.0)'
     )
 
     parser.add_argument('--port', type=int, default=7860, help='Server port (default: 7860)')

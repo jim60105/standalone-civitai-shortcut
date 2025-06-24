@@ -1,7 +1,6 @@
 import os
 import json
 import shutil
-import requests
 import gradio as gr
 import datetime
 
@@ -18,6 +17,9 @@ from . import classification
 from PIL import Image
 
 thumbnail_max_size = (400, 400)
+
+# Use centralized HTTP client factory
+from .http_client import get_http_client
 
 
 def get_model_information(modelid: str = None, versionid: str = None, ver_index: int = None):
@@ -513,124 +515,447 @@ def update_all_shortcut_informations(progress):
 
 
 def write_model_information(modelid: str, register_only_information=False, progress=None):
+    """
+    Write model information to local storage and optionally download images.
+
+    Args:
+        modelid: The model ID to process
+        register_only_information: If True, skip image downloads
+        progress: Progress callback for UI updates
+
+    Returns:
+        dict: Model information from Civitai API, or None if failed
+    """
+    util.printD(f"[ishortcut.write_model_information] Starting process for modelid: {modelid}")
+
     if not modelid:
-        return
+        util.printD("[ishortcut.write_model_information] No modelid provided, aborting")
+        return None
+
+    # Fetch model information from Civitai API
+    util.printD("[ishortcut.write_model_information] Fetching model info from Civitai API")
     model_info = civitai.get_model_info(modelid)
-    if model_info:
-        version_list = list()
-        if "modelVersions" in model_info.keys():
-            for version_info in model_info["modelVersions"]:
-                version_id = version_info['id']
-                if "images" in version_info.keys():
-                    image_list = list()
-                    for img in version_info["images"]:
-                        if "url" in img:
-                            img_url = img["url"]
-                            # use max width
-                            if "width" in img.keys():
-                                if img["width"]:
-                                    img_url = util.change_width_from_image_url(
-                                        img_url, img["width"]
-                                    )
-                            image_list.append([version_id, img_url])
-                    if len(image_list) > 0:
-                        version_list.append(image_list)
 
-        try:
-            # model 폴더 생성
-            model_path = os.path.join(setting.shortcut_info_folder, modelid)
-            if not os.path.exists(model_path):
-                os.makedirs(model_path)
-        except Exception as e:
-            return
+    if not model_info:
+        util.printD(f"[ishortcut.write_model_information] Failed to get model info for {modelid}")
+        return None
 
-        try:
-            # model info 저장
-            tmp_info_file = os.path.join(model_path, f"tmp{setting.info_suffix}{setting.info_ext}")
-            model_info_file = os.path.join(
-                model_path, f"{modelid}{setting.info_suffix}{setting.info_ext}"
-            )
-            with open(tmp_info_file, 'w') as f:
-                f.write(json.dumps(model_info, indent=4))
-            os.replace(tmp_info_file, model_info_file)
-        except Exception as e:
-            return
+    util.printD("[ishortcut.write_model_information] Successfully fetched model info")
 
-        # 이미지 다운로드
-        if not register_only_information and len(version_list) > 0:
-            if progress:
-                for image_list in progress.tqdm(version_list, desc="downloading model images"):
-                    dn_count = 0  # 진짜로 다운 받은 이미지를 뜻한다.
-                    for image_count, (vid, url) in enumerate(progress.tqdm(image_list), start=0):
+    # Process model versions and extract image information
+    version_list = _extract_version_images(model_info, modelid)
 
-                        # 0이면 전체를 지정수를 넘어가면 스킵한다.
-                        if setting.shortcut_max_download_image_per_version != 0:
-                            if dn_count >= setting.shortcut_max_download_image_per_version:
-                                continue
+    # Create model directory and save information
+    model_path = _create_model_directory(modelid)
+    if not model_path:
+        return None
 
-                        try:
-                            # get image
-                            description_img = setting.get_image_url_to_shortcut_file(
-                                modelid, vid, url
-                            )
-                            if os.path.exists(description_img):
-                                dn_count = dn_count + 1
-                                continue
+    if not _save_model_information(model_info, model_path, modelid):
+        return None
 
-                            with requests.get(url, stream=True) as img_r:
-                                if not img_r.ok:
-                                    util.printD(
-                                        "Get error code: "
-                                        + str(img_r.status_code)
-                                        + ": proceed to the next file"
-                                    )
-                                    continue
+    # Download images if requested
+    if not register_only_information:
+        _download_model_images(version_list, modelid, progress)
+    else:
+        util.printD(
+            "[ishortcut.write_model_information] Skipping image downloads "
+            "(register_only_information=True)"
+        )
 
-                                # write to file
-                                with open(description_img, 'wb') as f:
-                                    img_r.raw.decode_content = True
-                                    shutil.copyfileobj(img_r.raw, f)
-                                    dn_count = dn_count + 1
-                        except Exception as e:
-                            pass
-            else:
-                for image_list in version_list:
-                    dn_count = 0  # 진짜로 다운 받은 이미지를 뜻한다.
-
-                    for image_count, (vid, url) in enumerate(image_list, start=0):
-
-                        # 0이면 전체를 지정수를 넘어가면 스킵한다.
-                        if setting.shortcut_max_download_image_per_version != 0:
-                            if dn_count >= setting.shortcut_max_download_image_per_version:
-                                continue
-
-                        try:
-                            # get image
-                            description_img = setting.get_image_url_to_shortcut_file(
-                                modelid, vid, url
-                            )
-                            if os.path.exists(description_img):
-                                dn_count = dn_count + 1
-                                continue
-
-                            with requests.get(url, stream=True) as img_r:
-                                if not img_r.ok:
-                                    util.printD(
-                                        "Get error code: "
-                                        + str(img_r.status_code)
-                                        + ": proceed to the next file"
-                                    )
-                                    continue
-
-                                # write to file
-                                with open(description_img, 'wb') as f:
-                                    img_r.raw.decode_content = True
-                                    shutil.copyfileobj(img_r.raw, f)
-                                    dn_count = dn_count + 1
-                        except Exception as e:
-                            pass
-
+    util.printD(f"[ishortcut.write_model_information] Process completed successfully for {modelid}")
     return model_info
+
+
+def _extract_version_images(model_info: dict, modelid: str) -> list:
+    """
+    Extract image information from model versions.
+
+    Args:
+        model_info: Model information from Civitai API
+        modelid: Model ID for debug logging
+
+    Returns:
+        list: List of image lists for each version
+    """
+    util.printD(f"[ishortcut._extract_version_images] Processing versions for model {modelid}")
+    version_list = []
+
+    if "modelVersions" not in model_info:
+        util.printD(f"[ishortcut._extract_version_images] No modelVersions found for {modelid}")
+        return version_list
+
+    version_count = len(model_info["modelVersions"])
+    util.printD(f"[ishortcut._extract_version_images] Found {version_count} versions")
+
+    for idx, version_info in enumerate(model_info["modelVersions"]):
+        version_id = version_info.get('id')
+        util.printD(
+            f"[ishortcut._extract_version_images] Processing version "
+            f"{idx+1}/{version_count}, ID: {version_id}"
+        )
+
+        if not version_id:
+            util.printD(f"[ishortcut._extract_version_images] Version {idx+1} has no ID, skipping")
+            continue
+
+        if "images" not in version_info:
+            util.printD(f"[ishortcut._extract_version_images] Version {version_id} has no images")
+            continue
+
+        image_list = _process_version_images(version_info["images"], version_id)
+        if image_list:
+            version_list.append(image_list)
+            util.printD(
+                f"[ishortcut._extract_version_images] Added {len(image_list)} images "
+                f"for version {version_id}"
+            )
+        else:
+            util.printD(
+                f"[ishortcut._extract_version_images] No valid images found "
+                f"for version {version_id}"
+            )
+
+    util.printD(
+        f"[ishortcut._extract_version_images] Processed {len(version_list)} versions with images"
+    )
+    return version_list
+
+
+def _process_version_images(images: list, version_id: str) -> list:
+    """
+    Process images for a specific version.
+
+    Args:
+        images: List of image data from API
+        version_id: Version ID for this set of images
+
+    Returns:
+        list: List of [version_id, img_url] pairs
+    """
+    image_list = []
+    image_count = len(images)
+    util.printD(
+        f"[ishortcut._process_version_images] Processing {image_count} images "
+        f"for version {version_id}"
+    )
+
+    for idx, img in enumerate(images):
+        if "url" not in img:
+            util.printD(
+                f"[ishortcut._process_version_images] Image {idx+1}/{image_count} "
+                f"has no URL, skipping"
+            )
+            continue
+
+        img_url = img["url"]
+
+        # Use max width if available
+        if "width" in img and img["width"]:
+            original_url = img_url
+            img_url = util.change_width_from_image_url(img_url, img["width"])
+            util.printD(
+                f"[ishortcut._process_version_images] Adjusted image URL width: "
+                f"{original_url} -> {img_url}"
+            )
+
+        image_list.append([version_id, img_url])
+        util.printD(
+            f"[ishortcut._process_version_images] Added image {idx+1}/{image_count}: {img_url}"
+        )
+
+    return image_list
+
+
+def _create_model_directory(modelid: str) -> str:
+    """
+    Create directory for model information storage.
+
+    Args:
+        modelid: Model ID to create directory for
+
+    Returns:
+        str: Path to created directory, or None if failed
+    """
+    util.printD(f"[ishortcut._create_model_directory] Creating directory for model {modelid}")
+
+    try:
+        model_path = os.path.join(setting.shortcut_info_folder, modelid)
+        util.printD(f"[ishortcut._create_model_directory] Target path: {model_path}")
+
+        if os.path.exists(model_path):
+            util.printD("[ishortcut._create_model_directory] Directory already exists")
+        else:
+            os.makedirs(model_path)
+            util.printD("[ishortcut._create_model_directory] Directory created successfully")
+
+        return model_path
+
+    except Exception as e:
+        util.printD(f"[ishortcut._create_model_directory] Failed to create directory: {str(e)}")
+        return None
+
+
+def _save_model_information(model_info: dict, model_path: str, modelid: str) -> bool:
+    """
+    Save model information to JSON file.
+
+    Args:
+        model_info: Model information to save
+        model_path: Directory path to save in
+        modelid: Model ID for filename
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    util.printD(f"[ishortcut._save_model_information] Saving model info for {modelid}")
+
+    try:
+        tmp_info_file = os.path.join(model_path, f"tmp{setting.info_suffix}{setting.info_ext}")
+        model_info_file = os.path.join(
+            model_path, f"{modelid}{setting.info_suffix}{setting.info_ext}"
+        )
+
+        util.printD(f"[ishortcut._save_model_information] Temp file: {tmp_info_file}")
+        util.printD(f"[ishortcut._save_model_information] Final file: {model_info_file}")
+
+        # Write to temporary file first for atomic operation
+        with open(tmp_info_file, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(model_info, indent=4, ensure_ascii=False))
+
+        # Atomically replace the target file
+        os.replace(tmp_info_file, model_info_file)
+        util.printD("[ishortcut._save_model_information] Model info saved successfully")
+        return True
+
+    except Exception as e:
+        util.printD(f"[ishortcut._save_model_information] Failed to save model info: {str(e)}")
+        return False
+
+
+def _download_model_images(version_list: list, modelid: str, progress=None):
+    """
+    Download images for all model versions.
+
+    Args:
+        version_list: List of image lists for each version
+        modelid: Model ID for debug logging
+        progress: Progress callback for UI updates
+    """
+    if not version_list:
+        util.printD(f"[ishortcut._download_model_images] No images to download for {modelid}")
+        return
+
+    util.printD(f"[ishortcut._download_model_images] Starting image downloads for model {modelid}")
+
+    # Get HTTP client for downloads
+    try:
+        client = get_http_client()
+        util.printD("[ishortcut._download_model_images] HTTP client obtained successfully")
+    except Exception as e:
+        util.printD(f"[ishortcut._download_model_images] Failed to get HTTP client: {str(e)}")
+        return
+
+    # Collect all images that need downloading
+    all_images_to_download = _collect_images_to_download(version_list, modelid)
+
+    if not all_images_to_download:
+        util.printD(f"[ishortcut._download_model_images] No new images to download for {modelid}")
+        return
+
+    # Download images with progress tracking
+    _perform_image_downloads(all_images_to_download, client, progress)
+    util.printD(f"[ishortcut._download_model_images] Image downloads completed for {modelid}")
+
+
+def _collect_images_to_download(version_list: list, modelid: str) -> list:
+    """
+    Collect images that need to be downloaded (don't already exist).
+
+    Args:
+        version_list: List of image lists for each version
+        modelid: Model ID for debug logging
+
+    Returns:
+        list: List of (version_id, url, filepath) tuples to download
+    """
+    util.printD(f"[ishortcut._collect_images_to_download] Collecting images for {modelid}")
+    all_images_to_download = []
+
+    for version_idx, image_list in enumerate(version_list):
+        util.printD(
+            f"[ishortcut._collect_images_to_download] Processing version "
+            f"{version_idx+1}/{len(version_list)}"
+        )
+        images_for_version = []
+
+        for img_idx, (vid, url) in enumerate(image_list):
+            description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
+
+            if os.path.exists(description_img):
+                util.printD(
+                    f"[ishortcut._collect_images_to_download] Image {img_idx+1} "
+                    f"already exists: {description_img}"
+                )
+                continue
+
+            images_for_version.append((vid, url, description_img))
+            util.printD(
+                f"[ishortcut._collect_images_to_download] Added image {img_idx+1} "
+                f"for download: {url}"
+            )
+
+        # Apply per-version download limit
+        if (
+            setting.shortcut_max_download_image_per_version
+            and len(images_for_version) > setting.shortcut_max_download_image_per_version
+        ):
+
+            original_count = len(images_for_version)
+            images_for_version = images_for_version[
+                : setting.shortcut_max_download_image_per_version
+            ]
+            util.printD(
+                f"[ishortcut._collect_images_to_download] Limited images from "
+                f"{original_count} to {len(images_for_version)} per version limit"
+            )
+
+        all_images_to_download.extend(images_for_version)
+
+    util.printD(
+        f"[ishortcut._collect_images_to_download] Total images to download: "
+        f"{len(all_images_to_download)}"
+    )
+    return all_images_to_download
+
+
+def _perform_image_downloads(all_images_to_download: list, client, progress=None):
+    """
+    Perform the actual image downloads with correct progress tracking.
+
+    Args:
+        all_images_to_download: List of (version_id, url, filepath) tuples
+        client: HTTP client for downloads
+        progress: Progress callback for UI updates
+    """
+    util.printD(
+        f"[ishortcut._perform_image_downloads] Starting downloads for "
+        f"{len(all_images_to_download)} images"
+    )
+
+    # Setup progress tracking
+    images_to_download, progress_tracker = _setup_progress_tracking(
+        all_images_to_download, progress
+    )
+
+    # Download each image with improved progress handling
+    success_count = 0
+    total_images = len(images_to_download)
+    # Use tqdm iterator to keep frontend progress alive
+    if progress_tracker is not None and hasattr(progress_tracker, 'tqdm'):
+        iterable = progress_tracker.tqdm(images_to_download, desc="Downloading images")
+    else:
+        iterable = images_to_download
+    for index, (vid, url, description_img) in enumerate(iterable):
+        try:
+            # Update progress before each download with robust error handling
+            if progress_tracker is not None:
+                try:
+                    current_progress = index / total_images if total_images > 0 else 0
+                    desc = f"Downloading image {index + 1}/{total_images}"
+
+                    # Send progress update via callback, including desc
+                    progress_tracker(current_progress, desc=desc)
+                except Exception as e:
+                    util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
+
+            util.printD(
+                f"[ishortcut._perform_image_downloads] Downloading: {url} -> {description_img}"
+            )
+            # Download image with progress callback to avoid UI reset during long downloads
+            try:
+                # progress_tracker is alive because progress is not None
+                def _cb(downloaded, total):
+                    # send progress as (downloaded, total)
+                    progress_tracker((downloaded, total), desc=desc)
+
+                client.download_file(url, description_img, progress_callback=_cb)
+                success_count += 1
+            except Exception as e:
+                util.printD(f"[ishortcut._perform_image_downloads] download_file error: {e}")
+                # fallback to safe download without progress
+                if not util.download_image_safe(url, description_img, client, show_error=True):
+                    continue
+                success_count += 1
+
+            # Update progress after successful download with robust error handling
+            if progress_tracker is not None:
+                try:
+                    completed_progress = (index + 1) / total_images if total_images > 0 else 1.0
+                    desc = f"Downloaded {success_count}/{total_images} images"
+
+                    # Send progress update via callback
+                    progress_tracker(completed_progress, desc=desc)
+                except Exception as e:
+                    util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
+
+            util.printD(
+                f"[ishortcut._perform_image_downloads] Successfully downloaded "
+                f"image {success_count}"
+            )
+        except Exception as e:
+            util.printD(f"[ishortcut._perform_image_downloads] Failed to download {url}: {str(e)}")
+
+    # Final progress update with robust error handling
+    if progress_tracker is not None:
+        try:
+            desc = f"Download completed: {success_count}/{total_images}"
+            progress_tracker(1.0, desc=desc)
+        except Exception as e:
+            util.printD(f"[ishortcut._perform_image_downloads] Final progress update failed: {e}")
+
+    util.printD(
+        f"[ishortcut._perform_image_downloads] Downloads completed: "
+        f"{success_count}/{len(all_images_to_download)} successful"
+    )
+
+
+def _setup_progress_tracking(all_images_to_download: list, progress=None):
+    """
+    Setup progress tracking with improved reset resilience.
+
+    Args:
+        all_images_to_download: List of images to download
+        progress: Progress callback
+
+    Returns:
+        tuple: (images_list, progress_tracker)
+    """
+    if progress is None:
+        util.printD("[ishortcut._setup_progress_tracking] No progress callback provided")
+        return all_images_to_download, None
+
+    try:
+        total_images = len(all_images_to_download)
+
+        # Initialize progress with robust error handling
+        try:
+            # Send initial progress update including total images
+            progress(0, desc="Initializing image downloads...", total=total_images)
+            util.printD(
+                f"[ishortcut._setup_progress_tracking] Initialized progress for {total_images} images"
+            )
+        except Exception as e:
+            util.printD(
+                f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}"
+            )
+
+        return all_images_to_download, progress
+
+    except Exception as e:
+        util.printD(
+            f"[ishortcut._setup_progress_tracking] Failed to setup progress tracking: {str(e)}"
+        )
+        return all_images_to_download, None
 
 
 def delete_model_information(modelid: str):
@@ -874,58 +1199,24 @@ def delete_thumbnail_image(model_id):
             return
 
 
-def download_thumbnail_image_old(model_id, url):
-    if not model_id or not url:
-        return False
-
-    if not os.path.exists(setting.shortcut_thumbnail_folder):
-        os.makedirs(setting.shortcut_thumbnail_folder)
-
-    try:
-        # get image
-        with requests.get(url, stream=True) as img_r:
-            if not img_r.ok:
-                return False
-
-            shotcut_img = os.path.join(
-                setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-            )
-            with open(shotcut_img, 'wb') as f:
-                img_r.raw.decode_content = True
-                shutil.copyfileobj(img_r.raw, f)
-
-    except Exception as e:
-        return False
-
-    return True
-
-
 def download_thumbnail_image(model_id, url):
-    global thumbnail_max_size
-
+    """Download and generate thumbnail for a shortcut image."""
     if not model_id or not url:
         return False
 
-    if not os.path.exists(setting.shortcut_thumbnail_folder):
-        os.makedirs(setting.shortcut_thumbnail_folder)
-
-    try:
-        # Get image
-        with requests.get(url, stream=True) as img_r:
-            if not img_r.ok:
-                return False
-
-            # Create thumbnail
-            with Image.open(img_r.raw) as image:
-                image.thumbnail(thumbnail_max_size)
-                thumbnail_path = os.path.join(
-                    setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-                )
-                image.save(thumbnail_path)
-
-    except Exception as e:
+    os.makedirs(setting.shortcut_thumbnail_folder, exist_ok=True)
+    thumbnail_path = os.path.join(
+        setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
+    )
+    client = get_http_client()
+    if not util.download_image_safe(url, thumbnail_path, client, show_error=False):
         return False
-
+    try:
+        with Image.open(thumbnail_path) as image:
+            image.thumbnail(thumbnail_max_size)
+            image.save(thumbnail_path)
+    except Exception as e:
+        util.printD(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
     return True
 
 
@@ -1120,3 +1411,88 @@ def load() -> dict:
 
     # check for new key
     return json_data
+
+
+def _get_preview_image_url(model_info) -> str:
+    """Extract preview image URL from model info."""
+    try:
+        # Try to get from model versions
+        if 'modelVersions' in model_info and model_info['modelVersions']:
+            for version in model_info['modelVersions']:
+                if 'images' in version and version['images']:
+                    for image in version['images']:
+                        url = image.get('url')
+                        if url:
+                            return url
+        # Try to get from direct images
+        if 'images' in model_info and model_info['images']:
+            for image in model_info['images']:
+                url = image.get('url')
+                if url:
+                    return url
+        return None
+    except Exception as e:
+        util.printD(f"[ishortcut] Error extracting preview URL: {e}")
+        return None
+
+
+def _get_preview_image_path(model_info) -> str:
+    """Generate local path for preview image."""
+    try:
+        model_id = model_info.get('id')
+        if not model_id:
+            return None
+        preview_dir = setting.shortcut_thumbnail_folder
+        os.makedirs(preview_dir, exist_ok=True)
+        filename = f"model_{model_id}_preview.jpg"
+        return os.path.join(preview_dir, filename)
+    except Exception as e:
+        util.printD(f"[ishortcut] Error generating image path: {e}")
+        return None
+
+
+def download_model_preview_image_by_model_info(model_info):
+    """Download model preview image with improved error handling."""
+    if not model_info:
+        util.printD("[ishortcut] download_model_preview_image_by_model_info: model_info is None")
+        return None
+    model_id = model_info.get('id')
+    if not model_id:
+        util.printD("[ishortcut] download_model_preview_image_by_model_info: model_id not found")
+        return None
+    util.printD(f"[ishortcut] Downloading preview image for model: {model_id}")
+    preview_url = _get_preview_image_url(model_info)
+    if not preview_url:
+        util.printD("[ishortcut] No preview image URL found")
+        return None
+    image_path = _get_preview_image_path(model_info)
+    if not image_path:
+        util.printD("[ishortcut] Failed to generate image path")
+        return None
+    if os.path.exists(image_path):
+        util.printD(f"[ishortcut] Preview image already exists: {image_path}")
+        return image_path
+    client = get_http_client()
+    success = util.download_image_safe(preview_url, image_path, client, show_error=False)
+    if success:
+        util.printD(f"[ishortcut] Successfully downloaded preview image: {image_path}")
+        return image_path
+    else:
+        util.printD(f"[ishortcut] Failed to download preview image: {preview_url}")
+        return None
+
+
+def get_preview_image_by_model_info(model_info):
+    """Get preview image, download if not exists."""
+    if not model_info:
+        util.printD("[ishortcut] get_preview_image_by_model_info: model_info is None")
+        return setting.no_card_preview_image
+    image_path = _get_preview_image_path(model_info)
+    if image_path and os.path.exists(image_path):
+        util.printD(f"[ishortcut] Using existing preview image: {image_path}")
+        return image_path
+    downloaded_path = download_model_preview_image_by_model_info(model_info)
+    if downloaded_path:
+        return downloaded_path
+    util.printD("[ishortcut] Using fallback preview image")
+    return setting.no_card_preview_image

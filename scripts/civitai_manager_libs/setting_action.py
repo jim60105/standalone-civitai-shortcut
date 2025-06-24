@@ -323,7 +323,7 @@ def on_setting_ui():
     )
 
     # reload the page
-    reload_btn.click(fn=on_reload_btn_click, _js='restart_reload', inputs=None, outputs=None)
+    reload_btn.click(fn=on_reload_btn_click, js='restart_reload', inputs=None, outputs=None)
 
     usergallery_openfolder_btn.click(
         fn=on_usergallery_openfolder_btn_click, inputs=None, outputs=None

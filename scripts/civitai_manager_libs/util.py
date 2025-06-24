@@ -4,7 +4,9 @@ import json
 import hashlib
 import platform
 import subprocess
+import time
 from .compat.environment_detector import EnvironmentDetector
+from . import setting
 
 
 EXTENSIONS_NAME = "Civitai Shortcut"
@@ -12,6 +14,7 @@ EXTENSIONS_NAME = "Civitai Shortcut"
 try:
     from tqdm import tqdm
 except ImportError:
+
     def tqdm(iterable, **kwargs):
         return iterable
 
@@ -92,10 +95,12 @@ def update_url(url, param_name, new_value):
     if param_name not in url:
         # If the parameter is not found in the URL, add it to the end with the new value
         if "?" in url:
-            # If there are already other parameters in the URL, add the new parameter with "&" separator
+            # If there are already parameters in the URL,
+            # add the new parameter with "&" separator
             updated_url = url + "&" + param_name + "=" + str(new_value)
         else:
-            # If there are no parameters in the URL, add the new parameter with "?" separator
+            # If there are no parameters in the URL,
+            # add the new parameter with "?" separator
             updated_url = url + "?" + param_name + "=" + str(new_value)
     else:
         # If the parameter is found in the URL, update its value with the new value
@@ -145,6 +150,7 @@ def open_folder(path):
         if EnvironmentDetector.is_webui_mode():
             try:
                 import modules.shared as shared
+
                 if hasattr(shared, "cmd_opts") and hasattr(shared.cmd_opts, "hide_ui_dir_config"):
                     if getattr(shared.cmd_opts, "hide_ui_dir_config", False):
                         printD(
@@ -208,7 +214,7 @@ def read_json(path) -> dict:
     try:
         with open(path, 'r') as f:
             contents = json.load(f)
-    except:
+    except Exception:
         return None
 
     return contents
@@ -224,7 +230,7 @@ def write_json(contents, path):
     try:
         with open(path, 'w') as f:
             f.write(json.dumps(contents, indent=4))
-    except Exception as e:
+    except Exception:
         return
 
 
@@ -367,7 +373,7 @@ def write_InternetShortcut(path, url):
     try:
         with open(path, 'w', newline='\r\n') as f:
             f.write(f"[InternetShortcut]\nURL={url}")
-    except:
+    except Exception:
         return False
     return True
 
@@ -439,3 +445,130 @@ def search_file(root_dirs: list, base: list, exts: list) -> list:
                         file_list.append(os.path.join(root, file_name))
 
     return file_list if len(file_list) > 0 else None
+
+
+# Image download helper functions
+def download_image_safe(
+    url: str,
+    save_path: str,
+    client=None,
+    show_error: bool = True,
+) -> bool:
+    """Safely download image with consistent error handling."""
+    if not url:
+        printD("[util] download_image_safe: URL is empty")
+        return False
+
+    if os.path.exists(save_path):
+        printD(f"[util] Image already exists: {save_path}")
+        return True
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    if client is None:
+        from .http_client import get_http_client
+
+        client = get_http_client()
+
+    try:
+        success = client.download_file(url, save_path)
+    except Exception as e:
+        printD(f"[util] download_image_safe exception: {e}")
+        success = False
+
+    if success:
+        printD(f"[util] Successfully downloaded image: {save_path}")
+    else:
+        printD(f"[util] Failed to download image: {url}")
+        if show_error:
+            try:
+                import gradio as gr
+
+                gr.Error("Image download failed 💥!", duration=3)
+            except Exception:
+                pass
+
+    return success
+
+
+def handle_image_download_error(
+    error: Exception,
+    url: str,
+    context: str = "",
+) -> None:
+    """Handle image download errors specifically."""
+    error_msg = ""
+
+    import requests
+
+    if isinstance(error, requests.exceptions.Timeout):
+        error_msg = "Image download timed out"
+    elif isinstance(error, requests.exceptions.ConnectionError):
+        error_msg = "Network connection failed"
+    elif hasattr(error, 'response') and error.response:
+        status_code = error.response.status_code
+        if status_code == 404:
+            error_msg = "Image not found"
+        elif status_code == 403:
+            error_msg = "Image access denied"
+        else:
+            error_msg = f"Image download failed (HTTP {status_code})"
+    else:
+        error_msg = "Unknown image download error"
+
+    printD(f"[image_download] {context}: {error_msg} - {url}")
+
+    if context in ["preview", "model_image"]:
+        try:
+            import gradio as gr
+
+            gr.Error(f"{error_msg} 💥!", duration=3)
+        except Exception:
+            pass
+
+
+def download_with_cache_and_retry(
+    url: str,
+    cache_key: str,
+    max_age: int = 3600,
+) -> str:
+    """Download with caching and retry logic."""
+    cache_path = os.path.join(setting.cache_folder, f"{cache_key}.jpg")
+
+    if os.path.exists(cache_path):
+        if time.time() - os.path.getmtime(cache_path) < max_age:
+            printD(f"[cache] Using cached image: {cache_path}")
+            return cache_path
+
+    from .http_client import get_http_client
+
+    client = get_http_client()
+    success = client.download_file(url, cache_path)
+
+    if success:
+        return cache_path
+    if os.path.exists(cache_path):
+        printD("[cache] Using stale cached image due to download failure")
+        return cache_path
+    return setting.no_card_preview_image
+
+
+def optimize_downloaded_image(
+    image_path: str,
+    max_size: tuple = (800, 600),
+    quality: int = 85,
+) -> bool:
+    """Optimize downloaded image size and quality."""
+    try:
+        from PIL import Image
+
+        with Image.open(image_path) as img:
+            if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            img.save(image_path, format='JPEG', quality=quality, optimize=True)
+
+        printD(f"[image_optimize] Optimized image: {image_path}")
+        return True
+    except Exception as e:
+        printD(f"[image_optimize] Failed to optimize {image_path}: {e}")
+        return False

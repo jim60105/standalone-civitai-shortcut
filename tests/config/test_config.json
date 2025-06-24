@@ -1,0 +1,25 @@
+{
+    "test_settings": {
+        "mock_civitai_api": true,
+        "test_timeout": 5,
+        "test_retry_count": 2,
+        "test_download_path": "tests/temp/downloads",
+        "test_cache_path": "tests/temp/cache"
+    },
+    "mock_responses": {
+        "model_info": {
+            "id": 12345,
+            "name": "Test Model",
+            "description": "Test Description",
+            "modelVersions": [
+                {
+                    "id": 67890,
+                    "name": "Test Version",
+                    "images": [
+                        {"url": "https://example.com/test_image.jpg", "width": 512, "height": 512}
+                    ],
+                }
+            ],
+        }
+    }
+}

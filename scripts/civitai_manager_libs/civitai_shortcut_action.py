@@ -268,6 +268,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         fn=on_civitai_internet_url_upload,
         inputs=[civitai_internet_url, register_information_only],
         outputs=[sc_modelid, refresh_sc_browser, civitai_internet_url],
+        show_progress=True,
     )
 
     util.printD("[civitai_shortcut_action] Binding civitai_internet_url_txt.change event handler")
@@ -275,6 +276,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         fn=on_civitai_internet_url_txt_upload,
         inputs=[civitai_internet_url_txt, register_information_only],
         outputs=[sc_modelid, refresh_sc_browser, civitai_internet_url_txt],
+        show_progress=True,
     )
 
     return refresh_sc_browser, refresh_civitai_information
@@ -333,8 +335,10 @@ def on_civitai_information_tabs_select(evt: gr.SelectData):
         f"[civitai_shortcut_action] on_civitai_information_tabs_select called with "
         f"evt.index: {evt.index}"
     )
-    current_time = datetime.datetime.now()
-    return evt.index, current_time
+    # Only update if this is a genuine user interaction, not an automatic refresh
+    # Return the tab index but use gr.update() for update_informations
+    # to prevent triggering change event
+    return evt.index, gr.update()
 
 
 # sc_gallery function definition
@@ -403,31 +407,166 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     return model_id, current_time, None
 
 
-def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress()):
+def on_civitai_internet_url_txt_upload(
+    url, register_information_only, progress=gr.Progress(track_tqdm=True)
+):
+    util.printD("[civitai_shortcut_action] ========== URL UPLOAD HANDLER START ==========")
     util.printD(
         f"[civitai_shortcut_action] on_civitai_internet_url_txt_upload called with url: {url}, "
-        f"register_information_only: {register_information_only}"
+        f"register_information_only: {register_information_only}, progress: {progress}"
     )
-    model_id = None
-    if url:
-        if len(url.strip()) > 0:
-            modelids = ishortcut_action.upload_shortcut_by_urls(
-                [url], register_information_only, progress
-            )
-            util.printD(f"[civitai_shortcut_action] upload_shortcut_by_urls returned: {modelids}")
-            if len(modelids) > 0:
-                model_id = modelids[0]
-        current_time = datetime.datetime.now()
-        if not model_id:
+    util.printD(f"[civitai_shortcut_action] URL type: {type(url)}, URL repr: {repr(url)}")
+    util.printD(
+        f"[civitai_shortcut_action] register_information_only type: "
+        f"{type(register_information_only)}"
+    )
+    util.printD(f"[civitai_shortcut_action] progress type: {type(progress)}")
+
+    try:
+        # Check environment and create appropriate progress object if needed
+        util.printD("[civitai_shortcut_action] Checking progress object...")
+
+        # Import environment detector to determine current mode
+        from .compat.environment_detector import EnvironmentDetector
+
+        is_standalone = EnvironmentDetector.is_standalone_mode()
+        util.printD(f"[civitai_shortcut_action] Detected mode - standalone: {is_standalone}")
+
+        # In standalone mode, we need to use a compatible progress implementation
+        if is_standalone and (progress is None or not hasattr(progress, 'tqdm')):
+            util.printD("[civitai_shortcut_action] Creating MockProgress for standalone mode")
+
+            class MockProgress:
+                def tqdm(self, iterable, desc=""):
+                    util.printD(
+                        f"[MockProgress] tqdm called with iterable type: {type(iterable)}, "
+                        f"desc: {desc}"
+                    )
+                    util.printD(f"[MockProgress] iterable content: {iterable}")
+                    # Return the iterable directly, mimicking tqdm behavior
+                    return iterable
+
+            progress = MockProgress()
+            util.printD(f"[civitai_shortcut_action] Created MockProgress: {progress}")
+        else:
             util.printD(
-                "[civitai_shortcut_action] No model_id found after txt upload, "
-                "returning invisible updates."
+                f"[civitai_shortcut_action] Using provided progress object: {type(progress)}"
             )
-            return gr.update(visible=False), gr.update(visible=False), None
-        util.printD(f"[civitai_shortcut_action] Model registered from txt: {model_id}")
-        return model_id, current_time, None
-    util.printD("[civitai_shortcut_action] URL is empty or None, returning fallback updates.")
-    return gr.update(visible=False), None, gr.update(visible=True)
+            if hasattr(progress, 'tqdm'):
+                util.printD(f"[civitai_shortcut_action] Progress has tqdm method: {progress.tqdm}")
+
+        model_id = None
+        util.printD(f"[civitai_shortcut_action] Initialized model_id = {model_id}")
+
+        if url:
+            util.printD("[civitai_shortcut_action] URL is not None/empty, checking length...")
+            util.printD(
+                f"[civitai_shortcut_action] URL stripped: '{url.strip()}', "
+                f"length: {len(url.strip())}"
+            )
+
+            if len(url.strip()) > 0:
+                util.printD(
+                    "[civitai_shortcut_action] URL has content, calling upload_shortcut_by_urls..."
+                )
+                util.printD(
+                    f"[civitai_shortcut_action] Parameters: urls=[{url}], "
+                    f"register_info_only={register_information_only}, progress={progress}"
+                )
+
+                try:
+                    # Upload shortcut by URLs, pass user choice for register_only_information
+                    modelids = ishortcut_action.upload_shortcut_by_urls(
+                        [url], register_information_only, progress
+                    )
+                    util.printD(
+                        f"[civitai_shortcut_action] upload_shortcut_by_urls SUCCESS, "
+                        f"returned: {modelids}"
+                    )
+                    modelids_len = len(modelids) if modelids else 'None'
+                    util.printD(
+                        f"[civitai_shortcut_action] modelids type: {type(modelids)}, "
+                        f"length: {modelids_len}"
+                    )
+
+                    if len(modelids) > 0:
+                        model_id = modelids[0]
+                        util.printD(f"[civitai_shortcut_action] Extracted model_id: {model_id}")
+                    else:
+                        util.printD("[civitai_shortcut_action] modelids is empty!")
+
+                except Exception as e:
+                    util.printD(
+                        f"[civitai_shortcut_action] EXCEPTION in upload_shortcut_by_urls: {e}"
+                    )
+                    util.printD(f"[civitai_shortcut_action] Exception type: {type(e)}")
+                    import traceback
+
+                    tb_str = traceback.format_exc()
+                    util.printD(f"[civitai_shortcut_action] Exception traceback: {tb_str}")
+                    # Re-raise to see what happens
+                    raise e
+            else:
+                util.printD("[civitai_shortcut_action] URL is empty after strip")
+
+            current_time = datetime.datetime.now()
+            util.printD(f"[civitai_shortcut_action] Generated current_time: {current_time}")
+
+            if not model_id:
+                util.printD(
+                    "[civitai_shortcut_action] No model_id found after txt upload, "
+                    "returning invisible updates."
+                )
+                result = (gr.update(visible=False), gr.update(visible=False), None)
+                util.printD(f"[civitai_shortcut_action] Returning (no model): {result}")
+                util.printD(
+                    "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (NO MODEL) "
+                    "=========="
+                )
+                return result
+
+            util.printD(f"[civitai_shortcut_action] Model registered from txt: {model_id}")
+            result = (model_id, current_time, None)  # Clear textbox on success
+            util.printD(f"[civitai_shortcut_action] Returning (success): {result}")
+            util.printD(
+                "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (SUCCESS) "
+                "=========="
+            )
+            return result
+        else:
+            util.printD(
+                "[civitai_shortcut_action] URL is empty or None, returning fallback updates."
+            )
+            result = (
+                gr.update(visible=False),
+                None,
+                gr.update(visible=True),
+            )  # Keep textbox visible
+            util.printD(f"[civitai_shortcut_action] Returning (empty URL): {result}")
+            util.printD(
+                "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EMPTY URL) "
+                "=========="
+            )
+            return result
+
+    except Exception as e:
+        util.printD(
+            f"[civitai_shortcut_action] OUTER EXCEPTION in on_civitai_internet_url_txt_upload: "
+            f"{e}"
+        )
+        util.printD(f"[civitai_shortcut_action] Outer exception type: {type(e)}")
+        import traceback
+
+        tb_str = traceback.format_exc()
+        util.printD(f"[civitai_shortcut_action] Outer exception traceback: {tb_str}")
+
+        # Return safe fallback values
+        result = (gr.update(visible=False), None, gr.update(visible=True))
+        util.printD(f"[civitai_shortcut_action] Returning (exception): {result}")
+        util.printD(
+            "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EXCEPTION) " "=========="
+        )
+        return result
 
 
 def on_update_modelfolder_btn_click():

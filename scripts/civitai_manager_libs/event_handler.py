@@ -30,18 +30,32 @@ class EventHandler:
     def setup_component_events(
         self, components: Dict[str, gr.Component], actions: Dict[str, Callable]
     ) -> None:
-        """Bind Gradio components to action functions based on type."""
+        """Bind Gradio components to action functions with enhanced error handling."""
         for name, comp in components.items():
             if name in actions:
                 action = actions[name]
+                
+                # Wrap action with error handling to prevent connection disruption
+                def create_wrapped_action(original_action, action_name):
+                    def wrapped_action(*args, **kwargs):
+                        try:
+                            return original_action(*args, **kwargs)
+                        except Exception as e:
+                            print(f"[EventHandler] Error in action {action_name}: {e}")
+                            # Return safe fallback instead of raising exception
+                            return gr.update()
+                    return wrapped_action
+                
+                wrapped_action = create_wrapped_action(action, name)
+                
                 if isinstance(comp, gr.Button):
-                    comp.click(fn=action)
+                    comp.click(fn=wrapped_action)
                 elif isinstance(comp, gr.Slider) or isinstance(comp, gr.Dropdown):
-                    comp.change(fn=action)
+                    comp.change(fn=wrapped_action)
                 elif isinstance(comp, gr.Textbox):
-                    comp.change(fn=action)
+                    comp.change(fn=wrapped_action)
                     if hasattr(comp, 'submit'):
-                        comp.submit(fn=action)
+                        comp.submit(fn=wrapped_action)
 
     def handle_async_operation(
         self,
