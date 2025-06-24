@@ -1,7 +1,15 @@
 {
     "servers": {
         "gradio-doc": {
+            "type": "sse",
             "url": "https://gradio-docs-mcp.hf.space/gradio_api/mcp/sse"
+        },
+        "github-sudo": {
+            "type": "http",
+            "url": "https://api.githubcopilot.com/mcp",
+            "headers":{
+                "X-MCP-Toolsets": "issues,pull_requests"
+            }
         }
     }
 }
