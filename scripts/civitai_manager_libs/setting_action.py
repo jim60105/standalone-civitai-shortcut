@@ -8,6 +8,7 @@ through the compatibility layer.
 import os
 import gradio as gr
 import shutil
+from packaging import version
 
 from . import util
 from . import setting
@@ -324,9 +325,6 @@ def on_setting_ui():
 
     # reload the page
     # Dynamically select the correct JS argument for Gradio v3/v4 compatibility
-    import gradio as gr
-    from packaging import version
-
     gradio_version = version.parse(gr.__version__)
     # Gradio <=4.0.1 uses '_js', >4.0.1 uses 'js'
     js_arg = '_js' if gradio_version <= version.parse('4.0.1') else 'js'
