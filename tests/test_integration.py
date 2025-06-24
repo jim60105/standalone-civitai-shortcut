@@ -53,7 +53,7 @@ class TestIntegration(unittest.TestCase):
             initialize_compatibility_layer(mock_compat_instance)
             self.assertTrue(True)
         except AttributeError:
-            # 某些 action module 可能沒有 set_compatibility_layer，允許此例外
+            # Some action modules may not have set_compatibility_layer, allow this exception
             self.assertTrue(True)
 
     @patch('civitai_manager_libs.compat.environment_detector.EnvironmentDetector')

@@ -189,9 +189,7 @@ Examples:
     )
 
     # Basic options
-    parser.add_argument(
-        '--host', default='0.0.0.0', help='Server host address (default: 0.0.0.0)'
-    )
+    parser.add_argument('--host', default='0.0.0.0', help='Server host address (default: 0.0.0.0)')
 
     parser.add_argument('--port', type=int, default=7860, help='Server port (default: 7860)')
 

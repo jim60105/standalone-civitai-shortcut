@@ -18,7 +18,11 @@ class TestCivitaiGalleryGenerateInfo:
         self.mock_metadata = {
             'c065d13f-38b3-4cad-90e3-dbd0b8a4a23d': {
                 'id': 83509145,
-                'url': 'https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/c065d13f-38b3-4cad-90e3-dbd0b8a4a23d/width=1344/c065d13f-38b3-4cad-90e3-dbd0b8a4a23d.jpeg',
+                'url': (
+                    'https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/'
+                    'c065d13f-38b3-4cad-90e3-dbd0b8a4a23d/width=1344/'
+                    'c065d13f-38b3-4cad-90e3-dbd0b8a4a23d.jpeg'
+                ),
                 'meta': {
                     'prompt': 'test prompt',
                     'negativePrompt': 'test negative',
@@ -137,7 +141,10 @@ class TestCivitaiGalleryGenerateInfo:
         mock_image_data = [
             {
                 'id': 83509145,
-                'url': 'https://image.civitai.com/test/c065d13f-38b3-4cad-90e3-dbd0b8a4a23d/test.jpeg',
+                'url': (
+                    'https://image.civitai.com/test/'
+                    'c065d13f-38b3-4cad-90e3-dbd0b8a4a23d/test.jpeg'
+                ),
                 'nsfwLevel': 'None',  # Add required field
                 'meta': {
                     'prompt': 'test prompt',

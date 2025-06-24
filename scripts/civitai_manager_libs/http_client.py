@@ -249,23 +249,25 @@ class CivitaiHttpClient:
         """Handle download errors with recovery strategies."""
         if isinstance(error, requests.exceptions.Timeout):
             util.printD(f"[http_client] Download timeout for {url}")
-            gr.Error("下載超時，請檢查網路連線 💥!", duration=5)
+            gr.Error("Download timeout, please check your network connection 💥!", duration=5)
         elif isinstance(error, requests.exceptions.ConnectionError):
             util.printD(f"[http_client] Connection error for {url}")
-            gr.Error("網路連線失敗，請檢查網路設定 💥!", duration=5)
+            gr.Error(
+                "Network connection failed, please check your network settings 💥!", duration=5
+            )
         elif hasattr(error, "response") and error.response:
             status_code = error.response.status_code
             if status_code == 403:
-                gr.Error("存取被拒絕，請檢查 API 金鑰 💥!", duration=8)
+                gr.Error("Access denied, please check your API key 💥!", duration=8)
             elif status_code == 404:
-                gr.Error("檔案不存在或已被移除 💥!", duration=5)
+                gr.Error("File does not exist or has been removed 💥!", duration=5)
             elif status_code >= 500:
-                gr.Error("伺服器錯誤，請稍後再試 💥!", duration=5)
+                gr.Error("Server error, please try again later 💥!", duration=5)
             else:
-                gr.Error(f"下載失敗 (HTTP {status_code}) 💥!", duration=5)
+                gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
         else:
             util.printD(f"[http_client] Unknown download error: {error}")
-            gr.Error("下載發生未知錯誤 💥!", duration=5)
+            gr.Error("Unknown error occurred during download 💥!", duration=5)
 
         # Clean up partial file if empty
         try:

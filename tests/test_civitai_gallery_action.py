@@ -127,7 +127,7 @@ def test_download_images_with_progress(tmp_path, monkeypatch):
     cga.download_images_with_progress(urls, progress_callback=progress_cb)
     assert (tmp_path / "x.png").exists()
     assert (tmp_path / "y.png").exists()
-    assert calls == [(1, 2, "下載圖片 1/2"), (2, 2, "下載圖片 2/2")]
+    assert calls == [(1, 2, "Downloading image 1/2"), (2, 2, "Downloading image 2/2")]
 
 
 def test_download_images_batch(tmp_path, monkeypatch):

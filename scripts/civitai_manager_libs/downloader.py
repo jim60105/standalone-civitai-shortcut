@@ -48,7 +48,7 @@ def download_image_file(model_name: str, image_urls: list, progress_gr=None):
 
     for index, img_url in enumerate(image_urls, start=1):
         if progress_gr:
-            progress_gr((index - 1) / total_count, f"下載圖片 {index}/{total_count}")
+            progress_gr((index - 1) / total_count, f"Downloading image {index}/{total_count}")
 
         if util.is_url_or_filepath(img_url) == "filepath":
             dest = os.path.join(save_folder, os.path.basename(img_url))
@@ -71,13 +71,16 @@ def download_image_file(model_name: str, image_urls: list, progress_gr=None):
     util.printD(f"[downloader] Image download complete: {success_count}/{total_count} successful")
     if progress_gr:
         msg = (
-            f"圖片下載完成 ✅ ({success_count}/{total_count})"
+            f"All images downloaded successfully ✅ ({success_count}/{total_count})"
             if success_count == total_count
-            else f"部分圖片下載完成 ⚠️ ({success_count}/{total_count})"
+            else f"Some images downloaded with warnings ⚠️ ({success_count}/{total_count})"
         )
         progress_gr(1.0, msg)
     if success_count < total_count:
-        gr.Error(f"部分圖片下載失敗 ({total_count - success_count} 個) 💥!", duration=5)
+        gr.Error(
+            f"Some images failed to download ({total_count - success_count} files) 💥!",
+            duration=5,
+        )
 
 
 def download_file(url: str, file_path: str) -> bool:
@@ -242,7 +245,8 @@ def download_file_thread(
             util.printD(f"[downloader] Wrote version info: {info_path}")
         preview_path = os.path.join(
             folder,
-            f"{util.replace_filename(savefile_base)}{setting.preview_image_suffix}{setting.preview_image_ext}",
+            f"{util.replace_filename(savefile_base)}"
+            f"{setting.preview_image_suffix}{setting.preview_image_ext}",
         )
         if download_preview_image(preview_path, vi):
             util.printD(f"[downloader] Wrote preview image: {preview_path}")

@@ -100,7 +100,7 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
             client.download_file(img_url, gallery_img_file)
         completed += 1
         if progress_callback:
-            progress_callback(completed, total, f"下載圖片 {completed}/{total}")
+            progress_callback(completed, total, f"Downloading image {completed}/{total}")
 
 
 def download_images_batch(
@@ -859,7 +859,11 @@ def download_images(dn_image_list: list):
     )
 
     if failed_count > 0:
-        gr.Error(f"部分圖片下載失敗 ({failed_count} 個)，請檢查網路連線 💥!", duration=3)
+        gr.Error(
+            f"Some images failed to download ({failed_count} files), "
+            "please check your network connection 💥!",
+            duration=3,
+        )
 
 
 def load_gallery_page(usergal_page_url, paging_information):

@@ -24,7 +24,7 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         self.processor = StandaloneMetadataProcessor()
         self.temp_dir = tempfile.TemporaryDirectory()
         self.img_path = os.path.join(self.temp_dir.name, 'test.png')
-        # 建立一個帶有 metadata 的 PNG
+        # Create a PNG file with metadata
         img = Image.new('RGB', (64, 64), color='red')
         meta = PngImagePlugin.PngInfo()
         meta.add_text("parameters", "prompt\nNegative prompt: bad\nSteps: 20, Sampler: Euler")
@@ -37,7 +37,7 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
         """Test extract png info success."""
         geninfo, params, info_text = self.processor.extract_png_info(self.img_path)
         self.assertIn("prompt", geninfo)
-        # Steps 只會在 Negative prompt 字串內
+        # Steps only appears in the Negative prompt string
         self.assertIn("Steps", geninfo)
         self.assertIn("Negative prompt", params)
         self.assertIn("parameters", info_text)
@@ -51,7 +51,7 @@ class TestStandaloneMetadataProcessor(unittest.TestCase):
 
     def test_extract_png_info_invalid_image(self):
         """Test extract png info invalid image."""
-        # 建立一個非圖片檔案
+        # Create a non-image file
         bad_path = os.path.join(self.temp_dir.name, 'bad.txt')
         with open(bad_path, 'w') as f:
             f.write('not an image')

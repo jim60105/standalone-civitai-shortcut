@@ -74,6 +74,7 @@ def create_civitai_shortcut_ui(compat_layer):
             ],
         )
 
+
 def _on_civitai_tabs_select(evt: gr.SelectData):
     """
     Handle tab selection events.

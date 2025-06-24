@@ -125,7 +125,7 @@ class TestModuleCompatibility(unittest.TestCase):
         try:
             initialize_compatibility_layer(mock_compat_instance)
         except AttributeError:
-            # 某些 action module 可能沒有 set_compatibility_layer，允許此例外
+            # Some action modules may not have set_compatibility_layer, allow this exception
             pass
 
         # Verify that compatibility layer was set (would need to check actual modules)
@@ -151,7 +151,7 @@ class TestSettingModuleCompatibility(unittest.TestCase):
 
     def test_setting_get_extension_base_path(self):
         """Test extension base path retrieval through compatibility layer."""
-        # Patch get_compatibility_layer 目標需用完整路徑
+        # Patch get_compatibility_layer target must use full path
         patch_path = (
             'scripts.civitai_manager_libs.compat.compat_layer'
             '.CompatibilityLayer.get_compatibility_layer'
@@ -167,7 +167,7 @@ class TestSettingModuleCompatibility(unittest.TestCase):
 
     def test_setting_load_data_with_compatibility(self):
         """Test load_data function with compatibility layer."""
-        # Patch get_compatibility_layer 目標需用完整路徑
+        # Patch get_compatibility_layer target must use full path
         patch_path = (
             'scripts.civitai_manager_libs.compat.compat_layer'
             '.CompatibilityLayer.get_compatibility_layer'
@@ -189,7 +189,7 @@ class TestUtilModuleCompatibility(unittest.TestCase):
 
     def test_util_printD_with_compatibility_layer(self):
         """Test printD function with compatibility layer."""
-        # Patch get_compatibility_layer 目標需用完整路徑
+        # Patch get_compatibility_layer target must use full path
         patch_path = (
             'scripts.civitai_manager_libs.compat.compat_layer'
             '.CompatibilityLayer.get_compatibility_layer'
@@ -206,7 +206,7 @@ class TestUtilModuleCompatibility(unittest.TestCase):
 
     def test_util_printD_without_compatibility_layer(self):
         """Test printD function without compatibility layer."""
-        # Patch get_compatibility_layer 目標需用完整路徑
+        # Patch get_compatibility_layer target must use full path
         patch_path = (
             'scripts.civitai_manager_libs.compat.compat_layer'
             '.CompatibilityLayer.get_compatibility_layer'

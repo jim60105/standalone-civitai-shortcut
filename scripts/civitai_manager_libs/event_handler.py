@@ -34,7 +34,7 @@ class EventHandler:
         for name, comp in components.items():
             if name in actions:
                 action = actions[name]
-                
+
                 # Wrap action with error handling to prevent connection disruption
                 def create_wrapped_action(original_action, action_name):
                     def wrapped_action(*args, **kwargs):
@@ -44,10 +44,11 @@ class EventHandler:
                             print(f"[EventHandler] Error in action {action_name}: {e}")
                             # Return safe fallback instead of raising exception
                             return gr.update()
+
                     return wrapped_action
-                
+
                 wrapped_action = create_wrapped_action(action, name)
-                
+
                 if isinstance(comp, gr.Button):
                     comp.click(fn=wrapped_action)
                 elif isinstance(comp, gr.Slider) or isinstance(comp, gr.Dropdown):

@@ -43,7 +43,7 @@ class TestWebUIPathManager(unittest.TestCase):
         """Test get all model paths."""
         paths = self.manager.get_all_model_paths()
         self.assertIsInstance(paths, dict)
-        # 檢查 key 不區分大小寫
+        # Check that key is case-insensitive
         keys_lower = [k.lower() for k in paths.keys()]
         self.assertIn('lora', keys_lower)
 

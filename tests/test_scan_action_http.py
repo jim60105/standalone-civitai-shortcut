@@ -1,4 +1,3 @@
-
 from scripts.civitai_manager_libs.scan_action import download_scan_image
 
 

@@ -945,9 +945,7 @@ def _setup_progress_tracking(all_images_to_download: list, progress=None):
                 f"[ishortcut._setup_progress_tracking] Initialized progress for {total_images} images"
             )
         except Exception as e:
-            util.printD(
-                f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}"
-            )
+            util.printD(f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}")
 
         return all_images_to_download, progress
 

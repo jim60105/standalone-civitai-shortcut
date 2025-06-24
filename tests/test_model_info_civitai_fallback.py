@@ -76,7 +76,8 @@ class TestModelInfoCivitaiFallback(unittest.TestCase):
 
                 # Verify Civitai API was called
                 mock_api.assert_called_once_with(
-                    f"https://civitai.com/api/v1/images?limit=20&modelId={self.test_model_id}&nsfw=X"
+                    f"https://civitai.com/api/v1/images?limit=20&modelId={self.test_model_id}"
+                    f"&nsfw=X"
                 )
 
                 # Verify PNG info contains Civitai data

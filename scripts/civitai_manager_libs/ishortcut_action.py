@@ -795,7 +795,7 @@ def on_open_folder_click(mid, vid):
     if path:
         result = util.open_folder(path)
         if not result:
-            # 回傳 HTML 超連結，讓使用者自行點擊
+            # Return HTML hyperlink so user can click manually if folder cannot be opened
             util.printD(
                 f"[ishortcut_action.on_open_folder_click] Failed to open folder, returning link: {path}"
             )
@@ -1402,7 +1402,7 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
             progress(0, desc="Starting model registration...", total=len(urls))
         except Exception:
             pass
-        
+
         modelids = list()
         util.printD(f"[ishortcut_action] Initialized empty modelids list: {modelids}")
 
@@ -1420,10 +1420,14 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
                     # Update progress to keep connection alive
                     # Update progress to keep connection alive
                     try:
-                        progress((i + 1) / len(urls), desc=f"Processing model {i+1}/{len(urls)}...", total=len(urls))
+                        progress(
+                            (i + 1) / len(urls),
+                            desc=f"Processing model {i+1}/{len(urls)}...",
+                            total=len(urls),
+                        )
                     except Exception:
                         pass
-                    
+
                     util.printD(f"[ishortcut_action] Processing URL #{i}: {url}")
                     util.printD(f"[ishortcut_action] URL type: {type(url)}")
 

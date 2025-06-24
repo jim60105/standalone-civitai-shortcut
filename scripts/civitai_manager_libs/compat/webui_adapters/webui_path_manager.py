@@ -11,11 +11,11 @@ from .. import paths
 from ..interfaces.ipath_manager import IPathManager
 from ..environment_detector import EnvironmentDetector
 
-if (
-    not EnvironmentDetector.is_webui_mode()
-    and ('pytest' in sys.modules or 'unittest' in sys.modules)
+if not EnvironmentDetector.is_webui_mode() and (
+    'pytest' in sys.modules or 'unittest' in sys.modules
 ):
     import types
+
     print("[Civitai Shortcut] [webui_path_manager] Mocking WebUI modules for test environment.")
     sys.modules['modules'] = types.ModuleType('modules')
     sys.modules['modules.paths'] = types.ModuleType('modules.paths')
@@ -36,7 +36,7 @@ try:
     import sys
     import importlib.util
 
-    # 正確匯入 util (兩層父目錄)
+    # Correctly import util (two parent directories up)
     util_spec = importlib.util.spec_from_file_location(
         "util", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py")
     )

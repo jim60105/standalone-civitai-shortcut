@@ -29,11 +29,15 @@ from PIL import Image
 
 def on_ui(recipe_input, shortcut_input, civitai_tabs):
 
-    # data = '''Best quality, masterpiece, ultra high res, (photorealistic:1.4),girl, beautiful_face, detailed skin,upper body, <lora:caise2-000022:0.6>
-    # Negative prompt: ng_deepnegative_v1_75t, badhandv4 (worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, bad hands, normal quality, ((monochrome)), ((grayscale)), ng_deepnegative_v1_75t, badhandv4 (worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, bad hands, normal quality, ((monochrome)), ((grayscale)),
-    # Steps: 28, Sampler: DPM++ 2M Karras, CFG scale: 11, Seed: 2508416159, Size: 640x384, Model hash: 7af26c6c98, Model: 真人_xsmix_V04很好看, Denoising strength: 0.53, Hires upscale: 2, Hires steps: 20, Hires upscaler: 4x-UltraSharp, Dynamic thresholding enabled: True, Mimic scale: 7, Threshold percentile: 100'''
+    # data = (
+    #     'Best quality, masterpiece, ultra high res, (photorealistic:1.4),girl, beautiful_face, detailed skin,upper body, <lora:caise2-000022:0.6>\n'
+    #     'Negative prompt: ng_deepnegative_v1_75t, badhandv4 (worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, bad hands, normal quality, ((monochrome)), ((grayscale)), ng_deepnegative_v1_75t, badhandv4 (worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, bad hands, normal quality, ((monochrome)), ((grayscale)),\n'
+    #     'Steps: 28, Sampler: DPM++ 2M Karras, CFG scale: 11, Seed: 2508416159, Size: 640x384, Model hash: 7af26c6c98, Model: RealPerson_xsmix_V04VeryNice, Denoising strength: 0.53, Hires upscale: 2, Hires steps: 20, Hires upscaler: 4x-UltraSharp, Dynamic thresholding enabled: True, Mimic scale: 7, Threshold percentile: 100'
+    # )
 
-    # aaa = "D:\\AI\\stable-diffusion-webui\\outputs\\download-images\\【Macross Delta】Freyja Wion Charecter LoRA（芙蕾雅·薇恩人物模組）\\images\\59749-651966.png"
+    # aaa = (
+    #     "D:\\AI\\stable-diffusion-webui\\outputs\\download-images\\[Macross Delta]Freyja Wion Charecter LoRA(Freyja Wion Character Model)\\images\\59749-651966.png"
+    # )
 
     with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
         with gr.Tabs():
