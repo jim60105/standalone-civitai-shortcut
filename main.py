@@ -18,6 +18,7 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'scripts'))
 
+os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
 
 class CivitaiShortcutApp:
     """Civitai Shortcut standalone application"""
@@ -97,7 +98,7 @@ class CivitaiShortcutApp:
                     css = f.read()
 
             with gr.Blocks(
-                title="Civitai Shortcut - Standalone", theme="SebastianBravo/simci_css", css=css,
+                title="Civitai Shortcut - Standalone", css=css,
             ) as app:
                 # Create main UI
                 create_civitai_shortcut_ui(self.compat_layer)
