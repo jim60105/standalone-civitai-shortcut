@@ -11,7 +11,7 @@ import shutil
 
 from . import util
 from . import setting
-from .compat.compat_layer import CompatibilityLayer
+from .compat.compat_layer import CompatibilityLayer  # noqa: F401
 
 # Compatibility layer variables
 _compat_layer = None
@@ -323,7 +323,16 @@ def on_setting_ui():
     )
 
     # reload the page
-    reload_btn.click(fn=on_reload_btn_click, js='restart_reload', inputs=None, outputs=None)
+    # Dynamically select the correct JS argument for Gradio v3/v4 compatibility
+    import gradio as gr
+    from packaging import version
+
+    gradio_version = version.parse(gr.__version__)
+    # Gradio <=4.0.1 uses '_js', >4.0.1 uses 'js'
+    js_arg = '_js' if gradio_version <= version.parse('4.0.1') else 'js'
+    reload_btn.click(
+        fn=on_reload_btn_click, **{js_arg: 'restart_reload'}, inputs=None, outputs=None
+    )
 
     usergallery_openfolder_btn.click(
         fn=on_usergallery_openfolder_btn_click, inputs=None, outputs=None
