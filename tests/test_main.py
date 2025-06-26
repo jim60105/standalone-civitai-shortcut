@@ -3,6 +3,8 @@
 import unittest
 import sys
 import os
+import tempfile
+import json
 from unittest.mock import patch, MagicMock
 import argparse
 
@@ -27,7 +29,21 @@ class TestCivitaiShortcutApp(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.test_config_path = os.path.join(project_root, 'config', 'default_config.json')
+        # Create a temporary config file for testing
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.test_config_path = os.path.join(self.temp_dir.name, 'test_config.json')
+
+        # Create a basic test config
+        test_config = {
+            "server": {"host": "127.0.0.1", "port": 7860, "share": False},
+            "debug": {"enabled": False},
+        }
+        with open(self.test_config_path, 'w') as f:
+            json.dump(test_config, f)
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        self.temp_dir.cleanup()
 
     @patch('scripts.civitai_manager_libs.compat.compat_layer.CompatibilityLayer')
     def test_app_initialization(self, mock_compat_layer):
