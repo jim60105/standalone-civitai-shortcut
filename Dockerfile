@@ -131,6 +131,9 @@ RUN install -d -m 775 -o $UID -g 0 /data && \
 COPY --chown=$UID:0 --chmod=775 --from=compile /main.dist /app
 
 ENV PATH="/app${PATH:+:${PATH}}"
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV PYTHONIOENCODING=utf-8
 
 # Remove these to prevent the container from executing arbitrary commands
 RUN rm /bin/echo /bin/ln /bin/rm /bin/sh /bin/bash /usr/bin/apt-get
