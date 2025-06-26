@@ -492,9 +492,12 @@ def on_refresh_recipe_browser_change(search, classification, shortcut, sc_page, 
 
 def on_recipe_reference_select_gallery_select(evt: gr.SelectData, shortcuts):
     if evt.value:
-        # evt.value can be either a string or a list [image_url, shortcut_name]
-        if isinstance(evt.value, list) and len(evt.value) > 1:
-            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        # evt.value can be Gradio v4+ FileData dict,
+        # v3.41+ list [image_url, shortcut_name], or legacy string
+        if isinstance(evt.value, dict) and 'caption' in evt.value:
+            shortcut = evt.value['caption']
+        elif isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
@@ -565,9 +568,12 @@ def on_recipe_reference_gallery_select(evt: gr.SelectData, shortcuts):
     current_time = datetime.datetime.now()
 
     if evt.value:
-        # evt.value can be either a string or a list [image_url, shortcut_name]
-        if isinstance(evt.value, list) and len(evt.value) > 1:
-            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        # evt.value can be Gradio v4+ FileData dict,
+        # v3.41+ list [image_url, shortcut_name], or legacy string
+        if isinstance(evt.value, dict) and 'caption' in evt.value:
+            shortcut = evt.value['caption']
+        elif isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:

@@ -180,8 +180,8 @@ class TestSettingModuleCompatibility(unittest.TestCase):
                 setting.load_data()
             self.assertEqual(setting.model_folders['TextualInversion'], '/test/models/embeddings')
             self.assertEqual(setting.model_folders['Hypernetwork'], '/test/models/hypernetworks')
-            self.assertEqual(setting.model_folders['Checkpoint'], '/test/models/checkpoints')
-            self.assertEqual(setting.model_folders['LORA'], '/test/models/lora')
+            self.assertEqual(setting.model_folders['Checkpoint'], '/test/models/Stable-diffusion')
+            self.assertEqual(setting.model_folders['LORA'], '/test/models/Lora')
 
 
 class TestUtilModuleCompatibility(unittest.TestCase):

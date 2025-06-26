@@ -551,9 +551,12 @@ def on_sc_gallery_select(evt: gr.SelectData, shortcuts, page):
     current_time = datetime.datetime.now()
 
     if evt.value:
-        # evt.value can be either a string or a list [image_url, shortcut_name]
-        if isinstance(evt.value, list) and len(evt.value) > 1:
-            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        # evt.value can be Gradio v4+ FileData dict,
+        # v3.41+ list [image_url, shortcut_name], or legacy string
+        if isinstance(evt.value, dict) and 'caption' in evt.value:
+            shortcut = evt.value['caption']
+        elif isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
@@ -647,9 +650,12 @@ def on_classification_gallery_loading(shortcuts, page=0):
 
 def on_classification_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=True):
     if evt.value:
-        # evt.value can be either a string or a list [image_url, shortcut_name]
-        if isinstance(evt.value, list) and len(evt.value) > 1:
-            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        # evt.value can be Gradio v4+ FileData dict,
+        # v3.41+ list [image_url, shortcut_name], or legacy string
+        if isinstance(evt.value, dict) and 'caption' in evt.value:
+            shortcut = evt.value['caption']
+        elif isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
