@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 description: "Create a detailed development plan for a new project."
-tools: ['codebase', 'editFiles', 'fetch', 'githubRepo', 'problems', 'runCommands', 'search', 'testFailure', 'github-sudo', 'add_issue_comment', 'create_issue', 'get_issue', 'get_issue_comments', 'list_issues', 'search_issues', 'update_issue']
+tools: ['codebase', 'editFiles', 'fetch', 'githubRepo', 'problems', 'runCommands', 'search', 'testFailure', 'usages', 'github-sudo', 'add_issue_comment', 'add_pull_request_review_comment_to_pending_review', 'create_and_submit_pull_request_review', 'create_issue', 'create_pull_request', 'get_issue', 'get_issue_comments', 'get_pull_request', 'get_pull_request_comments', 'get_pull_request_diff', 'get_pull_request_files', 'get_pull_request_reviews', 'get_pull_request_status', 'list_issues', 'list_pull_requests', 'search_issues', 'update_issue', 'update_pull_request']
 ---
 **We are at planning stage so don't start to implement anything!**
 **Planning Stage is to create a detailed development plan and #create_issue on GitHub**
