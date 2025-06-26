@@ -38,19 +38,19 @@ class CivitaiShortcutApp:
         self._initialize_components()
 
     def _setup_logging(self):
-        """Setup logging system"""
+        """Setup logging system for standalone mode"""
+        from scripts.civitai_manager_libs.logging_config import setup_logging_for_standalone
+
         log_dir = os.path.join(project_root, 'logs')
         os.makedirs(log_dir, exist_ok=True)
 
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(os.path.join(log_dir, 'civitai_shortcut.log')),
-                logging.StreamHandler(sys.stdout),
-            ],
+        setup_logging_for_standalone(
+            loglevel=os.environ.get("SD_WEBUI_LOG_LEVEL", "INFO"),
+            log_file=os.path.join(log_dir, 'civitai_shortcut.log'),
         )
+
         self.logger = logging.getLogger(__name__)
+        self.logger.info("Logging configured for standalone mode with rich output")
 
     def _initialize_components(self):
         """Initialize core components"""

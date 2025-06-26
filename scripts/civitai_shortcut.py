@@ -17,7 +17,10 @@ from scripts.civitai_manager_libs import classification_action
 from scripts.civitai_manager_libs import civitai_shortcut_action
 from scripts.civitai_manager_libs import setting_action
 from scripts.civitai_manager_libs import scan_action
-from scripts.civitai_manager_libs import util
+from scripts.civitai_manager_libs.logging_config import get_logger
+
+# Module logger
+logger = get_logger(__name__)
 from scripts.civitai_manager_libs import ishortcut
 from scripts.civitai_manager_libs import recipe_action
 from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
@@ -37,13 +40,13 @@ def initialize_civitai_shortcut():
         # Initialize all modules with compatibility layer
         initialize_compatibility_layer(compat_layer)
 
-        util.printD(f"Civitai Shortcut initialized in {env} mode")
+        logger.info(f"Civitai Shortcut initialized in {env} mode")
 
         return compat_layer
 
     except Exception as e:
-        util.printD(f"Warning: Failed to initialize compatibility layer: {e}")
-        util.printD("Running in fallback mode")
+        logger.warning(f"Failed to initialize compatibility layer: {e}")
+        logger.info("Running in fallback mode")
         return None
 
 
@@ -154,7 +157,7 @@ def civitai_shortcut_ui():
             civitai_shortcut_action.setup_ui_copypaste(compat_layer)
             # This would be integrated into specific UI components as needed
         except Exception as e:
-            util.printD(f"Failed to setup copy-paste functionality: {e}")
+            logger.error(f"Failed to setup copy-paste functionality: {e}")
 
     # civitai tab start
     civitai_tabs.select(
@@ -175,10 +178,10 @@ def update_all_shortcut_informations():
         return
 
     modelid_list = [k for k in preISC]
-    util.printD("shortcut update start")
+    logger.debug("shortcut update start")
     for modelid in modelid_list:
         ishortcut.write_model_information(modelid, False, None)
-    util.printD("shortcut update end")
+    logger.debug("shortcut update end")
 
 
 def update_all_shortcut_informations_thread():
@@ -186,7 +189,7 @@ def update_all_shortcut_informations_thread():
         thread = threading.Thread(target=update_all_shortcut_informations)
         thread.start()
     except Exception as e:
-        util.printD(e)
+        logger.error(f"{e}")
         pass
 
 
@@ -194,7 +197,7 @@ def init_civitai_shortcut():
     setting.init()
     model.update_downloaded_model()
 
-    util.printD(setting.Extensions_Version)
+    logger.info(setting.Extensions_Version)
 
     if setting.shortcut_update_when_start:
         update_all_shortcut_informations_thread()

@@ -3,12 +3,16 @@ import math
 import os
 import datetime
 
-from . import util
 from . import setting
 from . import recipe
 from . import ishortcut
 
-from PIL import Image
+from .logging_config import get_logger
+
+# Module logger for this component
+logger = get_logger(__name__)
+
+
 
 
 def on_ui():
@@ -501,7 +505,7 @@ def on_recipe_reference_select_gallery_select(evt: gr.SelectData, shortcuts):
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[RECIPE_BROWSER] Unexpected evt.value format: {evt.value}")
+            logger.warning(f"[RECIPE_BROWSER] Unexpected evt.value format: {evt.value}")
             return shortcuts, None, gr.update(visible=False)
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
@@ -577,7 +581,7 @@ def on_recipe_reference_gallery_select(evt: gr.SelectData, shortcuts):
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[RECIPE_BROWSER] Unexpected evt.value format: {evt.value}")
+            logger.warning(f"[RECIPE_BROWSER] Unexpected evt.value format: {evt.value}")
             return shortcuts, gr.update(visible=False)
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
