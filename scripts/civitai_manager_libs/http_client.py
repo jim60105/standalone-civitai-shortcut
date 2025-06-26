@@ -211,15 +211,27 @@ class CivitaiHttpClient:
             with open(filepath, mode) as f:
                 downloaded = resume_pos
                 start_time = time.time()
+                last_update = start_time
+                update_interval = 2.0  # seconds between progress notifications
+
                 for chunk in response.iter_content(chunk_size=setting.download_chunk_size):
                     if chunk:
                         f.write(chunk)
                         downloaded += len(chunk)
                         if progress_callback:
-                            speed = self._calculate_speed(
-                                downloaded - resume_pos, time.time() - start_time
-                            )
-                            progress_callback(downloaded, total_size, speed)
+                            current_time = time.time()
+                            if current_time - last_update >= update_interval:
+                                speed = self._calculate_speed(
+                                    downloaded - resume_pos, current_time - start_time
+                                )
+                                progress_callback(downloaded, total_size, speed)
+                                last_update = current_time
+
+                # Final progress update after download completes
+                if progress_callback:
+                    total_time = time.time() - start_time
+                    final_speed = self._calculate_speed(downloaded - resume_pos, total_time)
+                    progress_callback(downloaded, total_size, final_speed)
 
             final_size = os.path.getsize(filepath)
             if total_size > 0 and final_size < total_size:

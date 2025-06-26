@@ -24,6 +24,21 @@ def printD(msg):
     print(f"[Civitai Shortcut] {msg}")
 
 
+def format_file_size(size_bytes: int) -> str:
+    """Convert a file size in bytes to a human-readable string."""
+    if size_bytes is None:
+        return ""
+    try:
+        size = float(size_bytes)
+    except (TypeError, ValueError):
+        return ""
+    for unit in ("B", "KB", "MB", "GB", "TB", "PB"):  # up to petabytes
+        if size < 1024.0:
+            return f"{size:.1f}{unit}"
+        size /= 1024.0
+    return f"{size:.1f}EB"
+
+
 def calculate_sha256(filname):
     """
     Calculate the SHA256 hash for a file.
