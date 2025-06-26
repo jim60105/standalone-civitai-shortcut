@@ -27,6 +27,8 @@ _STATUS_CODE_MESSAGES: Dict[int, str] = {
     503: "Service Unavailable: The server is temporarily unavailable.",
     504: "Gateway Timeout: The server did not respond in time.",
     524: "Cloudflare Timeout: The request timed out.",
+    307: "Temporary Redirect: Login required for this resource.",
+    416: "Range Not Satisfiable: Authentication may be required.",
 }
 
 
@@ -131,6 +133,25 @@ class CivitaiHttpClient:
                 url, headers=headers or {}, stream=True, timeout=self.timeout
             )
             util.printD(f"[http_client] Response status: {response.status_code}")
+            # Detect authentication-required redirects and range errors
+            if response.status_code == 307:
+                location = response.headers.get('Location', '')
+                if 'login' in location.lower():
+                    util.printD(f"[http_client] Authentication required for: {url}")
+                    gr.Error(
+                        "🔐 This resource requires login. "
+                        "Please configure your Civitai API key in settings."
+                    )
+                    return None
+            elif response.status_code == 416:
+                util.printD(
+                    f"[http_client] Range request failed, may require authentication: {url}"
+                )
+                gr.Error(
+                    "🔐 Download failed. This resource may require authentication. "
+                    "Please check your API key."
+                )
+                return None
             if response.status_code >= 400:
                 msg = _STATUS_CODE_MESSAGES.get(
                     response.status_code,
@@ -170,6 +191,9 @@ class CivitaiHttpClient:
                     downloaded += len(chunk)
                     if progress_callback:
                         progress_callback(downloaded, total)
+            # Validate file size after download
+            if not self._validate_download_size(filepath, total):
+                return False
             return True
         except Exception as e:
             util.printD(f"[http_client] File write error: {e}")
@@ -233,11 +257,9 @@ class CivitaiHttpClient:
                     final_speed = self._calculate_speed(downloaded - resume_pos, total_time)
                     progress_callback(downloaded, total_size, final_speed)
 
-            final_size = os.path.getsize(filepath)
-            if total_size > 0 and final_size < total_size:
-                util.printD(f"[http_client] Incomplete download: {final_size}/{total_size}")
+            # Validate file size after download (including resumed downloads)
+            if not self._validate_download_size(filepath, total_size):
                 return False
-
             return True
 
         except Exception as e:
@@ -289,6 +311,30 @@ class CivitaiHttpClient:
             pass
 
         return False
+
+    def _validate_download_size(
+        self, filepath: str, expected_size: int, tolerance: float = 0.1
+    ) -> bool:
+        """Validate downloaded file size against expected size."""
+        if not os.path.exists(filepath):
+            return False
+
+        actual_size = os.path.getsize(filepath)
+        if expected_size <= 0:
+            return True  # Cannot validate if expected size unknown
+
+        size_diff_ratio = abs(actual_size - expected_size) / expected_size
+        if size_diff_ratio > tolerance:
+            util.printD(
+                f"[http_client] File size mismatch: expected {expected_size}, got {actual_size}"
+            )
+            gr.Warning(
+                "⚠️ Downloaded file size differs significantly from expected. "
+                "Please verify the download."
+            )
+            return False
+
+        return True
 
 
 # ------------------------------------------------------------------------------
