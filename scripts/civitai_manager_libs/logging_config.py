@@ -75,6 +75,7 @@ def get_logger(name: str) -> logging.Logger:
     Get a logger instance. Works in both WebUI and standalone modes.
     """
     env_detector = EnvironmentDetector()
-    if env_detector.is_standalone():
+    # Use is_standalone_mode to check standalone execution environment
+    if env_detector.is_standalone_mode():
         setup_logging_for_standalone()
     return logging.getLogger(name)

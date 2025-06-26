@@ -31,6 +31,8 @@ def printD(msg):
     Note: this function is deprecated; use logger.debug() instead.
     """
     logger.debug(msg)
+    # Legacy debug output to stdout for backward compatibility
+    print(msg)
 
 
 def format_file_size(size_bytes: int) -> str:
