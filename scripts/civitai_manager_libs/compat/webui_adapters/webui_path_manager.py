@@ -6,6 +6,8 @@ Provides path management using AUTOMATIC1111 WebUI modules.
 
 import os
 import sys
+import types
+import importlib.util
 
 from .. import paths
 from ..interfaces.ipath_manager import IPathManager
@@ -14,8 +16,6 @@ from ..environment_detector import EnvironmentDetector
 if not EnvironmentDetector.is_webui_mode() and (
     'pytest' in sys.modules or 'unittest' in sys.modules
 ):
-    import types
-
     print("[Civitai Shortcut] [webui_path_manager] Mocking WebUI modules for test environment.")
     sys.modules['modules'] = types.ModuleType('modules')
     sys.modules['modules.paths'] = types.ModuleType('modules.paths')
@@ -33,15 +33,32 @@ try:
         default_output_dir,
     )
     from modules import shared
-    import sys
-    import importlib.util
 
-    # Correctly import util (two parent directories up)
-    util_spec = importlib.util.spec_from_file_location(
-        "util", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py")
-    )
-    util = importlib.util.module_from_spec(util_spec)
-    util_spec.loader.exec_module(util)
+    # Import util using package import
+    try:
+        # Add the project root to sys.path to enable package imports
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        import scripts.civitai_manager_libs.util as util
+    except Exception as import_e:
+        # Fallback: try direct file import
+        try:
+            util_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py"
+            )
+            if not os.path.isabs(util_path):
+                # If path is not absolute, resolve it
+                util_path = os.path.abspath(util_path)
+            util_spec = importlib.util.spec_from_file_location("util", util_path)
+            util = importlib.util.module_from_spec(util_spec)
+            util_spec.loader.exec_module(util)
+        except Exception as file_import_e:
+            print("[Civitai Shortcut] [webui_path_manager] Both import methods failed:")
+            print(f"  Package import: {import_e}")
+            print(f"  File import: {file_import_e}")
+            util = None
 
     util.printD(f"[webui_path_manager] webui_models_path: {webui_models_path}")
     util.printD(f"[webui_path_manager] webui_script_path: {webui_script_path}")
@@ -56,6 +73,32 @@ except (ImportError, ModuleNotFoundError) as e:
     # Log the import failure for debugging
     print(f"[Civitai Shortcut] [webui_path_manager] Failed to import WebUI modules: {e}")
     print("[Civitai Shortcut] [webui_path_manager] Falling back to standalone mode compatibility.")
+
+    # Import util for logging in fallback mode
+    try:
+        # Add the project root to sys.path to enable package imports
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        import scripts.civitai_manager_libs.util as util
+    except Exception as import_e:
+        # Fallback: try direct file import
+        try:
+            util_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py"
+            )
+            if not os.path.isabs(util_path):
+                # If path is not absolute, resolve it
+                util_path = os.path.abspath(util_path)
+            util_spec = importlib.util.spec_from_file_location("util", util_path)
+            util = importlib.util.module_from_spec(util_spec)
+            util_spec.loader.exec_module(util)
+        except Exception as file_import_e:
+            print("[Civitai Shortcut] [webui_path_manager] Both import methods failed:")
+            print(f"  Package import: {import_e}")
+            print(f"  File import: {file_import_e}")
+            util = None
 
     webui_paths = None
     webui_models_path = None
@@ -78,17 +121,45 @@ class WebUIPathManager(IPathManager):
 
     def __init__(self):
         """Initialize WebUI Path Manager with logging."""
-        # Import util for logging
+        # Check if util is available from module level
         try:
-            import importlib.util
+            # Try to access the module-level util variable
+            if 'util' in globals() and globals()['util'] is not None:
+                self.util = globals()['util']
+            else:
+                raise NameError("util is not available")
+        except NameError:
+            # util is not available at module level, import locally
+            try:
+                # Add the project root to sys.path to enable package imports
+                project_root = os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                )
+                if project_root not in sys.path:
+                    sys.path.insert(0, project_root)
 
-            util_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py"
-            )
-            util_spec = importlib.util.spec_from_file_location("util", util_path)
-            self.util = importlib.util.module_from_spec(util_spec)
-            util_spec.loader.exec_module(self.util)
+                from scripts.civitai_manager_libs import util
 
+                self.util = util
+            except Exception as import_e:
+                # Fallback: try direct file import
+                try:
+                    util_path = os.path.join(
+                        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "util.py"
+                    )
+                    if not os.path.isabs(util_path):
+                        # If path is not absolute, resolve it
+                        util_path = os.path.abspath(util_path)
+                    util_spec = importlib.util.spec_from_file_location("util", util_path)
+                    self.util = importlib.util.module_from_spec(util_spec)
+                    util_spec.loader.exec_module(self.util)
+                except Exception as file_import_e:
+                    print("[Civitai Shortcut] [webui_path_manager] Both import methods failed:")
+                    print(f"  Package import: {import_e}")
+                    print(f"  File import: {file_import_e}")
+                    self.util = None
+
+        if self.util:
             self.util.printD("[webui_path_manager] WebUIPathManager initialized")
             self.util.printD(f"[webui_path_manager] WebUI available: {WEBUI_AVAILABLE}")
 
@@ -96,11 +167,10 @@ class WebUIPathManager(IPathManager):
                 self.util.printD("[webui_path_manager] Operating in WebUI extension mode")
             else:
                 self.util.printD("[webui_path_manager] Operating in standalone compatibility mode")
-
-        except Exception as e:
-            # Fallback if util import fails
-            print(f"[Civitai Shortcut] [webui_path_manager] Failed to import util: {e}")
-            self.util = None
+        else:
+            print(
+                "[Civitai Shortcut] [webui_path_manager] WebUIPathManager initialized without util"
+            )
 
     def _log(self, message: str, level: str = "debug"):
         """Internal logging method."""
