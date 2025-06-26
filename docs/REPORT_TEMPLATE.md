@@ -1,9 +1,9 @@
 ---
-title: "Job Report: [任務類型] #[編號] - [任務標題]"
+title: "Job Report: [任務類型] [任務標題]"
 date: "[YYYY-MM-DDTHH:MM:SSZ]"
 ---
 
-# [任務類型] #[編號] - [任務標題] 工作報告
+# [任務類型] [任務標題] 工作報告
 
 **日期**：[YYYY-MM-DDTHH:MM:SSZ]  
 **任務**：[簡要描述此次任務的目標與範圍]  

@@ -13,16 +13,6 @@
 - 複雜功能開發
 - 需要詳細技術文件的變更
 
-## 命名規範
-
-報告檔案命名格式：`[編號]-[任務簡稱]-report.md`
-
-> 編號是為循序增加的整數，並非任務或 Backlog 編號。請查看現有的報告檔案以獲取最新編號。
-
-**範例**：
-- `001-project-foundation-report.md`
-- `015-ai-service-integration-report.md`
-
 ## 填寫指南
 
 ### 必填欄位
@@ -30,6 +20,10 @@
 - `date`: 完成日期 (YYYY-MM-DDTHH:MM:SSZ)
 - `任務`: 任務描述
 - `實作內容`: 主要變更內容
+
+> [!TIP]  
+> Always get the date with `date -u +"%Y-%m-%dT%H:%M:%SZ"` command.  
+> (Do not include this tip in the final report)
 
 ### 檔案變更標記格式
 使用格式：`【F:檔案路徑†L起始行-L結束行】`
