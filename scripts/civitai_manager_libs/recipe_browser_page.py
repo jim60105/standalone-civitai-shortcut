@@ -13,8 +13,6 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 
-
-
 def on_ui():
 
     thumb_list, thumb_totals, thumb_max_page = get_recipe_list(None, None, None, 1)
