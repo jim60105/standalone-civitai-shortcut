@@ -452,12 +452,12 @@ def load_data():
             util.printD(f"[setting] load_data: Set Hypernetwork folder: {hypernetwork_dir}")
             model_folders['Hypernetwork'] = hypernetwork_dir
 
-        ckpt_dir = compat.path_manager.get_model_path('checkpoints')
+        ckpt_dir = compat.path_manager.get_model_path('Stable-diffusion')
         if ckpt_dir:
             util.printD(f"[setting] load_data: Set Checkpoint folder: {ckpt_dir}")
             model_folders['Checkpoint'] = ckpt_dir
 
-        lora_dir = compat.path_manager.get_model_path('lora')
+        lora_dir = compat.path_manager.get_model_path('Lora')
         if lora_dir:
             util.printD(f"[setting] load_data: Set LORA folder: {lora_dir}")
             model_folders['LORA'] = lora_dir
