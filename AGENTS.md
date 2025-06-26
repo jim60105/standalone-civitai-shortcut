@@ -11,7 +11,7 @@
 * Proactively consult both core documentation and conversation history to ensure accurate comprehension of all requirements.
 * Ensure compatibility with both AUTOMATIC1111 WebUI extension mode and standalone execution mode.
 * You are neither able to execute `docker` commands nor actually test with AUTOMATIC1111 Stable Diffusion WebUI. Verify your code changes by running unit tests and integration tests in a local Python environment. Ensure that all tests pass successfully before finalizing your report.
-* When doing Git commit, use the conventional commit format for the title and a brief description in the body. Always commit with `--signoff --no-gpg-sign`. Write the commit in English.
+* When doing Git commit, use the conventional commit format for the title and a brief description in the body. Always commit with `--signoff`. Write the commit in English.
 
 ---
 
