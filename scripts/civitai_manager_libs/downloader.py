@@ -6,20 +6,88 @@ supporting resume capability, progress tracking, and error handling.
 """
 
 import os
-import re
 import time
 import threading
 import shutil
-import json
-
-import requests
 import gradio as gr
-from tqdm import tqdm
 
 from . import util, setting, civitai
 
 # Use centralized HTTP client and chunked downloader factories
 from .http_client import get_http_client, get_chunked_downloader
+
+
+class DownloadNotifier:
+    """Notify users of download status via UI and logs."""
+
+    @staticmethod
+    def notify_start(filename: str, file_size: int = None):
+        """Notify download start using gr.Info and debug log."""
+        try:
+            size_str = f" ({util.format_file_size(file_size)})" if file_size else ""
+            gr.Info(f"🚀 Starting download: {filename}{size_str}", duration=3)
+        except Exception:
+            pass
+        util.printD(f"[downloader] Starting download: {filename}{size_str}")
+
+    @staticmethod
+    def notify_progress(filename: str, downloaded: int, total: int, speed: str = ""):
+        """Log download progress."""
+        if total and total > 0:
+            percentage = (downloaded / total) * 100
+            downloaded_str = util.format_file_size(downloaded)
+            total_str = util.format_file_size(total)
+            speed_str = f" at {speed}" if speed else ""
+            util.printD(
+                (
+                    f"[downloader] Progress: {percentage:.1f}% "
+                    f"({downloaded_str}/{total_str}){speed_str}"
+                )
+            )
+        else:
+            downloaded_str = util.format_file_size(downloaded)
+            speed_str = f" at {speed}" if speed else ""
+            util.printD(f"[downloader] Downloaded: {downloaded_str}{speed_str}")
+
+    @staticmethod
+    def notify_complete(filename: str, success: bool, error_msg: str = None):
+        """Notify download completion or failure using UI and logs."""
+        try:
+            if success:
+                gr.Info(f"✅ Download completed: {filename}", duration=5)
+            else:
+                error_detail = f" - {error_msg}" if error_msg else ""
+                gr.Error(f"❌ Download failed: {filename}{error_detail}", duration=10)
+        except Exception:
+            pass
+        status = "successfully" if success else f"failed{error_detail}"
+        util.printD(f"[downloader] Download {status}: {filename}")
+
+
+class DownloadTask:
+    """Data structure for carrying download task parameters."""
+
+    def __init__(self, fid, filename, url, path, total_size=None):
+        self.fid = fid
+        self.filename = filename
+        self.url = url
+        self.path = path
+        self.total = total_size
+
+
+def download_file_with_notifications(task: DownloadTask):
+    """Download file with progress notifications."""
+
+    def progress_callback(downloaded: int, total: int, speed: str = ""):
+        DownloadNotifier.notify_progress(task.filename, downloaded, total, speed)
+
+    try:
+        success = get_http_client().download_file_with_resume(
+            task.url, task.path, progress_callback=progress_callback
+        )
+        DownloadNotifier.notify_complete(task.filename, success)
+    except Exception as e:
+        DownloadNotifier.notify_complete(task.filename, False, str(e))
 
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):
@@ -211,31 +279,45 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
 def download_file_thread(
     file_name, version_id, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
 ):
-    """Threaded download entry for UI."""
+    """Threaded download entry for UI with enhanced notifications."""
     if not file_name or not version_id:
         return
     vi = civitai.get_version_info_by_version_id(version_id)
     if not vi:
+        DownloadNotifier.notify_complete(str(file_name), False, "Failed to get version info")
         return
     files = civitai.get_files_by_version_info(vi)
     folder = util.make_download_model_folder(
         vi, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
     )
     if not folder:
+        DownloadNotifier.notify_complete(str(file_name), False, "Failed to create download folder")
         return
+
     savefile_base = None
     dup = add_number_to_duplicate_files(file_name)
     info_files = vi.get("files") or []
+    # Start download tasks with notifications
     for fid, fname in dup.items():
+        file_info = next((f for f in info_files if str(f.get('id')) == str(fid)), None)
+        file_size = file_info.get('sizeKB', 0) * 1024 if file_info else None
+
+        # Notify download start
+        DownloadNotifier.notify_start(fname, file_size)
+
         url = files.get(str(fid), {}).get("downloadUrl")
         path = os.path.join(folder, fname)
-        threading.Thread(target=download_file, args=(url, path)).start()
-        # record primary file base name
-        for info in info_files:
-            if str(info.get('id')) == str(fid) and info.get('primary'):
-                base, _ = os.path.splitext(fname)
-                savefile_base = base
-    # write version info and preview if primary file found
+
+        # Schedule download with progress notifications
+        task = DownloadTask(fid, fname, url, path, file_size)
+        threading.Thread(target=download_file_with_notifications, args=(task,)).start()
+
+        # Record primary file base name
+        if file_info and file_info.get('primary'):
+            base, _ = os.path.splitext(fname)
+            savefile_base = base
+
+    # Write version info and preview image if primary file found
     if savefile_base:
         info_path = os.path.join(
             folder,
@@ -250,4 +332,4 @@ def download_file_thread(
         )
         if download_preview_image(preview_path, vi):
             util.printD(f"[downloader] Wrote preview image: {preview_path}")
-    return "Download started"
+    return "Download started with notifications"
