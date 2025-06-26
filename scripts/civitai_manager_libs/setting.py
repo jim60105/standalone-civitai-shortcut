@@ -316,6 +316,20 @@ def migrate_existing_files():
             except Exception as e:
                 util.printD(f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}")
 
+    # Migrate any other sc_* directories not explicitly mapped above
+    for entry in os.listdir('.'):
+        if entry.startswith('sc_'):
+            old = entry
+            new = os.path.join(SC_DATA_ROOT, entry)
+            if os.path.exists(old) and not os.path.exists(new):
+                try:
+                    shutil.move(old, new)
+                    util.printD(f"[setting] migrate_existing_files: Moved {old} to {new}")
+                except Exception as e:
+                    util.printD(
+                        f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}"
+                    )
+
 
 no_card_preview_image = os.path.join(extension_base, "img", "card-no-preview.png")
 nsfw_disable_image = os.path.join(extension_base, "img", "nsfw-no-preview.png")
