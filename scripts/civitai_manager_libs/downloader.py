@@ -332,4 +332,19 @@ def download_file_thread(
         )
         if download_preview_image(preview_path, vi):
             util.printD(f"[downloader] Wrote preview image: {preview_path}")
+
+        # Generate LoRa/LyCORIS metadata JSON file for LoRa models
+        if vi and _is_lora_model(vi):
+            metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
+            if civitai.write_LoRa_metadata(metadata_path, vi):
+                util.printD(f"[downloader] Wrote LoRa metadata: {metadata_path}")
     return "Download started with notifications"
+
+
+def _is_lora_model(version_info: dict) -> bool:
+    """Check if the model is a LoRa or LyCORIS model."""
+    if not version_info or "model" not in version_info:
+        return False
+
+    model_type = version_info["model"].get("type", "").upper()
+    return model_type in ["LORA", "LOCON", "LYCORIS"]
