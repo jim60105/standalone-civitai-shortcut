@@ -373,8 +373,13 @@ def save_NSFW():
 def init():
     global extension_base
     util.printD(f"[setting] init: Initializing with extension_base={extension_base}")
-    init_paths()
+    # Ensure base data_sc directory exists before migrating old sc_* data
+    try:
+        os.makedirs(SC_DATA_ROOT, exist_ok=True)
+    except Exception as e:
+        util.printD(f"[setting] init: Failed to create SC_DATA_ROOT for migration: {e}")
     migrate_existing_files()
+    init_paths()
     global shortcut
     global shortcut_setting
     global shortcut_classification
