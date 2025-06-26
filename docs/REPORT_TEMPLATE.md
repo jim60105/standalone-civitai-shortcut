@@ -1,18 +1,8 @@
----
-title: "Job Report: [任務類型] [任務標題]"
-date: "[YYYY-MM-DDTHH:MM:SSZ]"
----
-
 # [任務類型] [任務標題] 工作報告
 
-**日期**：[YYYY-MM-DDTHH:MM:SSZ]  
 **任務**：[簡要描述此次任務的目標與範圍]  
 **類型**：[Backlog | Bug Fix | Enhancement | Refactor | Test]  
 **狀態**：[進行中 | 已完成 | 部分完成]
-
-> [!TIP]  
-> Always get the date with `date -u +"%Y-%m-%dT%H:%M:%SZ"` command.  
-> (Do not include this tip in the final report)
 
 ## 一、任務概述
 
@@ -24,7 +14,7 @@ date: "[YYYY-MM-DDTHH:MM:SSZ]"
 - [實作內容描述]
 - [檔案變更說明，使用格式：【F:檔案路徑†L起始行-L結束行】]
 
-```rust
+```python
 // 程式碼範例（如需要）
 [程式碼片段]
 ```
@@ -86,10 +76,7 @@ pytest --cov=scripts/civitai_manager_libs/compat --cov-report=term --cov-report=
 - [ ] [待完成項目一]
 - [ ] [待完成項目二]
 
-### 7.2 相關任務
-- [列出相關的 Backlog 或 Bug 編號]
-
-### 7.3 建議的下一步
+### 7.2 建議的下一步
 - [建議後續應進行的任務]
 
 ## 八、檔案異動清單
@@ -99,3 +86,11 @@ pytest --cov=scripts/civitai_manager_libs/compat --cov-report=term --cov-report=
 | `src/example.py` | 新增 | [描述] |
 | `src/other.py` | 修改 | [描述] |
 | `requirements.txt` | 修改 | [描述] |
+
+### 九、關聯項目
+
+Resolves #[issue_number]
+
+> [!TIP]  
+> The word `Resolves` must remain in English and be used as is.
+> (Do not include this tip in the final report)

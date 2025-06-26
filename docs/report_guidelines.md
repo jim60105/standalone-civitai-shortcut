@@ -17,13 +17,8 @@
 
 ### 必填欄位
 - `title`: 任務標題
-- `date`: 完成日期 (YYYY-MM-DDTHH:MM:SSZ)
 - `任務`: 任務描述
 - `實作內容`: 主要變更內容
-
-> [!TIP]  
-> Always get the date with `date -u +"%Y-%m-%dT%H:%M:%SZ"` command.  
-> (Do not include this tip in the final report)
 
 ### 檔案變更標記格式
 使用格式：`【F:檔案路徑†L起始行-L結束行】`
@@ -71,3 +66,4 @@ pytest -v
 3. **測試驗證**: 包含完整的測試步驟
 4. **後續規劃**: 明確列出下一步行動
 5. **影響評估**: 評估變更對系統的影響
+6. **關聯項目**: 列出與本次變更相關的 issue
