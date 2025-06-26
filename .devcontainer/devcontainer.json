@@ -6,7 +6,8 @@
 		"ghcr.io/va-h/devcontainers-features/uv:1": {},
 		"ghcr.io/devcontainers/features/rust:1": {
 			"version": "stable"
-		}
+		},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 
 	// Use 'mounts' to make the cargo and uv cache persistent in Docker Volumes.
@@ -20,10 +21,19 @@
 			"source": "devcontainer-uv-cache-${devcontainerId}",
 			"target": "/.cache/uv",
 			"type": "volume"
+		},
+		{
+			"source": "${localEnv:HOME}/.env",
+			"target": "/root/.env",
+			"type": "bind"
 		}
 	],
 
-	"postCreateCommand": "uv pip install -U pytest black flake8 && cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli && rustup default stable",
+	"postCreateCommand": {
+		"pip-install": "uv pip install -U pytest black flake8",
+		"codex-cli": "cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli",
+		"rustup": "rustup default stable"
+	},
 
 	"containerEnv": {
 		"LC_ALL": "C",
@@ -54,8 +64,7 @@
 				"ms-vscode-remote.remote-containers"
 			],
 			"settings": {
-				"chat.tools.autoApprove": true,
-				
+				"chat.tools.autoApprove": true
 			}
 		}
 	},
