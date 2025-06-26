@@ -35,7 +35,7 @@ _compat_layer = None
 _current_page_metadata = {}
 
 # HTTP client factory for gallery operations
-from .http_client import get_http_client
+from .http_client import get_http_client, ParallelImageDownloader
 
 
 def _download_single_image(img_url: str, save_path: str) -> bool:
@@ -86,21 +86,27 @@ class GalleryDownloadManager:
 
 
 def download_images_with_progress(dn_image_list: list, progress_callback=None):
-    """Download images with progress tracking."""
+    """Download images with parallel processing and progress tracking."""
     if not dn_image_list:
         return
 
-    total = len(dn_image_list)
-    completed = 0
+    downloader = ParallelImageDownloader(max_workers=10)
     client = get_http_client()
 
+    # Prepare download tasks
+    image_tasks = []
     for img_url in dn_image_list:
         gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
         if not os.path.isfile(gallery_img_file):
-            client.download_file(img_url, gallery_img_file)
-        completed += 1
-        if progress_callback:
-            progress_callback(completed, total, f"Downloading image {completed}/{total}")
+            image_tasks.append((img_url, gallery_img_file))
+
+    # Execute parallel download
+    success_count = downloader.download_images(image_tasks, progress_callback, client)
+
+    util.printD(
+        f"[civitai_gallery_action] Parallel download completed:"
+        f" {success_count}/{len(image_tasks)} successful"
+    )
 
 
 def download_images_batch(
