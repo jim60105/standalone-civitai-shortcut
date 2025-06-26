@@ -1,11 +1,15 @@
 # syntax=docker/dockerfile:1
+# This Containerfile is crafted to handle SELinux
+# If you're not in this situation, simply remove both `,Z` and `,z`
+# https://docs.docker.com/engine/storage/bind-mounts/#configure-the-selinux-label
+# https://docs.docker.com/reference/cli/dockerd/#:~:text=Enable%20selinux%20support
 ARG UID=1001
 ARG VERSION=EDGE
 ARG RELEASE=0
 
-######
+########################################
 # Build stage
-######
+########################################
 FROM docker.io/library/python:3.11-slim-bookworm AS build
 
 # RUN mount cache for multi-arch: https://github.com/docker/buildx/issues/549#issuecomment-1788297892
@@ -31,8 +35,7 @@ ARG PIP_DISABLE_PIP_VERSION_CHECK="true"
 
 # Install requirements
 RUN --mount=type=cache,id=pip-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/pip \
-    --mount=source=requirements.txt,target=requirements.txt,rw \
-    pip install -U --force-reinstall pip setuptools wheel && \
+    --mount=source=requirements.txt,target=requirements.txt,Z \
     pip install -r requirements.txt
 
 # Replace pillow with pillow-simd (Only for x86)
@@ -47,9 +50,9 @@ RUN --mount=type=cache,id=pip-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/r
 RUN find "/root/.local" -name '*.pyc' -print0 | xargs -0 rm -f || true ; \
     find "/root/.local" -type d -name '__pycache__' -print0 | xargs -0 rm -rf || true ;
 
-######
+########################################
 # Compile with Nuitka
-######
+########################################
 FROM build AS compile
 
 ARG TARGETARCH
@@ -76,7 +79,7 @@ RUN --mount=type=cache,id=pip-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/r
 
 # Compile with nuitka
 RUN --mount=type=cache,id=nuitka-$TARGETARCH$TARGETVARIANT,target=/cache \
-    --mount=source=.,target=.,rw \
+    --mount=source=.,target=.,rw,Z \
     python3 -m nuitka \
     --python-flag=nosite,-O \
     --clang \
@@ -88,19 +91,19 @@ RUN --mount=type=cache,id=nuitka-$TARGETARCH$TARGETVARIANT,target=/cache \
     --standalone \
     --deployment \
     --remove-output \
-    main.py 
+    main.py
 
-######
+########################################
 # Report stage
-######
+########################################
 FROM scratch AS report
 
 ARG UID
-COPY --link --chown=$UID:0 --chmod=775 --from=compile /compilationreport.xml /
+COPY --chown=$UID:0 --chmod=775 --from=compile /compilationreport.xml /
 
-######
+########################################
 # Final stage
-######
+########################################
 FROM docker.io/library/debian:bookworm-slim AS final
 
 # RUN mount cache for multi-arch: https://github.com/docker/buildx/issues/549#issuecomment-1788297892
@@ -122,41 +125,41 @@ RUN install -d -m 775 -o $UID -g 0 /data && \
     install -d -m 775 -o $UID -g 0 /app
 
 # Copy licenses (OpenShift Policy)
-# COPY --link --chown=$UID:0 --chmod=775 LICENSE /licenses/Dockerfile.LICENSE
+# COPY --chown=$UID:0 --chmod=775 LICENSE /licenses/Dockerfile.LICENSE
 
 # Copy dependencies and code (and support arbitrary uid for OpenShift best practice)
-COPY --link --chown=$UID:0 --chmod=775 --from=compile /main.dist /app
+COPY --chown=$UID:0 --chmod=775 --from=compile /main.dist /app
 
-ENV PATH="/app:$PATH"
+ENV PATH="/app${PATH:+:${PATH}}"
 
 # Remove these to prevent the container from executing arbitrary commands
 RUN rm /bin/echo /bin/ln /bin/rm /bin/sh /bin/bash /usr/bin/apt-get
 
 WORKDIR /app
 
-VOLUME [ "/app/data" ]
+VOLUME [ "/app/data", "/app/data_sc" ]
 
-EXPOSE 80
+EXPOSE 8080
 
 USER $UID
 
 STOPSIGNAL SIGINT
 
 # Use dumb-init as PID 1 to handle signals properly
-ENTRYPOINT ["dumb-init", "--", "/app/main.bin", "--host", "0.0.0.0", "--port", "80"]
+ENTRYPOINT ["dumb-init", "--", "/app/main.bin", "--host", "0.0.0.0", "--port", "8080"]
 
 ARG VERSION
 ARG RELEASE
-LABEL name="sunnyark/civitai-shortcut" \
-    # Authors for infinite-image-browsing
-    vendor="sunnyark" \
+LABEL name="jim60105/standalone-civitai-shortcut" \
+    # Authors for civitai-shortcut
+    vendor="sunnyark,jim60105" \
     # Maintainer for this docker image
-    maintainer="sunnyark" \
+    maintainer="jim60105" \
     # Dockerfile source repository
-    url="https://github.com/sunnyark/civitai-shortcut" \
+    url="https://github.com/jim60105/standalone-civitai-shortcut" \
     version=${VERSION} \
     # This should be a number, incremented with each change
     release=${RELEASE} \
-    io.k8s.display-name="civitai-shortcut" \
+    io.k8s.display-name="standalone-civitai-shortcut" \
     summary="Stable Diffusion Webui Extension for Civitai, to download civitai shortcut and models." \
-    description="You can save the model URL of the Civitai site for future reference and storage. This allows you to download the model when needed and check if the model has been updated to the latest version. The downloaded models are saved to the designated storage location. For more information about this tool, please visit the following website: https://github.com/sunnyark/civitai-shortcut"
+    description="You can save the model URL of the Civitai site for future reference and storage. This allows you to download the model when needed and check if the model has been updated to the latest version. The downloaded models are saved to the designated storage location. For more information about this tool, please visit the following website: https://github.com/jim60105/standalone-civitai-shortcut"

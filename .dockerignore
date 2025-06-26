@@ -186,6 +186,7 @@ pyrightconfig.json
 **/bin
 **/obj
 **/dist
-/data
-Civitai*.json
+data/
+data_sc/
+**/Civitai*.json
 **/docs
