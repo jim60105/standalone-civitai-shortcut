@@ -185,38 +185,15 @@ class TestSettingModuleCompatibility(unittest.TestCase):
 
 
 class TestUtilModuleCompatibility(unittest.TestCase):
-    """Test util module compatibility modifications."""
+    """Test util.printD behavior after migrating to logging."""
 
-    def test_util_printD_with_compatibility_layer(self):
-        """Test printD function with compatibility layer."""
-        # Patch get_compatibility_layer target must use full path
-        patch_path = (
-            'scripts.civitai_manager_libs.compat.compat_layer'
-            '.CompatibilityLayer.get_compatibility_layer'
-        )
-        with patch(patch_path) as mock_get_layer:
-            import scripts.civitai_manager_libs.util as util
+    def test_util_printD_calls_logger_debug(self):
+        """Test that printD delegates to logger.debug()."""
+        import scripts.civitai_manager_libs.util as util
 
-            mock_compat = Mock()
-            mock_compat.config_manager.get.return_value = True
-            mock_get_layer.return_value = mock_compat
-            with patch('builtins.print') as mock_print:
-                util.printD("test message")
-                mock_print.assert_called_once()
-
-    def test_util_printD_without_compatibility_layer(self):
-        """Test printD function without compatibility layer."""
-        # Patch get_compatibility_layer target must use full path
-        patch_path = (
-            'scripts.civitai_manager_libs.compat.compat_layer'
-            '.CompatibilityLayer.get_compatibility_layer'
-        )
-        with patch(patch_path, return_value=None):
-            import scripts.civitai_manager_libs.util as util
-
-            with patch('builtins.print') as mock_print:
-                util.printD("test message")
-                mock_print.assert_called_once()
+        with patch.object(util.logger, 'debug') as mock_debug:
+            util.printD("test message")
+            mock_debug.assert_called_once_with("test message")
 
 
 if __name__ == '__main__':

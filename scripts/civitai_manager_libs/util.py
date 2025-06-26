@@ -8,6 +8,12 @@ import time
 from .compat.environment_detector import EnvironmentDetector
 from . import setting
 
+import logging
+from .logging_config import get_logger
+
+# Module logger for standardized debug output (deprecated printD wrapper)
+logger = get_logger(__name__)
+
 
 EXTENSIONS_NAME = "Civitai Shortcut"
 
@@ -20,8 +26,11 @@ except ImportError:
 
 
 def printD(msg):
-    """Debug message output with compatibility layer support."""
-    print(f"[Civitai Shortcut] {msg}")
+    """
+    Legacy debug function - maintaining backward compatibility.
+    Note: this function is deprecated; use logger.debug() instead.
+    """
+    logger.debug(msg)
 
 
 def format_file_size(size_bytes: int) -> str:
@@ -37,6 +46,11 @@ def format_file_size(size_bytes: int) -> str:
             return f"{size:.1f}{unit}"
         size /= 1024.0
     return f"{size:.1f}EB"
+
+
+def get_module_logger(module_name: str) -> logging.Logger:
+    """Get a logger for specific module"""
+    return get_logger(module_name)
 
 
 def calculate_sha256(filname):

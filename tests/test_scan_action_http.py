@@ -1,7 +1,10 @@
 from scripts.civitai_manager_libs.scan_action import download_scan_image
 
 
-def test_download_scan_image_success(monkeypatch, capsys):
+import logging
+
+
+def test_download_scan_image_success(monkeypatch, caplog):
     url = 'http://example.com/img.jpg'
     path = '/tmp/test.jpg'
 
@@ -13,14 +16,15 @@ def test_download_scan_image_success(monkeypatch, capsys):
     monkeypatch.setattr(
         'scripts.civitai_manager_libs.scan_action.get_http_client', lambda: DummyClient()
     )
+    caplog.set_level(logging.DEBUG)
     result = download_scan_image(url, path)
     assert result is True
-    captured = capsys.readouterr()
-    assert 'Downloading scan image' in captured.out
-    assert 'Scan image downloaded' in captured.out
+    log_text = caplog.text
+    assert 'Downloading scan image' in log_text
+    assert 'Scan image downloaded' in log_text
 
 
-def test_download_scan_image_failure(monkeypatch, capsys):
+def test_download_scan_image_failure(monkeypatch, caplog):
     url = 'http://example.com/img.jpg'
     path = '/tmp/test.jpg'
 
@@ -31,8 +35,9 @@ def test_download_scan_image_failure(monkeypatch, capsys):
     monkeypatch.setattr(
         'scripts.civitai_manager_libs.scan_action.get_http_client', lambda: DummyClient()
     )
+    caplog.set_level(logging.DEBUG)
     result = download_scan_image(url, path)
     assert result is False
-    captured = capsys.readouterr()
-    assert 'Downloading scan image' in captured.out
-    assert 'Failed to download scan image' in captured.out
+    log_text = caplog.text
+    assert 'Downloading scan image' in log_text
+    assert 'Failed to download scan image' in log_text
