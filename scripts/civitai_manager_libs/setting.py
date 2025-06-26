@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 
 from . import util
 from .conditional_imports import import_manager
@@ -7,6 +8,11 @@ from .compat.compat_layer import CompatibilityLayer
 
 # Compatibility layer variables
 _compat_layer = None
+
+# Project-generated files root directory
+SC_DATA_ROOT = "data_sc"
+# Stable Diffusion files root directory
+SD_DATA_ROOT = "data"
 
 root_path = os.getcwd()
 
@@ -234,7 +240,7 @@ shortcut_max_download_image_per_version = (
 gallery_thumbnail_image_style = "scale-down"
 
 # 다운로드 설정
-download_images_folder = os.path.join("outputs", "download-images")
+download_images_folder = os.path.join(SD_DATA_ROOT, "output", "download-images")
 
 # Image download settings
 image_download_timeout = 30
@@ -256,17 +262,74 @@ shortcut_update_when_start = True
 usergallery_preloading = False
 
 # 생성되는 폴더 및 파일
-shortcut = "CivitaiShortCut.json"
-shortcut_setting = "CivitaiShortCutSetting.json"
-shortcut_classification = "CivitaiShortCutClassification.json"
-shortcut_civitai_internet_shortcut_url = "CivitaiShortCutBackupUrl.json"
-shortcut_recipe = "CivitaiShortCutRecipeCollection.json"
+shortcut = os.path.join(SC_DATA_ROOT, "CivitaiShortCut.json")
+shortcut_setting = os.path.join(SC_DATA_ROOT, "CivitaiShortCutSetting.json")
+shortcut_classification = os.path.join(SC_DATA_ROOT, "CivitaiShortCutClassification.json")
+shortcut_civitai_internet_shortcut_url = os.path.join(SC_DATA_ROOT, "CivitaiShortCutBackupUrl.json")
+shortcut_recipe = os.path.join(SC_DATA_ROOT, "CivitaiShortCutRecipeCollection.json")
 
 # shortcut_thumbnail_folder =  "sc_thumb"
-shortcut_thumbnail_folder = "sc_thumb_images"
-shortcut_recipe_folder = "sc_recipes"
-shortcut_info_folder = "sc_infos"
-shortcut_gallery_folder = "sc_gallery"
+shortcut_thumbnail_folder = os.path.join(SC_DATA_ROOT, "sc_thumb_images")
+shortcut_recipe_folder = os.path.join(SC_DATA_ROOT, "sc_recipes")
+shortcut_info_folder = os.path.join(SC_DATA_ROOT, "sc_infos")
+shortcut_gallery_folder = os.path.join(SC_DATA_ROOT, "sc_gallery")
+
+
+def init_paths():
+    """Initialize and create necessary directories."""
+    dirs = [
+        SC_DATA_ROOT,
+        SD_DATA_ROOT,
+        os.path.join(SD_DATA_ROOT, "models"),
+        os.path.join(SD_DATA_ROOT, "output"),
+        download_images_folder,
+        shortcut_thumbnail_folder,
+        shortcut_recipe_folder,
+        shortcut_info_folder,
+        shortcut_gallery_folder,
+    ]
+    for d in dirs:
+        try:
+            os.makedirs(d, exist_ok=True)
+        except Exception as e:
+            util.printD(f"[setting] init_paths: Failed to create directory {d}: {e}")
+
+
+def migrate_existing_files():
+    """Migrate existing files and folders in root to new data_sc structure."""
+    mapping = {
+        "CivitaiShortCut.json": shortcut,
+        "CivitaiShortCutSetting.json": shortcut_setting,
+        "CivitaiShortCutClassification.json": shortcut_classification,
+        "CivitaiShortCutRecipeCollection.json": shortcut_recipe,
+        "CivitaiShortCutBackupUrl.json": shortcut_civitai_internet_shortcut_url,
+        "sc_gallery": shortcut_gallery_folder,
+        "sc_thumb_images": shortcut_thumbnail_folder,
+        "sc_infos": shortcut_info_folder,
+        "sc_recipes": shortcut_recipe_folder,
+    }
+    for old, new in mapping.items():
+        if os.path.exists(old) and not os.path.exists(new):
+            try:
+                shutil.move(old, new)
+                util.printD(f"[setting] migrate_existing_files: Moved {old} to {new}")
+            except Exception as e:
+                util.printD(f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}")
+
+    # Migrate any other sc_* directories not explicitly mapped above
+    for entry in os.listdir('.'):
+        if entry.startswith('sc_'):
+            old = entry
+            new = os.path.join(SC_DATA_ROOT, entry)
+            if os.path.exists(old) and not os.path.exists(new):
+                try:
+                    shutil.move(old, new)
+                    util.printD(f"[setting] migrate_existing_files: Moved {old} to {new}")
+                except Exception as e:
+                    util.printD(
+                        f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}"
+                    )
+
 
 no_card_preview_image = os.path.join(extension_base, "img", "card-no-preview.png")
 nsfw_disable_image = os.path.join(extension_base, "img", "nsfw-no-preview.png")
@@ -310,6 +373,13 @@ def save_NSFW():
 def init():
     global extension_base
     util.printD(f"[setting] init: Initializing with extension_base={extension_base}")
+    # Ensure base data_sc directory exists before migrating old sc_* data
+    try:
+        os.makedirs(SC_DATA_ROOT, exist_ok=True)
+    except Exception as e:
+        util.printD(f"[setting] init: Failed to create SC_DATA_ROOT for migration: {e}")
+    migrate_existing_files()
+    init_paths()
     global shortcut
     global shortcut_setting
     global shortcut_classification
@@ -382,12 +452,12 @@ def load_data():
             util.printD(f"[setting] load_data: Set Hypernetwork folder: {hypernetwork_dir}")
             model_folders['Hypernetwork'] = hypernetwork_dir
 
-        ckpt_dir = compat.path_manager.get_model_path('checkpoints')
+        ckpt_dir = compat.path_manager.get_model_path('Stable-diffusion')
         if ckpt_dir:
             util.printD(f"[setting] load_data: Set Checkpoint folder: {ckpt_dir}")
             model_folders['Checkpoint'] = ckpt_dir
 
-        lora_dir = compat.path_manager.get_model_path('lora')
+        lora_dir = compat.path_manager.get_model_path('Lora')
         if lora_dir:
             util.printD(f"[setting] load_data: Set LORA folder: {lora_dir}")
             model_folders['LORA'] = lora_dir

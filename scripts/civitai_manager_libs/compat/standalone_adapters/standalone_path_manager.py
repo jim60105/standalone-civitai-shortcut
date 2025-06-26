@@ -35,6 +35,9 @@ class StandalonePathManager(IPathManager):
         self._config_path = config_path
         self._debug_mode = False
         self._base_path = self._detect_base_path()
+        # Initialize SC and SD data root directories
+        self._sc_data_root = os.path.join(self._base_path, "data_sc")
+        self._sd_data_root = os.path.join(self._base_path, "data")
         self._model_folders = self._load_model_folders_config()
 
         # Ensure essential directories exist
@@ -243,6 +246,14 @@ class StandalonePathManager(IPathManager):
             return path
         else:
             return os.path.abspath(os.path.join(self._base_path, path))
+
+    def get_sc_data_path(self) -> str:
+        """Get path to SC data directory."""
+        return self._sc_data_root
+
+    def get_sd_data_path(self) -> str:
+        """Get path to SD data directory."""
+        return self._sd_data_root
 
     def get_all_model_paths(self) -> Dict[str, str]:
         """
