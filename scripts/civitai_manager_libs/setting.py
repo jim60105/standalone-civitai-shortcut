@@ -743,6 +743,10 @@ def get_modelid_from_shortcutname(sc_name):
     if not sc_name:
         return None
 
+    # Handle new Gradio v4+ FileData dict format with caption key
+    if isinstance(sc_name, dict) and 'caption' in sc_name:
+        sc_name = sc_name['caption']
+
     # Handle case where sc_name is a list (from Gradio SelectData)
     if isinstance(sc_name, list):
         if len(sc_name) > 1:

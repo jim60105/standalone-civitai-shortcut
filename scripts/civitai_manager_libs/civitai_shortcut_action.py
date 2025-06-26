@@ -346,9 +346,12 @@ def on_sc_gallery_select(evt: gr.SelectData):
     )
     sc_model_id = None
     if evt.value:
-        # evt.value can be either a string or a list [image_url, shortcut_name]
-        if isinstance(evt.value, list) and len(evt.value) > 1:
-            shortcut = evt.value[1]  # Use the shortcut name (second element)
+        # evt.value can be Gradio v4+ FileData dict,
+        # v3.41+ list [image_url, shortcut_name], or legacy string
+        if isinstance(evt.value, dict) and 'caption' in evt.value:
+            shortcut = evt.value['caption']
+        elif isinstance(evt.value, list) and len(evt.value) > 1:
+            shortcut = evt.value[1]
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
@@ -405,7 +408,9 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     return model_id, current_time, None
 
 
-def on_civitai_internet_url_txt_upload(url, register_information_only, progress=gr.Progress(track_tqdm=True)):
+def on_civitai_internet_url_txt_upload(
+    url, register_information_only, progress=gr.Progress(track_tqdm=True)
+):
     util.printD("[civitai_shortcut_action] ========== URL UPLOAD HANDLER START ==========")
     util.printD(
         f"[civitai_shortcut_action] on_civitai_internet_url_txt_upload called with url: {url}, "
@@ -560,8 +565,7 @@ def on_civitai_internet_url_txt_upload(url, register_information_only, progress=
         result = (gr.update(visible=False), None, gr.update(visible=True))
         util.printD(f"[civitai_shortcut_action] Returning (exception): {result}")
         util.printD(
-            "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EXCEPTION) "
-            "=========="
+            "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EXCEPTION) " "=========="
         )
         return result
 
