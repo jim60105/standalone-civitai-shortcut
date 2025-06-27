@@ -741,6 +741,12 @@ def _download_model_images(version_list: list, modelid: str, progress=None):
         modelid: Model ID for debug logging
         progress: Progress callback for UI updates
     """
+    # Ensure latest configuration values loaded before downloading
+    setting.load_data()
+    util.printD(
+        f"[ishortcut._download_model_images] Current shortcut_max_download_image_per_version: "
+        f"{setting.shortcut_max_download_image_per_version}"
+    )
     if not version_list:
         util.printD(f"[ishortcut._download_model_images] No images to download for {modelid}")
         return
@@ -779,6 +785,11 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
         list: List of (version_id, url, filepath) tuples to download
     """
     util.printD(f"[ishortcut._collect_images_to_download] Collecting images for {modelid}")
+    util.printD(
+        "[ishortcut._collect_images_to_download] "
+        f"shortcut_max_download_image_per_version = "
+        f"{setting.shortcut_max_download_image_per_version}"
+    )
     all_images_to_download = []
 
     for version_idx, image_list in enumerate(version_list):
@@ -809,7 +820,6 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
             setting.shortcut_max_download_image_per_version
             and len(images_for_version) > setting.shortcut_max_download_image_per_version
         ):
-
             original_count = len(images_for_version)
             images_for_version = images_for_version[
                 : setting.shortcut_max_download_image_per_version
@@ -817,6 +827,12 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
             util.printD(
                 f"[ishortcut._collect_images_to_download] Limited images from "
                 f"{original_count} to {len(images_for_version)} per version limit"
+            )
+        else:
+            util.printD(
+                f"[ishortcut._collect_images_to_download] No limit applied: "
+                f"setting={setting.shortcut_max_download_image_per_version}, "
+                f"count={len(images_for_version)}"
             )
 
         all_images_to_download.extend(images_for_version)
