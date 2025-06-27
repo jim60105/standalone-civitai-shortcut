@@ -526,21 +526,21 @@ def write_model_information(modelid: str, register_only_information=False, progr
     Returns:
         dict: Model information from Civitai API, or None if failed
     """
-    util.printD(f"[ishortcut.write_model_information] Starting process for modelid: {modelid}")
+    logger.info(f"[ishortcut.write_model_information] Starting process for modelid: {modelid}")
 
     if not modelid:
-        util.printD("[ishortcut.write_model_information] No modelid provided, aborting")
+        logger.warning("[ishortcut.write_model_information] No modelid provided, aborting")
         return None
 
     # Fetch model information from Civitai API
-    util.printD("[ishortcut.write_model_information] Fetching model info from Civitai API")
+    logger.info("[ishortcut.write_model_information] Fetching model info from Civitai API")
     model_info = civitai.get_model_info(modelid)
 
     if not model_info:
-        util.printD(f"[ishortcut.write_model_information] Failed to get model info for {modelid}")
+        logger.error(f"[ishortcut.write_model_information] Failed to get model info for {modelid}")
         return None
 
-    util.printD("[ishortcut.write_model_information] Successfully fetched model info")
+    logger.info("[ishortcut.write_model_information] Successfully fetched model info")
 
     # Process model versions and extract image information
     version_list = _extract_version_images(model_info, modelid)
@@ -557,12 +557,12 @@ def write_model_information(modelid: str, register_only_information=False, progr
     if not register_only_information:
         _download_model_images(version_list, modelid, progress)
     else:
-        util.printD(
+        logger.info(
             "[ishortcut.write_model_information] Skipping image downloads "
             "(register_only_information=True)"
         )
 
-    util.printD(f"[ishortcut.write_model_information] Process completed successfully for {modelid}")
+    logger.info(f"[ishortcut.write_model_information] Process completed successfully for {modelid}")
     return model_info
 
 
@@ -577,42 +577,40 @@ def _extract_version_images(model_info: dict, modelid: str) -> list:
     Returns:
         list: List of image lists for each version
     """
-    util.printD(f"[ishortcut._extract_version_images] Processing versions for model {modelid}")
+    logger.info(f"[ishortcut._extract_version_images] Processing versions for model {modelid}")
     version_list = []
 
     if "modelVersions" not in model_info:
-        util.printD(f"[ishortcut._extract_version_images] No modelVersions found for {modelid}")
+        logger.warning(f"[ishortcut._extract_version_images] No modelVersions found for {modelid}")
         return version_list
 
     version_count = len(model_info["modelVersions"])
-    util.printD(f"[ishortcut._extract_version_images] Found {version_count} versions")
+    logger.info(f"[ishortcut._extract_version_images] Found {version_count} versions")
 
     for idx, version_info in enumerate(model_info["modelVersions"]):
         version_id = version_info.get('id')
-        util.printD(
+        logger.debug(
             f"[ishortcut._extract_version_images] Processing version "
             f"{idx+1}/{version_count}, ID: {version_id}"
         )
 
         if not version_id:
-            util.printD(f"[ishortcut._extract_version_images] Version {idx+1} has no ID, skipping")
+            logger.warning(f"[ishortcut._extract_version_images] Version {idx+1} has no ID, skipping")
             continue
 
         if "images" not in version_info:
-            util.printD(f"[ishortcut._extract_version_images] Version {version_id} has no images")
+            logger.warning(f"[ishortcut._extract_version_images] Version {version_id} has no images")
             continue
 
         image_list = _process_version_images(version_info["images"], version_id)
         if image_list:
             version_list.append(image_list)
-            util.printD(
-                f"[ishortcut._extract_version_images] Added {len(image_list)} images "
-                f"for version {version_id}"
+            logger.info(
+                f"[ishortcut._extract_version_images] Added {len(image_list)} images for version {version_id}"
             )
         else:
-            util.printD(
-                f"[ishortcut._extract_version_images] No valid images found "
-                f"for version {version_id}"
+            logger.warning(
+                f"[ishortcut._extract_version_images] No valid images found for version {version_id}"
             )
 
     util.printD(
