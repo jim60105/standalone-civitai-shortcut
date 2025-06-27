@@ -7,7 +7,9 @@ for all modules that need it.
 
 import sys
 from . import setting
-from . import util
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def initialize_compatibility_layer(compat_layer):
@@ -45,4 +47,4 @@ def initialize_compatibility_layer(compat_layer):
     except Exception:
         pass
 
-    util.printD("Compatibility layer initialized for all modules")
+    logger.info("Compatibility layer initialized for all modules")

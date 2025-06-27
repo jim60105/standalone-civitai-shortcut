@@ -1,13 +1,15 @@
 import os
 import gradio as gr
-import datetime
 import json
 
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 from . import util
+
 from . import model
 from . import setting
 from . import civitai
-
 from . import ishortcut
 from . import ishortcut_action
 from .http_client import get_http_client
@@ -15,13 +17,13 @@ from .http_client import get_http_client
 
 def download_scan_image(url: str, save_path: str) -> bool:
     """Download image during scan operation."""
-    util.printD(f"[scan_action] Downloading scan image: {url}")
+    logger.info(f"Downloading scan image: {url}")
     client = get_http_client()
     success = client.download_file(url, save_path)
     if success:
-        util.printD(f"[scan_action] Scan image downloaded: {save_path}")
+        logger.info(f"Scan image downloaded: {save_path}")
     else:
-        util.printD(f"[scan_action] Failed to download scan image: {url}")
+        logger.error(f"Failed to download scan image: {url}")
     return success
 
 
@@ -194,9 +196,9 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
     if not files:
         return None
 
-    for file_path in progress.tqdm(files, desc=f"Create Models Information"):
+    for file_path in progress.tqdm(files, desc="Create Models Information"):
         if os.path.isfile(file_path):
-            util.printD(f"Generate SHA256: {file_path}")
+            logger.debug(f"Generate SHA256: {file_path}")
             hash = util.calculate_sha256(file_path)
             version_info = civitai.get_version_info_by_hash(hash)
 
@@ -228,7 +230,7 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
             )
             result = civitai.write_version_info(info_path, version_info)
             if result:
-                util.printD(f"Wrote version info : {info_path}")
+                logger.info(f"Wrote version info: {info_path}")
 
             # save preview
             if "images" in version_info.keys():
@@ -250,7 +252,7 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
                     if not os.path.isfile(destination):
                         os.rename(file_path, destination)
                     else:
-                        util.printD(f"The target file already exists : target {destination}")
+                        logger.warning(f"The target file already exists: {destination}")
 
             # 숏컷 추가
             if register_shortcut:
@@ -280,7 +282,7 @@ def is_filename_in_version_info_in_directory(directory, filename):
                     for file in files:
                         if file['name'] == filename:
                             return True
-        except:
+        except Exception:
             pass
 
     return False
@@ -296,7 +298,7 @@ def scan_models(fix_information_filename, progress=gr.Progress()):
         # fix_version_information_filename()
         pass
 
-    for file_path in progress.tqdm(file_list, desc=f"Scan Models for Civitai"):
+    for file_path in progress.tqdm(file_list, desc="Scan Models for Civitai"):
 
         vfolder, vfile = os.path.split(file_path)
         basename, ext = os.path.splitext(vfile)
@@ -400,7 +402,7 @@ def on_update_lora_meta_for_downloaded_model_btn_click(progress=gr.Progress()):
 def update_lora_meta(progress=gr.Progress()):
 
     for file_path, version_id in progress.tqdm(
-        model.Downloaded_InfoPath.items(), desc=f"Create Lora metadata file for Downloaded Model"
+        model.Downloaded_InfoPath.items(), desc="Create Lora metadata file for Downloaded Model"
     ):
         vfolder, vfile = os.path.split(file_path)
         basename, ext = os.path.splitext(vfile)

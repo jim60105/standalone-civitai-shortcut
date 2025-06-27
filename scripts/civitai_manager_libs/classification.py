@@ -1,7 +1,10 @@
 import os
 import json
 
-from . import util
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
+
 from . import setting
 
 
@@ -81,10 +84,7 @@ def get_classification_shortcuts(s_name):
 
     # Ensure s_name is a string, not a list
     if isinstance(s_name, list):
-        util.printD(
-            f"[CLASSIFICATION] get_classification_shortcuts received list instead of "
-            f"string: {s_name}"
-        )
+        logger.warning(f"get_classification_shortcuts received list instead of string: {s_name}")
         return None
 
     CISC = load()
@@ -137,10 +137,7 @@ def get_classification_info(s_name):
 
     # Ensure s_name is a string, not a list
     if isinstance(s_name, list):
-        util.printD(
-            f"[CLASSIFICATION] get_classification_info received list instead of "
-            f"string: {s_name}"
-        )
+        logger.warning(f"get_classification_info received list instead of string: {s_name}")
         return None
 
     CISC = load()
@@ -267,8 +264,7 @@ def delete(CISC: dict, classification) -> dict:
     if not CISC:
         return CISC
 
-    sc = CISC.pop(classification, None)
-
+    CISC.pop(classification, None)
     return CISC
 
 
@@ -306,13 +302,12 @@ def save(CISC: dict):
     try:
         with open(setting.shortcut_classification, 'w') as f:
             json.dump(CISC, f, indent=4)
-    except Exception as e:
-        util.printD("Error when writing file:" + setting.shortcut_classification)
+    except Exception:
+        logger.error(f"Error when writing file: {setting.shortcut_classification}")
         return output
 
-    output = "Civitai Internet Shortcut Classification saved to: " + setting.shortcut_classification
-    # util.printD(output)
-
+    output = f"Civitai Internet Shortcut Classification saved to: {setting.shortcut_classification}"
+    logger.info(output)
     return output
 
 
@@ -325,7 +320,7 @@ def load() -> dict:
     try:
         with open(setting.shortcut_classification, 'r') as f:
             json_data = json.load(f)
-    except:
+    except Exception:
         return None
 
     # check error

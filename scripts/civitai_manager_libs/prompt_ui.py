@@ -9,8 +9,11 @@ import gradio as gr
 
 from .conditional_imports import import_manager
 
+# Prompt UI Module - Dual Mode Compatible
 from . import prompt
-from . import util
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 from .compat.compat_layer import CompatibilityLayer
 
 # Compatibility layer variables
@@ -47,7 +50,7 @@ def on_option_change(option):
 
     try:
         parameters = prompt.parse_option_data(option)
-    except:
+    except Exception:
         pass
 
     if parameters:
@@ -61,7 +64,7 @@ def on_option_change(option):
         if size:
             try:
                 size_width, size_height = map(int, size.split("x"))
-            except:
+            except Exception:
                 pass
 
         cfg_scale = parameters.pop('CFG scale', 7.0)
@@ -75,7 +78,7 @@ def on_option_change(option):
             if hr_resize:
                 try:
                     hr_resize_width, hr_resize_height = map(int, hr_resize.split("x"))
-                except:
+                except Exception:
                     pass
 
         others = [f"{k}:{v}" for k, v in parameters.items()]
@@ -124,7 +127,7 @@ def on_make_parameters(
         parameters_string = parameters_string + f", Sampler:{sampler}"
 
     if faces:
-        parameters_string = parameters_string + f", Face restoration:CodeFormer"
+        parameters_string = parameters_string + ", Face restoration:CodeFormer"
 
     if cfg_scale:
         parameters_string = parameters_string + f", CFG scale:{cfg_scale}"
@@ -567,7 +570,7 @@ def _get_sampler_choices():
         try:
             return compat.sampler_provider.get_txt2img_samplers()
         except Exception as e:
-            util.printD(f"Error getting samplers through compatibility layer: {e}")
+            logger.error(f"Error getting samplers through compatibility layer: {e}")
 
     # Fallback: Try WebUI direct access
     sd_samplers = import_manager.get_webui_module('sd_samplers')
@@ -575,7 +578,7 @@ def _get_sampler_choices():
         try:
             return [x.name for x in sd_samplers.samplers]
         except Exception as e:
-            util.printD(f"Error getting samplers from WebUI: {e}")
+            logger.error(f"Error getting samplers from WebUI: {e}")
 
     # Final fallback: Basic sampler list
     return [
@@ -612,7 +615,7 @@ def _get_upscaler_choices():
             if upscalers:
                 return upscalers
         except Exception as e:
-            util.printD(f"Error getting upscalers through compatibility layer: {e}")
+            logger.error(f"Error getting upscalers through compatibility layer: {e}")
 
     # Fallback: Try WebUI direct access
     shared = import_manager.get_webui_module('shared')
@@ -623,7 +626,7 @@ def _get_upscaler_choices():
             upscaler_names = [x.name for x in sd_upscalers] if sd_upscalers else []
             return list(latent_modes) + upscaler_names
         except Exception as e:
-            util.printD(f"Error getting upscalers from WebUI: {e}")
+            logger.error(f"Error getting upscalers from WebUI: {e}")
 
     # Final fallback: Basic upscaler list
     return [

@@ -1,5 +1,9 @@
 import os
 import json
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
+
 from . import util
 from . import setting
 
@@ -18,7 +22,7 @@ Downloaded_InfoPath = (
 def Test_Models():
     if Downloaded_Models:
         for mid, vidpath in Downloaded_Models.items():
-            util.printD(f"{mid} :\n")
+            logger.debug(f"{mid} :\n")
             # for vid, path in vidpath:
             #     print(f"{vid} : {path}\n")
 
@@ -125,7 +129,7 @@ def get_model_path() -> dict:
                         models[mid] = list()
 
                     models[mid].append([vid, file_path])
-        except:
+        except Exception:
             pass
 
     if len(models) > 0:
