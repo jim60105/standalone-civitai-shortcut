@@ -21,13 +21,16 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Use a specific runner per platform: ubuntu-latest for amd64, ubuntu-24.04-arm for arm64
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
