@@ -191,7 +191,7 @@ Main files:
 * Includes mechanisms for handling rate limits and API failure modes.
 
 ## Logging
-* Use Python's standard `logging` module for all log output. Remove calls to `util.printD()`.
+* Use Python's standard `logging` module for all log output.
 * At the top of each module, initialize a logger:
 
 ```python
