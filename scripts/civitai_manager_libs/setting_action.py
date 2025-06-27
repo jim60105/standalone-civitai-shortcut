@@ -6,6 +6,7 @@ through the compatibility layer.
 """
 
 import os
+import copy
 import gradio as gr
 import shutil
 from packaging import version
@@ -22,6 +23,27 @@ def set_compatibility_layer(compat_layer):
     """Set compatibility layer."""
     global _compat_layer
     _compat_layer = compat_layer
+
+
+def _check_ui_reload_required(old_env: dict, new_env: dict) -> bool:
+    """Return True if changed settings require UI reload to take effect."""
+    ui_dependent_keys = [
+        ('screen_style', 'shortcut_browser_screen_split_ratio'),
+        ('screen_style', 'information_gallery_height'),
+        ('screen_style', 'gallery_thumbnail_image_style'),
+        ('screen_style', 'shortcut_browser_search_up'),
+        ('image_style', 'shortcut_column'),
+        ('image_style', 'shortcut_rows_per_page'),
+        ('image_style', 'gallery_column'),
+        ('image_style', 'classification_shortcut_column'),
+        ('image_style', 'classification_shortcut_rows_per_page'),
+        ('image_style', 'classification_gallery_column'),
+        ('image_style', 'classification_gallery_rows_per_page'),
+    ]
+    for section, key in ui_dependent_keys:
+        if old_env.get(section, {}).get(key) != new_env.get(section, {}).get(key):
+            return True
+    return False
 
 
 def on_setting_ui():
@@ -471,6 +493,8 @@ def save_setting(
     environment = setting.load()
     if not environment:
         environment = dict()
+    # preserve a copy to detect reload-dependent changes
+    old_env = copy.deepcopy(environment)
 
     application_allow = dict()
     application_allow['civitai_api_key'] = civitai_api_key
@@ -539,15 +563,27 @@ def save_setting(
     setting.save(environment)
     setting.load_data()
 
+    # notify user based on whether layout reload is needed
+    ui_reload_needed = _check_ui_reload_required(old_env, environment)
     try:
-        gr.Info(
-            "⚙️ Settings saved! Some layout changes require UI reload to take effect. "
-            "Please click the 'Reload UI' button below.",
-            duration=8,
-        )
+        if ui_reload_needed:
+            gr.Info(
+                "⚙️ Settings saved! Some layout changes require UI reload to take effect. "
+                "Please click the 'Reload UI' button below.",
+                duration=8,
+            )
+        else:
+            gr.Info(
+                "✅ Settings saved and applied successfully!",
+                duration=3,
+            )
     except Exception as e:
         util.printD(f"Failed to show setting save notification: {e}")
-    util.printD("Settings saved. UI reload recommended for layout changes.")
+    # log for debugging purposes
+    if ui_reload_needed:
+        util.printD("Settings saved. UI reload recommended for layout changes.")
+    else:
+        util.printD("Settings saved and applied successfully.")
 
 
 def on_usergallery_openfolder_btn_click():
