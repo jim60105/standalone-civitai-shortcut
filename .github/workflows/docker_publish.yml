@@ -26,6 +26,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Prepare Dockerfile for CI (remove ,Z and ,z)
+        run: |
+          sed -i 's/,Z//g;s/,z//g' Dockerfile
+        shell: bash
+
       - name: Setup docker
         id: setup
         uses: ./.github/workflows/docker-reused-setup-steps
