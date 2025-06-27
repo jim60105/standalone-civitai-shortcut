@@ -1,0 +1,78 @@
+name: docker_publish
+
+on:
+  push:
+    branches:
+      - "master"
+    tags:
+      - "v*"
+  schedule:
+    - cron: "0 5 1 * *"  # 1st day of month at 5am UTC
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup docker
+        id: setup
+        uses: ./.github/workflows/docker-reused-setup-steps
+        with:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+          tag: ${{ github.ref_name }}
+          CR_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: build_push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          target: final
+          tags: ${{ steps.setup.outputs.tags }}
+          labels: ${{ steps.setup.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            RELEASE=${{ github.run_number }}
+          platforms: linux/amd64,linux/arm64
+          # Cache to registry instead of gha to avoid the capacity limit.
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut:cache
+          cache-to: |
+            type=registry,ref=ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut:cache,mode=max
+          sbom: true
+          provenance: true
+
+      - name: Attest GHCR image
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut
+          subject-digest: ${{ steps.build_push.outputs.digest }}
+
+      - name: Attest Docker Hub image
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: index.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/standalone-civitai-shortcut
+          subject-digest: ${{ steps.build_push.outputs.digest }}
+
+      - name: Attest Quay image
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: quay.io/${{ github.repository_owner }}/standalone-civitai-shortcut
+          subject-digest: ${{ steps.build_push.outputs.digest }}
