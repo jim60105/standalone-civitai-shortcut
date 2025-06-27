@@ -840,11 +840,12 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
     # Prepare download tasks
     image_tasks = [(url, filepath) for _, url, filepath in all_images_to_download]
 
-    # Setup progress wrapper
-    def progress_wrapper(progress_val, desc):
+    # Setup progress wrapper matching new progress_callback signature (done, total, desc)
+    def progress_wrapper(done, total, desc):
         if progress:
             try:
-                progress(progress_val, desc=desc)
+                # Convert completed count to progress fraction
+                progress(done / total if total else 0, desc=desc)
             except Exception as e:
                 util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
 
