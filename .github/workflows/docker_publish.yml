@@ -66,6 +66,7 @@ jobs:
           context: .
           file: ./Dockerfile
           target: final
+          tags: ${{ steps.setup.outputs.tags }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.setup.outputs.labels }}
           build-args: |
