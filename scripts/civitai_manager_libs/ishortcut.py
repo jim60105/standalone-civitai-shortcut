@@ -595,11 +595,15 @@ def _extract_version_images(model_info: dict, modelid: str) -> list:
         )
 
         if not version_id:
-            logger.warning(f"[ishortcut._extract_version_images] Version {idx+1} has no ID, skipping")
+            logger.warning(
+                f"[ishortcut._extract_version_images] Version {idx+1} has no ID, skipping"
+            )
             continue
 
         if "images" not in version_info:
-            logger.warning(f"[ishortcut._extract_version_images] Version {version_id} has no images")
+            logger.warning(
+                f"[ishortcut._extract_version_images] Version {version_id} has no images"
+            )
             continue
 
         image_list = _process_version_images(version_info["images"], version_id)
@@ -674,22 +678,22 @@ def _create_model_directory(modelid: str) -> str:
     Returns:
         str: Path to created directory, or None if failed
     """
-    util.printD(f"[ishortcut._create_model_directory] Creating directory for model {modelid}")
+    logger.info(f"[ishortcut._create_model_directory] Creating directory for model {modelid}")
 
     try:
         model_path = os.path.join(setting.shortcut_info_folder, modelid)
-        util.printD(f"[ishortcut._create_model_directory] Target path: {model_path}")
+        logger.debug(f"[ishortcut._create_model_directory] Target path: {model_path}")
 
         if os.path.exists(model_path):
-            util.printD("[ishortcut._create_model_directory] Directory already exists")
+            logger.info("[ishortcut._create_model_directory] Directory already exists")
         else:
             os.makedirs(model_path)
-            util.printD("[ishortcut._create_model_directory] Directory created successfully")
+            logger.info("[ishortcut._create_model_directory] Directory created successfully")
 
         return model_path
 
     except Exception as e:
-        util.printD(f"[ishortcut._create_model_directory] Failed to create directory: {str(e)}")
+        logger.error(f"[ishortcut._create_model_directory] Failed to create directory: {e}")
         return None
 
 
@@ -705,7 +709,7 @@ def _save_model_information(model_info: dict, model_path: str, modelid: str) -> 
     Returns:
         bool: True if successful, False otherwise
     """
-    util.printD(f"[ishortcut._save_model_information] Saving model info for {modelid}")
+    logger.info(f"[ishortcut._save_model_information] Saving model info for {modelid}")
 
     try:
         tmp_info_file = os.path.join(model_path, f"tmp{setting.info_suffix}{setting.info_ext}")
@@ -713,8 +717,8 @@ def _save_model_information(model_info: dict, model_path: str, modelid: str) -> 
             model_path, f"{modelid}{setting.info_suffix}{setting.info_ext}"
         )
 
-        util.printD(f"[ishortcut._save_model_information] Temp file: {tmp_info_file}")
-        util.printD(f"[ishortcut._save_model_information] Final file: {model_info_file}")
+        logger.debug(f"[ishortcut._save_model_information] Temp file: {tmp_info_file}")
+        logger.debug(f"[ishortcut._save_model_information] Final file: {model_info_file}")
 
         # Write to temporary file first for atomic operation
         with open(tmp_info_file, 'w', encoding='utf-8') as f:
@@ -722,11 +726,11 @@ def _save_model_information(model_info: dict, model_path: str, modelid: str) -> 
 
         # Atomically replace the target file
         os.replace(tmp_info_file, model_info_file)
-        util.printD("[ishortcut._save_model_information] Model info saved successfully")
+        logger.info("[ishortcut._save_model_information] Model info saved successfully")
         return True
 
     except Exception as e:
-        util.printD(f"[ishortcut._save_model_information] Failed to save model info: {str(e)}")
+        logger.error(f"[ishortcut._save_model_information] Failed to save model info: {e}")
         return False
 
 
@@ -741,34 +745,34 @@ def _download_model_images(version_list: list, modelid: str, progress=None):
     """
     # Ensure latest configuration values loaded before downloading
     setting.load_data()
-    util.printD(
+    logger.debug(
         f"[ishortcut._download_model_images] Current shortcut_max_download_image_per_version: "
         f"{setting.shortcut_max_download_image_per_version}"
     )
     if not version_list:
-        util.printD(f"[ishortcut._download_model_images] No images to download for {modelid}")
+        logger.info(f"[ishortcut._download_model_images] No images to download for {modelid}")
         return
 
-    util.printD(f"[ishortcut._download_model_images] Starting image downloads for model {modelid}")
+    logger.info(f"[ishortcut._download_model_images] Starting image downloads for model {modelid}")
 
     # Get HTTP client for downloads
     try:
         client = get_http_client()
-        util.printD("[ishortcut._download_model_images] HTTP client obtained successfully")
+        logger.debug("[ishortcut._download_model_images] HTTP client obtained successfully")
     except Exception as e:
-        util.printD(f"[ishortcut._download_model_images] Failed to get HTTP client: {str(e)}")
+        logger.error(f"[ishortcut._download_model_images] Failed to get HTTP client: {e}")
         return
 
     # Collect all images that need downloading
     all_images_to_download = _collect_images_to_download(version_list, modelid)
 
     if not all_images_to_download:
-        util.printD(f"[ishortcut._download_model_images] No new images to download for {modelid}")
+        logger.info(f"[ishortcut._download_model_images] No new images to download for {modelid}")
         return
 
     # Download images with progress tracking
     _perform_image_downloads(all_images_to_download, client, progress)
-    util.printD(f"[ishortcut._download_model_images] Image downloads completed for {modelid}")
+    logger.info(f"[ishortcut._download_model_images] Image downloads completed for {modelid}")
 
 
 def _collect_images_to_download(version_list: list, modelid: str) -> list:
@@ -782,16 +786,15 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
     Returns:
         list: List of (version_id, url, filepath) tuples to download
     """
-    util.printD(f"[ishortcut._collect_images_to_download] Collecting images for {modelid}")
-    util.printD(
+    logger.info(f"[ishortcut._collect_images_to_download] Collecting images for {modelid}")
+    logger.debug(
         "[ishortcut._collect_images_to_download] "
-        f"shortcut_max_download_image_per_version = "
-        f"{setting.shortcut_max_download_image_per_version}"
+        f"shortcut_max_download_image_per_version = {setting.shortcut_max_download_image_per_version}"
     )
     all_images_to_download = []
 
     for version_idx, image_list in enumerate(version_list):
-        util.printD(
+        logger.debug(
             f"[ishortcut._collect_images_to_download] Processing version "
             f"{version_idx+1}/{len(version_list)}"
         )
@@ -801,16 +804,14 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
             description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
 
             if os.path.exists(description_img):
-                util.printD(
-                    f"[ishortcut._collect_images_to_download] Image {img_idx+1} "
-                    f"already exists: {description_img}"
-                )
+            logger.debug(
+                f"[ishortcut._collect_images_to_download] Image {img_idx+1} already exists: {description_img}"
+            )
                 continue
 
             images_for_version.append((vid, url, description_img))
-            util.printD(
-                f"[ishortcut._collect_images_to_download] Added image {img_idx+1} "
-                f"for download: {url}"
+            logger.info(
+                f"[ishortcut._collect_images_to_download] Added image {img_idx+1} for download: {url}"
             )
 
         # Apply per-version download limit
@@ -819,15 +820,13 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
             and len(images_for_version) > setting.shortcut_max_download_image_per_version
         ):
             original_count = len(images_for_version)
-            images_for_version = images_for_version[
-                : setting.shortcut_max_download_image_per_version
-            ]
-            util.printD(
+            images_for_version = images_for_version[: setting.shortcut_max_download_image_per_version]
+            logger.info(
                 f"[ishortcut._collect_images_to_download] Limited images from "
                 f"{original_count} to {len(images_for_version)} per version limit"
             )
         else:
-            util.printD(
+            logger.debug(
                 f"[ishortcut._collect_images_to_download] No limit applied: "
                 f"setting={setting.shortcut_max_download_image_per_version}, "
                 f"count={len(images_for_version)}"
@@ -835,9 +834,8 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
 
         all_images_to_download.extend(images_for_version)
 
-    util.printD(
-        f"[ishortcut._collect_images_to_download] Total images to download: "
-        f"{len(all_images_to_download)}"
+    logger.info(
+        f"[ishortcut._collect_images_to_download] Total images to download: {len(all_images_to_download)}"
     )
     return all_images_to_download
 
@@ -847,7 +845,7 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
     if not all_images_to_download:
         return
 
-    util.printD(
+    logger.info(
         f"[ishortcut._perform_image_downloads] Starting parallel downloads for {len(all_images_to_download)} images"
     )
 
