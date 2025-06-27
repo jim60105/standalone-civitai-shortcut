@@ -16,10 +16,18 @@ permissions:
   contents: read
   packages: write
 
-jobs:
-  docker:
-    runs-on: ubuntu-latest
+env:
+  REGISTRY_IMAGE: ${{ github.repository_owner }}/standalone-civitai-shortcut
 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +38,10 @@ jobs:
         run: |
           sed -i 's/,Z//g;s/,z//g' Dockerfile
         shell: bash
+
+      - name: Prepare platform variables
+        run: |
+          echo "PLATFORM_PAIR=${{ matrix.platform//\//- }}" >> $GITHUB_ENV
 
       - name: Setup docker
         id: setup
@@ -42,42 +54,92 @@ jobs:
           tag: ${{ github.ref_name }}
           CR_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        id: build_push
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
           target: final
-          tags: ${{ steps.setup.outputs.tags }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.setup.outputs.labels }}
           build-args: |
             VERSION=${{ github.ref_name }}
             RELEASE=${{ github.run_number }}
-          platforms: linux/amd64,linux/arm64
-          # Cache to registry instead of gha to avoid the capacity limit.
           cache-from: |
-            type=registry,ref=ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut:cache
+            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache
           cache-to: |
-            type=registry,ref=ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut:cache,mode=max
+            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache,mode=max
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           sbom: true
           provenance: true
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          echo "${digest#sha256:}" > /tmp/digests/${{ env.PLATFORM_PAIR }}
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Setup docker
+        id: setup
+        uses: ./.github/workflows/docker-reused-setup-steps
+        with:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+          tag: ${{ github.ref_name }}
+          CR_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          digests=(*/)
+          digests=("${digests[@]%/}")
+          for registry in ghcr.io/${{ github.repository_owner }} index.docker.io/${{ secrets.DOCKERHUB_USERNAME }} quay.io/${{ github.repository_owner }}; do
+            tags=$(echo "${{ steps.setup.outputs.tags }}" | grep "^${registry}/" | tr '\n' ' ')
+            if [ -n "$tags" ]; then
+              docker buildx imagetools create $tags $(printf "${registry}/$GITHUB_REPOSITORY@sha256:%s " "${digests[@]}")
+            fi
+          done
 
       - name: Attest GHCR image
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut
-          subject-digest: ${{ steps.build_push.outputs.digest }}
+          subject-digest: ${{ steps.build.outputs.digest }}
 
       - name: Attest Docker Hub image
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: index.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/standalone-civitai-shortcut
-          subject-digest: ${{ steps.build_push.outputs.digest }}
+          subject-digest: ${{ steps.build.outputs.digest }}
 
       - name: Attest Quay image
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: quay.io/${{ github.repository_owner }}/standalone-civitai-shortcut
-          subject-digest: ${{ steps.build_push.outputs.digest }}
+          subject-digest: ${{ steps.build.outputs.digest }}
