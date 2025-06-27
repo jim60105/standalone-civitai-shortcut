@@ -433,18 +433,16 @@ def on_civitai_internet_url_txt_upload(
         is_standalone = EnvironmentDetector.is_standalone_mode()
         util.printD(f"[civitai_shortcut_action] Detected mode - standalone: {is_standalone}")
 
-        # In standalone mode, we need to use a compatible progress implementation
-        if is_standalone and (progress is None or not hasattr(progress, 'tqdm')):
+        # In standalone mode, replace Gradio Progress (SSE streaming) with MockProgress to avoid SSE errors
+        if is_standalone:
             util.printD("[civitai_shortcut_action] Creating MockProgress for standalone mode")
 
             class MockProgress:
                 def tqdm(self, iterable, desc=""):
                     util.printD(
-                        f"[MockProgress] tqdm called with iterable type: {type(iterable)}, "
-                        f"desc: {desc}"
+                        f"[MockProgress] tqdm called with iterable type: {type(iterable)}, desc: {desc}"
                     )
                     util.printD(f"[MockProgress] iterable content: {iterable}")
-                    # Return the iterable directly, mimicking tqdm behavior
                     return iterable
 
             progress = MockProgress()
