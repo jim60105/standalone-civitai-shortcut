@@ -106,8 +106,8 @@ def get_version_description_gallery(modelid, version_info):
             description_img = setting.get_image_url_to_shortcut_file(
                 modelid, versionid, img_dict['url']
             )
-            # util.printD(modelid)
-            # util.printD(description_img)
+            # logger.debug(modelid)
+            # logger.debug(description_img)
 
             # NSFW filtering ....
             if setting.NSFW_filtering_enable:
@@ -129,7 +129,7 @@ def get_version_description_gallery(modelid, version_info):
             if os.path.isfile(description_img):
                 images_url.append(description_img)
     except Exception as e:
-        # util.printD("error :" + e)
+        # logger.debug("error :" + e)
         return None
 
     return images_url
@@ -258,7 +258,7 @@ def get_tags():
         result.extend(name_values)
 
     result = list(set(result))
-    # util.printD(f"{len(result)}:{result}")
+    # logger.debug(f"{len(result)}:{result}")
     return result
 
 
@@ -307,7 +307,7 @@ def is_baseModel(modelid: str, baseModels):
     if "modelVersions" in model_info.keys():
         for ver in model_info["modelVersions"]:
             try:
-                # util.printD(ver["baseModel"])
+                # logger.debug(ver["baseModel"])
                 if ver["baseModel"] in baseModels:
                     return True
             except:
@@ -621,7 +621,7 @@ def _extract_version_images(model_info: dict, modelid: str) -> list:
                 f"[ishortcut._extract_version_images] No valid images found for version {version_id}"
             )
 
-    util.printD(
+    logger.debug(
         f"[ishortcut._extract_version_images] Processed {len(version_list)} versions with images"
     )
     return version_list
@@ -863,13 +863,13 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
                 # Convert completed count to progress fraction
                 progress(done / total if total else 0, desc=desc)
             except Exception as e:
-                util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
+                logger.debug(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
 
     # Execute parallel download
     downloader = ParallelImageDownloader(max_workers=10)
     success_count = downloader.download_images(image_tasks, progress_wrapper)
 
-    util.printD(
+    logger.debug(
         f"[ishortcut._perform_image_downloads] Parallel downloads completed:"
         f" {success_count}/{len(all_images_to_download)} successful"
     )
@@ -887,7 +887,7 @@ def _setup_progress_tracking(all_images_to_download: list, progress=None):
         tuple: (images_list, progress_tracker)
     """
     if progress is None:
-        util.printD("[ishortcut._setup_progress_tracking] No progress callback provided")
+        logger.debug("[ishortcut._setup_progress_tracking] No progress callback provided")
         return all_images_to_download, None
 
     try:
@@ -897,18 +897,18 @@ def _setup_progress_tracking(all_images_to_download: list, progress=None):
         try:
             # Send initial progress update including total images
             progress(0, desc="Initializing image downloads...", total=total_images)
-            util.printD(
+            logger.debug(
                 f"[ishortcut._setup_progress_tracking] Initialized progress for {total_images} images"
             )
         except Exception as e:
-            util.printD(f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}")
+            logger.debug(
+                f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}"
+            )
 
         return all_images_to_download, progress
 
     except Exception as e:
-        util.printD(
-            f"[ishortcut._setup_progress_tracking] Failed to setup progress tracking: {str(e)}"
-        )
+        logger.debug(f"[ishortcut._setup_progress_tracking] Failed to setup progress tracking: {e}")
         return all_images_to_download, None
 
 
@@ -994,7 +994,7 @@ def get_list(shortcut_types=None) -> str:
 
     shotcutlist = list()
     for k, v in ISC.items():
-        # util.printD(ISC[k])
+        # logger.debug(ISC[k])
         if v:
             if tmp_types:
                 if v['type'] in tmp_types:
@@ -1016,7 +1016,7 @@ def get_image_list(
     result_list = list()
 
     keys, tags, notes = util.get_search_keyword(search)
-    # util.printD(f"keys:{keys} ,tags:{tags},notes:{notes}")
+    # logger.debug(f"keys:{keys} ,tags:{tags},notes:{notes}")
 
     # classification # and 연산으로 변경한다.
     if shortcut_classification:
@@ -1170,7 +1170,7 @@ def download_thumbnail_image(model_id, url):
             image.thumbnail(thumbnail_max_size)
             image.save(thumbnail_path)
     except Exception as e:
-        util.printD(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
+        logger.debug(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
     return True
 
 
@@ -1320,7 +1320,7 @@ def backup_cis(name, url):
         with open(setting.shortcut_civitai_internet_shortcut_url, 'w') as f:
             json.dump(backup_dict, f, indent=4)
     except Exception as e:
-        util.printD("Error when writing file:" + setting.shortcut_civitai_internet_shortcut_url)
+        logger.debug("Error when writing file:" + setting.shortcut_civitai_internet_shortcut_url)
         pass
 
 
@@ -1334,20 +1334,20 @@ def save(ISC: dict):
         with open(setting.shortcut, 'w') as f:
             json.dump(ISC, f, indent=4)
     except Exception as e:
-        util.printD("Error when writing file:" + setting.shortcut)
+        logger.debug("Error when writing file:" + setting.shortcut)
         return output
 
     output = "Civitai Internet Shortcut saved to: " + setting.shortcut
-    # util.printD(output)
+    # logger.debug(output)
 
     return output
 
 
 def load() -> dict:
-    # util.printD("Load Civitai Internet Shortcut from: " + setting.shortcut)
+    # logger.debug("Load Civitai Internet Shortcut from: " + setting.shortcut)
 
     if not os.path.isfile(setting.shortcut):
-        util.printD("Unable to load the shortcut file. Starting with an empty file.")
+        logger.debug("Unable to load the shortcut file. Starting with an empty file.")
         save({})
         return
 
@@ -1360,7 +1360,7 @@ def load() -> dict:
 
     # check error
     if not json_data:
-        util.printD("There are no registered shortcuts.")
+        logger.debug("There are no registered shortcuts.")
         return None
 
     # check for new key
