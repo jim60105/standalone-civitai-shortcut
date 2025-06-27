@@ -14,6 +14,10 @@ from . import setting
 from . import civitai
 from . import classification
 
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
+
 from PIL import Image
 
 thumbnail_max_size = (400, 400)
@@ -636,16 +640,14 @@ def _process_version_images(images: list, version_id: str) -> list:
     """
     image_list = []
     image_count = len(images)
-    util.printD(
-        f"[ishortcut._process_version_images] Processing {image_count} images "
-        f"for version {version_id}"
+    logger.info(
+        f"[ishortcut._process_version_images] Processing {image_count} images for version {version_id}"
     )
 
     for idx, img in enumerate(images):
         if "url" not in img:
-            util.printD(
-                f"[ishortcut._process_version_images] Image {idx+1}/{image_count} "
-                f"has no URL, skipping"
+            logger.warning(
+                f"[ishortcut._process_version_images] Image {idx+1}/{image_count} has no URL, skipping"
             )
             continue
 
@@ -655,13 +657,12 @@ def _process_version_images(images: list, version_id: str) -> list:
         if "width" in img and img["width"]:
             original_url = img_url
             img_url = util.change_width_from_image_url(img_url, img["width"])
-            util.printD(
-                f"[ishortcut._process_version_images] Adjusted image URL width: "
-                f"{original_url} -> {img_url}"
+            logger.debug(
+                f"[ishortcut._process_version_images] Adjusted image URL width: {original_url} -> {img_url}"
             )
 
         image_list.append([version_id, img_url])
-        util.printD(
+        logger.debug(
             f"[ishortcut._process_version_images] Added image {idx+1}/{image_count}: {img_url}"
         )
 
@@ -804,9 +805,9 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
             description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
 
             if os.path.exists(description_img):
-            logger.debug(
-                f"[ishortcut._collect_images_to_download] Image {img_idx+1} already exists: {description_img}"
-            )
+                logger.debug(
+                    f"[ishortcut._collect_images_to_download] Image {img_idx+1} already exists: {description_img}"
+                )
                 continue
 
             images_for_version.append((vid, url, description_img))
@@ -820,7 +821,9 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
             and len(images_for_version) > setting.shortcut_max_download_image_per_version
         ):
             original_count = len(images_for_version)
-            images_for_version = images_for_version[: setting.shortcut_max_download_image_per_version]
+            images_for_version = images_for_version[
+                : setting.shortcut_max_download_image_per_version
+            ]
             logger.info(
                 f"[ishortcut._collect_images_to_download] Limited images from "
                 f"{original_count} to {len(images_for_version)} per version limit"
@@ -1383,7 +1386,7 @@ def _get_preview_image_url(model_info) -> str:
                     return url
         return None
     except Exception as e:
-        util.printD(f"[ishortcut] Error extracting preview URL: {e}")
+        logger.error(f"[ishortcut] Error extracting preview URL: {e}")
         return None
 
 
@@ -1398,52 +1401,51 @@ def _get_preview_image_path(model_info) -> str:
         filename = f"model_{model_id}_preview.jpg"
         return os.path.join(preview_dir, filename)
     except Exception as e:
-        util.printD(f"[ishortcut] Error generating image path: {e}")
+        logger.error(f"[ishortcut] Error generating image path: {e}")
         return None
 
 
 def download_model_preview_image_by_model_info(model_info):
     """Download model preview image with improved error handling."""
     if not model_info:
-        util.printD("[ishortcut] download_model_preview_image_by_model_info: model_info is None")
+        logger.error("[ishortcut] download_model_preview_image_by_model_info: model_info is None")
         return None
     model_id = model_info.get('id')
     if not model_id:
-        util.printD("[ishortcut] download_model_preview_image_by_model_info: model_id not found")
+        logger.error("[ishortcut] download_model_preview_image_by_model_info: model_id not found")
         return None
-    util.printD(f"[ishortcut] Downloading preview image for model: {model_id}")
+    logger.info(f"[ishortcut] Downloading preview image for model: {model_id}")
     preview_url = _get_preview_image_url(model_info)
     if not preview_url:
-        util.printD("[ishortcut] No preview image URL found")
+        logger.warning("[ishortcut] No preview image URL found")
         return None
     image_path = _get_preview_image_path(model_info)
     if not image_path:
-        util.printD("[ishortcut] Failed to generate image path")
+        logger.error("[ishortcut] Failed to generate image path")
         return None
     if os.path.exists(image_path):
-        util.printD(f"[ishortcut] Preview image already exists: {image_path}")
+        logger.info(f"[ishortcut] Preview image already exists: {image_path}")
         return image_path
     client = get_http_client()
     success = util.download_image_safe(preview_url, image_path, client, show_error=False)
     if success:
-        util.printD(f"[ishortcut] Successfully downloaded preview image: {image_path}")
+        logger.info(f"[ishortcut] Successfully downloaded preview image: {image_path}")
         return image_path
-    else:
-        util.printD(f"[ishortcut] Failed to download preview image: {preview_url}")
-        return None
+    logger.error(f"[ishortcut] Failed to download preview image: {preview_url}")
+    return None
 
 
 def get_preview_image_by_model_info(model_info):
     """Get preview image, download if not exists."""
     if not model_info:
-        util.printD("[ishortcut] get_preview_image_by_model_info: model_info is None")
+        logger.error("[ishortcut] get_preview_image_by_model_info: model_info is None")
         return setting.no_card_preview_image
     image_path = _get_preview_image_path(model_info)
     if image_path and os.path.exists(image_path):
-        util.printD(f"[ishortcut] Using existing preview image: {image_path}")
+        logger.info(f"[ishortcut] Using existing preview image: {image_path}")
         return image_path
     downloaded_path = download_model_preview_image_by_model_info(model_info)
     if downloaded_path:
         return downloaded_path
-    util.printD("[ishortcut] Using fallback preview image")
+    logger.info("[ishortcut] Using fallback preview image")
     return setting.no_card_preview_image
