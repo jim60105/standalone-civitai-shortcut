@@ -12,6 +12,9 @@ import importlib.util
 from .. import paths
 from ..interfaces.ipath_manager import IPathManager
 from ..environment_detector import EnvironmentDetector
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 if not EnvironmentDetector.is_webui_mode() and (
     'pytest' in sys.modules or 'unittest' in sys.modules
@@ -60,13 +63,13 @@ try:
             print(f"  File import: {file_import_e}")
             util = None
 
-    util.printD(f"[webui_path_manager] webui_models_path: {webui_models_path}")
-    util.printD(f"[webui_path_manager] webui_script_path: {webui_script_path}")
-    util.printD(f"[webui_path_manager] webui_data_path: {webui_data_path}")
-    util.printD(f"[webui_path_manager] extensions_dir: {extensions_dir}")
-    util.printD(f"[webui_path_manager] extensions_builtin_dir: {extensions_builtin_dir}")
-    util.printD(f"[webui_path_manager] default_output_dir: {default_output_dir}")
-    util.printD('[webui_path_manager] Successfully imported WebUI modules.')
+    logger.debug(f"webui_models_path: {webui_models_path}")
+    logger.debug(f"webui_script_path: {webui_script_path}")
+    logger.debug(f"webui_data_path: {webui_data_path}")
+    logger.debug(f"extensions_dir: {extensions_dir}")
+    logger.debug(f"extensions_builtin_dir: {extensions_builtin_dir}")
+    logger.debug(f"default_output_dir: {default_output_dir}")
+    logger.info('Successfully imported WebUI modules.')
 
     WEBUI_AVAILABLE = True
 except (ImportError, ModuleNotFoundError) as e:
@@ -160,13 +163,13 @@ class WebUIPathManager(IPathManager):
                     self.util = None
 
         if self.util:
-            self.util.printD("[webui_path_manager] WebUIPathManager initialized")
-            self.util.printD(f"[webui_path_manager] WebUI available: {WEBUI_AVAILABLE}")
+            logger.debug("WebUIPathManager initialized")
+            logger.debug(f"WebUI available: {WEBUI_AVAILABLE}")
 
             if WEBUI_AVAILABLE:
-                self.util.printD("[webui_path_manager] Operating in WebUI extension mode")
+                logger.debug("Operating in WebUI extension mode")
             else:
-                self.util.printD("[webui_path_manager] Operating in standalone compatibility mode")
+                logger.debug("Operating in standalone compatibility mode")
         else:
             print(
                 "[Civitai Shortcut] [webui_path_manager] WebUIPathManager initialized without util"
@@ -174,10 +177,16 @@ class WebUIPathManager(IPathManager):
 
     def _log(self, message: str, level: str = "debug"):
         """Internal logging method."""
-        if self.util:
-            self.util.printD(f"[webui_path_manager] {message}")
+        if level == "debug":
+            logger.debug(message)
+        elif level == "info":
+            logger.info(message)
+        elif level == "warning":
+            logger.warning(message)
+        elif level == "error":
+            logger.error(message)
         else:
-            print(f"[Civitai Shortcut] [webui_path_manager] {message}")
+            logger.debug(message)
 
     def ensure_directories(self) -> bool:
         """

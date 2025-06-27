@@ -13,9 +13,13 @@ import datetime
 import time
 import re
 import threading
+import tempfile
 from PIL import Image
 
 from .conditional_imports import import_manager
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 try:
     from tqdm import tqdm
@@ -41,13 +45,14 @@ from .http_client import get_http_client, ParallelImageDownloader
 def _download_single_image(img_url: str, save_path: str) -> bool:
     """Download a single image with proper error handling."""
     client = get_http_client()
-    util.printD(f"[civitai_gallery_action] Downloading image from: {img_url}")
-    util.printD(f"[civitai_gallery_action] Saving to: {save_path}")
+    logger.debug(f"Downloading image from: {img_url}")
+    logger.debug(f"Saving to: {save_path}")
     success = client.download_file(img_url, save_path)
     if success:
-        util.printD(f"[civitai_gallery_action] Successfully downloaded image: {save_path}")
+        logger.debug(f"Successfully downloaded image: {save_path}")
     else:
-        util.printD(f"[civitai_gallery_action] Failed to download image: {img_url}")
+        logger.warning(f"Failed to download image: {img_url}")
+    return success
     return success
 
 
@@ -64,7 +69,7 @@ class GalleryDownloadManager:
             if self.client.download_file(img_url, save_path):
                 return True
             if attempt < max_retries:
-                util.printD(f"[civitai_gallery_action] Retry {attempt + 1} for: {img_url}")
+                logger.debug(f"Retry {attempt + 1} for: {img_url}")
                 time.sleep(1)
         self.failed_downloads.append((img_url, save_path))
         return False
@@ -74,8 +79,8 @@ class GalleryDownloadManager:
         if not self.failed_downloads:
             return
 
-        util.printD(
-            f"[civitai_gallery_action] Retrying {len(self.failed_downloads)} failed downloads"
+        logger.debug(
+            f"Retrying {len(self.failed_downloads)} failed downloads"
         )
 
         retry_list = self.failed_downloads.copy()
@@ -103,9 +108,8 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
     # Execute parallel download
     success_count = downloader.download_images(image_tasks, progress_callback, client)
 
-    util.printD(
-        f"[civitai_gallery_action] Parallel download completed:"
-        f" {success_count}/{len(image_tasks)} successful"
+    logger.debug(
+        f"Parallel download completed: {success_count}/{len(image_tasks)} successful"
     )
 
 
@@ -120,8 +124,8 @@ def download_images_batch(
 
     for i in range(0, len(dn_image_list), batch_size):
         batch = dn_image_list[i : i + batch_size]
-        util.printD(
-            f"[civitai_gallery_action] Processing batch {i//batch_size + 1}, {len(batch)} images"
+        logger.debug(
+            f"Processing batch {i//batch_size + 1}, {len(batch)} images"
         )
         for img_url in batch:
             gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
@@ -357,11 +361,11 @@ def on_ui(recipe_input):
 
 
 def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
-    util.printD("[CIVITAI_GALLERY] on_send_to_recipe_click called")
-    util.printD(f"[CIVITAI_GALLERY]   model_id: {repr(model_id)}")
-    util.printD(f"[CIVITAI_GALLERY]   img_file_info: {repr(img_file_info)}")
-    util.printD(f"[CIVITAI_GALLERY]   img_index: {repr(img_index)}")
-    util.printD(f"[CIVITAI_GALLERY]   civitai_images: {repr(civitai_images)}")
+    logger.debug("on_send_to_recipe_click called")
+    logger.debug(f"  model_id: {repr(model_id)}")
+    logger.debug(f"  img_file_info: {repr(img_file_info)}")
+    logger.debug(f"  img_index: {repr(img_index)}")
+    logger.debug(f"  civitai_images: {repr(civitai_images)}")
 
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
@@ -369,21 +373,20 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
         recipe_image = setting.set_imagefn_and_shortcutid_for_recipe_image(
             model_id, civitai_images[int(img_index)]
         )
-        util.printD(f"[CIVITAI_GALLERY]   recipe_image: {repr(recipe_image)}")
+        logger.debug(f"  recipe_image: {repr(recipe_image)}")
 
         # Pass parsed generation parameters directly when available
         if img_file_info:
             result = f"{recipe_image}\n{img_file_info}"
-            util.printD(f"[CIVITAI_GALLERY] Returning combined data: {repr(result)}")
+            logger.debug(f"Returning combined data: {repr(result)}")
             return result
         else:
-            util.printD(
-                "[CIVITAI_GALLERY] No img_file_info, returning recipe_image only: "
-                f"{repr(recipe_image)}"
+            logger.debug(
+                f"No img_file_info, returning recipe_image only: {repr(recipe_image)}"
             )
             return recipe_image
     except Exception as e:
-        util.printD(f"[CIVITAI_GALLERY] Exception in on_send_to_recipe_click: {e}")
+        logger.error(f"Exception in on_send_to_recipe_click: {e}")
         return gr.update(visible=False)
 
 
@@ -479,7 +482,7 @@ def on_civitai_hidden_change(hidden, index):
                 fd, temp_path = tempfile.mkstemp(suffix=".png", prefix="civitai_hidden_")
                 os.close(fd)
                 hidden.save(temp_path, format="PNG")
-                util.printD(f"[civitai_gallery_action] Saved PIL Image to temp file: {temp_path}")
+                logger.debug(f"Saved PIL Image to temp file: {temp_path}")
                 result = compat.metadata_processor.extract_png_info(temp_path)
                 if result and result[0]:
                     return result[0]
@@ -488,8 +491,8 @@ def on_civitai_hidden_change(hidden, index):
                 if result and result[0]:
                     return result[0]
             else:
-                util.printD(
-                    f"[civitai_gallery_action] Invalid hidden input for standalone: "
+                logger.debug(
+                    f"Invalid hidden input for standalone: "
                     f"{type(hidden)} - {hidden if isinstance(hidden, str) else 'PIL Image'}"
                 )
         # WebUI mode: pass through
@@ -498,11 +501,11 @@ def on_civitai_hidden_change(hidden, index):
             if result and result[0]:
                 return result[0]
     except Exception as e:
-        util.printD(f"Error processing PNG info through compatibility layer: {e}")
+        logger.error(f"Error processing PNG info through compatibility layer: {e}")
     finally:
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
-            util.printD(f"[civitai_gallery_action] Cleaned up temp file: {temp_path}")
+            logger.debug(f"Cleaned up temp file: {temp_path}")
 
     # Fallback: Try WebUI direct access
     extras_module = import_manager.get_webui_module('extras')

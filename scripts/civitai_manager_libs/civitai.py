@@ -2,6 +2,9 @@ import os
 import json
 from . import util
 from . import setting
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Module-level HTTP client instance (use centralized factory)
 from .http_client import get_http_client
@@ -40,16 +43,16 @@ def Url_ImagePage():
 
 def request_models(api_url=None):
     """Request models from Civitai API with robust error handling."""
-    util.printD(f"[civitai] request_models() called with api_url: {api_url}")
+    logger.debug(f"request_models() called with api_url: {api_url}")
     if not api_url:
-        util.printD("[civitai] request_models: api_url is None or empty")
+        logger.debug("request_models: api_url is None or empty")
         return {'items': [], 'metadata': {}}
     client = get_http_client()
     data = client.get_json(api_url)
     if data is None:
-        util.printD(f"[civitai] request_models: Failed to get data from {api_url}")
+        logger.warning(f"request_models: Failed to get data from {api_url}")
         return {'items': [], 'metadata': {}}
-    util.printD(f"[civitai] Response data loaded successfully from {api_url}")
+    logger.debug(f"Response data loaded successfully from {api_url}")
     return data
 
 
@@ -97,47 +100,49 @@ def get_version_info_by_hash(hash_value) -> dict:
     client = get_http_client()
     content = client.get_json(url)
     if content is None:
-        util.printD(f"[civitai] get_version_info_by_hash: Failed to get data for hash {hash_value}")
+        logger.warning(f"get_version_info_by_hash: Failed to get data for hash {hash_value}")
         return None
     if 'id' not in content:
-        util.printD(
-            f"[civitai] get_version_info_by_hash: 'id' not in response content for hash {hash_value}"
+        logger.warning(
+            f"get_version_info_by_hash: 'id' not in response content for hash {hash_value}"
         )
         return None
-    util.printD(
-        f"[civitai] get_version_info_by_hash: Successfully retrieved version info for hash {hash_value}"
+    logger.debug(
+        f"get_version_info_by_hash: Successfully retrieved version info for hash {hash_value}"
     )
     return content
 
 
 def get_version_info_by_version_id(version_id: str) -> dict:
     """Get version information by version ID."""
-    util.printD(f"[civitai] get_version_info_by_version_id() called with version_id: {version_id}")
+    logger.debug(f"get_version_info_by_version_id() called with version_id: {version_id}")
     if not version_id:
-        util.printD("[civitai] get_version_info_by_version_id: version_id is None or empty")
+        logger.debug("get_version_info_by_version_id: version_id is None or empty")
         return None
     url = Url_VersionId() + str(version_id)
-    util.printD(f"[civitai] Requesting version info from URL: {url}")
+    logger.debug(f"Requesting version info from URL: {url}")
     client = get_http_client()
     content = client.get_json(url)
     if content is None:
-        util.printD(
-            f"[civitai] get_version_info_by_version_id: Failed to get data for version_id {version_id}"
+        logger.warning(
+            f"get_version_info_by_version_id: Failed to get data for version_id {version_id}"
         )
         return None
     if 'id' not in content:
-        util.printD(
-            f"[civitai] get_version_info_by_version_id: 'id' not in response content for version_id {version_id}"
+        logger.warning(
+            f"get_version_info_by_version_id: 'id' not in response content for "
+            f"version_id {version_id}"
         )
         return None
-    util.printD(
-        f"[civitai] get_version_info_by_version_id: Successfully retrieved version info for version_id {version_id}"
+    logger.debug(
+        f"get_version_info_by_version_id: Successfully retrieved version info for "
+        f"version_id {version_id}"
     )
     return content
 
 
 def get_latest_version_info_by_model_id(id: str) -> dict:
-    util.printD(f"[civitai] get_latest_version_info_by_model_id() called with id: {id}")
+    logger.debug(f"get_latest_version_info_by_model_id() called with id: {id}")
     model_info = get_model_info(id)
     if not model_info:
         util.printD(

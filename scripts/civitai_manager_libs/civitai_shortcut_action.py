@@ -16,13 +16,16 @@ from . import model_action
 from . import sc_browser_page
 from . import setting
 from . import util
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 _compat_layer = None
 
 
 def set_compatibility_layer(compat_layer):
     """Set compatibility layer."""
-    util.printD(f"[civitai_shortcut_action] set_compatibility_layer called with: {compat_layer}")
+    logger.debug(f"set_compatibility_layer called with: {compat_layer}")
     global _compat_layer
     _compat_layer = compat_layer
 
