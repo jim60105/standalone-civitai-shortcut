@@ -35,7 +35,7 @@ _compat_layer = None
 _current_page_metadata = {}
 
 # HTTP client factory for gallery operations
-from .http_client import get_http_client
+from .http_client import get_http_client, ParallelImageDownloader
 
 
 def _download_single_image(img_url: str, save_path: str) -> bool:
@@ -86,21 +86,27 @@ class GalleryDownloadManager:
 
 
 def download_images_with_progress(dn_image_list: list, progress_callback=None):
-    """Download images with progress tracking."""
+    """Download images with parallel processing and progress tracking."""
     if not dn_image_list:
         return
 
-    total = len(dn_image_list)
-    completed = 0
+    downloader = ParallelImageDownloader(max_workers=10)
     client = get_http_client()
 
+    # Prepare download tasks
+    image_tasks = []
     for img_url in dn_image_list:
         gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
         if not os.path.isfile(gallery_img_file):
-            client.download_file(img_url, gallery_img_file)
-        completed += 1
-        if progress_callback:
-            progress_callback(completed, total, f"Downloading image {completed}/{total}")
+            image_tasks.append((img_url, gallery_img_file))
+
+    # Execute parallel download
+    success_count = downloader.download_images(image_tasks, progress_callback, client)
+
+    util.printD(
+        f"[civitai_gallery_action] Parallel download completed:"
+        f" {success_count}/{len(image_tasks)} successful"
+    )
 
 
 def download_images_batch(
@@ -1115,23 +1121,30 @@ def download_user_gallery_images(model_id, image_urls):
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
 
-    if image_urls and len(image_urls) > 0:
-        for image_count, img_url in enumerate(
-            tqdm(image_urls, desc="Download user gallery image"), start=0
-        ):
-
+    if image_urls:
+        client = get_http_client()
+        downloader = ParallelImageDownloader(max_workers=10)
+        # prepare download tasks for URLs; local filepaths are copied immediately
+        image_tasks = []
+        for img_url in image_urls:
             result = util.is_url_or_filepath(img_url)
             if result == "filepath":
                 if os.path.basename(img_url) != setting.no_card_preview_image:
-                    description_img = os.path.join(save_folder, os.path.basename(img_url))
-                    shutil.copyfile(img_url, description_img)
+                    dest = os.path.join(save_folder, os.path.basename(img_url))
+                    shutil.copyfile(img_url, dest)
             elif result == "url":
-                image_id, ext = os.path.splitext(os.path.basename(img_url))
-                description_img = os.path.join(
+                image_id, _ = os.path.splitext(os.path.basename(img_url))
+                dest = os.path.join(
                     save_folder,
                     f"{image_id}{setting.preview_image_suffix}{setting.preview_image_ext}",
                 )
-                _download_single_image(img_url, description_img)
+                image_tasks.append((img_url, dest))
+        # execute parallel download for remote images
+        success = downloader.download_images(image_tasks, None, client)
+        util.printD(
+            f"[civitai_gallery_action] Parallel user gallery download: "
+            f"{success}/{len(image_tasks)} successful"
+        )
     return image_folder
 
 

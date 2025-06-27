@@ -19,7 +19,7 @@ from PIL import Image
 thumbnail_max_size = (400, 400)
 
 # Use centralized HTTP client factory
-from .http_client import get_http_client
+from .http_client import get_http_client, ParallelImageDownloader
 
 
 def get_model_information(modelid: str = None, versionid: str = None, ver_index: int = None):
@@ -829,93 +829,34 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
 
 
 def _perform_image_downloads(all_images_to_download: list, client, progress=None):
-    """
-    Perform the actual image downloads with correct progress tracking.
+    """Perform parallel image downloads with progress tracking."""
+    if not all_images_to_download:
+        return
 
-    Args:
-        all_images_to_download: List of (version_id, url, filepath) tuples
-        client: HTTP client for downloads
-        progress: Progress callback for UI updates
-    """
     util.printD(
-        f"[ishortcut._perform_image_downloads] Starting downloads for "
-        f"{len(all_images_to_download)} images"
+        f"[ishortcut._perform_image_downloads] Starting parallel downloads for {len(all_images_to_download)} images"
     )
 
-    # Setup progress tracking
-    images_to_download, progress_tracker = _setup_progress_tracking(
-        all_images_to_download, progress
-    )
+    # Prepare download tasks
+    image_tasks = [(url, filepath) for _, url, filepath in all_images_to_download]
 
-    # Download each image with improved progress handling
-    success_count = 0
-    total_images = len(images_to_download)
-    # Use tqdm iterator to keep frontend progress alive
-    if progress_tracker is not None and hasattr(progress_tracker, 'tqdm'):
-        iterable = progress_tracker.tqdm(images_to_download, desc="Downloading images")
-    else:
-        iterable = images_to_download
-    for index, (vid, url, description_img) in enumerate(iterable):
-        try:
-            # Update progress before each download with robust error handling
-            if progress_tracker is not None:
-                try:
-                    current_progress = index / total_images if total_images > 0 else 0
-                    desc = f"Downloading image {index + 1}/{total_images}"
-
-                    # Send progress update via callback, including desc
-                    progress_tracker(current_progress, desc=desc)
-                except Exception as e:
-                    util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
-
-            util.printD(
-                f"[ishortcut._perform_image_downloads] Downloading: {url} -> {description_img}"
-            )
-            # Download image with progress callback to avoid UI reset during long downloads
+    # Setup progress wrapper matching new progress_callback signature (done, total, desc)
+    def progress_wrapper(done, total, desc):
+        # Only update progress if a valid Progress callback was provided
+        if progress is not None:
             try:
-                # progress_tracker is alive because progress is not None
-                def _cb(downloaded, total):
-                    # send progress as (downloaded, total)
-                    progress_tracker((downloaded, total), desc=desc)
-
-                client.download_file(url, description_img, progress_callback=_cb)
-                success_count += 1
+                # Convert completed count to progress fraction
+                progress(done / total if total else 0, desc=desc)
             except Exception as e:
-                util.printD(f"[ishortcut._perform_image_downloads] download_file error: {e}")
-                # fallback to safe download without progress
-                if not util.download_image_safe(url, description_img, client, show_error=True):
-                    continue
-                success_count += 1
+                util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
 
-            # Update progress after successful download with robust error handling
-            if progress_tracker is not None:
-                try:
-                    completed_progress = (index + 1) / total_images if total_images > 0 else 1.0
-                    desc = f"Downloaded {success_count}/{total_images} images"
-
-                    # Send progress update via callback
-                    progress_tracker(completed_progress, desc=desc)
-                except Exception as e:
-                    util.printD(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
-
-            util.printD(
-                f"[ishortcut._perform_image_downloads] Successfully downloaded "
-                f"image {success_count}"
-            )
-        except Exception as e:
-            util.printD(f"[ishortcut._perform_image_downloads] Failed to download {url}: {str(e)}")
-
-    # Final progress update with robust error handling
-    if progress_tracker is not None:
-        try:
-            desc = f"Download completed: {success_count}/{total_images}"
-            progress_tracker(1.0, desc=desc)
-        except Exception as e:
-            util.printD(f"[ishortcut._perform_image_downloads] Final progress update failed: {e}")
+    # Execute parallel download
+    downloader = ParallelImageDownloader(max_workers=10)
+    success_count = downloader.download_images(image_tasks, progress_wrapper)
 
     util.printD(
-        f"[ishortcut._perform_image_downloads] Downloads completed: "
-        f"{success_count}/{len(all_images_to_download)} successful"
+        f"[ishortcut._perform_image_downloads] Parallel downloads completed:"
+        f" {success_count}/{len(all_images_to_download)} successful"
     )
 
 

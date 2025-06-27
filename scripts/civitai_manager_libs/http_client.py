@@ -5,9 +5,10 @@ timeout and retry mechanisms.
 
 import json
 import time
-from typing import Callable, Dict, Optional, List
+from typing import Callable, Dict, Optional, List, Tuple
 
 import threading
+import concurrent.futures
 
 import requests
 import gradio as gr
@@ -335,6 +336,66 @@ class CivitaiHttpClient:
             return False
 
         return True
+
+
+class ParallelImageDownloader:
+    """Parallel image downloader with thread-safe progress tracking."""
+
+    def __init__(self, max_workers: int = 10):
+        self.max_workers = max_workers
+        self.progress_lock = threading.Lock()
+        self.completed_count = 0
+        self.total_count = 0
+
+    def download_images(
+        self,
+        image_tasks: List[Tuple[str, str]],
+        progress_callback: Optional[Callable] = None,
+        client=None,
+    ) -> int:
+        """Download images using ThreadPoolExecutor with progress tracking."""
+        if not image_tasks:
+            return 0
+
+        self.total_count = len(image_tasks)
+        self.completed_count = 0
+        success_count = 0
+
+        client = client or get_http_client()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_task = {
+                executor.submit(self._download_single_image, url, filepath, client): (url, filepath)
+                for url, filepath in image_tasks
+            }
+            for future in concurrent.futures.as_completed(future_to_task):
+                url, filepath = future_to_task[future]
+                try:
+                    if future.result():
+                        success_count += 1
+                        util.printD(f"[parallel_downloader] Successfully downloaded: {filepath}")
+                    else:
+                        util.printD(f"[parallel_downloader] Failed to download: {url}")
+                except Exception as e:
+                    util.printD(f"[parallel_downloader] Download exception for {url}: {e}")
+                finally:
+                    self._update_progress(progress_callback)
+
+        return success_count
+
+    def _download_single_image(self, url: str, filepath: str, client) -> bool:
+        """Download single image with error handling."""
+        return client.download_file(url, filepath)
+
+    def _update_progress(self, progress_callback: Optional[Callable]):
+        """Thread-safe progress update."""
+        if progress_callback:
+            with self.progress_lock:
+                self.completed_count += 1
+                done = self.completed_count
+                total = self.total_count
+                desc = f"Downloading image {done}/{total}"
+                progress_callback(done, total, desc)
 
 
 # ------------------------------------------------------------------------------

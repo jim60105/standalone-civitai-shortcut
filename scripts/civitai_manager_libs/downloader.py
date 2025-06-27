@@ -8,13 +8,12 @@ supporting resume capability, progress tracking, and error handling.
 import os
 import time
 import threading
-import shutil
 import gradio as gr
 
 from . import util, setting, civitai
 
 # Use centralized HTTP client and chunked downloader factories
-from .http_client import get_http_client, get_chunked_downloader
+from .http_client import get_http_client, get_chunked_downloader, ParallelImageDownloader
 
 
 class DownloadNotifier:
@@ -91,64 +90,46 @@ def download_file_with_notifications(task: DownloadTask):
 
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):
-    """Download model-related images with improved error handling."""
-    if not model_name:
-        util.printD("[downloader] download_image_file: model_name is empty")
+    """Download model-related images with parallel processing."""
+    if not model_name or not image_urls:
         return
 
     model_folder = util.make_download_image_folder(model_name)
     if not model_folder:
-        util.printD("[downloader] Failed to create download folder")
         return
 
     save_folder = os.path.join(model_folder, "images")
     os.makedirs(save_folder, exist_ok=True)
 
-    if not image_urls:
-        util.printD("[downloader] No image URLs to download")
-        return
-
-    client = get_http_client()
-    success_count = 0
-    total_count = len(image_urls)
-
-    util.printD(f"[downloader] Starting download of {total_count} images for model: {model_name}")
-
+    # Prepare parallel download tasks
+    image_tasks = []
     for index, img_url in enumerate(image_urls, start=1):
-        if progress_gr:
-            progress_gr((index - 1) / total_count, f"Downloading image {index}/{total_count}")
-
-        if util.is_url_or_filepath(img_url) == "filepath":
-            dest = os.path.join(save_folder, os.path.basename(img_url))
-            try:
-                shutil.copyfile(img_url, dest)
-                success_count += 1
-            except Exception as e:
-                util.printD(f"[downloader] Failed to copy image {img_url}: {e}")
-        else:
+        if util.is_url_or_filepath(img_url) == "url":
             dest_name = f"image_{index:03d}.jpg"
             dest_path = os.path.join(save_folder, dest_name)
-            if client.download_file_with_resume(
-                img_url, dest_path, headers={"Authorization": f"Bearer {setting.civitai_api_key}"}
-            ):
-                success_count += 1
-                util.printD(f"[downloader] Downloaded image: {dest_path}")
-            else:
-                util.printD(f"[downloader] Failed to download image: {img_url}")
+            image_tasks.append((img_url, dest_path))
 
-    util.printD(f"[downloader] Image download complete: {success_count}/{total_count} successful")
+    # Setup progress wrapper matching new progress_callback signature (done, total, desc)
+    def progress_wrapper(done, total, desc):
+        if progress_gr is not None:
+            try:
+                progress_gr(done / total if total else 0, desc)
+            except Exception:
+                pass
+
+    # Execute parallel download
+    downloader = ParallelImageDownloader(max_workers=10)
+    success_count = downloader.download_images(image_tasks, progress_wrapper)
+
+    # Handle final progress update
+    total_count = len(image_urls)
+    util.printD(
+        f"[downloader] Parallel image download complete: {success_count}/{total_count} successful"
+    )
+
     if progress_gr:
-        msg = (
-            f"All images downloaded successfully ✅ ({success_count}/{total_count})"
-            if success_count == total_count
-            else f"Some images downloaded with warnings ⚠️ ({success_count}/{total_count})"
-        )
+        msg = f"Downloaded {success_count}/{total_count} images"
         progress_gr(1.0, msg)
-    if success_count < total_count:
-        gr.Error(
-            f"Some images failed to download ({total_count - success_count} files) 💥!",
-            duration=5,
-        )
 
 
 def download_file(url: str, file_path: str) -> bool:
@@ -159,13 +140,14 @@ def download_file(url: str, file_path: str) -> bool:
 
 def download_file_gr(url: str, file_path: str, progress_gr=None) -> bool:
     """Download files with Gradio progress integration."""
-    # Use HTTP client for streaming download with progress callback
     client = get_http_client()
 
-    def progress_wrapper(downloaded: int, total: int) -> None:
-        if progress_gr:
-            fraction = downloaded / total if total > 0 else 0
-            progress_gr(fraction, "")
+    def progress_wrapper(downloaded: int, total: int, desc: str = "") -> None:
+        if progress_gr is not None:
+            try:
+                progress_gr(downloaded / total if total else 0, desc)
+            except Exception:
+                pass
 
     return client.download_file(url, file_path, progress_callback=progress_wrapper)
 
