@@ -63,8 +63,9 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          # Why without tags
+          # Why input tags with without "tag"?
           # https://github.com/docker/build-push-action/discussions/1213#discussioncomment-10414120
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/standalone-civitai-shortcut,ghcr.io/${{ env.REGISTRY_IMAGE }},quay.io/${{ env.REGISTRY_IMAGE }}
           context: .
           file: ./Dockerfile
           target: final

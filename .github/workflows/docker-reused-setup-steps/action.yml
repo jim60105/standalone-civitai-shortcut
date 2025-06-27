@@ -3,16 +3,22 @@ description: Configure the docker workflow.
 
 inputs:
   DOCKERHUB_USERNAME:
+    description: Username for DockerHub.
     required: true
   DOCKERHUB_TOKEN:
+    description: Access token for DockerHub.
     required: true
   QUAY_USERNAME:
+    description: Username for Quay Container Registry.
     required: true
   QUAY_TOKEN:
+    description: Access token for Quay Container Registry.
     required: true
   tag:
+    description: Tag for the Docker image, typically the ref.
     required: true
   CR_PAT:
+    description: Personal Access Token for GitHub Container Registry.
     required: true
 
 outputs:
