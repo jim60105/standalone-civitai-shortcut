@@ -31,7 +31,9 @@ class DummyResponse:
 def disable_gr_error(monkeypatch):
     # Prevent gradio.Error calls from interfering tests
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.gr.Error", lambda *args, **kwargs: None
+        "scripts.civitai_manager_libs.http_client.gr.Error",
+        lambda *args, **kwargs: None,
+        raising=False,
     )
 
 

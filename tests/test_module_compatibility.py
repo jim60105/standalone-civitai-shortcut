@@ -189,7 +189,7 @@ class TestUtilModuleCompatibility(unittest.TestCase):
 
     def test_util_printD_calls_logger_debug(self):
         """Test that printD delegates to logger.debug()."""
-        import scripts.civitai_manager_libs.util as util
+        import civitai_manager_libs.util as util
 
         with patch.object(util.logger, 'debug') as mock_debug:
             util.printD("test message")
