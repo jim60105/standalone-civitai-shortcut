@@ -216,14 +216,28 @@ Main files:
 * Supports fetching model, version, and preview asset data.
 * Includes mechanisms for handling rate limits and API failure modes.
 
-## Debugging and Logging
+## Logging
+* Use Python's standard `logging` module for all log output. Remove calls to `util.printD()`.
+* At the top of each module, initialize a logger:
 
-* Use `util.printD()` for debug output.
-* All debug messages should be prefixed with module identifiers.
+```python
+import logging
+from scripts.civitai_manager_libs.logging_config import get_logger
+
+logger = get_logger(__name__)
+```
+
+* Use appropriate logging levels:
+  - `logger.debug()` for detailed debugging information.
+  - `logger.info()` for general runtime information.
+  - `logger.warning()` for potential issues.
+  - `logger.error()` or `logger.exception()` for error conditions.
+  - `logger.critical()` for severe errors.
+
+* Include module context in log messages.
 * Network failures must yield detailed error diagnostics.
 * File I/O exceptions should include full path context in logs.
 
 ---
 
 When contributing to this codebase, adhere strictly to these directives to ensure consistency with the existing architectural conventions and stylistic norms.
-

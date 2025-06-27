@@ -38,6 +38,8 @@ This document summarizes the occurrences of `util.printD()` across the codebase 
 
 ---
 
-## Next Steps (Stage 2)
+## Next Steps
 
-Stage 2 will migrate each `util.printD()` call to `logger.debug()` or another appropriate logging level using the standard Python `logging` module. High-priority modules will be processed first, followed by medium and low-priority modules according to the implementation plan outlined in Issue #26.
+* **Stage 2**: Migrate each `util.printD()` call to `logger.debug()` or another appropriate logging level using the standard Python `logging` module for high, medium, and low-priority modules as defined in Issue #26.
+* **Stage 3**: Update tests to remove dependencies on `util.printD()`, adapt mocks for `logging`, and ensure all tests pass without legacy debug calls.
+* **Stage 4**: Update documentation to reflect the new logging standards. This includes updating `.github/copilot-instructions.md`, `AGENTS.md`, and relevant examples within the `docs/` directory.
