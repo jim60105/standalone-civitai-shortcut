@@ -842,7 +842,8 @@ def _perform_image_downloads(all_images_to_download: list, client, progress=None
 
     # Setup progress wrapper matching new progress_callback signature (done, total, desc)
     def progress_wrapper(done, total, desc):
-        if progress:
+        # Only update progress if a valid Progress callback was provided
+        if progress is not None:
             try:
                 # Convert completed count to progress fraction
                 progress(done / total if total else 0, desc=desc)
