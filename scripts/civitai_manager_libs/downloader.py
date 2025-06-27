@@ -10,6 +10,10 @@ import time
 import threading
 import gradio as gr
 
+# Standard logging setup
+from .logging_config import get_logger
+logger = get_logger(__name__)
+
 from . import util, setting, civitai
 
 # Use centralized HTTP client and chunked downloader factories
@@ -27,7 +31,7 @@ class DownloadNotifier:
             gr.Info(f"🚀 Starting download: {filename}{size_str}", duration=3)
         except Exception:
             pass
-        util.printD(f"[downloader] Starting download: {filename}{size_str}")
+        logger.info(f"[downloader] Starting download: {filename}{size_str}")
 
     @staticmethod
     def notify_progress(filename: str, downloaded: int, total: int, speed: str = ""):
@@ -37,7 +41,7 @@ class DownloadNotifier:
             downloaded_str = util.format_file_size(downloaded)
             total_str = util.format_file_size(total)
             speed_str = f" at {speed}" if speed else ""
-            util.printD(
+            logger.debug(
                 (
                     f"[downloader] Progress: {percentage:.1f}% "
                     f"({downloaded_str}/{total_str}){speed_str}"
@@ -46,7 +50,7 @@ class DownloadNotifier:
         else:
             downloaded_str = util.format_file_size(downloaded)
             speed_str = f" at {speed}" if speed else ""
-            util.printD(f"[downloader] Downloaded: {downloaded_str}{speed_str}")
+            logger.debug(f"[downloader] Downloaded: {downloaded_str}{speed_str}")
 
     @staticmethod
     def notify_complete(filename: str, success: bool, error_msg: str = None):

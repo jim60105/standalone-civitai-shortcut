@@ -1,4 +1,11 @@
+# Core imports
 import re
+
+# Standard logging setup
+from .logging_config import get_logger
+logger = get_logger(__name__)
+
+from . import util
 
 
 # def parse_data(data):
@@ -66,11 +73,11 @@ def parse_data(data):
 
     parsed_data = {}
 
-    util.printD(f"[PROMPT] parse_data called with data: {repr(data)}")
+    logger.debug(f"[PROMPT] parse_data called with data: {repr(data)}")
 
     # Split the data into lines
     lines = data.split('\n')
-    util.printD(f"[PROMPT] Split into {len(lines)} lines: {lines}")
+    logger.debug(f"[PROMPT] Split into {len(lines)} lines: {lines}")
 
     # Find the prompt line and extract everything after "Prompt:"
     prompt_found = False
@@ -79,27 +86,27 @@ def parse_data(data):
 
     for i, line in enumerate(lines):
         line = line.strip()
-        util.printD(f"[PROMPT] Processing line {i}: {repr(line)}")
+        logger.debug(f"[PROMPT] Processing line {i}: {repr(line)}")
 
         # Handle Prompt line
         if line.startswith('Prompt:') and not prompt_found:
-            util.printD("[PROMPT] Found 'Prompt:' line")
+            logger.debug("[PROMPT] Found 'Prompt:' line")
             prompt_match = re.search(r'Prompt:\s*(.+)', line)
             if prompt_match:
                 extracted_prompt = prompt_match.group(1).strip()
                 parsed_data['prompt'] = extracted_prompt
-                util.printD(f"[PROMPT] Extracted prompt: {repr(extracted_prompt)}")
+                logger.debug(f"[PROMPT] Extracted prompt: {repr(extracted_prompt)}")
                 prompt_found = True
             continue
 
         # Handle Negative prompt line
         elif line.startswith('Negative prompt:') and not negative_found:
-            util.printD("[PROMPT] Found 'Negative prompt:' line")
+            logger.debug("[PROMPT] Found 'Negative prompt:' line")
             negative_prompt_match = re.search(r'Negative prompt:\s*(.+)', line)
             if negative_prompt_match:
                 extracted_negative = negative_prompt_match.group(1).strip().rstrip(',')
                 parsed_data['negativePrompt'] = extracted_negative
-                util.printD(f"[PROMPT] Extracted negative prompt: {repr(extracted_negative)}")
+                logger.debug(f"[PROMPT] Extracted negative prompt: {repr(extracted_negative)}")
                 negative_found = True
             continue
 
@@ -118,7 +125,7 @@ def parse_data(data):
             or line.startswith('Threshold')
             or line.startswith('Face restoration')
         ):
-            util.printD("[PROMPT] Found parameter line, collecting all parameters")
+            logger.debug("[PROMPT] Found parameter line, collecting all parameters")
             # Collect all parameter lines starting from this line
             param_lines = []
             for j in range(i, len(lines)):
@@ -138,14 +145,14 @@ def parse_data(data):
                     or param_line.startswith('Face restoration')
                 ):
                     param_lines.append(param_line)
-                    util.printD(f"[PROMPT] Added parameter line: {repr(param_line)}")
+                    logger.debug(f"[PROMPT] Added parameter line: {repr(param_line)}")
 
             if param_lines:
                 # Join all parameter lines with commas
                 steps_data = ', '.join(param_lines)
-                util.printD(f"[PROMPT] Combined steps data: {repr(steps_data)}")
+                logger.debug(f"[PROMPT] Combined steps data: {repr(steps_data)}")
                 parsed_steps_data = parse_option_data(steps_data)
-                util.printD(f"[PROMPT] Parsed steps data: {parsed_steps_data}")
+                logger.debug(f"[PROMPT] Parsed steps data: {parsed_steps_data}")
                 if parsed_steps_data:
                     parsed_data['options'] = parsed_steps_data
                 steps_found = True
@@ -153,7 +160,7 @@ def parse_data(data):
 
         # Skip lines that are not prompt, negative prompt, or parameters
         elif line == '' or line.startswith('Generated using'):
-            util.printD(f"[PROMPT] Skipping line: {repr(line)}")
+            logger.debug(f"[PROMPT] Skipping line: {repr(line)}")
             continue
 
         # Handle the first line as prompt if it doesn't start with known prefixes (standard format)
@@ -164,9 +171,9 @@ def parse_data(data):
             and not line.startswith('Steps:')
             and line
         ):
-            util.printD("[PROMPT] Using first line as prompt (standard format)")
+            logger.debug("[PROMPT] Using first line as prompt (standard format)")
             parsed_data['prompt'] = line
-            util.printD(f"[PROMPT] Set prompt from first line: {repr(line)}")
+            logger.debug(f"[PROMPT] Set prompt from first line: {repr(line)}")
             prompt_found = True
 
         # If we haven't found prompt yet, and this line doesn't start with known prefixes,
@@ -180,9 +187,9 @@ def parse_data(data):
             # This could be a continuation of the prompt
             if 'prompt' in parsed_data:
                 parsed_data['prompt'] = parsed_data['prompt'] + ' ' + line
-                util.printD(f"[PROMPT] Appended to prompt: {repr(parsed_data['prompt'])}")
+                logger.debug(f"[PROMPT] Appended to prompt: {repr(parsed_data['prompt'])}")
 
-    util.printD(f"[PROMPT] Final parsed_data: {parsed_data}")
+    logger.debug(f"[PROMPT] Final parsed_data: {parsed_data}")
     return parsed_data
 
 
