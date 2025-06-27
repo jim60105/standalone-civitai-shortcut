@@ -35,13 +35,6 @@ def disable_gr_error(monkeypatch):
     )
 
 
-@pytest.fixture(autouse=True)
-def disable_printD(monkeypatch):
-    monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.util.printD", lambda *args, **kwargs: None
-    )
-
-
 def test_get_json_success(monkeypatch):
     client = CivitaiHttpClient()
     dummy = DummyResponse(status_code=200, data={"key": "value"})

@@ -2,6 +2,9 @@ import os
 import json
 import shutil
 
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 from . import util
 from .conditional_imports import import_manager
 from .compat.compat_layer import CompatibilityLayer
@@ -21,7 +24,7 @@ def set_compatibility_layer(compat_layer):
     """Set compatibility layer (called by main program)."""
     global _compat_layer
 
-    util.printD("[setting] set_compatibility_layer: Setting compatibility layer.")
+    logger.info("[setting] set_compatibility_layer: Setting compatibility layer.")
     _compat_layer = compat_layer
     _initialize_extension_base()
 
@@ -30,22 +33,21 @@ def _initialize_extension_base():
     """Initialize extension base path."""
     global extension_base
 
-    util.printD("[setting] _initialize_extension_base: Initializing extension base path.")
+    logger.debug("[setting] _initialize_extension_base: Initializing extension base path.")
     compat = CompatibilityLayer.get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
         extension_base = compat.path_manager.get_extension_path()
 
-        util.printD(
-            f"[setting] _initialize_extension_base: Set extension_base from compat.path_manager: "
-            f"{extension_base}"
+        logger.debug(
+            f"[setting] _initialize_extension_base: Set extension_base from compat.path_manager: {extension_base}"
         )
     else:
         # Fallback to current directory structure
         current_dir = os.path.dirname(os.path.abspath(__file__))
         extension_base = os.path.dirname(os.path.dirname(current_dir))
 
-        util.printD(
-            f"[setting] _initialize_extension_base: Fallback extension_base: " f"{extension_base}"
+        logger.debug(
+            f"[setting] _initialize_extension_base: Fallback extension_base: {extension_base}"
         )
 
 
@@ -292,7 +294,7 @@ def init_paths():
         try:
             os.makedirs(d, exist_ok=True)
         except Exception as e:
-            util.printD(f"[setting] init_paths: Failed to create directory {d}: {e}")
+            logger.warning(f"[setting] init_paths: Failed to create directory {d}: {e}")
 
 
 def migrate_existing_files():
@@ -312,9 +314,11 @@ def migrate_existing_files():
         if os.path.exists(old) and not os.path.exists(new):
             try:
                 shutil.move(old, new)
-                util.printD(f"[setting] migrate_existing_files: Moved {old} to {new}")
+                logger.info(f"[setting] migrate_existing_files: Moved {old} to {new}")
             except Exception as e:
-                util.printD(f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}")
+                logger.warning(
+                    f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}"
+                )
 
     # Migrate any other sc_* directories not explicitly mapped above
     for entry in os.listdir('.'):
@@ -324,9 +328,9 @@ def migrate_existing_files():
             if os.path.exists(old) and not os.path.exists(new):
                 try:
                     shutil.move(old, new)
-                    util.printD(f"[setting] migrate_existing_files: Moved {old} to {new}")
+                    logger.info(f"[setting] migrate_existing_files: Moved {old} to {new}")
                 except Exception as e:
-                    util.printD(
+                    logger.warning(
                         f"[setting] migrate_existing_files: Failed to move {old} to {new}: {e}"
                     )
 
@@ -346,7 +350,7 @@ def set_NSFW(enable, level="None"):
     # global NSFW_level
     global NSFW_filtering_enable
     global NSFW_level_user
-    util.printD(f"[setting] set_NSFW: Set NSFW_filtering_enable={enable}, NSFW_level_user={level}")
+    logger.info(f"[setting] set_NSFW: Set NSFW_filtering_enable={enable}, NSFW_level_user={level}")
     NSFW_filtering_enable = enable
     NSFW_level_user = level
 
@@ -354,9 +358,8 @@ def set_NSFW(enable, level="None"):
 def save_NSFW():
     global NSFW_filtering_enable
     global NSFW_level_user
-    util.printD(
-        f"[setting] save_NSFW: Saving NSFW settings. Enable={NSFW_filtering_enable}, "
-        f"Level={NSFW_level_user}"
+    logger.debug(
+        f"[setting] save_NSFW: Saving NSFW settings. Enable={NSFW_filtering_enable}, Level={NSFW_level_user}"
     )
     environment = load()
     if not environment:
@@ -372,12 +375,12 @@ def save_NSFW():
 
 def init():
     global extension_base
-    util.printD(f"[setting] init: Initializing with extension_base={extension_base}")
+    logger.info(f"[setting] init: Initializing with extension_base={extension_base}")
     # Ensure base data_sc directory exists before migrating old sc_* data
     try:
         os.makedirs(SC_DATA_ROOT, exist_ok=True)
     except Exception as e:
-        util.printD(f"[setting] init: Failed to create SC_DATA_ROOT for migration: {e}")
+        logger.warning(f"[setting] init: Failed to create SC_DATA_ROOT for migration: {e}")
     migrate_existing_files()
     init_paths()
     global shortcut
@@ -404,13 +407,13 @@ def init():
     shortcut_info_folder = os.path.join(extension_base, shortcut_info_folder)
     shortcut_gallery_folder = os.path.join(extension_base, shortcut_gallery_folder)
 
-    util.printD("[setting] init: Paths initialized. Loading data...")
+    logger.info("[setting] init: Paths initialized. Loading data...")
     load_data()
 
 
 def load_data():
     global model_folders
-    util.printD("[setting] load_data: Loading configuration data and environment settings.")
+    logger.info("[setting] load_data: Loading configuration data and environment settings.")
     global shortcut_column
     global shortcut_rows_per_page
     global gallery_column
@@ -440,57 +443,57 @@ def load_data():
     # Load WebUI specific paths through compatibility layer
     compat = CompatibilityLayer.get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
-        util.printD("[setting] load_data: Using compat.path_manager for model folders.")
+        logger.debug("[setting] load_data: Using compat.path_manager for model folders.")
         # Override default model folder paths directly without filesystem check
         embeddings_dir = compat.path_manager.get_model_path('embeddings')
         if embeddings_dir:
-            util.printD(f"[setting] load_data: Set TextualInversion folder: {embeddings_dir}")
+            logger.debug(f"[setting] load_data: Set TextualInversion folder: {embeddings_dir}")
             model_folders['TextualInversion'] = embeddings_dir
 
         hypernetwork_dir = compat.path_manager.get_model_path('hypernetworks')
         if hypernetwork_dir:
-            util.printD(f"[setting] load_data: Set Hypernetwork folder: {hypernetwork_dir}")
+            logger.debug(f"[setting] load_data: Set Hypernetwork folder: {hypernetwork_dir}")
             model_folders['Hypernetwork'] = hypernetwork_dir
 
         ckpt_dir = compat.path_manager.get_model_path('Stable-diffusion')
         if ckpt_dir:
-            util.printD(f"[setting] load_data: Set Checkpoint folder: {ckpt_dir}")
+            logger.debug(f"[setting] load_data: Set Checkpoint folder: {ckpt_dir}")
             model_folders['Checkpoint'] = ckpt_dir
 
         lora_dir = compat.path_manager.get_model_path('Lora')
         if lora_dir:
-            util.printD(f"[setting] load_data: Set LORA folder: {lora_dir}")
+            logger.debug(f"[setting] load_data: Set LORA folder: {lora_dir}")
             model_folders['LORA'] = lora_dir
     else:
-        util.printD("[setting] load_data: Fallback to import_manager for model folders.")
+        logger.debug("[setting] load_data: Fallback to import_manager for model folders.")
         # Fallback: Try to get WebUI paths directly (for backward compatibility)
         shared = import_manager.get_webui_module('shared')
         if shared and hasattr(shared, 'cmd_opts'):
             cmd_opts = shared.cmd_opts
             if hasattr(cmd_opts, 'embeddings_dir') and cmd_opts.embeddings_dir:
-                util.printD(
-                    f"[setting] load_data: Set TextualInversion folder (fallback): "
-                    f"{cmd_opts.embeddings_dir}"
+                logger.debug(
+                    f"[setting] load_data: Set TextualInversion folder (fallback): {cmd_opts.embeddings_dir}"
                 )
                 model_folders['TextualInversion'] = cmd_opts.embeddings_dir
             if hasattr(cmd_opts, 'hypernetwork_dir') and cmd_opts.hypernetwork_dir:
-                util.printD(
-                    f"[setting] load_data: Set Hypernetwork folder (fallback): "
-                    f"{cmd_opts.hypernetwork_dir}"
+                logger.debug(
+                    f"[setting] load_data: Set Hypernetwork folder (fallback): {cmd_opts.hypernetwork_dir}"
                 )
                 model_folders['Hypernetwork'] = cmd_opts.hypernetwork_dir
             if hasattr(cmd_opts, 'ckpt_dir') and cmd_opts.ckpt_dir:
-                util.printD(
+                logger.debug(
                     f"[setting] load_data: Set Checkpoint folder (fallback): {cmd_opts.ckpt_dir}"
                 )
                 model_folders['Checkpoint'] = cmd_opts.ckpt_dir
             if hasattr(cmd_opts, 'lora_dir') and cmd_opts.lora_dir:
-                util.printD(f"[setting] load_data: Set LORA folder (fallback): {cmd_opts.lora_dir}")
+                logger.debug(
+                    f"[setting] load_data: Set LORA folder (fallback): {cmd_opts.lora_dir}"
+                )
                 model_folders['LORA'] = cmd_opts.lora_dir
 
     environment = load()
     if environment:
-        util.printD(f"[setting] load_data: Loaded environment: {environment}")
+        logger.info(f"[setting] load_data: Loaded environment: {environment}")
         if "NSFW_filter" in environment.keys():
             nsfw_filter = environment['NSFW_filter']
             filtering_enable = True
@@ -498,9 +501,8 @@ def load_data():
                 filtering_enable = bool(nsfw_filter['nsfw_filter_enable'])
 
             if 'nsfw_level' in nsfw_filter.keys():
-                util.printD(
-                    f"[setting] load_data: Set NSFW from environment: enable={filtering_enable}, "
-                    f"level={nsfw_filter['nsfw_level']}"
+                logger.debug(
+                    f"[setting] load_data: Set NSFW from environment: enable={filtering_enable}, level={nsfw_filter['nsfw_level']}"
                 )
                 set_NSFW(filtering_enable, nsfw_filter['nsfw_level'])
 
@@ -509,20 +511,18 @@ def load_data():
 
             if "civitai_api_key" in application_allow.keys():
                 civitai_api_key = application_allow['civitai_api_key']
-                util.printD("[setting] load_data: Set civitai_api_key from environment.")
+                logger.info("[setting] load_data: Set civitai_api_key from environment.")
             if "shortcut_update_when_start" in application_allow.keys():
                 shortcut_update_when_start = bool(application_allow['shortcut_update_when_start'])
-                util.printD(
-                    f"[setting] load_data: Set shortcut_update_when_start: "
-                    f"{shortcut_update_when_start}"
+                logger.debug(
+                    f"[setting] load_data: Set shortcut_update_when_start: {shortcut_update_when_start}"
                 )
             if "shortcut_max_download_image_per_version" in application_allow.keys():
                 shortcut_max_download_image_per_version = int(
                     application_allow['shortcut_max_download_image_per_version']
                 )
-                util.printD(
-                    f"[setting] load_data: Set shortcut_max_download_image_per_version: "
-                    f"{shortcut_max_download_image_per_version}"
+                logger.debug(
+                    f"[setting] load_data: Set shortcut_max_download_image_per_version: {shortcut_max_download_image_per_version}"
                 )
 
         if "screen_style" in environment.keys():
@@ -532,163 +532,94 @@ def load_data():
                 shortcut_browser_screen_split_ratio = int(
                     screen_style['shortcut_browser_screen_split_ratio']
                 )
-                util.printD(
-                    f"[setting] load_data: Set shortcut_browser_screen_split_ratio: "
-                    f"{shortcut_browser_screen_split_ratio}"
+                logger.debug(
+                    f"[setting] load_data: Set shortcut_browser_screen_split_ratio: {shortcut_browser_screen_split_ratio}"
                 )
             if "information_gallery_height" in screen_style.keys():
                 if screen_style['information_gallery_height'].strip():
                     information_gallery_height = screen_style['information_gallery_height']
-                    util.printD(
-                        f"[setting] load_data: Set information_gallery_height: "
-                        f"{information_gallery_height}"
+                    logger.debug(
+                        f"[setting] load_data: Set information_gallery_height: {information_gallery_height}"
                     )
             if "gallery_thumbnail_image_style" in screen_style.keys():
                 gallery_thumbnail_image_style = screen_style['gallery_thumbnail_image_style']
-                util.printD(
-                    f"[setting] load_data: Set gallery_thumbnail_image_style: "
-                    f"{gallery_thumbnail_image_style}"
+                logger.debug(
+                    f"[setting] load_data: Set gallery_thumbnail_image_style: {gallery_thumbnail_image_style}"
                 )
             if "shortcut_browser_search_up" in screen_style.keys():
                 shortcut_browser_search_up = bool(screen_style['shortcut_browser_search_up'])
-                util.printD(
-                    f"[setting] load_data: Set shortcut_browser_search_up: "
-                    f"{shortcut_browser_search_up}"
+                logger.debug(
+                    f"[setting] load_data: Set shortcut_browser_search_up: {shortcut_browser_search_up}"
                 )
 
         if "image_style" in environment.keys():
             image_style = environment['image_style']
 
-            if "shortcut_column" in image_style.keys():
-                shortcut_column = int(image_style['shortcut_column'])
-                util.printD(f"[setting] load_data: Set shortcut_column: {shortcut_column}")
-            if "shortcut_rows_per_page" in image_style.keys():
-                shortcut_rows_per_page = int(image_style['shortcut_rows_per_page'])
-                util.printD(
-                    f"[setting] load_data: Set shortcut_rows_per_page: {shortcut_rows_per_page}"
-                )
-
-            if "gallery_column" in image_style.keys():
-                gallery_column = int(image_style['gallery_column'])
-                util.printD(f"[setting] load_data: Set gallery_column: {gallery_column}")
-
-            if "classification_shortcut_column" in image_style.keys():
-                classification_shortcut_column = int(image_style['classification_shortcut_column'])
-                util.printD(
-                    f"[setting] load_data: Set classification_shortcut_column: "
-                    f"{classification_shortcut_column}"
-                )
-            if "classification_shortcut_rows_per_page" in image_style.keys():
-                classification_shortcut_rows_per_page = int(
-                    image_style['classification_shortcut_rows_per_page']
-                )
-                util.printD(
-                    f"[setting] load_data: Set classification_shortcut_rows_per_page: "
-                    f"{classification_shortcut_rows_per_page}"
-                )
-            if "classification_gallery_column" in image_style.keys():
-                classification_gallery_column = int(image_style['classification_gallery_column'])
-                util.printD(
-                    f"[setting] load_data: Set classification_gallery_column: "
-                    f"{classification_gallery_column}"
-                )
-            if "classification_gallery_rows_per_page" in image_style.keys():
-                classification_gallery_rows_per_page = int(
-                    image_style['classification_gallery_rows_per_page']
-                )
-                util.printD(
-                    f"[setting] load_data: Set classification_gallery_rows_per_page: "
-                    f"{classification_gallery_rows_per_page}"
-                )
-
-            if "usergallery_images_column" in image_style.keys():
-                usergallery_images_column = int(image_style['usergallery_images_column'])
-                util.printD(
-                    f"[setting] load_data: Set usergallery_images_column: "
-                    f"{usergallery_images_column}"
-                )
-            if "usergallery_images_rows_per_page" in image_style.keys():
-                usergallery_images_rows_per_page = int(
-                    image_style['usergallery_images_rows_per_page']
-                )
-                util.printD(
-                    f"[setting] load_data: Set usergallery_images_rows_per_page: "
-                    f"{usergallery_images_rows_per_page}"
-                )
-
-            if "prompt_shortcut_column" in image_style.keys():
-                prompt_shortcut_column = int(image_style['prompt_shortcut_column'])
-                util.printD(
-                    f"[setting] load_data: Set prompt_shortcut_column: {prompt_shortcut_column}"
-                )
-            if "prompt_shortcut_rows_per_page" in image_style.keys():
-                prompt_shortcut_rows_per_page = int(image_style['prompt_shortcut_rows_per_page'])
-                util.printD(
-                    f"[setting] load_data: Set prompt_shortcut_rows_per_page: "
-                    f"{prompt_shortcut_rows_per_page}"
-                )
-            if "prompt_reference_shortcut_column" in image_style.keys():
-                prompt_reference_shortcut_column = int(
-                    image_style['prompt_reference_shortcut_column']
-                )
-                util.printD(
-                    f"[setting] load_data: Set prompt_reference_shortcut_column: "
-                    f"{prompt_reference_shortcut_column}"
-                )
-            if "prompt_reference_shortcut_rows_per_page" in image_style.keys():
-                prompt_reference_shortcut_rows_per_page = int(
-                    image_style['prompt_reference_shortcut_rows_per_page']
-                )
-                util.printD(
-                    f"[setting] load_data: Set prompt_reference_shortcut_rows_per_page: "
-                    f"{prompt_reference_shortcut_rows_per_page}"
-                )
+            for key, attr in (
+                ('shortcut_column', 'shortcut_column'),
+                ('shortcut_rows_per_page', 'shortcut_rows_per_page'),
+                ('gallery_column', 'gallery_column'),
+                ('classification_shortcut_column', 'classification_shortcut_column'),
+                ('classification_shortcut_rows_per_page', 'classification_shortcut_rows_per_page'),
+                ('classification_gallery_column', 'classification_gallery_column'),
+                ('classification_gallery_rows_per_page', 'classification_gallery_rows_per_page'),
+                ('usergallery_images_column', 'usergallery_images_column'),
+                ('usergallery_images_rows_per_page', 'usergallery_images_rows_per_page'),
+                ('prompt_shortcut_column', 'prompt_shortcut_column'),
+                ('prompt_shortcut_rows_per_page', 'prompt_shortcut_rows_per_page'),
+                ('prompt_reference_shortcut_column', 'prompt_reference_shortcut_column'),
+                (
+                    'prompt_reference_shortcut_rows_per_page',
+                    'prompt_reference_shortcut_rows_per_page',
+                ),
+            ):
+                if key in image_style.keys():
+                    value = int(image_style[key])
+                    globals()[attr] = value
+                    logger.debug(f"[setting] load_data: Set {attr}: {value}")
 
         if "model_folders" in environment.keys():
             user_folders = environment['model_folders']
 
-            if 'LoCon' in user_folders.keys():
-                model_folders['LoCon'] = user_folders['LoCon']
-                util.printD(f"[setting] load_data: Set LoCon folder: {user_folders['LoCon']}")
+        if 'LoCon' in user_folders.keys():
+            model_folders['LoCon'] = user_folders['LoCon']
+            logger.debug(f"[setting] load_data: Set LoCon folder: {user_folders['LoCon']}")
 
-            if 'Wildcards' in user_folders.keys():
-                model_folders['Wildcards'] = user_folders['Wildcards']
-                util.printD(
-                    f"[setting] load_data: Set Wildcards folder: {user_folders['Wildcards']}"
-                )
+        if 'Wildcards' in user_folders.keys():
+            model_folders['Wildcards'] = user_folders['Wildcards']
+            logger.debug(f"[setting] load_data: Set Wildcards folder: {user_folders['Wildcards']}")
 
-            if 'Controlnet' in user_folders.keys():
-                model_folders['Controlnet'] = user_folders['Controlnet']
-                util.printD(
-                    f"[setting] load_data: Set Controlnet folder: {user_folders['Controlnet']}"
-                )
+        if 'Controlnet' in user_folders.keys():
+            model_folders['Controlnet'] = user_folders['Controlnet']
+            logger.debug(
+                f"[setting] load_data: Set Controlnet folder: {user_folders['Controlnet']}"
+            )
 
-            if 'AestheticGradient' in user_folders.keys():
-                model_folders['AestheticGradient'] = user_folders['AestheticGradient']
-                util.printD(
-                    f"[setting] load_data: Set AestheticGradient folder: "
-                    f"{user_folders['AestheticGradient']}"
-                )
+        if 'AestheticGradient' in user_folders.keys():
+            model_folders['AestheticGradient'] = user_folders['AestheticGradient']
+            logger.debug(
+                f"[setting] load_data: Set AestheticGradient folder: {user_folders['AestheticGradient']}"
+            )
 
-            if 'Poses' in user_folders.keys():
-                model_folders['Poses'] = user_folders['Poses']
-                util.printD(f"[setting] load_data: Set Poses folder: {user_folders['Poses']}")
+        if 'Poses' in user_folders.keys():
+            model_folders['Poses'] = user_folders['Poses']
+            logger.debug(f"[setting] load_data: Set Poses folder: {user_folders['Poses']}")
 
-            if 'Other' in user_folders.keys():
-                model_folders['Other'] = user_folders['Other']
-                util.printD(f"[setting] load_data: Set Other folder: {user_folders['Other']}")
+        if 'Other' in user_folders.keys():
+            model_folders['Other'] = user_folders['Other']
+            logger.debug(f"[setting] load_data: Set Other folder: {user_folders['Other']}")
 
         if "download_folders" in environment.keys():
             download_folders = environment['download_folders']
-            if 'download_images' in download_folders.keys():
-                download_images_folder = download_folders['download_images']
-                util.printD(
-                    f"[setting] load_data: Set download_images_folder: {download_images_folder}"
-                )
+        if 'download_images' in download_folders.keys():
+            download_images_folder = download_folders['download_images']
+            logger.debug(
+                f"[setting] load_data: Set download_images_folder: {download_images_folder}"
+            )
 
         if "temporary" in environment.keys():
             temporary = environment['temporary']
-            util.printD(f"[setting] load_data: Loaded temporary section: {temporary}")
+            logger.debug(f"[setting] load_data: Loaded temporary section: {temporary}")
 
 
 def generate_type_basefolder(content_type):
@@ -795,20 +726,20 @@ def get_image_url_to_gallery_file(image_url):
 
 def save(env):
     try:
-        util.printD(f"[setting] save: Saving environment to {shortcut_setting}")
+        logger.info(f"[setting] save: Saving environment to {shortcut_setting}")
         with open(shortcut_setting, 'w') as f:
             json.dump(env, f, indent=4)
     except Exception as e:
-        util.printD(f"[setting] save: Exception occurred while saving: {e}")
+        logger.error(f"[setting] save: Exception occurred while saving: {e}")
         return False
 
-    util.printD("[setting] save: Save successful.")
+    logger.info("[setting] save: Save successful.")
     return True
 
 
 def load():
     if not os.path.isfile(shortcut_setting):
-        util.printD(f"[setting] load: {shortcut_setting} not found, creating new file.")
+        logger.info(f"[setting] load: {shortcut_setting} not found, creating new file.")
         save({})
         return
 
@@ -816,9 +747,9 @@ def load():
     try:
         with open(shortcut_setting, 'r') as f:
             json_data = json.load(f)
-        util.printD(f"[setting] load: Loaded data from {shortcut_setting}")
+        logger.info(f"[setting] load: Loaded data from {shortcut_setting}")
     except Exception as e:
-        util.printD(f"[setting] load: Exception occurred while loading: {e}")
+        logger.error(f"[setting] load: Exception occurred while loading: {e}")
         pass
 
     return json_data
