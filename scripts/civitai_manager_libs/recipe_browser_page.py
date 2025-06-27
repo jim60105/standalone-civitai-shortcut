@@ -108,7 +108,7 @@ def on_ui():
         inputs=[recipe_reference_select],
         outputs=[
             recipe_reference_select,
-            recipe_reference_select_gallery,  # 이거는 None으로 할 필요는 gallery를 미선택으로 만드는 방법을 몰라서 일단 이렇게 해보자
+            recipe_reference_select_gallery,  # Uses None to deselect gallery
             refresh_recipe_reference_select_gallery,
         ],
         show_progress=False,
@@ -285,7 +285,7 @@ def get_shortcut_by_modelid(ISC, modelid):
     if ISC and modelid:
         try:
             return ISC[str(modelid)]
-        except:
+        except Exception:
             pass
     return None
 
@@ -364,8 +364,8 @@ def get_recipe_reference_list(page=0):
                     (setting.no_card_preview_image, setting.set_shortcutname("delete", shortcut))
                 )
 
-    # util.printD(shortlist)
-    # util.printD(result)
+    logger.debug(f"shortlist: {shortlist}")
+    logger.debug(f"result: {result}")
     return result, total, max_page
 
 
