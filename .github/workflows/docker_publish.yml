@@ -10,6 +10,12 @@ on:
     - cron: "0 5 1 * *"  # 1st day of month at 5am UTC
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+  packages: write
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -32,6 +38,7 @@ jobs:
           CR_PAT: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
+        id: build_push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -51,3 +58,21 @@ jobs:
             type=registry,ref=ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut:cache,mode=max
           sbom: true
           provenance: true
+
+      - name: Attest GHCR image
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/standalone-civitai-shortcut
+          subject-digest: ${{ steps.build_push.outputs.digest }}
+
+      - name: Attest Docker Hub image
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: index.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/standalone-civitai-shortcut
+          subject-digest: ${{ steps.build_push.outputs.digest }}
+
+      - name: Attest Quay image
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: quay.io/${{ github.repository_owner }}/standalone-civitai-shortcut
+          subject-digest: ${{ steps.build_push.outputs.digest }}
