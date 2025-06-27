@@ -8,7 +8,6 @@ supporting resume capability, progress tracking, and error handling.
 import os
 import time
 import threading
-import shutil
 import gradio as gr
 
 from . import util, setting, civitai
@@ -110,10 +109,13 @@ def download_image_file(model_name: str, image_urls: list, progress_gr=None):
             dest_path = os.path.join(save_folder, dest_name)
             image_tasks.append((img_url, dest_path))
 
-    # Setup progress wrapper for Gradio
-    def progress_wrapper(progress, desc):
-        if progress_gr:
-            progress_gr(progress, desc)
+    # Setup progress wrapper matching new progress_callback signature (done, total, desc)
+    def progress_wrapper(done, total, desc):
+        if progress_gr is not None:
+            try:
+                progress_gr(done / total if total else 0, desc)
+            except Exception:
+                pass
 
     # Execute parallel download
     downloader = ParallelImageDownloader(max_workers=10)
@@ -138,13 +140,14 @@ def download_file(url: str, file_path: str) -> bool:
 
 def download_file_gr(url: str, file_path: str, progress_gr=None) -> bool:
     """Download files with Gradio progress integration."""
-    # Use HTTP client for streaming download with progress callback
     client = get_http_client()
 
-    def progress_wrapper(downloaded: int, total: int) -> None:
-        if progress_gr:
-            fraction = downloaded / total if total > 0 else 0
-            progress_gr(fraction, "")
+    def progress_wrapper(downloaded: int, total: int, desc: str = "") -> None:
+        if progress_gr is not None:
+            try:
+                progress_gr(downloaded / total if total else 0, desc)
+            except Exception:
+                pass
 
     return client.download_file(url, file_path, progress_callback=progress_wrapper)
 
