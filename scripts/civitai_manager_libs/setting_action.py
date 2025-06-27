@@ -539,7 +539,15 @@ def save_setting(
     setting.save(environment)
     setting.load_data()
 
-    util.printD("Save setting. Reload UI is needed")
+    try:
+        gr.Info(
+            "⚙️ Settings saved! Some layout changes require UI reload to take effect. "
+            "Please click the 'Reload UI' button below.",
+            duration=8,
+        )
+    except Exception as e:
+        util.printD(f"Failed to show setting save notification: {e}")
+    util.printD("Settings saved. UI reload recommended for layout changes.")
 
 
 def on_usergallery_openfolder_btn_click():
