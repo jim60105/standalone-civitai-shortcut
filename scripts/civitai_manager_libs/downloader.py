@@ -12,6 +12,7 @@ import gradio as gr
 
 # Standard logging setup
 from .logging_config import get_logger
+
 logger = get_logger(__name__)
 
 from . import util, setting, civitai
@@ -63,8 +64,10 @@ class DownloadNotifier:
                 gr.Error(f"❌ Download failed: {filename}{error_detail}", duration=10)
         except Exception:
             pass
-        status = "successfully" if success else f"failed{error_detail}"
-        util.printD(f"[downloader] Download {status}: {filename}")
+        if success:
+            logger.info(f"[downloader] Download completed: {filename}")
+        else:
+            logger.error(f"[downloader] Download failed: {filename}{error_detail}")
 
 
 class DownloadTask:
@@ -127,7 +130,7 @@ def download_image_file(model_name: str, image_urls: list, progress_gr=None):
 
     # Handle final progress update
     total_count = len(image_urls)
-    util.printD(
+    logger.info(
         f"[downloader] Parallel image download complete: {success_count}/{total_count} successful"
     )
 
@@ -190,7 +193,7 @@ class DownloadManager:
             info.update({"completed": True, "success": ok, "end": time.time()})
             self.history.append(info)
         except Exception as e:
-            util.printD(f"[downloader] Worker error {tid}: {e}")
+            logger.error(f"[downloader] Worker error {tid}: {e}")
             self.active.pop(tid, None)
 
     def list_active(self):
@@ -258,7 +261,7 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
             headers={"Authorization": f"Bearer {setting.civitai_api_key}"},
         )
     except Exception as e:
-        util.printD(f"[downloader] Failed to download preview image: {e}")
+        logger.error(f"[downloader] Failed to download preview image: {e}")
         return False
 
 
@@ -310,20 +313,20 @@ def download_file_thread(
             f"{util.replace_filename(savefile_base)}{setting.info_suffix}{setting.info_ext}",
         )
         if civitai.write_version_info(info_path, vi):
-            util.printD(f"[downloader] Wrote version info: {info_path}")
+            logger.info(f"[downloader] Wrote version info: {info_path}")
         preview_path = os.path.join(
             folder,
             f"{util.replace_filename(savefile_base)}"
             f"{setting.preview_image_suffix}{setting.preview_image_ext}",
         )
         if download_preview_image(preview_path, vi):
-            util.printD(f"[downloader] Wrote preview image: {preview_path}")
+            logger.info(f"[downloader] Wrote preview image: {preview_path}")
 
         # Generate LoRa/LyCORIS metadata JSON file for LoRa models
         if vi and _is_lora_model(vi):
             metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
             if civitai.write_LoRa_metadata(metadata_path, vi):
-                util.printD(f"[downloader] Wrote LoRa metadata: {metadata_path}")
+                logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
     return "Download started with notifications"
 
 

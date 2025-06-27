@@ -3,10 +3,9 @@ import re
 
 # Standard logging setup
 from .logging_config import get_logger
+
+# logger definition
 logger = get_logger(__name__)
-
-from . import util
-
 
 # def parse_data(data):
 #     parsed_data = {}
@@ -69,7 +68,6 @@ from . import util
 
 
 def parse_data(data):
-    from scripts.civitai_manager_libs import util
 
     parsed_data = {}
 
