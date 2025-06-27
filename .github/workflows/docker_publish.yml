@@ -63,10 +63,11 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
+          # Why without tags
+          # https://github.com/docker/build-push-action/discussions/1213#discussioncomment-10414120
           context: .
           file: ./Dockerfile
           target: final
-          tags: ${{ steps.setup.outputs.tags }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.setup.outputs.labels }}
           build-args: |
