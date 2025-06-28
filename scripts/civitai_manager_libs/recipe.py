@@ -1,6 +1,10 @@
 import os
 import json
 
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
+
 from . import util
 from . import setting
 
@@ -107,7 +111,7 @@ def is_classifications(classification):
         for v in RecipeCollection.values():
             if v['classification'] == classification:
                 return True
-    except:
+    except Exception:
         pass
 
     return False
@@ -119,7 +123,7 @@ def get_recipe_shortcuts(recipe):
 
     # Ensure recipe is a string, not a list
     if isinstance(recipe, list):
-        util.printD(f"[RECIPE] get_recipe_shortcuts received list instead of string: {recipe}")
+        logger.warning(f"get_recipe_shortcuts received list instead of string: {recipe}")
         return None
 
     RecipeCollection = load()
@@ -216,7 +220,7 @@ def get_recipe(s_name):
 
     # Ensure s_name is a string, not a list
     if isinstance(s_name, list):
-        util.printD(f"[RECIPE] get_recipe received list instead of string: {s_name}")
+        logger.warning(f"get_recipe received list instead of string: {s_name}")
         return None
 
     RecipeCollection = load()
@@ -265,7 +269,7 @@ def update_image(RecipeCollection: dict, recipe, image):
         recipe_imgfile = os.path.join(setting.shortcut_recipe_folder, pre_image)
         if os.path.isfile(recipe_imgfile):
             os.remove(recipe_imgfile)
-    except:
+    except Exception:
         pass
 
     RecipeCollection[recipe]['image'] = image
@@ -322,7 +326,7 @@ def delete(RecipeCollection: dict, recipe) -> dict:
         recipe_imgfile = os.path.join(setting.shortcut_recipe_folder, pre_image)
         if os.path.isfile(recipe_imgfile):
             os.remove(recipe_imgfile)
-    except:
+    except Exception:
         pass
 
     return RecipeCollection
@@ -398,13 +402,12 @@ def save(RecipeCollection: dict):
     try:
         with open(setting.shortcut_recipe, 'w') as f:
             json.dump(RecipeCollection, f, indent=4)
-    except Exception as e:
-        util.printD("Error when writing file:" + setting.shortcut_recipe)
+    except Exception:
+        logger.error(f"Error when writing file: {setting.shortcut_recipe}")
         return output
 
-    output = "Recipe saved to: " + setting.shortcut_recipe
-    # util.printD(output)
-
+    output = f"Recipe saved to: {setting.shortcut_recipe}"
+    logger.info(output)
     return output
 
 
@@ -417,7 +420,7 @@ def load() -> dict:
     try:
         with open(setting.shortcut_recipe, 'r') as f:
             json_data = json.load(f)
-    except:
+    except Exception:
         return None
 
     # check error

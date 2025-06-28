@@ -89,15 +89,6 @@ class TestIntegration(unittest.TestCase):
             env = EnvironmentDetector.detect_environment()
             self.assertIn(env, ['webui', 'standalone'])
 
-    def test_error_handling_graceful_degradation(self):
-        from civitai_manager_libs import util
-
-        try:
-            util.printD("test message")
-            self.assertTrue(True)
-        except Exception as e:
-            self.fail(f"Graceful degradation failed: {e}")
-
     def test_png_info_processing_fallback(self):
         from civitai_manager_libs import ishortcut_action
 

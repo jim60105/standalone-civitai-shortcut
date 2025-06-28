@@ -81,7 +81,7 @@ Use `gh` CLI commands to perform DevOps tasks.
 * Use `pytest` for running tests and makesure this project is testable. Always run `pytest` with `|| true` since there's technical issue with `pytest` in the current project setup.
 * Place tests in the `tests` folder; any test files located in the project root directory are considered temporary and should be deleted.
 * Follow the testing principles and practices outlined in [Test Guidelines](docs/testing_guidelines.md)`.
-* Always use `util.printD()` for structured debug output with module identifiers.
+* Always use Python's standard `logging` module for all log output.
 * Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Use the `.flake8` configuration file in the root directory for linting. Fix not only the errors but also styling warnings. Always run `flake8` with `|| true` since there's technical issue with `flake8` in the current project setup.
 
 ## Gradio UI Guidelines
@@ -216,14 +216,28 @@ Main files:
 * Supports fetching model, version, and preview asset data.
 * Includes mechanisms for handling rate limits and API failure modes.
 
-## Debugging and Logging
+## Logging
+* Use Python's standard `logging` module for all log output.
+* At the top of each module, initialize a logger:
 
-* Use `util.printD()` for debug output.
-* All debug messages should be prefixed with module identifiers.
+```python
+import logging
+from scripts.civitai_manager_libs.logging_config import get_logger
+
+logger = get_logger(__name__)
+```
+
+* Use appropriate logging levels:
+  - `logger.debug()` for detailed debugging information.
+  - `logger.info()` for general runtime information.
+  - `logger.warning()` for potential issues.
+  - `logger.error()` or `logger.exception()` for error conditions.
+  - `logger.critical()` for severe errors.
+
+* Include module context in log messages.
 * Network failures must yield detailed error diagnostics.
 * File I/O exceptions should include full path context in logs.
 
 ---
 
 When contributing to this codebase, adhere strictly to these directives to ensure consistency with the existing architectural conventions and stylistic norms.
-

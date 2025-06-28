@@ -68,8 +68,8 @@ class TestGallerySelectFix:
         result = setting.get_modelid_from_shortcutname({"key": "value"})
         assert result is None
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_sc_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_sc_gallery_select_with_list(self, mock_logger):
         """Test on_reference_sc_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()
@@ -81,8 +81,8 @@ class TestGallerySelectFix:
         assert "12345" in result_shortcuts
         assert len(result_shortcuts) == 1
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_sc_gallery_select_with_string(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_sc_gallery_select_with_string(self, mock_logger):
         """Test on_reference_sc_gallery_select with string input."""
         # Mock SelectData event
         evt = Mock()
@@ -94,8 +94,8 @@ class TestGallerySelectFix:
         assert "12345" in result_shortcuts
         assert len(result_shortcuts) == 1
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_sc_gallery_select_with_invalid_input(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_sc_gallery_select_with_invalid_input(self, mock_logger):
         """Test on_reference_sc_gallery_select with invalid input."""
         # Mock SelectData event
         evt = Mock()
@@ -107,10 +107,10 @@ class TestGallerySelectFix:
         # Should return original shortcuts without modification
         assert result_shortcuts == shortcuts
         assert len(result_shortcuts) == 0
-        mock_printD.assert_called_once()
+        mock_logger.debug.assert_called_once()
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_gallery_select_with_list(self, mock_logger):
         """Test on_reference_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()
@@ -122,8 +122,8 @@ class TestGallerySelectFix:
         shortcuts_result, visible_result, display_result, model_id = result
         assert model_id == "12345"
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_sc_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.classification_action.logger.warning')
+    def test_on_sc_gallery_select_with_list(self, mock_warning):
         """Test on_sc_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()
@@ -137,8 +137,8 @@ class TestGallerySelectFix:
         assert "12345" in shortcuts_result
         assert len(shortcuts_result) == 1
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_classification_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.classification_action.logger.warning')
+    def test_on_classification_gallery_select_with_list(self, mock_warning):
         """Test on_classification_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()
@@ -150,8 +150,8 @@ class TestGallerySelectFix:
         shortcuts_result, visible_result1, visible_result2, model_id = result
         assert model_id == "12345"
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_recipe_reference_select_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_browser_page.logger.warning')
+    def test_on_recipe_reference_select_gallery_select_with_list(self, mock_warning):
         """Test on_recipe_reference_select_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()
@@ -164,8 +164,8 @@ class TestGallerySelectFix:
         # Should be removed from shortcuts
         assert "12345" not in shortcuts_result
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_recipe_reference_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_browser_page.logger.warning')
+    def test_on_recipe_reference_gallery_select_with_list(self, mock_warning):
         """Test on_recipe_reference_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()

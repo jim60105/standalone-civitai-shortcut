@@ -100,7 +100,7 @@ def on_civitai_tabs_select(evt: gr.SelectData):
 #         with open(path, 'r',encoding='UTF-8') as f:
 #             markdown_text = f.read()
 #     except Exception as e:
-#         util.printD(e)
+#         logger.error(f"{e}")
 #         return
 #     return markdown_text
 

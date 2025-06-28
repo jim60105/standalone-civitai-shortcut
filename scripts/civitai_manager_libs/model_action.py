@@ -14,7 +14,12 @@ from . import util
 from . import model
 from . import setting
 from . import ishortcut
-from .compat.compat_layer import CompatibilityLayer
+from .compat.compat_layer import CompatibilityLayer  # noqa: F401
+
+from .logging_config import get_logger
+
+# Module logger for this component
+logger = get_logger(__name__)
 
 # from . import civitai
 
@@ -148,7 +153,7 @@ def on_download_openfolder_click(vlocation):
 
 
 def on_downloaded_information_select(evt: gr.SelectData, df):
-    # util.printD(evt.index)
+    logger.debug(f"on_downloaded_information_select index: {evt.index}")
     vname = None
     vlocation = None
     contents = None
@@ -165,7 +170,7 @@ def on_downloaded_information_select(evt: gr.SelectData, df):
                     contents = json.load(f)
                 if 'id' not in contents.keys():
                     contents = None
-            except:
+            except Exception:
                 pass
 
         if contents:
@@ -219,7 +224,6 @@ def get_model_information(modelid: str = None):
         # model_info = civitai.get_model_info(modelid)
         model_info = ishortcut.get_model_info(modelid)
         if model_info:
-            model_type = model_info['type']
             title_name = f"{model_info['name']}"
 
             downloaded_versions = model.get_model_downloaded_versions(modelid)
@@ -230,6 +234,6 @@ def get_model_information(modelid: str = None):
                     if info_list:
                         for path in info_list:
                             versions_list.append([vid, name, path])
-                            # util.printD(f"{vid} : {name} : {path}")
+                            logger.debug(f"{vid} : {name} : {path}")
             return title_name, versions_list if len(versions_list) > 0 else None
     return None, None

@@ -8,6 +8,9 @@ import json
 import os
 from typing import List, Dict, Optional, Any
 from ..interfaces.isampler_provider import ISamplerProvider
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class StandaloneSamplerProvider(ISamplerProvider):
@@ -418,7 +421,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
     def _log_debug(self, message: str):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
-            print(f"StandaloneSamplerProvider: {message}")
+            logger.debug(f"StandaloneSamplerProvider: {message}")
 
     def set_debug_mode(self, enabled: bool):
         """Enable or disable debug mode."""

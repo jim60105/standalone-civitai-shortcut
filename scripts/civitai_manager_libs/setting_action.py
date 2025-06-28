@@ -11,7 +11,9 @@ import gradio as gr
 import shutil
 from packaging import version
 
-from . import util
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 from . import setting
 from .compat.compat_layer import CompatibilityLayer  # noqa: F401
 
@@ -565,6 +567,7 @@ def save_setting(
 
     # notify user based on whether layout reload is needed
     ui_reload_needed = _check_ui_reload_required(old_env, environment)
+
     try:
         if ui_reload_needed:
             gr.Info(
@@ -578,12 +581,13 @@ def save_setting(
                 duration=3,
             )
     except Exception as e:
-        util.printD(f"Failed to show setting save notification: {e}")
+        logger.error(f"Failed to show setting save notification: {e}")
+
     # log for debugging purposes
     if ui_reload_needed:
-        util.printD("Settings saved. UI reload recommended for layout changes.")
+        logger.info("Settings saved. UI reload recommended for layout changes.")
     else:
-        util.printD("Settings saved and applied successfully.")
+        logger.info("Settings saved and applied successfully.")
 
 
 def on_usergallery_openfolder_btn_click():

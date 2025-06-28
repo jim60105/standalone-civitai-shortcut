@@ -11,7 +11,6 @@ import gradio as gr
 import datetime
 
 from scripts.civitai_manager_libs import (
-    util,
     civitai_shortcut_action,
     recipe_action,
     classification_action,
@@ -19,6 +18,11 @@ from scripts.civitai_manager_libs import (
     scan_action,
     module_compatibility,
 )
+
+from scripts.civitai_manager_libs.logging_config import get_logger
+
+# Module logger for this component
+logger = get_logger(__name__)
 
 
 def create_civitai_shortcut_ui(compat_layer):
@@ -90,7 +94,7 @@ def _on_civitai_tabs_select(evt: gr.SelectData):
     update = getattr(gr, 'update', lambda **kwargs: None)
 
     if evt is None:
-        util.printD(
+        logger.debug(
             "[ui_adapter] _on_civitai_tabs_select: evt is None, skipping tab selection logic."
         )
         update = getattr(gr, 'update', lambda **kwargs: None)

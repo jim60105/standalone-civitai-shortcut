@@ -9,6 +9,9 @@ import json
 from typing import Dict, Optional
 from .. import paths
 from ..interfaces.ipath_manager import IPathManager
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class StandalonePathManager(IPathManager):
@@ -49,9 +52,7 @@ class StandalonePathManager(IPathManager):
 
         In standalone mode, this returns our extension's base path.
         """
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_script_path: {self._base_path}")
+        logger.debug(f"get_script_path: {self._base_path}")
         return self._base_path
 
     def get_user_data_path(self) -> str:
@@ -61,31 +62,23 @@ class StandalonePathManager(IPathManager):
         In standalone mode, this returns our extension's data directory.
         """
         result = str(paths.data_path)
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_user_data_path: {result}")
+        logger.debug(f"get_user_data_path: {result}")
         return result
 
     def get_base_path(self) -> str:
         """Get the base path for standalone mode."""
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_base_path: {self._base_path}")
+        logger.debug(f"get_base_path: {self._base_path}")
         return self._base_path
 
     def get_extension_path(self) -> str:
         """Get extension path (same as base path in standalone mode)."""
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_extension_path: {self._base_path}")
+        logger.debug(f"get_extension_path: {self._base_path}")
         return self._base_path
 
     def get_models_path(self) -> str:
         """Get models directory path."""
         result = str(paths.models_path)
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_models_path: {result}")
+        logger.debug(f"get_models_path: {result}")
         return result
 
     def get_model_folder_path(self, model_type: str) -> str:
@@ -115,9 +108,7 @@ class StandalonePathManager(IPathManager):
 
         # Ensure the directory exists
         self.ensure_directory_exists(full_path)
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_model_folder_path({model_type}): {full_path}")
+        logger.debug(f"get_model_folder_path({model_type}): {full_path}")
         return full_path
 
     def get_model_path(self, model_type: str) -> str:
@@ -131,9 +122,7 @@ class StandalonePathManager(IPathManager):
             str: The absolute path to the model type directory.
         """
         result = self.get_model_folder_path(model_type)
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_model_path({model_type}): {result}")
+        logger.debug(f"get_model_path({model_type}): {result}")
         return result
 
     def get_config_path(self) -> str:
@@ -142,9 +131,7 @@ class StandalonePathManager(IPathManager):
             result = self._config_path
         else:
             result = os.path.join(self._base_path, "setting.json")
-        from scripts.civitai_manager_libs import util
-
-        util.printD(f"[standalone_path_manager] get_config_path: {result}")
+        logger.debug(f"get_config_path: {result}")
         return result
 
     def ensure_directory_exists(self, path: str) -> bool:
@@ -308,8 +295,6 @@ class StandalonePathManager(IPathManager):
         Returns:
             bool: True if all directories exist or were created successfully, False otherwise.
         """
-        from scripts.civitai_manager_libs import util
-
         required_dirs = [
             self.get_models_path(),
             self.get_output_path(),
@@ -321,9 +306,9 @@ class StandalonePathManager(IPathManager):
         success = True
         for d in required_dirs:
             if self.ensure_directory_exists(d):
-                util.printD(f"StandalonePathManager: Ensured directory exists: {d}")
+                logger.debug(f"Ensured directory exists: {d}")
             else:
-                util.printD(f"StandalonePathManager: Failed to create directory: {d}", force=True)
+                logger.error(f"Failed to create directory: {d}")
                 success = False
         return success
 
@@ -480,4 +465,4 @@ class StandalonePathManager(IPathManager):
     def _log_debug(self, message: str):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
-            print(f"StandalonePathManager: {message}")
+            logger.debug(f"StandalonePathManager: {message}")

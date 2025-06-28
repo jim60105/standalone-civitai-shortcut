@@ -7,6 +7,10 @@ import gradio as gr
 import threading
 from typing import Callable, Dict, List, Any, Optional
 
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class EventHandler:
     """Centralized event dispatcher and async operation handler."""
@@ -25,7 +29,7 @@ class EventHandler:
             try:
                 cb(*args, **kwargs)
             except Exception as e:
-                print(f"Error in callback '{event_name}': {e}")
+                logger.error(f"Error in callback '{event_name}': {e}")
 
     def setup_component_events(
         self, components: Dict[str, gr.Component], actions: Dict[str, Callable]
@@ -41,7 +45,7 @@ class EventHandler:
                         try:
                             return original_action(*args, **kwargs)
                         except Exception as e:
-                            print(f"[EventHandler] Error in action {action_name}: {e}")
+                            logger.error(f"Error in action {action_name}: {e}")
                             # Return safe fallback instead of raising exception
                             return gr.update()
 
@@ -75,7 +79,7 @@ class EventHandler:
                 if error_callback:
                     error_callback(e)
                 else:
-                    print(f"Async operation error: {e}")
+                    logger.error(f"Async operation error: {e}")
 
         thread = threading.Thread(target=runner, daemon=True)
         thread.start()

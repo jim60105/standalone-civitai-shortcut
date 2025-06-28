@@ -3,7 +3,9 @@ import math
 import gradio as gr
 import datetime
 
-from . import util
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 from . import setting
 from . import ishortcut
 from . import classification
@@ -439,7 +441,7 @@ def get_shortcut_by_modelid(ISC, modelid):
     if ISC and modelid:
         try:
             return ISC[str(modelid)]
-        except:
+        except Exception:
             pass
     return None
 
@@ -560,7 +562,7 @@ def on_sc_gallery_select(evt: gr.SelectData, shortcuts, page):
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[CLASSIFICATION] Unexpected evt.value format: {evt.value}")
+            logger.warning(f"Unexpected evt.value format in on_sc_gallery_select: {evt.value}")
             return shortcuts, page, current_time
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
@@ -659,7 +661,9 @@ def on_classification_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=T
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[CLASSIFICATION] Unexpected evt.value format: {evt.value}")
+            logger.warning(
+                f"Unexpected evt.value format in on_classification_gallery_select: {evt.value}"
+            )
             return shortcuts, gr.update(visible=False), gr.update(visible=True), None
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
@@ -749,10 +753,7 @@ def on_classification_list_select(evt: gr.SelectData):
     elif isinstance(evt.value, str):
         select_name = evt.value
     else:
-        util.printD(
-            f"[CLASSIFICATION] Unexpected evt.value format in "
-            f"on_classification_list_select: {evt.value}"
-        )
+        logger.warning(f"Unexpected evt.value format in on_classification_list_select: {evt.value}")
         return (
             gr.update(value=""),
             gr.update(value=""),

@@ -14,7 +14,11 @@ import requests
 import gradio as gr
 import os
 
-from . import util, setting
+from .logging_config import get_logger
+
+from . import setting
+
+logger = get_logger(__name__)
 
 # Mapping of HTTP status codes to user-friendly error messages
 _STATUS_CODE_MESSAGES: Dict[int, str] = {
@@ -68,30 +72,30 @@ class CivitaiHttpClient:
         """Make GET request and return JSON response or None on error."""
         for attempt in range(self.max_retries):
             try:
-                util.printD(f"[http_client] GET {url} attempt {attempt + 1}")
+                logger.debug(f"[http_client] GET {url} attempt {attempt + 1}")
                 response = self.session.get(url, params=params, timeout=self.timeout)
-                util.printD(f"[http_client] Response status: {response.status_code}")
+                logger.debug(f"[http_client] Response status: {response.status_code}")
                 if response.status_code >= 400:
                     msg = _STATUS_CODE_MESSAGES.get(
                         response.status_code,
                         f"HTTP {response.status_code} Error",
                     )
-                    util.printD(f"[http_client] {msg}")
+                    logger.debug(f"[http_client] {msg}")
                     gr.Error(f"Request failed: {msg}")
                     return None
                 return response.json()
             except (requests.ConnectionError, requests.Timeout) as e:
-                util.printD(f"[http_client] Connection error: {e}")
+                logger.warning(f"[http_client] Connection error: {e}")
                 if attempt == self.max_retries - 1:
                     gr.Error(f"Network error: {type(e).__name__}")
                     return None
                 time.sleep(self.retry_delay)
             except json.JSONDecodeError as e:
-                util.printD(f"[http_client] JSON decode error: {e}")
+                logger.error(f"[http_client] JSON decode error: {e}")
                 gr.Error("Failed to parse JSON response")
                 return None
             except requests.RequestException as e:
-                util.printD(f"[http_client] Request exception: {e}")
+                logger.error(f"[http_client] Request exception: {e}")
                 gr.Error(f"Request error: {e}")
                 return None
 
@@ -99,53 +103,53 @@ class CivitaiHttpClient:
         """Make POST request with JSON payload and return JSON response or None on error."""
         for attempt in range(self.max_retries):
             try:
-                util.printD(f"[http_client] POST {url} attempt {attempt + 1}")
+                logger.debug(f"[http_client] POST {url} attempt {attempt + 1}")
                 response = self.session.post(url, json=json_data, timeout=self.timeout)
-                util.printD(f"[http_client] Response status: {response.status_code}")
+                logger.debug(f"[http_client] Response status: {response.status_code}")
                 if response.status_code >= 400:
                     msg = _STATUS_CODE_MESSAGES.get(
                         response.status_code,
                         f"HTTP {response.status_code} Error",
                     )
-                    util.printD(f"[http_client] {msg}")
+                    logger.debug(f"[http_client] {msg}")
                     gr.Error(f"Request failed: {msg}")
                     return None
                 return response.json()
             except (requests.ConnectionError, requests.Timeout) as e:
-                util.printD(f"[http_client] Connection error: {e}")
+                logger.warning(f"[http_client] Connection error: {e}")
                 if attempt == self.max_retries - 1:
                     gr.Error(f"Network error: {type(e).__name__}")
                     return None
                 time.sleep(self.retry_delay)
             except json.JSONDecodeError as e:
-                util.printD(f"[http_client] JSON decode error: {e}")
+                logger.error(f"[http_client] JSON decode error: {e}")
                 gr.Error("Failed to parse JSON response")
                 return None
             except requests.RequestException as e:
-                util.printD(f"[http_client] Request exception: {e}")
+                logger.error(f"[http_client] Request exception: {e}")
                 gr.Error(f"Request error: {e}")
                 return None
 
     def get_stream(self, url: str, headers: Dict = None) -> Optional[requests.Response]:
         """Make GET request for streaming download and return response or None on error."""
         try:
-            util.printD(f"[http_client] STREAM {url}")
+            logger.debug(f"[http_client] STREAM {url}")
             response = self.session.get(
                 url, headers=headers or {}, stream=True, timeout=self.timeout
             )
-            util.printD(f"[http_client] Response status: {response.status_code}")
+            logger.debug(f"[http_client] Response status: {response.status_code}")
             # Detect authentication-required redirects and range errors
             if response.status_code == 307:
                 location = response.headers.get('Location', '')
                 if 'login' in location.lower():
-                    util.printD(f"[http_client] Authentication required for: {url}")
+                    logger.debug(f"[http_client] Authentication required for: {url}")
                     gr.Error(
                         "🔐 This resource requires login. "
                         "Please configure your Civitai API key in settings."
                     )
                     return None
             elif response.status_code == 416:
-                util.printD(
+                logger.debug(
                     f"[http_client] Range request failed, may require authentication: {url}"
                 )
                 gr.Error(
@@ -158,12 +162,12 @@ class CivitaiHttpClient:
                     response.status_code,
                     f"HTTP {response.status_code} Error",
                 )
-                util.printD(f"[http_client] {msg}")
+                logger.debug(f"[http_client] {msg}")
                 gr.Error(f"Request failed: {msg}")
                 return None
             return response
         except (requests.ConnectionError, requests.Timeout) as e:
-            util.printD(f"[http_client] Stream connection error: {e}")
+            logger.warning(f"[http_client] Stream connection error: {e}")
             gr.Error(f"Network error: {type(e).__name__}")
             return None
 
@@ -197,7 +201,7 @@ class CivitaiHttpClient:
                 return False
             return True
         except Exception as e:
-            util.printD(f"[http_client] File write error: {e}")
+            logger.error(f"[http_client] File write error: {e}")
             gr.Error(f"Failed to write file: {e}")
             return False
 
@@ -216,7 +220,7 @@ class CivitaiHttpClient:
         resume_pos = 0
         if setting.download_resume_enabled and os.path.exists(filepath):
             resume_pos = os.path.getsize(filepath)
-            util.printD(f"[http_client] Resuming download from position: {resume_pos}")
+            logger.debug(f"[http_client] Resuming download from position: {resume_pos}")
 
         # Prepare headers for resume
         download_headers = headers.copy() if headers else {}
@@ -283,10 +287,10 @@ class CivitaiHttpClient:
     def _handle_download_error(self, error: Exception, url: str, filepath: str) -> bool:
         """Handle download errors with recovery strategies."""
         if isinstance(error, requests.exceptions.Timeout):
-            util.printD(f"[http_client] Download timeout for {url}")
+            logger.warning(f"[http_client] Download timeout for {url}")
             gr.Error("Download timeout, please check your network connection 💥!", duration=5)
         elif isinstance(error, requests.exceptions.ConnectionError):
-            util.printD(f"[http_client] Connection error for {url}")
+            logger.warning(f"[http_client] Connection error for {url}")
             gr.Error(
                 "Network connection failed, please check your network settings 💥!", duration=5
             )
@@ -301,7 +305,7 @@ class CivitaiHttpClient:
             else:
                 gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
         else:
-            util.printD(f"[http_client] Unknown download error: {error}")
+            logger.error(f"[http_client] Unknown download error: {error}")
             gr.Error("Unknown error occurred during download 💥!", duration=5)
 
         # Clean up partial file if empty
@@ -326,7 +330,7 @@ class CivitaiHttpClient:
 
         size_diff_ratio = abs(actual_size - expected_size) / expected_size
         if size_diff_ratio > tolerance:
-            util.printD(
+            logger.warning(
                 f"[http_client] File size mismatch: expected {expected_size}, got {actual_size}"
             )
             gr.Warning(
@@ -373,11 +377,11 @@ class ParallelImageDownloader:
                 try:
                     if future.result():
                         success_count += 1
-                        util.printD(f"[parallel_downloader] Successfully downloaded: {filepath}")
+                        logger.info(f"[parallel_downloader] Successfully downloaded: {filepath}")
                     else:
-                        util.printD(f"[parallel_downloader] Failed to download: {url}")
+                        logger.error(f"[parallel_downloader] Failed to download: {url}")
                 except Exception as e:
-                    util.printD(f"[parallel_downloader] Download exception for {url}: {e}")
+                    logger.error(f"[parallel_downloader] Download exception for {url}: {e}")
                 finally:
                     self._update_progress(progress_callback)
 
@@ -421,7 +425,7 @@ class ChunkedDownloader:
             total = int(head.headers.get('Content-Length', 0))
             supports = 'bytes' in head.headers.get('Accept-Ranges', '')
         except Exception as e:
-            util.printD(f"[chunked_downloader] Failed to get file info: {e}")
+            logger.error(f"[chunked_downloader] Failed to get file info: {e}")
             return self._fallback_download(url, filepath, progress_callback)
 
         if supports and total > 10 * setting.http_chunk_size and self.max_parallel > 1:
@@ -432,19 +436,19 @@ class ChunkedDownloader:
         self, url: str, filepath: str, progress_callback: Optional[Callable] = None
     ) -> bool:
         """Fallback to standard download when chunked download is not applicable."""
-        util.printD(f"[chunked_downloader] Fallback to single-stream download: {url}")
+        logger.info(f"[chunked_downloader] Fallback to single-stream download: {url}")
         return self.client.download_file(url, filepath, progress_callback)
 
     def _sequential_download(
         self, url: str, filepath: str, total_size: int, progress_callback: Optional[Callable] = None
     ) -> bool:
         """Download file sequentially in a single stream."""
-        util.printD(f"[chunked_downloader] Starting sequential download: {url}")
+        logger.info(f"[chunked_downloader] Starting sequential download: {url}")
         downloaded = 0
         try:
             response = self.client.session.get(url, stream=True)
             if not response.ok:
-                util.printD(
+                logger.error(
                     f"[chunked_downloader] Sequential download failed: HTTP {response.status_code}"
                 )
                 return False
@@ -456,17 +460,17 @@ class ChunkedDownloader:
                     downloaded += len(chunk)
                     if progress_callback:
                         progress_callback(downloaded, total_size)
-            util.printD(f"[chunked_downloader] Sequential download completed: {filepath}")
+            logger.info(f"[chunked_downloader] Sequential download completed: {filepath}")
             return True
         except Exception as e:
-            util.printD(f"[chunked_downloader] Sequential download error: {e}")
+            logger.error(f"[chunked_downloader] Sequential download error: {e}")
             return False
 
     def _parallel_download(
         self, url: str, filepath: str, total_size: int, progress_callback: Optional[Callable] = None
     ) -> bool:
         """Download file using parallel chunked requests."""
-        util.printD(f"[chunked_downloader] Starting parallel download: {url}")
+        logger.info(f"[chunked_downloader] Starting parallel download: {url}")
         # divide into chunks
         chunk_count = self.max_parallel
         base = total_size // chunk_count
@@ -494,9 +498,9 @@ class ChunkedDownloader:
                                 total_dl = sum(chunk_progress)
                                 progress_callback(total_dl, total_size)
                 else:
-                    util.printD(f"[chunked_downloader] Chunk {idx} HTTP {resp.status_code}")
+                    logger.error(f"[chunked_downloader] Chunk {idx} HTTP {resp.status_code}")
             except Exception as e:
-                util.printD(f"[chunked_downloader] Chunk {idx} failed: {e}")
+                logger.error(f"[chunked_downloader] Chunk {idx} failed: {e}")
 
         # launch threads
         threads: List[threading.Thread] = []
@@ -516,10 +520,10 @@ class ChunkedDownloader:
                         with open(part_file, 'rb') as pf:
                             out.write(pf.read())
                         os.remove(part_file)
-            util.printD(f"[chunked_downloader] Parallel download completed: {filepath}")
+            logger.info(f"[chunked_downloader] Parallel download completed: {filepath}")
             return True
         except Exception as e:
-            util.printD(f"[chunked_downloader] Failed to combine chunks: {e}")
+            logger.error(f"[chunked_downloader] Failed to combine chunks: {e}")
             return False
 
 

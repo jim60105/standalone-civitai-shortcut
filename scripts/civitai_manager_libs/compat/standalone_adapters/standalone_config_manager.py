@@ -6,9 +6,11 @@ Implements the same architecture and patterns used in modules/options.py for max
 
 import json
 import os
-import sys
 from typing import Any, Dict, Optional, Callable
 from ..interfaces.iconfig_manager import IConfigManager
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class OptionInfo:
@@ -670,15 +672,14 @@ class StandaloneConfigManager(IConfigManager):
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
                 expected_type = type(info.default).__name__
-                print(
-                    f"Warning: bad setting value: {k}: {v} "
-                    f"({type(v).__name__}; expected {expected_type})",
-                    file=sys.stderr,
+                logger.warning(
+                    f"Bad setting value: {k}: {v} "
+                    f"({type(v).__name__}; expected {expected_type})"
                 )
                 bad_settings += 1
 
         if bad_settings > 0:
-            print(f"The program loaded {bad_settings} bad settings.", file=sys.stderr)
+            logger.warning(f"The program loaded {bad_settings} bad settings.")
 
     def get_all_configs(self) -> Dict[str, Any]:
         """Get all configuration values."""
@@ -943,7 +944,7 @@ class StandaloneConfigManager(IConfigManager):
     def _log_debug(self, message: str):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
-            print(f"StandaloneConfigManager: {message}")
+            logger.debug(f"StandaloneConfigManager: {message}")
 
     def set_debug_mode(self, enabled: bool):
         """Enable or disable debug mode."""

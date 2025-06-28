@@ -12,6 +12,9 @@ import datetime
 import shutil
 
 from .conditional_imports import import_manager
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 from . import util
 from . import model
@@ -539,11 +542,11 @@ def on_personal_note_save_click(modelid, note):
 
 
 def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
-    util.printD("[ISHORTCUT] on_send_to_recipe_click called")
-    util.printD(f"[ISHORTCUT]   model_id: {repr(model_id)}")
-    util.printD(f"[ISHORTCUT]   img_file_info: {repr(img_file_info)}")
-    util.printD(f"[ISHORTCUT]   img_index: {repr(img_index)}")
-    util.printD(f"[ISHORTCUT]   civitai_images: {repr(civitai_images)}")
+    logger.debug("on_send_to_recipe_click called")
+    logger.debug(f"  model_id: {repr(model_id)}")
+    logger.debug(f"  img_file_info: {repr(img_file_info)}")
+    logger.debug(f"  img_index: {repr(img_index)}")
+    logger.debug(f"  civitai_images: {repr(civitai_images)}")
 
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
@@ -551,20 +554,20 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
         recipe_image = setting.set_imagefn_and_shortcutid_for_recipe_image(
             model_id, civitai_images[int(img_index)]
         )
-        util.printD(f"[ISHORTCUT]   recipe_image: {repr(recipe_image)}")
+        logger.debug(f"   recipe_image: {repr(recipe_image)}")
 
         # Pass parsed generation parameters directly when available
         if img_file_info:
             result = f"{recipe_image}\n{img_file_info}"
-            util.printD(f"[ISHORTCUT] Returning combined data: {repr(result)}")
+            logger.debug(f" Returning combined data: {repr(result)}")
             return result
         else:
-            util.printD(
+            logger.debug(
                 f"[ISHORTCUT] No img_file_info, returning recipe_image only: {repr(recipe_image)}"
             )
             return recipe_image
     except Exception as e:
-        util.printD(f"[ISHORTCUT] Exception in on_send_to_recipe_click: {e}")
+        logger.debug(f" Exception in on_send_to_recipe_click: {e}")
         return gr.update(visible=False)
 
 
@@ -616,7 +619,7 @@ def on_change_filename_submit(select_fileid, select_filename, df, filenames):
 
 
 def on_downloadable_files_select(evt: gr.SelectData, df, filenames):
-    # util.printD(evt.index)
+    # logger.debug(evt.index)
     # index[0] # 행,열
     vid = None
     vname = None
@@ -625,7 +628,7 @@ def on_downloadable_files_select(evt: gr.SelectData, df, filenames):
     row = evt.index[0]
     col = evt.index[1]
 
-    # util.printD(f"row : {row} ,col : {col}")
+    # logger.debug(f"row : {row} ,col : {col}")
     if col == 0:
         # 파일 선택
         if df:
@@ -796,14 +799,14 @@ def on_open_folder_click(mid, vid):
         result = util.open_folder(path)
         if not result:
             # Return HTML hyperlink so user can click manually if folder cannot be opened
-            util.printD(
+            logger.debug(
                 f"[ishortcut_action.on_open_folder_click] Failed to open folder, returning link: {path}"
             )
             return gr.HTML(f'<a href="file://{path}" target="_blank">Open folder: {path}</a>')
         else:
-            util.printD(f"[ishortcut_action.on_open_folder_click] Folder opened: {path}")
+            logger.debug(f"[ishortcut_action.on_open_folder_click] Folder opened: {path}")
     else:
-        util.printD(
+        logger.debug(
             f"[ishortcut_action.on_open_folder_click] No folder found for version id: {vid}"
         )
     return None
@@ -837,7 +840,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
             infopath = model.get_default_version_infopath(vid)
 
             if not infopath:
-                util.printD(
+                logger.debug(
                     "The selected version of the model has not been downloaded. The model must be downloaded first."
                 )
                 return
@@ -845,13 +848,13 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
             path, infofile = os.path.split(infopath)
 
             if not path or not os.path.isdir(path):
-                util.printD(
+                logger.debug(
                     "The selected version of the model has not been downloaded. The model must be downloaded first."
                 )
                 return
 
             if not f"{setting.info_suffix}{setting.info_ext}" in infofile:
-                util.printD(
+                logger.debug(
                     "The selected version of the model has not been downloaded. The model must be downloaded first."
                 )
                 return
@@ -859,7 +862,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
             savefile_base = infofile[: infofile.rfind(f"{setting.info_suffix}{setting.info_ext}")]
 
             if not savefile_base:
-                util.printD(
+                logger.debug(
                     "The selected version of the model has not been downloaded. The model must be downloaded first."
                 )
                 return
@@ -874,16 +877,16 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
             # path = model.get_default_version_folder(vid)
 
             # if not path:
-            #     util.printD("The selected version of the model has not been downloaded. The model must be downloaded first.")
+            #     logger.debug("The selected version of the model has not been downloaded. The model must be downloaded first.")
             #     return
 
             # if not os.path.isdir(path):
-            #     util.printD("The selected version of the model has not been downloaded. The model must be downloaded first.")
+            #     logger.debug("The selected version of the model has not been downloaded. The model must be downloaded first.")
             #     return
 
             # version_info = ishortcut.get_version_info(mid,vid)
             # if not version_info:
-            #     util.printD("The model information does not exist.")
+            #     logger.debug("The model information does not exist.")
             #     return
 
             # savefile_base = downloader.get_save_base_name(version_info)
@@ -896,7 +899,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
 def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
     """Extract generation parameters from PNG info first, then fallback methods."""
     selected = civitai_images[evt.index]
-    util.printD(f"[ishortcut_action] on_gallery_select: selected={selected}")
+    logger.debug(f"[ishortcut_action] on_gallery_select: selected={selected}")
 
     # Get local file path if URL
     local_path = selected
@@ -904,7 +907,7 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
         from . import setting
 
         local_path = setting.get_image_url_to_gallery_file(selected)
-        util.printD(
+        logger.debug(
             f"[ishortcut_action] on_gallery_select: converted URL to local_path={local_path}"
         )
 
@@ -913,14 +916,14 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
     try:
         if isinstance(local_path, str) and os.path.exists(local_path):
             # First try to extract PNG info from the image file itself
-            util.printD(f"[ishortcut_action] Trying to extract PNG info from: {local_path}")
+            logger.debug(f"[ishortcut_action] Trying to extract PNG info from: {local_path}")
 
             from PIL import Image
 
             try:
                 with Image.open(local_path) as img:
                     if hasattr(img, 'text') and img.text:
-                        util.printD(
+                        logger.debug(
                             f"[ishortcut_action] Found PNG text info: {list(img.text.keys())}"
                         )
                         # Check for common PNG info keys
@@ -932,66 +935,66 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
                         ]:
                             if key in img.text:
                                 png_info = img.text[key]
-                                util.printD(
+                                logger.debug(
                                     f"[ishortcut_action] Extracted PNG info from key "
                                     f"'{key}': {len(png_info)} chars"
                                 )
                                 break
                     else:
-                        util.printD("[ishortcut_action] No PNG text info found in image")
+                        logger.debug("[ishortcut_action] No PNG text info found in image")
             except Exception as e:
-                util.printD(f"[ishortcut_action] Error reading PNG info: {e}")
+                logger.debug(f"[ishortcut_action] Error reading PNG info: {e}")
 
             # If no PNG info found, try compatibility layer fallback
             if not png_info:
-                util.printD("[ishortcut_action] No PNG info found, trying compatibility layer")
+                logger.debug("[ishortcut_action] No PNG info found, trying compatibility layer")
                 try:
                     compat = CompatibilityLayer.get_compatibility_layer()
                     if compat and hasattr(compat, 'metadata_processor'):
                         result = compat.metadata_processor.extract_png_info(local_path)
                         if result and result[0]:
                             png_info = result[0]
-                            util.printD(
+                            logger.debug(
                                 f"[ishortcut_action] Extracted via compatibility layer: "
                                 f"{len(png_info)} chars"
                             )
                 except ImportError as e:
-                    util.printD(f"[ishortcut_action] Compatibility layer import error: {e}")
+                    logger.debug(f"[ishortcut_action] Compatibility layer import error: {e}")
                 except Exception as e:
-                    util.printD(f"[ishortcut_action] Error with compatibility layer: {e}")
+                    logger.debug(f"[ishortcut_action] Error with compatibility layer: {e}")
 
             # Final fallback: WebUI direct access
             if not png_info:
-                util.printD("[ishortcut_action] Trying WebUI direct access")
+                logger.debug("[ishortcut_action] Trying WebUI direct access")
                 try:
                     try:
                         extras_module = import_manager.get_webui_module('extras')
                     except ImportError as e:
-                        util.printD(f"[ishortcut_action] WebUI import error: {e}")
+                        logger.debug(f"[ishortcut_action] WebUI import error: {e}")
                         extras_module = None
                     if extras_module and hasattr(extras_module, 'run_pnginfo'):
                         info1, info2, info3 = extras_module.run_pnginfo(local_path)
                         if info1:
                             png_info = info1
-                            util.printD(
+                            logger.debug(
                                 f"[ishortcut_action] Extracted via WebUI: {len(png_info)} chars"
                             )
                 except Exception as e:
-                    util.printD(f"[ishortcut_action] Error with WebUI: {e}")
+                    logger.debug(f"[ishortcut_action] Error with WebUI: {e}")
 
             # Last resort: Try Civitai API if we have model ID
             if not png_info and model_id:
-                util.printD("[ishortcut_action] Trying Civitai API as final fallback")
+                logger.debug("[ishortcut_action] Trying Civitai API as final fallback")
                 try:
                     # Always add nsfw param for info query
                     api_url = (
                         f"https://civitai.com/api/v1/images?limit=20&modelId={model_id}&nsfw=X"
                     )
-                    util.printD(f"[ishortcut_action] Querying Civitai API: {api_url}")
+                    logger.debug(f"[ishortcut_action] Querying Civitai API: {api_url}")
 
                     response = civitai.request_models(api_url)
                     if response and 'items' in response:
-                        util.printD(
+                        logger.debug(
                             f"[ishortcut_action] Found {len(response['items'])} images from API"
                         )
                         # Try to match by filename similarity or just use first image with meta
@@ -1022,29 +1025,29 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
                                         f"Generated using example parameters from Civitai:\n\n"
                                         f"{chr(10).join(params)}"
                                     )
-                                    util.printD(
+                                    logger.debug(
                                         f"[ishortcut_action] Using Civitai API fallback: "
                                         f"{len(png_info)} chars"
                                     )
                                     break
                 except Exception as e:
-                    util.printD(f"[ishortcut_action] Error with Civitai API fallback: {e}")
+                    logger.debug(f"[ishortcut_action] Error with Civitai API fallback: {e}")
 
             if not png_info:
                 png_info = "No generation parameters found in this image."
-                util.printD("[ishortcut_action] No generation parameters found")
+                logger.debug("[ishortcut_action] No generation parameters found")
             else:
-                util.printD(f"[ishortcut_action] Using PNG info: {len(png_info)} chars")
+                logger.debug(f"[ishortcut_action] Using PNG info: {len(png_info)} chars")
         else:
-            util.printD(
+            logger.debug(
                 f"[ishortcut_action] local_path is not string or doesn't exist: {local_path}"
             )
             png_info = "Image file not accessible."
     except Exception as e:
         png_info = f"Error extracting generation parameters: {e}"
-        util.printD(f"[ishortcut_action] Error: {e}")
+        logger.debug(f"[ishortcut_action] Error: {e}")
 
-    util.printD(f"[ishortcut_action] Final png_info length: {len(png_info)} chars")
+    logger.debug(f"[ishortcut_action] Final png_info length: {len(png_info)} chars")
     return evt.index, local_path, gr.update(selected="Image_Information"), png_info
 
 
@@ -1060,7 +1063,7 @@ def on_civitai_hidden_change(hidden, index):
             if result and result[0]:
                 return result[0]
         except Exception as e:
-            util.printD(f"Error processing PNG info through compatibility layer: {e}")
+            logger.debug(f"Error processing PNG info through compatibility layer: {e}")
 
     # Fallback: Try WebUI direct access
     extras_module = import_manager.get_webui_module('extras')
@@ -1069,7 +1072,7 @@ def on_civitai_hidden_change(hidden, index):
             info1, info2, info3 = extras_module.run_pnginfo(hidden)
             return info1  # Return the parameters string, not the dictionary
         except Exception as e:
-            util.printD(f"Error processing PNG info through WebUI: {e}")
+            logger.debug(f"Error processing PNG info through WebUI: {e}")
 
     # Final fallback: Try basic PIL extraction
     try:
@@ -1083,7 +1086,7 @@ def on_civitai_hidden_change(hidden, index):
             with Image.open(io.BytesIO(hidden.read())) as img:
                 return img.text.get('parameters', '')
     except Exception as e:
-        util.printD(f"Error in PNG info fallback processing: {e}")
+        logger.debug(f"Error in PNG info fallback processing: {e}")
 
     return ""
 
@@ -1234,7 +1237,7 @@ def load_saved_model(modelid=None, ver_index=None):
                 tags = [tag for tag in model_info['tags']]
                 suggested_names.extend(tags)
 
-            # util.printD(suggested_names)
+            # logger.debug(suggested_names)
             downloaded_versions = model.get_model_downloaded_versions(modelid)
             if downloaded_versions:
                 downloaded_info = "\n".join(downloaded_versions.values())
@@ -1382,19 +1385,19 @@ def upload_shortcut_by_files(files, register_information_only, progress):
 
 
 def upload_shortcut_by_urls(urls, register_information_only, progress):
-    util.printD("[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS START ==========")
-    util.printD(f"[ishortcut_action] Function called with urls: {urls}")
-    util.printD(
+    logger.debug("[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS START ==========")
+    logger.debug(f"[ishortcut_action] Function called with urls: {urls}")
+    logger.debug(
         f"[ishortcut_action] urls type: {type(urls)}, length: {len(urls) if urls else 'None'}"
     )
-    util.printD(f"[ishortcut_action] register_information_only: {register_information_only}")
-    util.printD(f"[ishortcut_action] progress: {progress}")
-    util.printD(f"[ishortcut_action] progress type: {type(progress)}")
+    logger.debug(f"[ishortcut_action] register_information_only: {register_information_only}")
+    logger.debug(f"[ishortcut_action] progress: {progress}")
+    logger.debug(f"[ishortcut_action] progress type: {type(progress)}")
 
     if hasattr(progress, 'tqdm'):
-        util.printD(f"[ishortcut_action] progress.tqdm: {progress.tqdm}")
+        logger.debug(f"[ishortcut_action] progress.tqdm: {progress.tqdm}")
     else:
-        util.printD("[ishortcut_action] progress does NOT have tqdm method!")
+        logger.debug("[ishortcut_action] progress does NOT have tqdm method!")
 
     try:
         # Send initial progress signal to establish connection and keep alive
@@ -1404,17 +1407,17 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
             pass
 
         modelids = list()
-        util.printD(f"[ishortcut_action] Initialized empty modelids list: {modelids}")
+        logger.debug(f"[ishortcut_action] Initialized empty modelids list: {modelids}")
 
         if urls:
-            util.printD(f"[ishortcut_action] URLs provided, processing...")
+            logger.debug(f"[ishortcut_action] URLs provided, processing...")
             add_ISC = dict()
-            util.printD(f"[ishortcut_action] Initialized empty add_ISC dict: {add_ISC}")
+            logger.debug(f"[ishortcut_action] Initialized empty add_ISC dict: {add_ISC}")
 
-            util.printD(f"[ishortcut_action] About to process urls: {urls}")
+            logger.debug(f"[ishortcut_action] About to process urls: {urls}")
 
             try:
-                util.printD("[ishortcut_action] Processing URLs with progress keep-alive")
+                logger.debug("[ishortcut_action] Processing URLs with progress keep-alive")
 
                 for i, url in enumerate(urls):
                     # Update progress to keep connection alive
@@ -1428,25 +1431,25 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
                     except Exception:
                         pass
 
-                    util.printD(f"[ishortcut_action] Processing URL #{i}: {url}")
-                    util.printD(f"[ishortcut_action] URL type: {type(url)}")
+                    logger.debug(f"[ishortcut_action] Processing URL #{i}: {url}")
+                    logger.debug(f"[ishortcut_action] URL type: {type(url)}")
 
                     if url:
-                        util.printD(
+                        logger.debug(
                             "[ishortcut_action] URL is not None/empty, extracting model_id..."
                         )
 
                         try:
                             model_id = util.get_model_id_from_url(url)
-                            util.printD(
+                            logger.debug(
                                 f"[ishortcut_action] get_model_id_from_url returned: {model_id}"
                             )
 
                             if model_id:
-                                util.printD(
+                                logger.debug(
                                     f"[ishortcut_action] Valid model_id found, calling ishortcut.add..."
                                 )
-                                util.printD(
+                                logger.debug(
                                     f"[ishortcut_action] ishortcut.add params: add_ISC={add_ISC}, model_id={model_id}, register_info_only={register_information_only}"
                                 )
 
@@ -1454,99 +1457,99 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
                                     add_ISC = ishortcut.add(
                                         add_ISC, model_id, register_information_only, progress
                                     )
-                                    util.printD(
+                                    logger.debug(
                                         f"[ishortcut_action] ishortcut.add SUCCESS, returned: {add_ISC}"
                                     )
 
                                     modelids.append(model_id)
-                                    util.printD(
+                                    logger.debug(
                                         f"[ishortcut_action] Added model_id to list, modelids now: {modelids}"
                                     )
 
                                 except Exception as e:
-                                    util.printD(
+                                    logger.debug(
                                         f"[ishortcut_action] EXCEPTION in ishortcut.add: {e}"
                                     )
-                                    util.printD(
+                                    logger.debug(
                                         f"[ishortcut_action] ishortcut.add exception type: {type(e)}"
                                     )
                                     import traceback
 
-                                    util.printD(
+                                    logger.debug(
                                         f"[ishortcut_action] ishortcut.add traceback: {traceback.format_exc()}"
                                     )
                                     raise e
                             else:
-                                util.printD(
+                                logger.debug(
                                     f"[ishortcut_action] No model_id extracted from URL: {url}"
                                 )
                         except Exception as e:
-                            util.printD(
+                            logger.debug(
                                 f"[ishortcut_action] EXCEPTION in get_model_id_from_url: {e}"
                             )
-                            util.printD(
+                            logger.debug(
                                 f"[ishortcut_action] get_model_id exception type: {type(e)}"
                             )
                             import traceback
 
-                            util.printD(
+                            logger.debug(
                                 f"[ishortcut_action] get_model_id traceback: {traceback.format_exc()}"
                             )
                             raise e
                     else:
-                        util.printD(f"[ishortcut_action] URL #{i} is None/empty, skipping")
+                        logger.debug(f"[ishortcut_action] URL #{i} is None/empty, skipping")
 
             except Exception as e:
-                util.printD(f"[ishortcut_action] EXCEPTION in progress.tqdm loop: {e}")
-                util.printD(f"[ishortcut_action] tqdm loop exception type: {type(e)}")
+                logger.debug(f"[ishortcut_action] EXCEPTION in progress.tqdm loop: {e}")
+                logger.debug(f"[ishortcut_action] tqdm loop exception type: {type(e)}")
                 import traceback
 
-                util.printD(f"[ishortcut_action] tqdm loop traceback: {traceback.format_exc()}")
+                logger.debug(f"[ishortcut_action] tqdm loop traceback: {traceback.format_exc()}")
                 raise e
 
-            util.printD(f"[ishortcut_action] Finished processing URLs, loading ISC...")
+            logger.debug(f"[ishortcut_action] Finished processing URLs, loading ISC...")
 
             try:
                 ISC = ishortcut.load()
-                util.printD(f"[ishortcut_action] ishortcut.load() returned: {ISC}")
-                util.printD(f"[ishortcut_action] ISC type: {type(ISC)}")
+                logger.debug(f"[ishortcut_action] ishortcut.load() returned: {ISC}")
+                logger.debug(f"[ishortcut_action] ISC type: {type(ISC)}")
 
                 if ISC:
-                    util.printD(f"[ishortcut_action] ISC exists, updating with add_ISC...")
+                    logger.debug(f"[ishortcut_action] ISC exists, updating with add_ISC...")
                     ISC.update(add_ISC)
-                    util.printD(f"[ishortcut_action] ISC after update: {ISC}")
+                    logger.debug(f"[ishortcut_action] ISC after update: {ISC}")
                 else:
-                    util.printD(f"[ishortcut_action] ISC is None/empty, using add_ISC directly...")
+                    logger.debug(f"[ishortcut_action] ISC is None/empty, using add_ISC directly...")
                     ISC = add_ISC
-                    util.printD(f"[ishortcut_action] ISC set to add_ISC: {ISC}")
+                    logger.debug(f"[ishortcut_action] ISC set to add_ISC: {ISC}")
 
-                util.printD(f"[ishortcut_action] Saving ISC...")
+                logger.debug(f"[ishortcut_action] Saving ISC...")
                 ishortcut.save(ISC)
-                util.printD(f"[ishortcut_action] ISC saved successfully")
+                logger.debug(f"[ishortcut_action] ISC saved successfully")
 
             except Exception as e:
-                util.printD(f"[ishortcut_action] EXCEPTION in ISC load/save: {e}")
-                util.printD(f"[ishortcut_action] ISC exception type: {type(e)}")
+                logger.debug(f"[ishortcut_action] EXCEPTION in ISC load/save: {e}")
+                logger.debug(f"[ishortcut_action] ISC exception type: {type(e)}")
                 import traceback
 
-                util.printD(f"[ishortcut_action] ISC traceback: {traceback.format_exc()}")
+                logger.debug(f"[ishortcut_action] ISC traceback: {traceback.format_exc()}")
                 raise e
         else:
-            util.printD(f"[ishortcut_action] No URLs provided, skipping processing")
+            logger.debug(f"[ishortcut_action] No URLs provided, skipping processing")
 
-        util.printD(f"[ishortcut_action] Returning modelids: {modelids}")
-        util.printD(
+        logger.debug(f"[ishortcut_action] Returning modelids: {modelids}")
+        logger.debug(
             "[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS END (SUCCESS) =========="
         )
         return modelids
 
     except Exception as e:
-        util.printD(f"[ishortcut_action] OUTER EXCEPTION in upload_shortcut_by_urls: {e}")
-        util.printD(f"[ishortcut_action] Outer exception type: {type(e)}")
+        logger.debug(f"[ishortcut_action] OUTER EXCEPTION in upload_shortcut_by_urls: {e}")
+        logger.debug(f"[ishortcut_action] Outer exception type: {type(e)}")
         import traceback
 
-        util.printD(f"[ishortcut_action] Outer exception traceback: {traceback.format_exc()}")
-        util.printD(
+        logger.debug(f"[ishortcut_action] Outer exception traceback: {traceback.format_exc()}")
+        logger.debug(
             "[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS END (EXCEPTION) =========="
         )
 
@@ -1555,7 +1558,7 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
 
 
 def scan_downloadedmodel_to_shortcut(progress):
-    # util.printD(len(model.Downloaded_Models))
+    # logger.debug(len(model.Downloaded_Models))
     if model.Downloaded_Models:
         modelid_list = [k for k in model.Downloaded_Models]
         ishortcut.update_shortcut_models(modelid_list, progress)
@@ -1572,7 +1575,7 @@ def _create_send_to_buttons():
             try:
                 return infotext_utils.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
             except Exception as e:
-                util.printD(f"Error creating WebUI buttons: {e}")
+                logger.debug(f"Error creating WebUI buttons: {e}")
 
     # Fallback: Create basic buttons for standalone mode
     import gradio as gr
@@ -1597,8 +1600,8 @@ def _bind_send_to_buttons(send_to_buttons, hidden, img_file_info):
                 infotext_utils.bind_buttons(send_to_buttons, hidden, img_file_info)
                 return
             except Exception as e:
-                util.printD(f"Error binding WebUI buttons: {e}")
+                logger.debug(f"Error binding WebUI buttons: {e}")
 
     # Fallback: Basic button handling for standalone mode
     # In standalone mode, these buttons won't do anything meaningful
-    util.printD("Send to buttons not functional in standalone mode")
+    logger.debug("Send to buttons not functional in standalone mode")
