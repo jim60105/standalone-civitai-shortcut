@@ -122,20 +122,64 @@ jobs:
           CR_PAT: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Skopeo
-        uses: warjiang/setup-skopeo@v0.1.3
-        with:
-          version: latest
+        run: |
+          echo "Installing skopeo..."
+          # Get the latest version
+          SKOPEO_VERSION=$(curl -s https://raw.githubusercontent.com/lework/skopeo-binary/master/version.txt | tail -n1)
+          echo "Installing skopeo version: $SKOPEO_VERSION"
+          
+          # Download skopeo binary
+          PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')
+          ARCH=$(uname -m)
+          case $ARCH in
+            x86_64) ARCH="amd64" ;;
+            aarch64) ARCH="arm64" ;;
+          esac
+          
+          DOWNLOAD_URL="https://github.com/lework/skopeo-binary/releases/download/${SKOPEO_VERSION}/skopeo-${PLATFORM}-${ARCH}"
+          echo "Downloading from: $DOWNLOAD_URL"
+          
+          # Download and install
+          curl -L "$DOWNLOAD_URL" -o /tmp/skopeo
+          chmod +x /tmp/skopeo
+          sudo mv /tmp/skopeo /usr/local/bin/skopeo
+          
+          # Verify installation
+          echo "Skopeo installed successfully:"
+          which skopeo
+          skopeo --version
 
       - name: Create GHCR manifest list
         run: |
           echo "Creating manifest list for GHCR..."
+          cd /tmp/digests
+          echo "Files in /tmp/digests:"
+          ls -la
+          echo "Building digest references..."
+          digest_refs=""
+          for file in linux-*; do
+            if [[ -f "$file" ]]; then
+              digest=$(cat "$file")
+              echo "Processing $file with digest: $digest"
+              digest_refs+="ghcr.io/${{ env.REGISTRY_IMAGE }}@sha256:$digest "
+            fi
+          done
+          echo "Final digest references: $digest_refs"
           docker buildx imagetools create \
             $(jq -cr '.tags | map(select(startswith("ghcr.io/")) | "-t " + .) | join(" ")' <<<$DOCKER_METADATA_OUTPUT_JSON) \
-            $(printf 'ghcr.io/${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+            $digest_refs
 
       - name: Copy to other registries using Skopeo
         run: |
           echo "Copying to Docker Hub and Quay.io using Skopeo..."
+          
+          # Ensure skopeo is available
+          if ! command -v skopeo &> /dev/null; then
+            echo "ERROR: skopeo command not found"
+            exit 1
+          fi
+          
+          echo "Using skopeo version: $(skopeo --version)"
 
           for tag in $(jq -cr '.tags[] | select(startswith("ghcr.io/"))' <<<$DOCKER_METADATA_OUTPUT_JSON); do
             # Copy to Docker Hub
