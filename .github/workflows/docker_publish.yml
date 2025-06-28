@@ -74,15 +74,13 @@ jobs:
             VERSION=${{ github.ref_name }}
             RELEASE=${{ github.run_number }}
           cache-from: |
-            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache
+            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache-${{ env.PLATFORM_PAIR }}
           cache-to: |
-            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache,mode=max
+            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache-${{ env.PLATFORM_PAIR }},mode=max
           sbom: true
           provenance: true
           outputs: |
-            type=image,name=${{ secrets.DOCKERHUB_USERNAME }}/standalone-civitai-shortcut,push-by-digest=true,name-canonical=true,push=true
             type=image,name=ghcr.io/${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-            type=image,name=quay.io/${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -123,16 +121,40 @@ jobs:
           tag: ${{ github.ref_name }}
           CR_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
+      - name: Set up Skopeo
+        uses: warjiang/setup-skopeo@v0.1.3
+        with:
+          version: latest
+
+      - name: Create GHCR manifest list
         run: |
-          digests=(*/)
-          digests=("${digests[@]%/}")
-          for registry in ghcr.io/${{ github.repository_owner }} ${{ secrets.DOCKERHUB_USERNAME }} quay.io/${{ github.repository_owner }}; do
-            tags=$(echo "${{ steps.setup.outputs.tags }}" | grep "^${registry}/" | tr '\n' ' ')
-            if [ -n "$tags" ]; then
-              docker buildx imagetools create $(echo "$tags" | sed 's/^/-t /') $(printf "${registry}/standalone-civitai-shortcut@sha256:%s " "${digests[@]}")
-            fi
+          echo "Creating manifest list for GHCR..."
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map(select(startswith("ghcr.io/")) | "-t " + .) | join(" ")' <<<$DOCKER_METADATA_OUTPUT_JSON) \
+            $(printf 'ghcr.io/${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Copy to other registries using Skopeo
+        run: |
+          echo "Copying to Docker Hub and Quay.io using Skopeo..."
+
+          for tag in $(jq -cr '.tags[] | select(startswith("ghcr.io/"))' <<<$DOCKER_METADATA_OUTPUT_JSON); do
+            # Copy to Docker Hub
+            docker_hub_tag=$(echo "$tag" | sed 's|ghcr.io/${{ github.repository_owner }}|docker.io/${{ secrets.DOCKERHUB_USERNAME }}|')
+            echo "Copying $tag -> $docker_hub_tag"
+            skopeo copy --multi-arch all \
+              --dest-creds ${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }} \
+              docker://$tag \
+              docker://$docker_hub_tag
+          done
+
+          for tag in $(jq -cr '.tags[] | select(startswith("ghcr.io/"))' <<<$DOCKER_METADATA_OUTPUT_JSON); do
+            # Copy to Quay.io
+            quay_tag=$(echo "$tag" | sed 's|ghcr.io/${{ github.repository_owner }}|quay.io/${{ github.repository_owner }}|')
+            echo "Copying $tag -> $quay_tag"
+            skopeo copy --multi-arch all \
+              --dest-creds ${{ secrets.QUAY_USERNAME }}:${{ secrets.QUAY_TOKEN }} \
+              docker://$tag \
+              docker://$quay_tag
           done
 
       - name: Attest GHCR image
