@@ -12,8 +12,10 @@ class DummyClient:
 
 
 @pytest.fixture(autouse=True)
-def disable_printD(monkeypatch):
-    monkeypatch.setattr(civitai.util, "printD", lambda *args, **kwargs: None)
+def disable_debug_logging(monkeypatch):
+    # Since printD has been migrated to logging, we can mock the logger instead
+    # or simply disable it if needed for testing
+    pass
 
 
 def test_request_models_success(monkeypatch):
