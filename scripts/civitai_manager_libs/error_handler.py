@@ -1,4 +1,3 @@
-import time
 import json
 from functools import wraps
 from typing import Any, Callable, Optional, Type
@@ -6,13 +5,14 @@ from urllib.error import URLError
 
 import requests
 
-from scripts.civitai_manager_libs.exceptions import (
+from .exceptions import (
     CivitaiShortcutError,
     FileOperationError,
     NetworkError,
+    APIError,
     ValidationError,
 )
-from scripts.civitai_manager_libs.logging_config import get_logger
+from .logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -30,40 +30,32 @@ def with_error_handling(
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            for attempt in range(retry_count + 1):
+            try:
+                return func(*args, **kwargs)
+            except exception_types as e:
+                # Log the error with minimal context
+                if log_errors:
+                    logger.error(
+                        f"Error in {func.__name__}: {e}",
+                        extra={"func_name": func.__name__, "module_name": func.__module__},
+                    )
+                # Special-case Cloudflare timeout (524): show specific message and fallback
+                if isinstance(e, APIError) and getattr(e, "status_code", None) == 524:
+                    try:
+                        import gradio as gr
+
+                        gr.Error(str(e))
+                    except Exception:
+                        pass
+                    return fallback_value
+                # General error handling: show exception class name for user-friendly error and fallback
                 try:
-                    return func(*args, **kwargs)
-                except exception_types as e:
+                    import gradio as gr
 
-                    if log_errors:
-                        context = {
-                            "function": func.__name__,
-                            "module": func.__module__,
-                            "attempt": attempt + 1,
-                            "max_attempts": retry_count + 1,
-                            "args": str(args)[:200],
-                            "kwargs": str(kwargs)[:200],
-                        }
-                        logger.error(f"Error in {func.__name__}: {e}", extra=context)
-
-                    if attempt < retry_count:
-                        time.sleep(retry_delay)
-                        continue
-
-                    if user_message:
-                        try:
-                            import gradio as gr
-
-                            gr.Error(user_message)
-                        except Exception:
-                            pass
-
-                    if not isinstance(e, CivitaiShortcutError):
-                        error_class = _map_exception_type(e)
-                        raise error_class(message=str(e), context=context, cause=e) from e
-                    raise
-
-            return fallback_value
+                    gr.Error(type(e).__name__)
+                except Exception:
+                    pass
+                return fallback_value
 
         return wrapper
 
