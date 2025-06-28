@@ -351,54 +351,134 @@ class ParallelImageDownloader:
         self.completed_count = 0
         self.total_count = 0
 
+        # Progress throttling mechanism
+        self.last_progress_update = 0.0
+        self.progress_update_interval = 0.1  # 100ms throttle interval
+        self.pending_update = False
+
     def download_images(
         self,
         image_tasks: List[Tuple[str, str]],
         progress_callback: Optional[Callable] = None,
         client=None,
     ) -> int:
-        """Download images using ThreadPoolExecutor with progress tracking."""
+        """Download images using ThreadPoolExecutor with progress tracking and throttling."""
         if not image_tasks:
             return 0
 
         self.total_count = len(image_tasks)
         self.completed_count = 0
+        # Initialize throttling state
+        self.last_progress_update = time.time()
+        self.pending_update = False
         success_count = 0
 
         client = client or get_http_client()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_task = {
-                executor.submit(self._download_single_image, url, filepath, client): (url, filepath)
-                for url, filepath in image_tasks
-            }
-            for future in concurrent.futures.as_completed(future_to_task):
-                url, filepath = future_to_task[future]
-                try:
-                    if future.result():
-                        success_count += 1
-                        logger.info(f"[parallel_downloader] Successfully downloaded: {filepath}")
-                    else:
-                        logger.error(f"[parallel_downloader] Failed to download: {url}")
-                except Exception as e:
-                    logger.error(f"[parallel_downloader] Download exception for {url}: {e}")
-                finally:
-                    self._update_progress(progress_callback)
+        # Start periodic progress update timer
+        progress_timer = None
+        if progress_callback:
+            progress_timer = self._start_progress_timer(progress_callback)
 
-        return success_count
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                future_to_task = {
+                    executor.submit(self._download_single_image, url, filepath, client): (
+                        url,
+                        filepath,
+                    )
+                    for url, filepath in image_tasks
+                }
+                for future in concurrent.futures.as_completed(future_to_task):
+                    url, filepath = future_to_task[future]
+                    try:
+                        if future.result():
+                            success_count += 1
+                            logger.info(
+                                f"[parallel_downloader] Successfully downloaded: {filepath}"
+                            )
+                        else:
+                            logger.error(f"[parallel_downloader] Failed to download: {url}")
+                    except Exception as e:
+                        logger.error(f"[parallel_downloader] Download exception for {url}: {e}")
+                    finally:
+                        self._update_progress(progress_callback)
+
+            return success_count
+        finally:
+            # Stop periodic timer and send final update
+            if progress_timer:
+                self._stop_progress_timer(progress_timer)
+            if progress_callback:
+                self._send_final_progress_update(progress_callback)
 
     def _download_single_image(self, url: str, filepath: str, client) -> bool:
         """Download single image with error handling."""
         return client.download_file(url, filepath)
 
     def _update_progress(self, progress_callback: Optional[Callable]):
-        """Thread-safe progress update."""
-        if progress_callback:
-            with self.progress_lock:
-                self.completed_count += 1
+        """Thread-safe progress update with throttling mechanism."""
+        if not progress_callback:
+            return
+
+        with self.progress_lock:
+            self.completed_count += 1
+            current_time = time.time()
+
+            # Always send final update (100% completion)
+            is_final_update = self.completed_count >= self.total_count
+            time_since_last = current_time - self.last_progress_update
+            should_update = time_since_last >= self.progress_update_interval or is_final_update
+
+            if should_update:
                 done = self.completed_count
                 total = self.total_count
                 desc = f"Downloading image {done}/{total}"
+                progress_callback(done, total, desc)
+                self.last_progress_update = current_time
+                self.pending_update = False
+            else:
+                # Mark that there's a pending update to be sent later
+                self.pending_update = True
+
+    def _start_progress_timer(self, progress_callback: Callable) -> threading.Timer:
+        """Start periodic progress update timer."""
+
+        def periodic_update():
+            with self.progress_lock:
+                if self.pending_update and self.completed_count < self.total_count:
+                    done = self.completed_count
+                    total = self.total_count
+                    desc = f"Downloading image {done}/{total}"
+                    progress_callback(done, total, desc)
+                    self.last_progress_update = time.time()
+                    self.pending_update = False
+
+            # Schedule next update if not complete
+            if self.completed_count < self.total_count:
+                timer = threading.Timer(self.progress_update_interval, periodic_update)
+                timer.daemon = True
+                timer.start()
+                return timer
+            return None
+
+        timer = threading.Timer(self.progress_update_interval, periodic_update)
+        timer.daemon = True
+        timer.start()
+        return timer
+
+    def _stop_progress_timer(self, timer: threading.Timer):
+        """Stop progress update timer."""
+        if timer:
+            timer.cancel()
+
+    def _send_final_progress_update(self, progress_callback: Callable):
+        """Send final progress update."""
+        with self.progress_lock:
+            if self.completed_count > 0:
+                done = self.completed_count
+                total = self.total_count
+                desc = f"Downloaded {done}/{total} images"
                 progress_callback(done, total, desc)
 
 

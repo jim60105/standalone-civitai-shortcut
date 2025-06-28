@@ -426,35 +426,7 @@ def on_civitai_internet_url_txt_upload(
     logger.debug(f" progress type: {type(progress)}")
 
     try:
-        # Check environment and create appropriate progress object if needed
-        logger.debug(" Checking progress object...")
-
-        # Import environment detector to determine current mode
-        from .compat.environment_detector import EnvironmentDetector
-
-        is_standalone = EnvironmentDetector.is_standalone_mode()
-        logger.debug(f" Detected mode - standalone: {is_standalone}")
-
-        # In standalone mode, replace Gradio Progress (SSE streaming) with MockProgress to avoid SSE errors
-        if is_standalone:
-            logger.debug(" Creating MockProgress for standalone mode")
-
-            class MockProgress:
-                def tqdm(self, iterable, desc=""):
-                    logger.debug(
-                        f"[MockProgress] tqdm called with iterable type: {type(iterable)}, desc: {desc}"
-                    )
-                    logger.debug(f"[MockProgress] iterable content: {iterable}")
-                    return iterable
-
-            progress = MockProgress()
-            logger.debug(f" Created MockProgress: {progress}")
-        else:
-            logger.debug(
-                f"[civitai_shortcut_action] Using provided progress object: {type(progress)}"
-            )
-            if hasattr(progress, 'tqdm'):
-                logger.debug(f" Progress has tqdm method: {progress.tqdm}")
+        logger.debug(f"[civitai_shortcut_action] Using provided progress object: {type(progress)}")
 
         model_id = None
         logger.debug(f" Initialized model_id = {model_id}")
