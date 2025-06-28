@@ -307,7 +307,7 @@ def scan_models(fix_information_filename, progress=gr.Progress()):
         if not os.path.isfile(info):
             # result.append(file_path)
             if not is_filename_in_version_info_in_directory(vfolder, vfile):
-                # util.printD(f"{file_path} : {vfile}: no info")
+                # logger.debug(f"{file_path} : {vfile}: no info")
                 result.append(file_path)
 
     return result

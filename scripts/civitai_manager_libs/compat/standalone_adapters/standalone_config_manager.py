@@ -944,7 +944,7 @@ class StandaloneConfigManager(IConfigManager):
     def _log_debug(self, message: str):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
-            print(f"StandaloneConfigManager: {message}")
+            logger.debug(f"StandaloneConfigManager: {message}")
 
     def set_debug_mode(self, enabled: bool):
         """Enable or disable debug mode."""
