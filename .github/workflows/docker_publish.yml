@@ -135,9 +135,16 @@ jobs:
           # Collect valid SHA256 digest files
           digests=()
           for file in *; do
-            if [[ -f "$file" && "$file" =~ ^[a-f0-9]{64}$ ]]; then
-              digests+=("$file")
-              echo "Found valid digest: $file"
+            if [[ -f "$file" ]]; then
+              # Read digest from file and strip possible 'sha256:' prefix
+              hash=$(<"$file")
+              hash=${hash#sha256:}
+              if [[ "$hash" =~ ^[a-f0-9]{64}$ ]]; then
+                digests+=("$hash")
+                echo "Found valid digest in file $file: $hash"
+              else
+                echo "Warning: invalid digest format in file $file: $hash"
+              fi
             fi
           done
 
