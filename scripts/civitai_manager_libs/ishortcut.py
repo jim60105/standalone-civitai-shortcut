@@ -26,7 +26,6 @@ thumbnail_max_size = (400, 400)
 from .http_client import get_http_client, ParallelImageDownloader
 from .error_handler import with_error_handling
 from .exceptions import NetworkError, FileOperationError, CivitaiShortcutError
-from .recovery import ErrorRecoveryManager
 
 
 @with_error_handling(

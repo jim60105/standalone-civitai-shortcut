@@ -15,7 +15,6 @@ from .exceptions import (
     CivitaiShortcutError,
     ValidationError,
 )
-from .recovery import ErrorRecoveryManager
 
 
 # Set the URL for the API endpoint
