@@ -11,7 +11,7 @@
 * Proactively consult both core documentation and conversation history to ensure accurate comprehension of all requirements.
 * Ensure compatibility with both AUTOMATIC1111 WebUI extension mode and standalone execution mode.
 * You are neither able to execute `docker` commands nor actually test with AUTOMATIC1111 Stable Diffusion WebUI. Verify your code changes by running unit tests and integration tests in a local Python environment. Ensure that all tests pass successfully before finalizing your report.
-* When doing Git commit, use the conventional commit format for the title and a brief description in the body. Always commit with `--signoff`. Write the commit in English.
+* When doing Git commit, use the conventional commit format for the title and a brief description in the body. Always commit with `--signoff` and explicitly specify the author on the command: `Codex-CLI <bot@琳.tw>`. Write the commit in English.
 
 ---
 
@@ -57,7 +57,7 @@ Use `gh` CLI commands to perform DevOps tasks.
 7. **Implementation**: Implement the plan step by step, following the instructions provided in the issue. Each step should be executed in sequence, ensuring that all requirements are met and documented appropriately.
 8. **Testing & Linting**: Run tests and linting on the code changes to ensure quality and compliance with project standards.
 9. **Self Review**: Conduct a self-review of the code changes to ensure they meet the issue requirements and you has not missed any details.
-10. **Git Commit & Git Push**: Run `git commit` using the conventional commit format for the title and a brief description in the body. Always commit with `--signoff`. Write the commit in English. Link the issue number in the commit message body. Run `git push` to push the changes to the remote repository.
+10. **Git Commit & Git Push**: Run `git commit` using the conventional commit format for the title and a brief description in the body. Always commit with `--signoff` and explicitly specify the author on the command: `Codex-CLI <bot@琳.tw>`. Write the commit in English. Link the issue number in the commit message body. Run `git push` to push the changes to the remote repository.
 11. **Create Pull Request**: Use `gh pr list` and `gh pr create` commands. ALWAYS SUBMIT PR TO `origin`, NEVER SUBMIT PR TO `upstream`. Create a pull request if there isn't already has one related to your issue using `gh pr create --title "PR Title" --body "PR Description"`. Create a comprehensive work report and use it as pull request details, detailing the work performed, code changes, and test results for the project. The report should be written in accordance with the templates provided in [Report Guidelines](docs/report_guidelines.md) and [REPORT_TEMPLATE](docs/REPORT_TEMPLATE.md). Follow the template exactly. Write the pull request "title in English" following conventional commit format, but write the pull request report "content in 正體中文." Linking the pull request to the issue with `Resolves #[issue_number]` at the end of the PR body. ALWAYS SUBMIT PR TO `origin`, NEVER SUBMIT PR TO `upstream`. ALWAYS SUBMIT PR TO `origin`, NEVER SUBMIT PR TO `upstream`. ALWAYS SUBMIT PR TO `origin`, NEVER SUBMIT PR to `upstream`.
 
 ***Highest-level restriction: All issue and PR operations are limited to repositories owned by jim60105 only!***
