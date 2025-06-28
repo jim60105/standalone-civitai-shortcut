@@ -465,4 +465,4 @@ class StandalonePathManager(IPathManager):
     def _log_debug(self, message: str):
         """Log debug message if debug mode is enabled."""
         if self._debug_mode:
-            print(f"StandalonePathManager: {message}")
+            logger.debug(f"StandalonePathManager: {message}")

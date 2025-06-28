@@ -8,6 +8,9 @@ import os
 from typing import Callable, Any, List
 
 from ..interfaces.iui_bridge import IUIBridge
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class StandaloneUIBridge(IUIBridge):
@@ -86,9 +89,9 @@ class StandaloneUIBridge(IUIBridge):
             app.launch(**launch_kwargs)
 
         except ImportError:
-            print("Gradio is not available. Cannot launch standalone UI.")
+            logger.error("Gradio is not available. Cannot launch standalone UI.")
         except Exception as e:
-            print(f"Error launching standalone UI: {e}")
+            logger.error(f"Error launching standalone UI: {e}")
 
     def is_webui_mode(self) -> bool:
         """Check if running in WebUI mode."""

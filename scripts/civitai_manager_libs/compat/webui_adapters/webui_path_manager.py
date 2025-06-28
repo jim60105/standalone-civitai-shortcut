@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 if not EnvironmentDetector.is_webui_mode() and (
     'pytest' in sys.modules or 'unittest' in sys.modules
 ):
-    print("[Civitai Shortcut] [webui_path_manager] Mocking WebUI modules for test environment.")
+    logger.info("Mocking WebUI modules for test environment.")
     sys.modules['modules'] = types.ModuleType('modules')
     sys.modules['modules.paths'] = types.ModuleType('modules.paths')
     sys.modules['modules.paths_internal'] = types.ModuleType('modules.paths_internal')
@@ -58,9 +58,9 @@ try:
             util = importlib.util.module_from_spec(util_spec)
             util_spec.loader.exec_module(util)
         except Exception as file_import_e:
-            print("[Civitai Shortcut] [webui_path_manager] Both import methods failed:")
-            print(f"  Package import: {import_e}")
-            print(f"  File import: {file_import_e}")
+            logger.debug("Both import methods failed:")
+            logger.debug(f"  Package import: {import_e}")
+            logger.debug(f"  File import: {file_import_e}")
             util = None
 
     logger.debug(f"webui_models_path: {webui_models_path}")
@@ -74,8 +74,8 @@ try:
     WEBUI_AVAILABLE = True
 except (ImportError, ModuleNotFoundError) as e:
     # Log the import failure for debugging
-    print(f"[Civitai Shortcut] [webui_path_manager] Failed to import WebUI modules: {e}")
-    print("[Civitai Shortcut] [webui_path_manager] Falling back to standalone mode compatibility.")
+    logger.warning(f"Failed to import WebUI modules: {e}")
+    logger.info("Falling back to standalone mode compatibility.")
 
     # Import util for logging in fallback mode
     try:
@@ -98,9 +98,9 @@ except (ImportError, ModuleNotFoundError) as e:
             util = importlib.util.module_from_spec(util_spec)
             util_spec.loader.exec_module(util)
         except Exception as file_import_e:
-            print("[Civitai Shortcut] [webui_path_manager] Both import methods failed:")
-            print(f"  Package import: {import_e}")
-            print(f"  File import: {file_import_e}")
+            logger.debug("Both import methods failed:")
+            logger.debug(f"  Package import: {import_e}")
+            logger.debug(f"  File import: {file_import_e}")
             util = None
 
     webui_paths = None
@@ -157,9 +157,9 @@ class WebUIPathManager(IPathManager):
                     self.util = importlib.util.module_from_spec(util_spec)
                     util_spec.loader.exec_module(self.util)
                 except Exception as file_import_e:
-                    print("[Civitai Shortcut] [webui_path_manager] Both import methods failed:")
-                    print(f"  Package import: {import_e}")
-                    print(f"  File import: {file_import_e}")
+                    logger.debug("Both import methods failed:")
+                    logger.debug(f"  Package import: {import_e}")
+                    logger.debug(f"  File import: {file_import_e}")
                     self.util = None
 
         if self.util:
@@ -171,7 +171,7 @@ class WebUIPathManager(IPathManager):
             else:
                 logger.debug("Operating in standalone compatibility mode")
         else:
-            print(
+            logger.info(
                 "[Civitai Shortcut] [webui_path_manager] WebUIPathManager initialized without util"
             )
 

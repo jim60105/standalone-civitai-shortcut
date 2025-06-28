@@ -68,8 +68,8 @@ class TestGallerySelectFix:
         result = setting.get_modelid_from_shortcutname({"key": "value"})
         assert result is None
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_sc_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_sc_gallery_select_with_list(self, mock_logger):
         """Test on_reference_sc_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()
@@ -81,8 +81,8 @@ class TestGallerySelectFix:
         assert "12345" in result_shortcuts
         assert len(result_shortcuts) == 1
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_sc_gallery_select_with_string(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_sc_gallery_select_with_string(self, mock_logger):
         """Test on_reference_sc_gallery_select with string input."""
         # Mock SelectData event
         evt = Mock()
@@ -94,8 +94,8 @@ class TestGallerySelectFix:
         assert "12345" in result_shortcuts
         assert len(result_shortcuts) == 1
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_sc_gallery_select_with_invalid_input(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_sc_gallery_select_with_invalid_input(self, mock_logger):
         """Test on_reference_sc_gallery_select with invalid input."""
         # Mock SelectData event
         evt = Mock()
@@ -107,10 +107,10 @@ class TestGallerySelectFix:
         # Should return original shortcuts without modification
         assert result_shortcuts == shortcuts
         assert len(result_shortcuts) == 0
-        mock_printD.assert_called_once()
+        mock_logger.debug.assert_called_once()
 
-    @patch('scripts.civitai_manager_libs.util.printD')
-    def test_on_reference_gallery_select_with_list(self, mock_printD):
+    @patch('scripts.civitai_manager_libs.recipe_action.logger')
+    def test_on_reference_gallery_select_with_list(self, mock_logger):
         """Test on_reference_gallery_select with list input."""
         # Mock SelectData event
         evt = Mock()

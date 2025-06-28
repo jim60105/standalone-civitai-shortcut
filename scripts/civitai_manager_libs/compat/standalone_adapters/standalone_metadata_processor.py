@@ -10,6 +10,9 @@ import hashlib
 from typing import Dict, Tuple, Optional, Any, Union
 from PIL import Image
 from ..interfaces.imetadata_processor import IMetadataProcessor
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 try:
     import piexif
@@ -257,7 +260,7 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
                 else:
                     res[k] = v
             except Exception:
-                print(f"Error parsing \"{k}: {v}\"")
+                logger.warning(f"Error parsing \"{k}: {v}\"")
 
         res["Prompt"] = prompt
         res["Negative prompt"] = negative_prompt
@@ -320,7 +323,7 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
     def _log_debug(self, message: str) -> None:
         """Log internal debug."""
         if self._debug_mode:
-            print(f"[{self._logger_name}] {message}")
+            logger.debug(f"[{self._logger_name}] {message}")
 
     def _format_info_for_display(self, geninfo: Optional[str], items: Dict[str, Any]) -> str:
         """Format metadata for display."""
