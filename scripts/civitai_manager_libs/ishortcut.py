@@ -24,8 +24,18 @@ thumbnail_max_size = (400, 400)
 
 # Use centralized HTTP client factory
 from .http_client import get_http_client, ParallelImageDownloader
+from .error_handler import with_error_handling
+from .exceptions import NetworkError, FileOperationError, CivitaiShortcutError
+from .recovery import ErrorRecoveryManager
 
 
+@with_error_handling(
+    fallback_value=(None, None, None, None, None, None, None, None, None, None),
+    exception_types=(NetworkError, FileOperationError, CivitaiShortcutError),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to get model information",
+)
 def get_model_information(modelid: str = None, versionid: str = None, ver_index: int = None):
     # 현재 모델의 정보를 가져온다.
     model_info = None
@@ -79,6 +89,12 @@ def get_model_information(modelid: str = None, versionid: str = None, ver_index:
     return None, None, None, None, None, None, None, None, None, None
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(Exception,),
+    retry_count=0,
+    user_message="Failed to get version description for gallery",
+)
 def get_version_description_gallery(modelid, version_info):
     #    modelid = None
     versionid = None
@@ -135,6 +151,12 @@ def get_version_description_gallery(modelid, version_info):
     return images_url
 
 
+@with_error_handling(
+    fallback_value=("", None, None),
+    exception_types=(Exception,),
+    retry_count=0,
+    user_message="Failed to get version description",
+)
 def get_version_description(version_info: dict, model_info: dict = None):
     output_html = ""
     output_training = ""
@@ -518,6 +540,13 @@ def update_all_shortcut_informations(progress):
     update_shortcut_informations(modelid_list, progress)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, FileOperationError, CivitaiShortcutError),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to write model information",
+)
 def write_model_information(modelid: str, register_only_information=False, progress=None):
     """
     Write model information to local storage and optionally download images.
@@ -570,6 +599,12 @@ def write_model_information(modelid: str, register_only_information=False, progr
     return model_info
 
 
+@with_error_handling(
+    fallback_value=[],
+    exception_types=(Exception,),
+    retry_count=0,
+    user_message="Failed to extract version images",
+)
 def _extract_version_images(model_info: dict, modelid: str) -> list:
     """
     Extract image information from model versions.
@@ -627,6 +662,12 @@ def _extract_version_images(model_info: dict, modelid: str) -> list:
     return version_list
 
 
+@with_error_handling(
+    fallback_value=[],
+    exception_types=(Exception,),
+    retry_count=0,
+    user_message="Failed to process version images",
+)
 def _process_version_images(images: list, version_id: str) -> list:
     """
     Process images for a specific version.
@@ -669,6 +710,13 @@ def _process_version_images(images: list, version_id: str) -> list:
     return image_list
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to create model directory",
+)
 def _create_model_directory(modelid: str) -> str:
     """
     Create directory for model information storage.
@@ -698,6 +746,13 @@ def _create_model_directory(modelid: str) -> str:
         return None
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to save model information",
+)
 def _save_model_information(model_info: dict, model_path: str, modelid: str) -> bool:
     """
     Save model information to JSON file.
@@ -735,6 +790,13 @@ def _save_model_information(model_info: dict, model_path: str, modelid: str) -> 
         return False
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, FileOperationError, CivitaiShortcutError),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to download model images",
+)
 def _download_model_images(version_list: list, modelid: str, progress=None):
     """
     Download images for all model versions.
@@ -776,6 +838,12 @@ def _download_model_images(version_list: list, modelid: str, progress=None):
     logger.info(f"[ishortcut._download_model_images] Image downloads completed for {modelid}")
 
 
+@with_error_handling(
+    fallback_value=[],
+    exception_types=(Exception,),
+    retry_count=0,
+    user_message="Failed to collect images to download",
+)
 def _collect_images_to_download(version_list: list, modelid: str) -> list:
     """
     Collect images that need to be downloaded (don't already exist).
@@ -843,6 +911,12 @@ def _collect_images_to_download(version_list: list, modelid: str) -> list:
     return all_images_to_download
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(Exception,),
+    retry_count=0,
+    user_message="Failed to perform image downloads",
+)
 def _perform_image_downloads(all_images_to_download: list, client, progress=None):
     """Perform parallel image downloads with progress tracking."""
     if not all_images_to_download:

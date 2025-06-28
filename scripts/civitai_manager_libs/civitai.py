@@ -7,6 +7,15 @@ logger = get_logger(__name__)
 
 # Module-level HTTP client instance (use centralized factory)
 from .http_client import get_http_client
+from .error_handler import with_error_handling
+from .exceptions import (
+    NetworkError,
+    APIError,
+    FileOperationError,
+    CivitaiShortcutError,
+    ValidationError,
+)
+from .recovery import ErrorRecoveryManager
 
 
 # Set the URL for the API endpoint
@@ -40,6 +49,13 @@ def Url_ImagePage():
     return url_dict["imagePage"]
 
 
+@with_error_handling(
+    fallback_value={'items': [], 'metadata': {}},
+    exception_types=(NetworkError, APIError),
+    retry_count=2,
+    retry_delay=1.0,
+    user_message="Failed to request models",
+)
 def request_models(api_url=None):
     """Request models from Civitai API with robust error handling."""
     logger.debug(f"request_models() called with api_url: {api_url}")
@@ -55,6 +71,13 @@ def request_models(api_url=None):
     return data
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError),
+    retry_count=2,
+    retry_delay=1.0,
+    user_message="Failed to get model info",
+)
 def get_model_info(id: str) -> dict:
     """Get model information by model ID."""
     logger.debug(f"get_model_info() called with id: {id}")
@@ -88,6 +111,13 @@ def get_model_info(id: str) -> dict:
 #     return get_model_info(version_info['modelId'])
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError),
+    retry_count=2,
+    retry_delay=1.0,
+    user_message="Failed to get version info by hash",
+)
 def get_version_info_by_hash(hash_value) -> dict:
     """Get version information by hash value."""
     logger.debug(f"get_version_info_by_hash() called with hash: {hash_value}")
@@ -112,6 +142,13 @@ def get_version_info_by_hash(hash_value) -> dict:
     return content
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError),
+    retry_count=2,
+    retry_delay=1.0,
+    user_message="Failed to get version info by version ID",
+)
 def get_version_info_by_version_id(version_id: str) -> dict:
     """Get version information by version ID."""
     logger.debug(f"get_version_info_by_version_id() called with version_id: {version_id}")
@@ -140,6 +177,13 @@ def get_version_info_by_version_id(version_id: str) -> dict:
     return content
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError),
+    retry_count=2,
+    retry_delay=1.0,
+    user_message="Failed to get latest version info",
+)
 def get_latest_version_info_by_model_id(id: str) -> dict:
     logger.debug(f"get_latest_version_info_by_model_id() called with id: {id}")
     model_info = get_model_info(id)
@@ -175,6 +219,13 @@ def get_latest_version_info_by_model_id(id: str) -> dict:
     return version_info
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError, ValidationError),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to get version ID by name",
+)
 def get_version_id_by_version_name(model_id: str, name: str) -> str:
     logger.debug(
         f"[civitai] get_version_id_by_version_name() called with model_id: {model_id}, name: {name}"
@@ -209,6 +260,12 @@ def get_version_id_by_version_name(model_id: str, name: str) -> str:
     return version_id
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get files by version info",
+)
 def get_files_by_version_info(version_info: dict) -> dict:
     logger.debug(" get_files_by_version_info() called")
     download_files = {}
@@ -222,6 +279,12 @@ def get_files_by_version_info(version_info: dict) -> dict:
     return download_files
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get files by version ID",
+)
 def get_files_by_version_id(version_id=None) -> dict:
     logger.debug(f" get_files_by_version_id() called with version_id: {version_id}")
     if not version_id:
@@ -231,6 +294,12 @@ def get_files_by_version_id(version_id=None) -> dict:
     return get_files_by_version_info(version_info)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get primary file by version info",
+)
 def get_primary_file_by_version_info(version_info: dict) -> dict:
     logger.debug(" get_primary_file_by_version_info() called")
     if not version_info:
@@ -246,6 +315,12 @@ def get_primary_file_by_version_info(version_info: dict) -> dict:
     return None
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get primary file by version ID",
+)
 def get_primary_file_by_version_id(version_id=None) -> dict:
     logger.debug(f" get_primary_file_by_version_id() called with version_id: {version_id}")
     if not version_id:
@@ -255,6 +330,12 @@ def get_primary_file_by_version_id(version_id=None) -> dict:
     return get_primary_file_by_version_info(version_info)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get images by version ID",
+)
 def get_images_by_version_id(version_id=None) -> dict:
     logger.debug(f" get_images_by_version_id() called with version_id: {version_id}")
     if not version_id:
@@ -264,6 +345,12 @@ def get_images_by_version_id(version_id=None) -> dict:
     return get_images_by_version_info(version_info)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get images by version info",
+)
 def get_images_by_version_info(version_info: dict) -> dict:
     logger.debug(" get_images_by_version_info() called")
     if not version_info:
@@ -272,6 +359,12 @@ def get_images_by_version_info(version_info: dict) -> dict:
     return version_info["images"]
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get trigger words by version info",
+)
 def get_triger_by_version_info(version_info: dict) -> str:
     logger.debug(" get_triger_by_version_info() called")
     if not version_info:
@@ -287,6 +380,12 @@ def get_triger_by_version_info(version_info: dict) -> str:
     return None
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(CivitaiShortcutError,),
+    retry_count=0,
+    user_message="Failed to get trigger words by version ID",
+)
 def get_triger_by_version_id(version_id=None) -> str:
     logger.debug(f" get_triger_by_version_id() called with version_id: {version_id}")
     if not version_id:
@@ -296,6 +395,12 @@ def get_triger_by_version_id(version_id=None) -> str:
     return get_triger_by_version_info(version_info)
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to write model info",
+)
 def write_model_info(file, model_info: dict) -> bool:
     logger.debug(f" write_model_info() called with file: {file}")
     if not model_info:
@@ -311,6 +416,12 @@ def write_model_info(file, model_info: dict) -> bool:
     return True
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to write version info",
+)
 def write_version_info(file, version_info: dict) -> bool:
     logger.debug(f" write_version_info() called with file: {file}")
     if not version_info:
@@ -326,6 +437,12 @@ def write_version_info(file, version_info: dict) -> bool:
     return True
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to write trigger words by version ID",
+)
 def write_triger_words_by_version_id(file, version_id: str) -> bool:
     logger.debug(
         f"[civitai] write_triger_words_by_version_id() called with file: {file}, "
@@ -338,6 +455,12 @@ def write_triger_words_by_version_id(file, version_id: str) -> bool:
     return write_triger_words(file, version_info)
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to write trigger words",
+)
 def write_triger_words(file, version_info: dict) -> bool:
     logger.debug(f" write_triger_words() called with file: {file}")
     if not version_info:
@@ -357,6 +480,12 @@ def write_triger_words(file, version_info: dict) -> bool:
     return True
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to write LoRa metadata by version ID",
+)
 def write_LoRa_metadata_by_version_id(file, version_id: str) -> bool:
     logger.debug(
         f"[civitai] write_LoRa_metadata_by_version_id() called with file: {file}, "
@@ -369,6 +498,12 @@ def write_LoRa_metadata_by_version_id(file, version_id: str) -> bool:
     return write_LoRa_metadata(file, version_info)
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to write LoRa metadata",
+)
 def write_LoRa_metadata(filepath, version_info) -> bool:
     logger.debug(f" write_LoRa_metadata() called with filepath: {filepath}")
     LoRa_metadata = {
