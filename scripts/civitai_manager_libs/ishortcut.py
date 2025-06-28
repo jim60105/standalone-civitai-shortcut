@@ -1170,7 +1170,7 @@ def download_thumbnail_image(model_id, url):
             image.thumbnail(thumbnail_max_size)
             image.save(thumbnail_path)
     except Exception as e:
-        logger.debug(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
+        logger.warning(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
     return True
 
 
@@ -1320,7 +1320,7 @@ def backup_cis(name, url):
         with open(setting.shortcut_civitai_internet_shortcut_url, 'w') as f:
             json.dump(backup_dict, f, indent=4)
     except Exception as e:
-        logger.debug("Error when writing file:" + setting.shortcut_civitai_internet_shortcut_url)
+        logger.error("Error when writing file:" + setting.shortcut_civitai_internet_shortcut_url)
         pass
 
 
@@ -1334,7 +1334,7 @@ def save(ISC: dict):
         with open(setting.shortcut, 'w') as f:
             json.dump(ISC, f, indent=4)
     except Exception as e:
-        logger.debug("Error when writing file:" + setting.shortcut)
+        logger.error("Error when writing file:" + setting.shortcut)
         return output
 
     output = "Civitai Internet Shortcut saved to: " + setting.shortcut

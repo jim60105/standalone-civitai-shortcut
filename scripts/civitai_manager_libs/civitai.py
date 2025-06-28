@@ -283,7 +283,7 @@ def get_triger_by_version_info(version_info: dict) -> str:
         if len(triger_words.strip()) > 0:
             return triger_words
     except Exception as e:
-        logger.debug(f" Exception in get_triger_by_version_info: {e}")
+        logger.error(f" Exception in get_triger_by_version_info: {e}")
     return None
 
 
@@ -306,7 +306,7 @@ def write_model_info(file, model_info: dict) -> bool:
             f.write(json.dumps(model_info, indent=4))
         logger.debug(f" write_model_info: Successfully wrote model info to {file}")
     except Exception as e:
-        logger.debug(f" Exception in write_model_info: {e}")
+        logger.error(f" Exception in write_model_info: {e}")
         return False
     return True
 
@@ -321,7 +321,7 @@ def write_version_info(file, version_info: dict) -> bool:
             f.write(json.dumps(version_info, indent=4))
         logger.debug(f" write_version_info: Successfully wrote version info to {file}")
     except Exception as e:
-        logger.debug(f" Exception in write_version_info: {e}")
+        logger.error(f" Exception in write_version_info: {e}")
         return False
     return True
 
@@ -352,7 +352,7 @@ def write_triger_words(file, version_info: dict) -> bool:
             f.write(triger_words)
         logger.debug(f" write_triger_words: Successfully wrote trigger words to {file}")
     except Exception as e:
-        logger.debug(f" Exception in write_triger_words: {e}")
+        logger.error(f" Exception in write_triger_words: {e}")
         return False
     return True
 
@@ -408,6 +408,6 @@ def write_LoRa_metadata(filepath, version_info) -> bool:
             f"[civitai] write_LoRa_metadata: Successfully wrote LoRa metadata to {filepath}"
         )
     except Exception as e:
-        logger.debug(f" Exception in write_LoRa_metadata: {e}")
+        logger.error(f" Exception in write_LoRa_metadata: {e}")
         return False
     return True

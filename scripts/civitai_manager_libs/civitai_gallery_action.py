@@ -850,11 +850,9 @@ def download_images(dn_image_list: list):
             logger.debug(f" Successfully downloaded: {gallery_img_file}")
         else:
             failed_count += 1
-            logger.debug(f" Failed to download: {img_url}")
+            logger.warning(f" Failed to download: {img_url}")
 
-    logger.debug(
-        f"Download complete: {success_count} success, {failed_count} failed"
-    )
+    logger.debug(f"Download complete: {success_count} success, {failed_count} failed")
 
     if failed_count > 0:
         gr.Error(
