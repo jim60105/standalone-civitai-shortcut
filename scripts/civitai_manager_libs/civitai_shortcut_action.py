@@ -15,7 +15,6 @@ from . import model
 from . import model_action
 from . import sc_browser_page
 from . import setting
-from . import util
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -31,46 +30,46 @@ def set_compatibility_layer(compat_layer):
 
 
 def on_shortcut_input_change(shortcut_input):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_shortcut_input_change called with "
         f"shortcut_input: {shortcut_input}"
     )
     if not shortcut_input:
-        util.printD("[civitai_shortcut_action] shortcut_input is empty or None")
+        logger.debug(" shortcut_input is empty or None")
         return gr.update(visible=False), gr.update(selected=None), gr.update(visible=False)
-    util.printD("[civitai_shortcut_action] shortcut_input is valid, returning values")
+    logger.debug(" shortcut_input is valid, returning values")
     return shortcut_input, gr.update(selected="Shortcut"), None
 
 
 def on_ui(recipe_input, shortcut_input, civitai_tabs):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_ui called with recipe_input: {recipe_input}, "
         f"shortcut_input: {shortcut_input}, civitai_tabs: {civitai_tabs}"
     )
 
     with gr.Row(visible=False):
-        util.printD("[civitai_shortcut_action] Creating hidden Row for internal state components")
+        logger.debug(" Creating hidden Row for internal state components")
         sc_modelid = gr.Textbox()
         update_informations = gr.Textbox()
         current_information_tabs = gr.State(0)
         refresh_NSFW = gr.Textbox()
 
     with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
-        util.printD(
+        logger.debug(
             f"[civitai_shortcut_action] Creating main UI column with scale: "
             f"{setting.shortcut_browser_screen_split_ratio}"
         )
         with gr.Tabs() as civitai_shortcut_tabs:
-            util.printD("[civitai_shortcut_action] Creating civitai_shortcut_tabs")
+            logger.debug(" Creating civitai_shortcut_tabs")
             with gr.TabItem("Register Model"):
-                util.printD("[civitai_shortcut_action] Register Model tab initialized")
+                logger.debug(" Register Model tab initialized")
                 with gr.Row(visible=False):
                     register_information_only = gr.Checkbox(
                         label="Register only model information", value=False
                     )
                 with gr.Row():
                     with gr.Column():
-                        util.printD(
+                        logger.debug(
                             "[civitai_shortcut_action] Register Model tab: Markdown, Textbox, "
                             "File components created"
                         )
@@ -96,20 +95,20 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                         )
 
             with gr.TabItem("Model Browser"):
-                util.printD("[civitai_shortcut_action] Model Browser tab initialized")
+                logger.debug(" Model Browser tab initialized")
                 with gr.Row():
                     with gr.Column():
-                        util.printD(
+                        logger.debug(
                             "[civitai_shortcut_action] Model Browser: calling "
                             "sc_browser_page.on_ui()"
                         )
                         sc_gallery, refresh_sc_browser, refresh_sc_gallery = sc_browser_page.on_ui()
 
             with gr.TabItem("Scan New Version"):
-                util.printD("[civitai_shortcut_action] Scan New Version tab initialized")
+                logger.debug(" Scan New Version tab initialized")
                 with gr.Row():
                     with gr.Column():
-                        util.printD(
+                        logger.debug(
                             "[civitai_shortcut_action] Scan New Version: Dropdown, Button, "
                             "Gallery, Markdown created"
                         )
@@ -138,10 +137,10 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                             visible=True,
                         )
             with gr.TabItem("NSFW Filter"):
-                util.printD("[civitai_shortcut_action] NSFW Filter tab initialized")
+                logger.debug(" NSFW Filter tab initialized")
                 with gr.Row():
                     with gr.Column():
-                        util.printD(
+                        logger.debug(
                             "[civitai_shortcut_action] NSFW Filter: Dropdowns and Button created"
                         )
                         nsfw_filter_enable = gr.Dropdown(
@@ -171,47 +170,47 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
             setting.shortcut_browser_screen_split_ratio_max
             - setting.shortcut_browser_screen_split_ratio
         )
-        util.printD(
+        logger.debug(
             f"[civitai_shortcut_action] Creating secondary UI column with scale: " f"{scale_val}"
         )
         with gr.Tabs() as civitai_information_tabs:
-            util.printD("[civitai_shortcut_action] Creating civitai_information_tabs")
+            logger.debug(" Creating civitai_information_tabs")
             with gr.TabItem("Model Information", id="civitai_info"):
-                util.printD("[civitai_shortcut_action] Model Information tab initialized")
+                logger.debug(" Model Information tab initialized")
                 with gr.Row():
                     shortcut_modelid, refresh_civitai_information = ishortcut_action.on_ui(
                         refresh_sc_browser, recipe_input
                     )
             with gr.TabItem("Civitai User Gallery", id="gallery_info"):
-                util.printD("[civitai_shortcut_action] Civitai User Gallery tab initialized")
+                logger.debug(" Civitai User Gallery tab initialized")
                 with gr.Row():
                     gallery_modelid, refresh_gallery_information = civitai_gallery_action.on_ui(
                         recipe_input
                     )
 
             with gr.TabItem("Downloaded Model Information", id="download_info"):
-                util.printD(
+                logger.debug(
                     "[civitai_shortcut_action] Downloaded Model Information tab initialized"
                 )
                 with gr.Row():
                     downloadinfo_modelid, refresh_download_information = model_action.on_ui()
 
     # NSFW Filter Setting Refresh
-    util.printD("[civitai_shortcut_action] Binding refresh_NSFW.change event handler")
+    logger.debug(" Binding refresh_NSFW.change event handler")
     refresh_NSFW.change(
         fn=on_refresh_NSFW_change,
         inputs=None,
         outputs=[nsfw_filter_enable, nsfw_level],
     )
 
-    util.printD("[civitai_shortcut_action] Binding nsfw_filter_enable.select event handler")
+    logger.debug(" Binding nsfw_filter_enable.select event handler")
     nsfw_filter_enable.select(
         fn=on_nsfw_filter,
         inputs=[nsfw_filter_enable, nsfw_level],
         outputs=[nsfw_level, refresh_civitai_information, refresh_gallery_information],
     )
 
-    util.printD("[civitai_shortcut_action] Binding nsfw_level.select event handler")
+    logger.debug(" Binding nsfw_level.select event handler")
     nsfw_level.select(
         fn=on_nsfw_filter,
         inputs=[nsfw_filter_enable, nsfw_level],
@@ -219,9 +218,9 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     )
 
     nsfw_save_btn.click(fn=on_nsfw_save_btn_click)
-    util.printD("[civitai_shortcut_action] Binding nsfw_save_btn.click event handler")
+    logger.debug(" Binding nsfw_save_btn.click event handler")
 
-    util.printD("[civitai_shortcut_action] Binding shortcut_input.change event handler")
+    logger.debug(" Binding shortcut_input.change event handler")
     shortcut_input.change(
         fn=on_shortcut_input_change,
         inputs=[shortcut_input],
@@ -232,41 +231,41 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     scan_new_version_btn.click(
         on_scan_new_version_btn, shortcut_new_version_type, sc_new_version_gallery
     )
-    util.printD("[civitai_shortcut_action] Binding scan_new_version_btn.click event handler")
+    logger.debug(" Binding scan_new_version_btn.click event handler")
     sc_gallery.select(on_sc_gallery_select, None, [sc_modelid], show_progress=False)
-    util.printD("[civitai_shortcut_action] Binding sc_gallery.select event handler")
+    logger.debug(" Binding sc_gallery.select event handler")
     sc_new_version_gallery.select(on_sc_gallery_select, None, [sc_modelid], show_progress=False)
-    util.printD("[civitai_shortcut_action] Binding sc_new_version_gallery.select event handler")
+    logger.debug(" Binding sc_new_version_gallery.select event handler")
     civitai_shortcut_tabs.select(
         on_civitai_shortcut_tabs_select,
         None,
         [refresh_sc_browser, refresh_NSFW],
         show_progress=False,
     )
-    util.printD("[civitai_shortcut_action] Binding civitai_shortcut_tabs.select event handler")
+    logger.debug(" Binding civitai_shortcut_tabs.select event handler")
 
-    util.printD("[civitai_shortcut_action] Binding update_informations.change event handler")
+    logger.debug(" Binding update_informations.change event handler")
     update_informations.change(
         fn=on_sc_modelid_change,
         inputs=[sc_modelid, current_information_tabs],
         outputs=[shortcut_modelid, gallery_modelid, downloadinfo_modelid],
     )
 
-    util.printD("[civitai_shortcut_action] Binding sc_modelid.change event handler")
+    logger.debug(" Binding sc_modelid.change event handler")
     sc_modelid.change(
         fn=on_sc_modelid_change,
         inputs=[sc_modelid, current_information_tabs],
         outputs=[shortcut_modelid, gallery_modelid, downloadinfo_modelid],
     )
 
-    util.printD("[civitai_shortcut_action] Binding civitai_information_tabs.select event handler")
+    logger.debug(" Binding civitai_information_tabs.select event handler")
     civitai_information_tabs.select(
         fn=on_civitai_information_tabs_select,
         inputs=None,
         outputs=[current_information_tabs, update_informations],
     )
 
-    util.printD("[civitai_shortcut_action] Binding civitai_internet_url.upload event handler")
+    logger.debug(" Binding civitai_internet_url.upload event handler")
     civitai_internet_url.upload(
         fn=on_civitai_internet_url_upload,
         inputs=[civitai_internet_url, register_information_only],
@@ -274,7 +273,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         show_progress=True,
     )
 
-    util.printD("[civitai_shortcut_action] Binding civitai_internet_url_txt.change event handler")
+    logger.debug(" Binding civitai_internet_url_txt.change event handler")
     civitai_internet_url_txt.change(
         fn=on_civitai_internet_url_txt_upload,
         inputs=[civitai_internet_url_txt, register_information_only],
@@ -286,7 +285,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
 
 
 def on_refresh_NSFW_change():
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_refresh_NSFW_change called. "
         f"NSFW_filtering_enable: {setting.NSFW_filtering_enable}, "
         f"NSFW_level_user: {setting.NSFW_level_user}"
@@ -298,12 +297,12 @@ def on_refresh_NSFW_change():
 
 
 def on_nsfw_filter(enable, level):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_nsfw_filter called with enable: {enable}, " f"level: {level}"
     )
     current_time = datetime.datetime.now()
     setting.set_NSFW(True if enable == "On" else False, level)
-    util.printD(f"[civitai_shortcut_action] NSFW set to: {enable == 'On'}, level: {level}")
+    logger.debug(f" NSFW set to: {enable == 'On'}, level: {level}")
     return (
         gr.update(visible=True if enable == "On" else False, value=level),
         current_time,
@@ -312,29 +311,29 @@ def on_nsfw_filter(enable, level):
 
 
 def on_nsfw_save_btn_click():
-    util.printD("[civitai_shortcut_action] on_nsfw_save_btn_click called. Saving NSFW settings.")
+    logger.debug(" on_nsfw_save_btn_click called. Saving NSFW settings.")
     setting.save_NSFW()
 
 
 def on_civitai_shortcut_tabs_select(evt: gr.SelectData):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_civitai_shortcut_tabs_select called with "
         f"evt.index: {evt.index}"
     )
     if evt.index == 1:
         current_time = datetime.datetime.now()
-        util.printD("[civitai_shortcut_action] Model Browser tab selected, refreshing browser.")
+        logger.debug(" Model Browser tab selected, refreshing browser.")
         return current_time, gr.update(visible=False)
     elif evt.index == 3:
         current_time = datetime.datetime.now()
-        util.printD("[civitai_shortcut_action] NSFW Filter tab selected, refreshing NSFW.")
+        logger.debug(" NSFW Filter tab selected, refreshing NSFW.")
         return gr.update(visible=False), current_time
-    util.printD("[civitai_shortcut_action] Other tab selected, no refresh.")
+    logger.debug(" Other tab selected, no refresh.")
     return gr.update(visible=False), gr.update(visible=False)
 
 
 def on_civitai_information_tabs_select(evt: gr.SelectData):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_civitai_information_tabs_select called with "
         f"evt.index: {evt.index}"
     )
@@ -344,7 +343,7 @@ def on_civitai_information_tabs_select(evt: gr.SelectData):
 
 # sc_gallery function definition
 def on_sc_gallery_select(evt: gr.SelectData):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_sc_gallery_select called with evt.value: {evt.value}"
     )
     sc_model_id = None
@@ -358,11 +357,11 @@ def on_sc_gallery_select(evt: gr.SelectData):
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[civitai_shortcut_action] Unexpected evt.value format: {evt.value}")
+            logger.debug(f" Unexpected evt.value format: {evt.value}")
             return None
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
-        util.printD(
+        logger.debug(
             f"[civitai_shortcut_action] Gallery select: shortcut={shortcut}, "
             f"sc_model_id={sc_model_id}"
         )
@@ -370,25 +369,25 @@ def on_sc_gallery_select(evt: gr.SelectData):
 
 
 def on_sc_modelid_change(sc_model_id, current_information_tabs):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_sc_modelid_change called with sc_model_id: {sc_model_id}, "
         f"current_information_tabs: {current_information_tabs}"
     )
     if current_information_tabs == setting.civitai_information_tab:
-        util.printD("[civitai_shortcut_action] Returning for civitai_information_tab")
+        logger.debug(" Returning for civitai_information_tab")
         return sc_model_id, gr.update(visible=False), gr.update(visible=False)
     if current_information_tabs == setting.usergal_information_tab:
-        util.printD("[civitai_shortcut_action] Returning for usergal_information_tab")
+        logger.debug(" Returning for usergal_information_tab")
         return gr.update(visible=False), sc_model_id, gr.update(visible=False)
     if current_information_tabs == setting.download_information_tab:
-        util.printD("[civitai_shortcut_action] Returning for download_information_tab")
+        logger.debug(" Returning for download_information_tab")
         return gr.update(visible=False), gr.update(visible=False), sc_model_id
-    util.printD("[civitai_shortcut_action] Returning default (all invisible)")
+    logger.debug(" Returning default (all invisible)")
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
 
 def on_civitai_internet_url_upload(files, register_information_only, progress=gr.Progress()):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_civitai_internet_url_upload called with files: {files}, "
         f"register_information_only: {register_information_only}"
     )
@@ -397,81 +396,81 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
         modelids = ishortcut_action.upload_shortcut_by_files(
             files, register_information_only, progress
         )
-        util.printD(f"[civitai_shortcut_action] upload_shortcut_by_files returned: {modelids}")
+        logger.debug(f" upload_shortcut_by_files returned: {modelids}")
         if len(modelids) > 0:
             model_id = modelids[0]
 
     current_time = datetime.datetime.now()
     if not model_id:
-        util.printD(
+        logger.debug(
             "[civitai_shortcut_action] No model_id found after upload, returning invisible updates."
         )
         return gr.update(visible=False), gr.update(visible=False), None
-    util.printD(f"[civitai_shortcut_action] Model registered: {model_id}")
+    logger.debug(f" Model registered: {model_id}")
     return model_id, current_time, None
 
 
 def on_civitai_internet_url_txt_upload(
     url, register_information_only, progress=gr.Progress(track_tqdm=True)
 ):
-    util.printD("[civitai_shortcut_action] ========== URL UPLOAD HANDLER START ==========")
-    util.printD(
+    logger.debug(" ========== URL UPLOAD HANDLER START ==========")
+    logger.debug(
         f"[civitai_shortcut_action] on_civitai_internet_url_txt_upload called with url: {url}, "
         f"register_information_only: {register_information_only}, progress: {progress}"
     )
-    util.printD(f"[civitai_shortcut_action] URL type: {type(url)}, URL repr: {repr(url)}")
-    util.printD(
+    logger.debug(f" URL type: {type(url)}, URL repr: {repr(url)}")
+    logger.debug(
         f"[civitai_shortcut_action] register_information_only type: "
         f"{type(register_information_only)}"
     )
-    util.printD(f"[civitai_shortcut_action] progress type: {type(progress)}")
+    logger.debug(f" progress type: {type(progress)}")
 
     try:
         # Check environment and create appropriate progress object if needed
-        util.printD("[civitai_shortcut_action] Checking progress object...")
+        logger.debug(" Checking progress object...")
 
         # Import environment detector to determine current mode
         from .compat.environment_detector import EnvironmentDetector
 
         is_standalone = EnvironmentDetector.is_standalone_mode()
-        util.printD(f"[civitai_shortcut_action] Detected mode - standalone: {is_standalone}")
+        logger.debug(f" Detected mode - standalone: {is_standalone}")
 
         # In standalone mode, replace Gradio Progress (SSE streaming) with MockProgress to avoid SSE errors
         if is_standalone:
-            util.printD("[civitai_shortcut_action] Creating MockProgress for standalone mode")
+            logger.debug(" Creating MockProgress for standalone mode")
 
             class MockProgress:
                 def tqdm(self, iterable, desc=""):
-                    util.printD(
+                    logger.debug(
                         f"[MockProgress] tqdm called with iterable type: {type(iterable)}, desc: {desc}"
                     )
-                    util.printD(f"[MockProgress] iterable content: {iterable}")
+                    logger.debug(f"[MockProgress] iterable content: {iterable}")
                     return iterable
 
             progress = MockProgress()
-            util.printD(f"[civitai_shortcut_action] Created MockProgress: {progress}")
+            logger.debug(f" Created MockProgress: {progress}")
         else:
-            util.printD(
+            logger.debug(
                 f"[civitai_shortcut_action] Using provided progress object: {type(progress)}"
             )
             if hasattr(progress, 'tqdm'):
-                util.printD(f"[civitai_shortcut_action] Progress has tqdm method: {progress.tqdm}")
+                logger.debug(f" Progress has tqdm method: {progress.tqdm}")
 
         model_id = None
-        util.printD(f"[civitai_shortcut_action] Initialized model_id = {model_id}")
+        logger.debug(f" Initialized model_id = {model_id}")
 
         if url:
-            util.printD("[civitai_shortcut_action] URL is not None/empty, checking length...")
-            util.printD(
+            logger.debug(" URL is not None/empty, checking length...")
+            logger.debug(
                 f"[civitai_shortcut_action] URL stripped: '{url.strip()}', "
                 f"length: {len(url.strip())}"
             )
 
             if len(url.strip()) > 0:
-                util.printD(
+                logger.debug(
                     "[civitai_shortcut_action] URL has content, calling upload_shortcut_by_urls..."
                 )
-                util.printD(
+                logger.debug(
                     f"[civitai_shortcut_action] Parameters: urls=[{url}], "
                     f"register_info_only={register_information_only}, progress={progress}"
                 )
@@ -481,62 +480,62 @@ def on_civitai_internet_url_txt_upload(
                     modelids = ishortcut_action.upload_shortcut_by_urls(
                         [url], register_information_only, progress
                     )
-                    util.printD(
+                    logger.debug(
                         f"[civitai_shortcut_action] upload_shortcut_by_urls SUCCESS, "
                         f"returned: {modelids}"
                     )
                     modelids_len = len(modelids) if modelids else 'None'
-                    util.printD(
+                    logger.debug(
                         f"[civitai_shortcut_action] modelids type: {type(modelids)}, "
                         f"length: {modelids_len}"
                     )
 
                     if len(modelids) > 0:
                         model_id = modelids[0]
-                        util.printD(f"[civitai_shortcut_action] Extracted model_id: {model_id}")
+                        logger.debug(f" Extracted model_id: {model_id}")
                     else:
-                        util.printD("[civitai_shortcut_action] modelids is empty!")
+                        logger.debug(" modelids is empty!")
 
                 except Exception as e:
-                    util.printD(
+                    logger.debug(
                         f"[civitai_shortcut_action] EXCEPTION in upload_shortcut_by_urls: {e}"
                     )
-                    util.printD(f"[civitai_shortcut_action] Exception type: {type(e)}")
+                    logger.debug(f" Exception type: {type(e)}")
                     import traceback
 
                     tb_str = traceback.format_exc()
-                    util.printD(f"[civitai_shortcut_action] Exception traceback: {tb_str}")
+                    logger.debug(f" Exception traceback: {tb_str}")
                     # Re-raise to see what happens
                     raise e
             else:
-                util.printD("[civitai_shortcut_action] URL is empty after strip")
+                logger.debug(" URL is empty after strip")
 
             current_time = datetime.datetime.now()
-            util.printD(f"[civitai_shortcut_action] Generated current_time: {current_time}")
+            logger.debug(f" Generated current_time: {current_time}")
 
             if not model_id:
-                util.printD(
+                logger.debug(
                     "[civitai_shortcut_action] No model_id found after txt upload, "
                     "returning invisible updates."
                 )
                 result = (gr.update(visible=False), gr.update(visible=False), None)
-                util.printD(f"[civitai_shortcut_action] Returning (no model): {result}")
-                util.printD(
+                logger.debug(f" Returning (no model): {result}")
+                logger.debug(
                     "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (NO MODEL) "
                     "=========="
                 )
                 return result
 
-            util.printD(f"[civitai_shortcut_action] Model registered from txt: {model_id}")
+            logger.debug(f" Model registered from txt: {model_id}")
             result = (model_id, current_time, None)  # Clear textbox on success
-            util.printD(f"[civitai_shortcut_action] Returning (success): {result}")
-            util.printD(
+            logger.debug(f" Returning (success): {result}")
+            logger.debug(
                 "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (SUCCESS) "
                 "=========="
             )
             return result
         else:
-            util.printD(
+            logger.debug(
                 "[civitai_shortcut_action] URL is empty or None, returning fallback updates."
             )
             result = (
@@ -544,35 +543,35 @@ def on_civitai_internet_url_txt_upload(
                 None,
                 gr.update(visible=True),
             )  # Keep textbox visible
-            util.printD(f"[civitai_shortcut_action] Returning (empty URL): {result}")
-            util.printD(
+            logger.debug(f" Returning (empty URL): {result}")
+            logger.debug(
                 "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EMPTY URL) "
                 "=========="
             )
             return result
 
     except Exception as e:
-        util.printD(
+        logger.debug(
             f"[civitai_shortcut_action] OUTER EXCEPTION in on_civitai_internet_url_txt_upload: "
             f"{e}"
         )
-        util.printD(f"[civitai_shortcut_action] Outer exception type: {type(e)}")
+        logger.debug(f" Outer exception type: {type(e)}")
         import traceback
 
         tb_str = traceback.format_exc()
-        util.printD(f"[civitai_shortcut_action] Outer exception traceback: {tb_str}")
+        logger.debug(f" Outer exception traceback: {tb_str}")
 
         # Return safe fallback values
         result = (gr.update(visible=False), None, gr.update(visible=True))
-        util.printD(f"[civitai_shortcut_action] Returning (exception): {result}")
-        util.printD(
+        logger.debug(f" Returning (exception): {result}")
+        logger.debug(
             "[civitai_shortcut_action] ========== URL UPLOAD HANDLER END (EXCEPTION) " "=========="
         )
         return result
 
 
 def on_update_modelfolder_btn_click():
-    util.printD(
+    logger.debug(
         "[civitai_shortcut_action] on_update_modelfolder_btn_click called. "
         "Updating downloaded model."
     )
@@ -583,21 +582,21 @@ def on_update_modelfolder_btn_click():
 
 # 새 버전이 있는지 스캔한다
 def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] on_scan_new_version_btn called with sc_types: {sc_types}"
     )
     model.update_downloaded_model()
     result = None
     scan_list = None
     shortlist = get_shortcut_list(sc_types, True)
-    util.printD(f"[civitai_shortcut_action] get_shortcut_list returned: {shortlist}")
+    logger.debug(f" get_shortcut_list returned: {shortlist}")
     if shortlist:
         for short in progress.tqdm(shortlist, desc="Scanning new version model"):
             if not is_latest(str(short['id'])):
                 if not scan_list:
                     scan_list = list()
                 scan_list.append(short)
-                util.printD(f"[civitai_shortcut_action] Found outdated model: {short}")
+                logger.debug(f" Found outdated model: {short}")
     if scan_list:
         result = list()
         for v in scan_list:
@@ -619,21 +618,21 @@ def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
                             setting.set_shortcutname(v['name'], v['id']),
                         )
                     )
-        util.printD(f"[civitai_shortcut_action] scan_list result: {result}")
+        logger.debug(f" scan_list result: {result}")
     else:
-        util.printD("[civitai_shortcut_action] No outdated models found.")
+        logger.debug(" No outdated models found.")
     return gr.update(value=result)
 
 
 def get_shortcut_list(shortcut_types=None, downloaded_sc=False):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] get_shortcut_list called with shortcut_types: "
         f"{shortcut_types}, downloaded_sc: {downloaded_sc}"
     )
     shortcut_list = ishortcut.get_image_list(shortcut_types, None, None, None)
-    util.printD(f"[civitai_shortcut_action] ishortcut.get_image_list returned: {shortcut_list}")
+    logger.debug(f" ishortcut.get_image_list returned: {shortcut_list}")
     if not shortcut_list:
-        util.printD("[civitai_shortcut_action] shortcut_list is empty, returning None")
+        logger.debug(" shortcut_list is empty, returning None")
         return None
     if downloaded_sc:
         if model.Downloaded_Models:
@@ -643,22 +642,22 @@ def get_shortcut_list(shortcut_types=None, downloaded_sc=False):
                 if str(mid) in model.Downloaded_Models.keys():
                     downloaded_list.append(short)
             shortcut_list = downloaded_list
-            util.printD(f"[civitai_shortcut_action] Filtered downloaded models: {shortcut_list}")
+            logger.debug(f" Filtered downloaded models: {shortcut_list}")
         else:
-            util.printD("[civitai_shortcut_action] No Downloaded_Models found, returning None")
+            logger.debug(" No Downloaded_Models found, returning None")
             shortcut_list = None
     return shortcut_list
 
 
 def is_latest(modelid: str) -> bool:
-    util.printD(f"[civitai_shortcut_action] is_latest called with modelid: {modelid}")
+    logger.debug(f" is_latest called with modelid: {modelid}")
     if not modelid:
-        util.printD("[civitai_shortcut_action] modelid is None or empty, returning False")
+        logger.debug(" modelid is None or empty, returning False")
         return False
     if str(modelid) in model.Downloaded_Models.keys():
-        util.printD(f"[civitai_shortcut_action] modelid {modelid} found in Downloaded_Models")
+        logger.debug(f" modelid {modelid} found in Downloaded_Models")
         version_info = civitai.get_latest_version_info_by_model_id(str(modelid))
-        util.printD(
+        logger.debug(
             f"[civitai_shortcut_action] get_latest_version_info_by_model_id returned: "
             f"{version_info}"
         )
@@ -667,23 +666,23 @@ def is_latest(modelid: str) -> bool:
             dnver_list = list()
             for vid, _ in model.Downloaded_Models[str(modelid)]:
                 dnver_list.append(str(vid).strip())
-            util.printD(
+            logger.debug(
                 f"[civitai_shortcut_action] Downloaded version list: {dnver_list}, "
                 f"latest_versionid: {latest_versionid}"
             )
             if latest_versionid in dnver_list:
-                util.printD(
+                logger.debug(
                     "[civitai_shortcut_action] Model is up to date (latest version present)"
                 )
                 return True
-    util.printD(
+    logger.debug(
         "[civitai_shortcut_action] Model is not up to date or not found in Downloaded_Models"
     )
     return False
 
 
 def setup_ui_copypaste(compat_layer):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] setup_ui_copypaste called with compat_layer: {compat_layer}"
     )
     from .ui_components import ParameterCopyPaste
@@ -692,7 +691,7 @@ def setup_ui_copypaste(compat_layer):
 
 
 def create_parameter_components(copypaste, gr=gr):
-    util.printD(
+    logger.debug(
         f"[civitai_shortcut_action] create_parameter_components called with copypaste: {copypaste}"
     )
     with gr.Row():
@@ -714,7 +713,7 @@ def create_parameter_components(copypaste, gr=gr):
         "steps": steps,
         "cfg_scale": cfg_scale,
     }
-    util.printD(f"[civitai_shortcut_action] Registering copypaste components: {components}")
+    logger.debug(f" Registering copypaste components: {components}")
     copypaste.register_copypaste_components(components)
     return components
 
@@ -734,5 +733,5 @@ def create_parameter_components(copypaste, gr=gr):
 #         thread = threading.Thread(target=update_shortcut_information, args=(modelid,))
 #         thread.start()
 #     except Exception as e:
-#         util.printD(e)
+#         logger.error(str(e))
 #         pass

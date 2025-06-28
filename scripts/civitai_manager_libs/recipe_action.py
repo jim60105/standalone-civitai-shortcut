@@ -12,8 +12,10 @@ import uuid
 import re
 
 from .conditional_imports import import_manager
+from .logging_config import get_logger
 
-from . import util
+logger = get_logger(__name__)
+
 from . import setting
 from . import recipe
 from . import prompt
@@ -675,7 +677,7 @@ def on_recipe_prompt_tabs_select(evt: gr.SelectData):
 
 
 def analyze_prompt(generate_data):
-    util.printD(f"[RECIPE] analyze_prompt called with: {repr(generate_data)}")
+    logger.debug(f"analyze_prompt called with: {repr(generate_data)}")
 
     positivePrompt = None
     negativePrompt = None
@@ -685,36 +687,36 @@ def analyze_prompt(generate_data):
     if generate_data:
         generate = None
         try:
-            util.printD("[RECIPE] Calling prompt.parse_data")
+            logger.debug(" Calling prompt.parse_data")
             generate = prompt.parse_data(generate_data)
-            util.printD(f"[RECIPE] prompt.parse_data returned: {generate}")
+            logger.debug(f" prompt.parse_data returned: {generate}")
         except Exception as e:
-            util.printD(f"[RECIPE] Exception in prompt.parse_data: {e}")
+            logger.debug(f" Exception in prompt.parse_data: {e}")
 
         if generate:
             if "options" in generate:
                 options = [f"{k}:{v}" for k, v in generate['options'].items()]
                 if options:
                     options = ", ".join(options)
-                util.printD(f"[RECIPE] Processed options: {repr(options)}")
+                logger.debug(f" Processed options: {repr(options)}")
 
             if 'prompt' in generate:
                 positivePrompt = generate['prompt']
-                util.printD(f"[RECIPE] Extracted positive prompt: {repr(positivePrompt)}")
+                logger.debug(f" Extracted positive prompt: {repr(positivePrompt)}")
 
             if 'negativePrompt' in generate:
                 negativePrompt = generate['negativePrompt']
-                util.printD(f"[RECIPE] Extracted negative prompt: {repr(negativePrompt)}")
+                logger.debug(f" Extracted negative prompt: {repr(negativePrompt)}")
         else:
-            util.printD("[RECIPE] generate is None after parse_data")
+            logger.debug(" generate is None after parse_data")
 
         gen_string = generate_prompt(positivePrompt, negativePrompt, options)
-        util.printD(f"[RECIPE] Generated string: {repr(gen_string)}")
+        logger.debug(f" Generated string: {repr(gen_string)}")
     else:
-        util.printD("[RECIPE] generate_data is empty")
+        logger.debug(" generate_data is empty")
 
     result = (positivePrompt, negativePrompt, options, gen_string)
-    util.printD(f"[RECIPE] analyze_prompt returning: {result}")
+    logger.debug(f" analyze_prompt returning: {result}")
     return result
 
 
@@ -783,18 +785,18 @@ def get_recipe_information(select_name):
 
 
 def on_recipe_input_change(recipe_input, shortcuts):
-    util.printD(f"[RECIPE] on_recipe_input_change called with: {repr(recipe_input)}")
+    logger.debug(f" on_recipe_input_change called with: {repr(recipe_input)}")
 
     # If recipe_input is an empty string, return immediately with no UI update (keep all states)
     if recipe_input is None or recipe_input == "":
-        util.printD(
+        logger.debug(
             "[RECIPE] on_recipe_input_change received empty string, returning without changes."
         )
         return tuple(gr.update() for _ in range(22))
 
     current_time = datetime.datetime.now()
     param_data = None
-    util.printD("[RECIPE] recipe_input is not empty, processing...")
+    logger.debug(" recipe_input is not empty, processing...")
     shortcuts = None
     recipe_image = None
     positivePrompt = None
@@ -804,26 +806,26 @@ def on_recipe_input_change(recipe_input, shortcuts):
     # recipe_input may include both image info and parsed parameters separated by newline
     try:
         if isinstance(recipe_input, str) and '\n' in recipe_input:
-            util.printD("[RECIPE] Found newline in recipe_input, splitting...")
+            logger.debug(" Found newline in recipe_input, splitting...")
             first_line, param_data = recipe_input.split('\n', 1)
-            util.printD(f"[RECIPE] first_line: {repr(first_line)}")
-            util.printD(f"[RECIPE] param_data: {repr(param_data)}")
+            logger.debug(f" first_line: {repr(first_line)}")
+            logger.debug(f" param_data: {repr(param_data)}")
 
             shortcutid, image_fn = first_line.split(':', 1)
             recipe_image = image_fn
-            util.printD(f"[RECIPE] shortcutid: {repr(shortcutid)}, image_fn: {repr(image_fn)}")
+            logger.debug(f" shortcutid: {repr(shortcutid)}, image_fn: {repr(image_fn)}")
 
-            util.printD("[RECIPE] Calling analyze_prompt with param_data...")
+            logger.debug(" Calling analyze_prompt with param_data...")
             positivePrompt, negativePrompt, options, gen_string = analyze_prompt(param_data)
-            util.printD("[RECIPE] analyze_prompt results:")
-            util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
-            util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
-            util.printD(f"[RECIPE]   options: {repr(options)}")
-            util.printD(f"[RECIPE]   gen_string: {repr(gen_string)}")
+            logger.debug(" analyze_prompt results:")
+            logger.debug(f"   positivePrompt: {repr(positivePrompt)}")
+            logger.debug(f"   negativePrompt: {repr(negativePrompt)}")
+            logger.debug(f"   options: {repr(options)}")
+            logger.debug(f"   gen_string: {repr(gen_string)}")
 
             shortcuts = [shortcutid]
         else:
-            util.printD(
+            logger.debug(
                 "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
             )
             shortcutid, recipe_image = setting.get_imagefn_and_shortcutid_from_recipe_image(
@@ -832,15 +834,15 @@ def on_recipe_input_change(recipe_input, shortcuts):
             if shortcutid:
                 shortcuts = [shortcutid]
     except Exception as e:
-        util.printD(f"[RECIPE] Exception in recipe_input processing: {e}")
+        logger.debug(f" Exception in recipe_input processing: {e}")
 
-    util.printD("[RECIPE] Final values before return:")
-    util.printD(f"[RECIPE]   recipe_image: {repr(recipe_image)}")
-    util.printD(f"[RECIPE]   positivePrompt: {repr(positivePrompt)}")
-    util.printD(f"[RECIPE]   negativePrompt: {repr(negativePrompt)}")
-    util.printD(f"[RECIPE]   options: {repr(options)}")
-    util.printD(f"[RECIPE]   param_data: {repr(param_data)}")
-    util.printD(f"[RECIPE]   shortcuts: {shortcuts}")
+    logger.debug(" Final values before return:")
+    logger.debug(f"   recipe_image: {repr(recipe_image)}")
+    logger.debug(f"   positivePrompt: {repr(positivePrompt)}")
+    logger.debug(f"   negativePrompt: {repr(negativePrompt)}")
+    logger.debug(f"   options: {repr(options)}")
+    logger.debug(f"   param_data: {repr(param_data)}")
+    logger.debug(f"   shortcuts: {shortcuts}")
 
     return (
         gr.update(value=""),  # selected_recipe_name
@@ -892,9 +894,9 @@ def on_recipe_generate_data_change(recipe_img):
                 if result and result[0]:
                     generate_data = result[0]
                     data_len = len(generate_data) if generate_data else 0
-                    util.printD(f"[RECIPE] Extracted via compatibility layer: {data_len} chars")
+                    logger.debug(f" Extracted via compatibility layer: {data_len} chars")
             except Exception as e:
-                util.printD(f"Error processing PNG info through compatibility layer: {e}")
+                logger.debug(f"Error processing PNG info through compatibility layer: {e}")
 
         # Fallback: Try WebUI direct access
         if not generate_data:
@@ -905,9 +907,9 @@ def on_recipe_generate_data_change(recipe_img):
                     # WebUI run_pnginfo returns info1 as the parameters string
                     generate_data = info1
                     data_len = len(generate_data) if generate_data else 0
-                    util.printD(f"[RECIPE] Extracted parameters via WebUI: {data_len} chars")
+                    logger.debug(f" Extracted parameters via WebUI: {data_len} chars")
                 except Exception as e:
-                    util.printD(f"Error processing PNG info through WebUI: {e}")
+                    logger.debug(f"Error processing PNG info through WebUI: {e}")
 
         # Final fallback: Try basic PIL extraction
         if not generate_data:
@@ -922,9 +924,9 @@ def on_recipe_generate_data_change(recipe_img):
                         generate_data = img.text.get('parameters', '')
 
                 if generate_data:
-                    util.printD(f"[RECIPE] Extracted via PIL fallback: {len(generate_data)} chars")
+                    logger.debug(f" Extracted via PIL fallback: {len(generate_data)} chars")
             except Exception as e:
-                util.printD(f"Error in PNG info fallback processing: {e}")
+                logger.debug(f"Error in PNG info fallback processing: {e}")
 
     if generate_data:
         positivePrompt, negativePrompt, options, gen_string = analyze_prompt(generate_data)
@@ -951,7 +953,7 @@ def on_recipe_gallery_select(evt: gr.SelectData):
     elif isinstance(evt.value, str):
         select_name = evt.value
     else:
-        util.printD(
+        logger.debug(
             f"[RECIPE] Unexpected evt.value format in on_recipe_gallery_select: " f"{evt.value}"
         )
         return ("", "", "", "", "", "", None, [])
@@ -1249,7 +1251,7 @@ def on_reference_sc_gallery_select(evt: gr.SelectData, shortcuts):
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[RECIPE] Unexpected evt.value format: {evt.value}")
+            logger.debug(f" Unexpected evt.value format: {evt.value}")
             return shortcuts, current_time
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
@@ -1275,7 +1277,7 @@ def on_reference_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=True):
         elif isinstance(evt.value, str):
             shortcut = evt.value
         else:
-            util.printD(f"[RECIPE] Unexpected evt.value format: {evt.value}")
+            logger.debug(f" Unexpected evt.value format: {evt.value}")
             return shortcuts, gr.update(visible=False), gr.update(visible=True), None
 
         sc_model_id = setting.get_modelid_from_shortcutname(shortcut)

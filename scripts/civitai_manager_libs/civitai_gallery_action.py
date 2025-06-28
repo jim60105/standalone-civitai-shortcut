@@ -7,7 +7,6 @@ through the compatibility layer.
 
 import os
 import shutil
-import requests
 import gradio as gr
 import datetime
 import time
@@ -79,9 +78,7 @@ class GalleryDownloadManager:
         if not self.failed_downloads:
             return
 
-        logger.debug(
-            f"Retrying {len(self.failed_downloads)} failed downloads"
-        )
+        logger.debug(f"Retrying {len(self.failed_downloads)} failed downloads")
 
         retry_list = self.failed_downloads.copy()
         self.failed_downloads.clear()
@@ -108,9 +105,7 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
     # Execute parallel download
     success_count = downloader.download_images(image_tasks, progress_callback, client)
 
-    logger.debug(
-        f"Parallel download completed: {success_count}/{len(image_tasks)} successful"
-    )
+    logger.debug(f"Parallel download completed: {success_count}/{len(image_tasks)} successful")
 
 
 def download_images_batch(
@@ -124,9 +119,7 @@ def download_images_batch(
 
     for i in range(0, len(dn_image_list), batch_size):
         batch = dn_image_list[i : i + batch_size]
-        logger.debug(
-            f"Processing batch {i//batch_size + 1}, {len(batch)} images"
-        )
+        logger.debug(f"Processing batch {i//batch_size + 1}, {len(batch)} images")
         for img_url in batch:
             gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
             if not os.path.isfile(gallery_img_file):
@@ -381,9 +374,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
             logger.debug(f"Returning combined data: {repr(result)}")
             return result
         else:
-            logger.debug(
-                f"No img_file_info, returning recipe_image only: {repr(recipe_image)}"
-            )
+            logger.debug(f"No img_file_info, returning recipe_image only: {repr(recipe_image)}")
             return recipe_image
     except Exception as e:
         logger.error(f"Exception in on_send_to_recipe_click: {e}")
@@ -514,7 +505,7 @@ def on_civitai_hidden_change(hidden, index):
             info1, info2, info3 = extras_module.run_pnginfo(hidden)
             return info1  # Return the parameters string, not the dictionary
         except Exception as e:
-            util.printD(f"Error processing PNG info through WebUI: {e}")
+            logger.error(f"Error processing PNG info through WebUI: {e}")
 
     # Final fallback: Try basic PIL extraction
     try:
@@ -527,7 +518,7 @@ def on_civitai_hidden_change(hidden, index):
             with Image.open(io.BytesIO(hidden.read())) as img:
                 return img.text.get('parameters', '')
     except Exception as e:
-        util.printD(f"Error in PNG info fallback processing: {e}")
+        logger.error(f"Error in PNG info fallback processing: {e}")
 
     return ""
 
@@ -535,7 +526,7 @@ def on_civitai_hidden_change(hidden, index):
 def on_gallery_select(evt: gr.SelectData, civitai_images):
     """Extract generation parameters from PNG info first, then Civitai API metadata."""
     selected = civitai_images[evt.index]
-    util.printD(f"[civitai_gallery_action] on_gallery_select: selected={selected}")
+    logger.debug(f"on_gallery_select: selected={selected}")
 
     # Get local file path if URL
     local_path = selected
@@ -543,23 +534,21 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
         from . import setting
 
         local_path = setting.get_image_url_to_gallery_file(selected)
-        util.printD(
-            f"[civitai_gallery_action] on_gallery_select: converted URL to local_path={local_path}"
-        )
+        logger.debug(f"on_gallery_select: converted URL to local_path={local_path}")
 
     # Extract generation parameters - try PNG info first, then Civitai metadata
     png_info = ""
     try:
         if isinstance(local_path, str) and os.path.exists(local_path):
             # First try to extract PNG info from the image file itself
-            util.printD(f"[civitai_gallery_action] Trying to extract PNG info from: {local_path}")
+            logger.debug(f" Trying to extract PNG info from: {local_path}")
 
             from PIL import Image
 
             try:
                 with Image.open(local_path) as img:
                     if hasattr(img, 'text') and img.text:
-                        util.printD(
+                        logger.debug(
                             f"[civitai_gallery_action] Found PNG text info: {list(img.text.keys())}"
                         )
                         # Check for common PNG info keys
@@ -571,23 +560,23 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
                         ]:
                             if key in img.text:
                                 png_info = img.text[key]
-                                util.printD(
+                                logger.debug(
                                     f"[civitai_gallery_action] Extracted PNG info from key "
                                     f"'{key}': {len(png_info)} chars"
                                 )
                                 break
                     else:
-                        util.printD("[civitai_gallery_action] No PNG text info found in image")
+                        logger.debug(" No PNG text info found in image")
             except Exception as e:
-                util.printD(f"[civitai_gallery_action] Error reading PNG info: {e}")
+                logger.debug(f" Error reading PNG info: {e}")
 
             # If no PNG info found, try Civitai API metadata
             if not png_info:
-                util.printD(
+                logger.debug(
                     "[civitai_gallery_action] No PNG info found, trying Civitai API metadata"
                 )
                 # Debug: Show available metadata keys
-                util.printD(
+                logger.debug(
                     f"[civitai_gallery_action] Current metadata keys: "
                     f"{list(_current_page_metadata.keys())}"
                 )
@@ -596,27 +585,27 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
                 import re
 
                 filename = os.path.basename(local_path)
-                util.printD(f"[civitai_gallery_action] Processing filename: {filename}")
+                logger.debug(f" Processing filename: {filename}")
                 uuid_match = re.search(
                     r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})', filename
                 )
                 if uuid_match:
                     image_uuid = uuid_match.group(1)
-                    util.printD(f"[civitai_gallery_action] Extracted UUID: {image_uuid}")
+                    logger.debug(f" Extracted UUID: {image_uuid}")
 
                     # Get metadata from global variable
                     if image_uuid in _current_page_metadata:
                         image_meta = _current_page_metadata[image_uuid]
-                        util.printD(
+                        logger.debug(
                             f"[civitai_gallery_action] Found metadata for UUID: {image_uuid}"
                         )
-                        util.printD(
+                        logger.debug(
                             f"[civitai_gallery_action] Metadata keys: {list(image_meta.keys())}"
                         )
 
                         if 'meta' in image_meta and image_meta['meta']:
                             meta = image_meta['meta']
-                            util.printD(
+                            logger.debug(
                                 f"[civitai_gallery_action] Meta fields: {list(meta.keys())}"
                             )
                             # Format generation parameters
@@ -639,32 +628,32 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
                                 params.append(f"Size: {meta['Size']}")
 
                             png_info = '\n'.join(params)
-                            util.printD(
+                            logger.debug(
                                 f"[civitai_gallery_action] Extracted Civitai metadata: "
                                 f"{len(png_info)} chars"
                             )
                         else:
                             png_info = "No generation parameters available for this image."
-                            util.printD("[civitai_gallery_action] No meta field in image data")
+                            logger.debug(" No meta field in image data")
                     else:
                         png_info = "Image metadata not found in current page data."
-                        util.printD(f"[civitai_gallery_action] UUID {image_uuid} not in metadata")
+                        logger.debug(f" UUID {image_uuid} not in metadata")
                 else:
                     png_info = "Could not extract image ID from filename."
-                    util.printD(f"[civitai_gallery_action] No UUID in filename: {filename}")
+                    logger.debug(f" No UUID in filename: {filename}")
             else:
-                util.printD(
+                logger.debug(
                     f"[civitai_gallery_action] Using PNG info from file: {len(png_info)} chars"
                 )
         else:
-            util.printD(
+            logger.debug(
                 f"[civitai_gallery_action] local_path is not string or doesn't exist: {local_path}"
             )
     except Exception as e:
         png_info = f"Error extracting generation parameters: {e}"
-        util.printD(f"[civitai_gallery_action] Error: {e}")
+        logger.debug(f" Error: {e}")
 
-    util.printD(f"[civitai_gallery_action] Final png_info length: {len(png_info)} chars")
+    logger.debug(f" Final png_info length: {len(png_info)} chars")
     return evt.index, local_path, gr.update(selected="Image_Information"), png_info
 
 
@@ -814,7 +803,7 @@ def pre_loading(usergal_page_url, paging_information):
         try:
             image_data = json_data['items']
         except Exception as e:
-            util.printD(e)
+            logger.error(str(e))
             return
 
         dn_image_list = list()
@@ -832,7 +821,7 @@ def pre_loading(usergal_page_url, paging_information):
                 thread = threading.Thread(target=download_images, args=(dn_image_list,))
                 thread.start()
             except Exception as e:
-                util.printD(e)
+                logger.error(str(e))
                 pass
     return
 
@@ -843,7 +832,7 @@ def download_images(dn_image_list: list):
         return
 
     client = get_http_client()
-    util.printD(f"[civitai_gallery_action] Starting download of {len(dn_image_list)} images")
+    logger.debug(f" Starting download of {len(dn_image_list)} images")
 
     success_count = 0
     failed_count = 0
@@ -852,19 +841,19 @@ def download_images(dn_image_list: list):
         gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
 
         if os.path.isfile(gallery_img_file):
-            util.printD(f"[civitai_gallery_action] Image already exists: {gallery_img_file}")
+            logger.debug(f" Image already exists: {gallery_img_file}")
             continue
 
-        util.printD(f"[civitai_gallery_action] Downloading image: {img_url}")
+        logger.debug(f" Downloading image: {img_url}")
         if client.download_file(img_url, gallery_img_file):
             success_count += 1
-            util.printD(f"[civitai_gallery_action] Successfully downloaded: {gallery_img_file}")
+            logger.debug(f" Successfully downloaded: {gallery_img_file}")
         else:
             failed_count += 1
-            util.printD(f"[civitai_gallery_action] Failed to download: {img_url}")
+            logger.debug(f" Failed to download: {img_url}")
 
-    util.printD(
-        f"[civitai_gallery_action] Download complete: {success_count} success, {failed_count} failed"
+    logger.debug(
+        f"Download complete: {success_count} success, {failed_count} failed"
     )
 
     if failed_count > 0:
@@ -909,8 +898,8 @@ def get_user_gallery(modelid, page_url, show_nsfw):
     images_url = []
 
     if image_data:
-        # util.printD("Gal:")
-        # util.printD(len(image_data))
+        # logger.debug("Gal:")
+        # logger.debug(len(image_data))
         for image_info in image_data:
             if "url" in image_info:
                 img_url = image_info['url']
@@ -936,7 +925,7 @@ def get_user_gallery(modelid, page_url, show_nsfw):
         global _current_page_metadata
         _current_page_metadata = {}
         if image_data:
-            util.printD(f"[civitai_gallery_action] Storing metadata for {len(image_data)} images")
+            logger.debug(f" Storing metadata for {len(image_data)} images")
             for image_info in image_data:
                 if "url" in image_info:
                     # Extract UUID from URL to create filename mapping
@@ -949,20 +938,20 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                     if uuid_match:
                         image_uuid = uuid_match.group(1)
                         _current_page_metadata[image_uuid] = image_info
-                        util.printD(
+                        logger.debug(
                             f"[civitai_gallery_action] Stored metadata for UUID: {image_uuid}"
                         )
                         # Debug: Check if meta field exists
                         if 'meta' in image_info:
-                            util.printD(
+                            logger.debug(
                                 f"[civitai_gallery_action] UUID {image_uuid} has meta field"
                             )
                         else:
-                            util.printD(
+                            logger.debug(
                                 f"[civitai_gallery_action] UUID {image_uuid} missing meta field"
                             )
 
-            util.printD(
+            logger.debug(
                 f"[civitai_gallery_action] Total metadata stored: "
                 f"{len(_current_page_metadata)} items"
             )
@@ -976,9 +965,9 @@ def get_image_page(modelid, page_url, show_nsfw=False):
     if not page_url:
         page_url = get_default_page_url(modelid, None, show_nsfw)
 
-    # util.printD(page_url)
+    # logger.debug(page_url)
     json_data = civitai.request_models(fix_page_url_cursor(page_url))
-    # util.printD("here")
+    # logger.debug("here")
 
     try:
         json_data['items']
@@ -996,7 +985,7 @@ def get_paging_information(modelId, modelVersionId=None, show_nsfw=False):
     total_page_urls = list()
     while page_url is not None:
         total_page_urls.append(page_url)
-        # util.printD(page_url)
+        # logger.debug(page_url)
         json_data = civitai.request_models(fix_page_url_cursor(page_url))
 
         try:
@@ -1059,20 +1048,20 @@ def get_paging_information_working(modelId, modelVersionId=None, show_nsfw=False
 # 현재 pageurl 의 cursor에서 page를 계산한다.
 def get_current_page(paging_information, page_url):
     current_cursor = extract_url_cursor(page_url)
-    # util.printD(f"current {current_cursor}")
-    # util.printD(page_url)
+    # logger.debug(f"current {current_cursor}")
+    # logger.debug(page_url)
 
     if paging_information:
         total_page_urls = paging_information["totalPageUrls"]
         for cur_page, p_url in enumerate(total_page_urls, start=1):
             p_cursor = extract_url_cursor(p_url)
-            # util.printD(p_cursor)
+            # logger.debug(p_cursor)
 
             if not p_cursor:
                 continue
 
             if str(current_cursor) == str(p_cursor):
-                # util.printD(f"select {p_cursor}")
+                # logger.debug(f"select {p_cursor}")
                 return cur_page
     return 1
 
@@ -1144,7 +1133,7 @@ def download_user_gallery_images(model_id, image_urls):
                 image_tasks.append((img_url, dest))
         # execute parallel download for remote images
         success = downloader.download_images(image_tasks, None, client)
-        util.printD(
+        logger.debug(
             f"[civitai_gallery_action] Parallel user gallery download: "
             f"{success}/{len(image_tasks)} successful"
         )
@@ -1200,7 +1189,7 @@ def get_default_page_url(modelId, modelVersionId=None, show_nsfw=False, limit=0)
 
     page_url = f"{page_url}&sort=Newest"
 
-    # util.printD(page_url)
+    # logger.debug(page_url)
     return page_url
 
 
