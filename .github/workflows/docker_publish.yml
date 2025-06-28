@@ -74,9 +74,9 @@ jobs:
             VERSION=${{ github.ref_name }}
             RELEASE=${{ github.run_number }}
           cache-from: |
-            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache
+            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache-${{ env.PLATFORM_PAIR }}
           cache-to: |
-            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache,mode=max
+            type=registry,ref=ghcr.io/${{ env.REGISTRY_IMAGE }}:cache-${{ env.PLATFORM_PAIR }},mode=max
           sbom: true
           provenance: true
           outputs: |
