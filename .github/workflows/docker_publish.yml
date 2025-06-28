@@ -126,12 +126,47 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          digests=(*/)
-          digests=("${digests[@]%/}")
+          set -euo pipefail
+
+          # Debug: list all files in digest directory
+          echo "Files in /tmp/digests:"
+          ls -la
+
+          # Collect valid SHA256 digest files
+          digests=()
+          for file in *; do
+            if [[ -f "$file" && "$file" =~ ^[a-f0-9]{64}$ ]]; then
+              digests+=("$file")
+              echo "Found valid digest: $file"
+            fi
+          done
+
+          if [[ ${#digests[@]} -eq 0 ]]; then
+            echo "Error: No valid digests found"
+            exit 1
+          fi
+
+          echo "Processing ${#digests[@]} digests: ${digests[*]}"
+
           for registry in ghcr.io/${{ github.repository_owner }} ${{ secrets.DOCKERHUB_USERNAME }} quay.io/${{ github.repository_owner }}; do
-            tags=$(echo "${{ steps.setup.outputs.tags }}" | grep "^${registry}/" | tr '\n' ' ')
-            if [ -n "$tags" ]; then
-              docker buildx imagetools create $(echo "$tags" | sed 's/^/-t /') $(printf "${registry}/standalone-civitai-shortcut@sha256:%s " "${digests[@]}")
+            tags=$(echo "${{ steps.setup.outputs.tags }}" | grep "^${registry}/" | tr '\n' ' ' || true)
+            if [[ -n "$tags" ]]; then
+              echo "Creating manifest for registry: $registry"
+              echo "Tags: $tags"
+
+              # Build digest references for each valid digest
+              digest_refs=""
+              for digest in "${digests[@]}"; do
+                digest_refs+="${registry}/standalone-civitai-shortcut@sha256:${digest} "
+              done
+
+              echo "Digest references: $digest_refs"
+
+              docker buildx imagetools create \
+                $(echo "$tags" | sed 's/\S\+/-t &/g') \
+                $digest_refs
+            else
+              echo "No tags found for registry: $registry"
             fi
           done
 
