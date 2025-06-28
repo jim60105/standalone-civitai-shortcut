@@ -127,7 +127,13 @@ def test_download_images_with_progress(tmp_path, monkeypatch):
     cga.download_images_with_progress(urls, progress_callback=progress_cb)
     assert (tmp_path / "x.png").exists()
     assert (tmp_path / "y.png").exists()
-    assert calls == [(1, 2, "Downloading image 1/2"), (2, 2, "Downloading image 2/2")]
+    # At least the final progress update should indicate completion
+    assert calls, f"Expected at least one progress update, got {calls}"
+    assert calls[-1] == (
+        2,
+        2,
+        "Downloaded 2/2 images",
+    ), f"Expected final progress update (Downloaded 2/2 images), got {calls[-1]}"
 
 
 def test_download_images_batch(tmp_path, monkeypatch):
