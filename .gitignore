@@ -212,3 +212,4 @@ outputs
 .coverage
 setting.json
 model_folders.json
+logs/
