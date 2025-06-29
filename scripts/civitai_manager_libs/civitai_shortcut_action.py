@@ -626,7 +626,7 @@ def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
         result = list()
         for v in scan_list:
             if v:
-                if imageprocessor.is_sc_image(v['id']):
+                if ishortcut.imageprocessor.is_sc_image(v['id']):
                     result.append(
                         (
                             os.path.join(
@@ -654,7 +654,9 @@ def get_shortcut_list(shortcut_types=None, downloaded_sc=False):
         f"[civitai_shortcut_action] get_shortcut_list called with shortcut_types: "
         f"{shortcut_types}, downloaded_sc: {downloaded_sc}"
     )
-    shortcut_list = shortcutsearchfilter.get_filtered_shortcuts(shortcut_types, None, None, None)
+    shortcut_list = ishortcut.shortcutsearchfilter.get_filtered_shortcuts(
+        shortcut_types, None, None, None
+    )
     logger.debug(f" ishortcut.get_image_list returned: {shortcut_list}")
     if not shortcut_list:
         logger.debug(" shortcut_list is empty, returning None")

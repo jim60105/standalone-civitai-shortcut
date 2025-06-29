@@ -146,7 +146,7 @@ def on_update_modelfolder_btn_click():
 def on_download_imagefolder_click(modelid):
     if modelid:
         # model_info = civitai.get_model_info(modelid)
-        model_info = modelprocessor.get_model_info(modelid)
+        model_info = ishortcut.modelprocessor.get_model_info(modelid)
         if model_info:
             model_name = model_info['name']
             image_folder = util.get_download_image_folder(model_name)
@@ -261,7 +261,7 @@ def on_load_model(modelid=None):
 def get_model_information(modelid: str = None):
     if modelid:
         # model_info = civitai.get_model_info(modelid)
-        model_info = modelprocessor.get_model_info(modelid)
+        model_info = ishortcut.modelprocessor.get_model_info(modelid)
         if model_info:
             title_name = f"{model_info['name']}"
 

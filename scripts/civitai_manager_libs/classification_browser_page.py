@@ -393,7 +393,7 @@ def get_thumbnail_list(
 
     total = 0
     max_page = 1
-    shortcut_list = shortcutsearchfilter.get_filtered_shortcuts(
+    shortcut_list = ishortcut.shortcutsearchfilter.get_filtered_shortcuts(
         shortcut_types, search, shortcut_basemodels, sc_classifications
     )
     shortlist = None
@@ -480,7 +480,7 @@ def get_thumbnail_list(
         # 썸네일이 있는지 판단해서 대체 이미지 작업
         for v in shortlist:
             if v:
-                if imageprocessor.is_sc_image(v['id']):
+                if ishortcut.imageprocessor.is_sc_image(v['id']):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result.append(
                             (

@@ -107,6 +107,14 @@ class ShortcutCollectionManager:
             )
         return shortcuts
 
+    def delete_shortcut_model(self, model_id: str):
+        """Delete a shortcut model and save changes."""
+        if not model_id:
+            return
+        shortcuts = self.load_shortcuts()
+        shortcuts = self.delete_shortcut(shortcuts, model_id)
+        self.save_shortcuts(shortcuts)
+
     def update_shortcut(self, model_id: str, progress=None):
         """Update existing shortcut preserving user data."""
         if not model_id:

@@ -28,7 +28,6 @@ except ImportError:
 from . import util
 from . import civitai
 from . import setting
-import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from scripts.civitai_manager_libs.ishortcut_core.model_processor import ModelProcessor
 modelprocessor = ModelProcessor()
 from .compat.compat_layer import CompatibilityLayer

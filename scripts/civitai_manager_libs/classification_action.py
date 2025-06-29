@@ -410,7 +410,7 @@ def load_model_information(modelid=None, ver_index=None):
             dhtml,
             triger,
             files,
-        ) = modelprocessor.get_model_information(modelid, None, ver_index)
+        ) = ishortcut.modelprocessor.get_model_information(modelid, None, ver_index)
         if model_info:
             flist = list()
             for file in files:
@@ -625,7 +625,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
     totals = 0
     max_page = 1
     cur_page = 1
-    ISC = shortcutcollectionmanager.load_shortcuts()
+    ISC = ishortcut.shortcutcollectionmanager.load_shortcuts()
     if not ISC:
         return None, gr.update(minimum=1), gr.update(visible=False)
 
@@ -642,7 +642,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
         for mid in shortcuts:
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
-                if imageprocessor.is_sc_image(v['id']):
+                if ishortcut.imageprocessor.is_sc_image(v['id']):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result_list.append(
                             (

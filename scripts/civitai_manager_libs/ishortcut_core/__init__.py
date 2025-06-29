@@ -30,12 +30,44 @@ from .data_validator import DataValidator
 from .model_factory import ModelFactory
 from .shortcut_collection_manager import ShortcutCollectionManager
 from .shortcut_search_filter import ShortcutSearchFilter
-from .shortcut_thumbnail_manager import ShortcutThumbnailManager
-from .shortcut_backup_manager import ShortcutBackupManager
 from .preview_image_manager import PreviewImageManager
+
+# Create global instances for backward compatibility
+_collection_manager = None
+_model_processor = None
+_search_filter = None
+_image_processor = None
+
+
+def _initialize_globals():
+    """Initialize global instances for backward compatibility."""
+    global _collection_manager, _model_processor, _search_filter, _image_processor
+
+    if _collection_manager is None:
+        _collection_manager = ShortcutCollectionManager()
+
+    if _model_processor is None:
+        _model_processor = ModelProcessor()
+
+    if _search_filter is None:
+        _search_filter = ShortcutSearchFilter(_collection_manager, _model_processor)
+
+    if _image_processor is None:
+        _image_processor = ImageProcessor()
+
+
+# Initialize globals on import
+_initialize_globals()
+
+# Global instances for backward compatibility
+shortcutsearchfilter = _search_filter
+imageprocessor = _image_processor
+modelprocessor = _model_processor
+shortcutcollectionmanager = _collection_manager
 
 __version__ = "1.0.0"
 __all__ = [
+    # Core classes that are directly imported
     "ModelProcessor",
     "FileProcessor",
     "ImageProcessor",
@@ -44,7 +76,10 @@ __all__ = [
     "ModelFactory",
     "ShortcutCollectionManager",
     "ShortcutSearchFilter",
-    "ShortcutThumbnailManager",
-    "ShortcutBackupManager",
     "PreviewImageManager",
+    # Global instances for backward compatibility
+    "shortcutsearchfilter",
+    "imageprocessor",
+    "modelprocessor",
+    "shortcutcollectionmanager",
 ]

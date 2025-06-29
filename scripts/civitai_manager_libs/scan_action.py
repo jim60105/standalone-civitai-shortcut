@@ -276,7 +276,7 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
             # 숏컷 추가
             if register_shortcut:
                 if version_info['modelId']:
-                    shortcutcollectionmanager.update_shortcut(version_info['modelId'], progress)
+                    ishortcut.shortcutcollectionmanager.update_shortcut(version_info['modelId'], progress)
                     model.update_downloaded_model()
 
     return non_list
@@ -435,7 +435,7 @@ def on_scan_to_shortcut_click(progress=gr.Progress()):
     user_message="Failed to update shortcuts",
 )
 def on_update_all_shortcuts_btn_click(progress=gr.Progress()):
-    shortcutcollectionmanager.update_all_shortcuts(progress)
+    ishortcut.shortcutcollectionmanager.update_all_shortcuts(progress)
     return gr.update(visible=True)
 
 

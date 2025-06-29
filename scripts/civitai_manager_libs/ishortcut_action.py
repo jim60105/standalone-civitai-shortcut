@@ -549,7 +549,7 @@ def on_ui(refresh_sc_browser, recipe_input):
     user_message="Failed to save personal note",
 )
 def on_personal_note_save_click(modelid, note):
-    ishortcut.update_shortcut_model_note(modelid, note)
+    ishortcut.shortcutcollectionmanager.update_shortcut_note(modelid, note)
 
 
 @with_error_handling(
@@ -595,7 +595,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
 )
 def on_open_image_folder_click(modelid):
     if modelid:
-        model_info = modelprocessor.get_model_info(modelid)
+        model_info = ishortcut.modelprocessor.get_model_info(modelid)
         if model_info:
             model_name = model_info['name']
             image_folder = util.get_download_image_folder(model_name)
@@ -725,7 +725,7 @@ def on_downloadable_files_select(evt: gr.SelectData, df, filenames):
 def on_download_images_click(model_id: str, images_url):
     msg = None
     if model_id:
-        model_info = modelprocessor.get_model_info(model_id)
+        model_info = ishortcut.modelprocessor.get_model_info(model_id)
         if not model_info:
             return gr.update(visible=False)
 
@@ -870,7 +870,7 @@ def on_change_thumbnail_image_click(mid, img_idx: int, civitai_images):
             if not os.path.isfile(selected_image_filepath):
                 return gr.update(visible=False)
 
-            imageprocessor.create_thumbnail(mid, selected_image_filepath)
+            ishortcut.imageprocessor.create_thumbnail(mid, selected_image_filepath)
 
             current_time = datetime.datetime.now()
             return current_time
@@ -1143,14 +1143,14 @@ def on_civitai_hidden_change(hidden, index):
 
 def on_shortcut_del_btn_click(model_id):
     if model_id:
-        ishortcut.delete_shortcut_model(model_id)
+        ishortcut.shortcutcollectionmanager.delete_shortcut_model(model_id)
     current_time = datetime.datetime.now()
     return current_time
 
 
 def on_update_information_btn_click(modelid, progress=gr.Progress()):
     if modelid:
-        shortcutcollectionmanager.update_multiple_shortcuts([modelid], progress)
+        ishortcut.shortcutcollectionmanager.update_multiple_shortcuts([modelid], progress)
 
         current_time = datetime.datetime.now()
         return (
@@ -1198,7 +1198,7 @@ def load_saved_model(modelid=None, ver_index=None):
             dhtml,
             triger,
             files,
-        ) = modelprocessor.get_model_information(modelid, None, ver_index)
+        ) = ishortcut.modelprocessor.get_model_information(modelid, None, ver_index)
         if model_info:
             downloaded_info = None
             is_downloaded = False
@@ -1318,14 +1318,16 @@ def load_saved_model(modelid=None, ver_index=None):
                     ]
                 )
 
-            note = ishortcut.get_shortcut_model_note(modelid)
+            note = ishortcut.shortcutcollectionmanager.get_shortcut_note(modelid)
             title_name = f"# {model_info['name']} : {version_name}"
             vs_foldername = setting.generate_version_foldername(
                 model_info['name'], version_name, versionid
             )
             model_url = civitai.Url_Page() + str(modelid)
 
-            images_url = modelprocessor.get_version_description_gallery(modelid, version_info)
+            images_url = ishortcut.modelprocessor.get_version_description_gallery(
+                modelid, version_info
+            )
 
             return (
                 gr.update(value=versionid),
@@ -1427,16 +1429,17 @@ def upload_shortcut_by_files(files, register_information_only, progress):
                     if model_id:
                         modelids.append(model_id)
 
-        for model_id in progress.tqdm(modelids, desc=f"Civitai Shortcut"):
+        for model_id in progress.tqdm(modelids, desc="Civitai Shortcut"):
             if model_id:
-                add_ISC = shortcutcollectionmanager.add_shortcut(add_ISC, model_id, register_information_only, progress)
-
-        ISC = shortcutcollectionmanager.load_shortcuts()
+                add_ISC = ishortcut.shortcutcollectionmanager.add_shortcut(
+                    add_ISC, model_id, register_information_only, progress
+                )
+        ISC = ishortcut.shortcutcollectionmanager.load_shortcuts()
         if ISC:
             ISC.update(add_ISC)
         else:
             ISC = add_ISC
-        shortcutcollectionmanager.save_shortcuts(ISC)
+        ishortcut.shortcutcollectionmanager.save_shortcuts(ISC)
 
     return modelids
 
@@ -1518,7 +1521,7 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
                                 )
 
                                 try:
-                                    add_ISC = shortcutcollectionmanager.add_shortcut(
+                                    add_ISC = ishortcut.shortcutcollectionmanager.add_shortcut(
                                         add_ISC, model_id, register_information_only, progress
                                     )
                                     logger.debug(
@@ -1574,8 +1577,8 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
             logger.debug(f"[ishortcut_action] Finished processing URLs, loading ISC...")
 
             try:
-                ISC = shortcutcollectionmanager.load_shortcuts()
-                logger.debug(f"[ishortcut_action] shortcutcollectionmanager.load_shortcuts() returned: {ISC}")
+                ISC = ishortcut.shortcutcollectionmanager.load_shortcuts()
+                logger.debug("shortcutcollectionmanager.load_shortcuts() returned")
                 logger.debug(f"[ishortcut_action] ISC type: {type(ISC)}")
 
                 if ISC:
@@ -1587,9 +1590,9 @@ def upload_shortcut_by_urls(urls, register_information_only, progress):
                     ISC = add_ISC
                     logger.debug(f"[ishortcut_action] ISC set to add_ISC: {ISC}")
 
-                logger.debug(f"[ishortcut_action] Saving ISC...")
-                shortcutcollectionmanager.save_shortcuts(ISC)
-                logger.debug(f"[ishortcut_action] ISC saved successfully")
+                logger.debug("Saving ISC...")
+                ishortcut.shortcutcollectionmanager.save_shortcuts(ISC)
+                logger.debug("ISC saved successfully")
 
             except Exception as e:
                 logger.debug(f"[ishortcut_action] EXCEPTION in ISC load/save: {e}")
@@ -1625,7 +1628,7 @@ def scan_downloadedmodel_to_shortcut(progress):
     # logger.debug(len(model.Downloaded_Models))
     if model.Downloaded_Models:
         modelid_list = [k for k in model.Downloaded_Models]
-        shortcutcollectionmanager.update_multiple_shortcuts(modelid_list, progress)
+        ishortcut.shortcutcollectionmanager.update_multiple_shortcuts(modelid_list, progress)
 
 
 def _create_send_to_buttons():

@@ -21,7 +21,7 @@ from scripts.civitai_manager_libs.logging_config import get_logger
 
 # Module logger
 logger = get_logger(__name__)
-from scripts.civitai_manager_libs import ishortcut
+from scripts.civitai_manager_libs import ishortcut_core as ishortcut
 from scripts.civitai_manager_libs import recipe_action
 from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
 
@@ -173,14 +173,14 @@ def civitai_shortcut_ui():
 
 
 def update_all_shortcut_informations():
-    preISC = shortcutcollectionmanager.load_shortcuts()
+    preISC = ishortcut.shortcutcollectionmanager.load_shortcuts()
     if not preISC:
         return
 
     modelid_list = [k for k in preISC]
     logger.debug("shortcut update start")
     for modelid in modelid_list:
-        fileprocessor.write_model_information(modelid, False, None)
+        ishortcut.fileprocessor.write_model_information(modelid, False, None)
     logger.debug("shortcut update end")
 
 
