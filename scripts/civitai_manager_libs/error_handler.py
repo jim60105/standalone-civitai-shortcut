@@ -48,7 +48,7 @@ def with_error_handling(
                     except Exception:
                         pass
                     return fallback_value
-                # General error handling: show exception class name for user-friendly error and fallback
+                # General error handling: show exception class name for user-friendly error
                 try:
                     import gradio as gr
 
