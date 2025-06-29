@@ -39,6 +39,12 @@ class ValidationError(CivitaiShortcutError):
     pass
 
 
+class DataValidationError(CivitaiShortcutError):
+    """Data validation errors for metadata processing."""
+
+    pass
+
+
 class APIError(NetworkError):
     """Civitai API specific errors."""
 

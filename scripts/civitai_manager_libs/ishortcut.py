@@ -1,13 +1,30 @@
+"""
+ishortcut.py - Unified entry point for Civitai shortcut functionality.
+
+This module serves as a backward-compatible facade over the new modularized
+architecture in ishortcut_core/. All existing API functions are preserved
+and delegate to the appropriate specialized processors.
+
+The actual implementation has been moved to:
+- ishortcut_core.model_processor: Model information handling
+- ishortcut_core.file_processor: File operations and storage
+- ishortcut_core.image_processor: Image downloading and processing
+- ishortcut_core.metadata_processor: Data validation and metadata
+- ishortcut_core.data_validator: Input validation
+- ishortcut_core.model_factory: Model creation and management
+"""
+
 import os
 import json
-import shutil
-import gradio as gr
 import datetime
 
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = lambda iterable, **kwargs: iterable
+
+    def tqdm(iterable, **kwargs):
+        return iterable
+
 
 from . import util
 from . import setting
@@ -18,14 +35,37 @@ from .logging_config import get_logger
 
 logger = get_logger(__name__)
 
-from PIL import Image
+# Import new modularized architecture
+from .ishortcut_core import (
+    ModelProcessor,
+    FileProcessor,
+    ImageProcessor,
+    MetadataProcessor,
+    DataValidator,
+    ModelFactory,
+)
 
+# Initialize processors
+_model_processor = ModelProcessor()
+_file_processor = FileProcessor()
+_image_processor = ImageProcessor()
+_metadata_processor = MetadataProcessor()
+_data_validator = DataValidator()
+_model_factory = ModelFactory()
+
+# Legacy constants for backward compatibility
 thumbnail_max_size = (400, 400)
 
 # Use centralized HTTP client factory
-from .http_client import get_http_client, ParallelImageDownloader
+from .http_client import get_http_client
 from .error_handler import with_error_handling
 from .exceptions import NetworkError, FileOperationError, CivitaiShortcutError
+
+
+# =============================================================================
+# PUBLIC API - Backward Compatible Functions
+# All functions below delegate to the new modularized architecture
+# =============================================================================
 
 
 @with_error_handling(
@@ -36,56 +76,12 @@ from .exceptions import NetworkError, FileOperationError, CivitaiShortcutError
     user_message="Failed to get model information",
 )
 def get_model_information(modelid: str = None, versionid: str = None, ver_index: int = None):
-    # 현재 모델의 정보를 가져온다.
-    model_info = None
-    version_info = None
+    """
+    Get model information from Civitai API.
 
-    if modelid:
-        model_info = get_model_info(modelid)
-        version_info = dict()
-        if model_info:
-            if not versionid and not ver_index:
-                if "modelVersions" in model_info.keys():
-                    version_info = model_info["modelVersions"][0]
-                    if version_info["id"]:
-                        versionid = version_info["id"]
-            elif versionid:
-                if "modelVersions" in model_info.keys():
-                    for ver in model_info["modelVersions"]:
-                        if versionid == ver["id"]:
-                            version_info = ver
-            else:
-                if "modelVersions" in model_info.keys():
-                    if len(model_info["modelVersions"]) > 0:
-                        version_info = model_info["modelVersions"][ver_index]
-                        if version_info["id"]:
-                            versionid = version_info["id"]
-
-    # 존재 하는지 판별하고 있다면 내용을 얻어낸다.
-    if model_info and version_info:
-        version_name = version_info["name"]
-        model_type = model_info['type']
-        model_basemodels = version_info["baseModel"]
-        versions_list = list()
-        for ver in model_info['modelVersions']:
-            versions_list.append(ver['name'])
-            # model_basemodels.append(ver['baseModel'])
-
-        dhtml, triger, files = get_version_description(version_info, model_info)
-
-        return (
-            model_info,
-            version_info,
-            versionid,
-            version_name,
-            model_type,
-            model_basemodels,
-            versions_list,
-            dhtml,
-            triger,
-            files,
-        )
-    return None, None, None, None, None, None, None, None, None, None
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_model_information(modelid, versionid, ver_index)
 
 
 @with_error_handling(
@@ -95,59 +91,12 @@ def get_model_information(modelid: str = None, versionid: str = None, ver_index:
     user_message="Failed to get version description for gallery",
 )
 def get_version_description_gallery(modelid, version_info):
-    #    modelid = None
-    versionid = None
-    ver_images = dict()
+    """
+    Get version description for gallery display.
 
-    if not modelid:
-        return None
-
-    if not version_info:
-        return None
-
-    # if "modelId" in version_info.keys():
-    #     modelid = str(version_info['modelId'])
-
-    if "id" in version_info.keys():
-        versionid = str(version_info['id'])
-
-    if "images" in version_info.keys():
-        ver_images = version_info['images']
-
-    images_url = list()
-
-    try:
-        for img_dict in ver_images:
-            description_img = setting.get_image_url_to_shortcut_file(
-                modelid, versionid, img_dict['url']
-            )
-            # logger.debug(modelid)
-            # logger.debug(description_img)
-
-            # NSFW filtering ....
-            if setting.NSFW_filtering_enable:
-                # if not setting.NSFW_level[ver["nsfw"]]:
-
-                img_nsfw_level = 1
-
-                if "nsfw" in img_dict.keys():
-                    img_nsfw_level = setting.NSFW_levels.index(img_dict["nsfw"])
-
-                if "nsfwLevel" in img_dict.keys():
-                    img_nsfw_level = img_dict["nsfwLevel"] - 1
-                    if img_nsfw_level < 0:
-                        img_nsfw_level = 0
-
-                if img_nsfw_level > setting.NSFW_levels.index(setting.NSFW_level_user):
-                    description_img = setting.nsfw_disable_image
-
-            if os.path.isfile(description_img):
-                images_url.append(description_img)
-    except Exception as e:
-        # logger.debug("error :" + e)
-        return None
-
-    return images_url
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_version_description_gallery(modelid, version_info)
 
 
 @with_error_handling(
@@ -157,110 +106,22 @@ def get_version_description_gallery(modelid, version_info):
     user_message="Failed to get version description",
 )
 def get_version_description(version_info: dict, model_info: dict = None):
-    output_html = ""
-    output_training = ""
+    """
+    Get version description HTML and training tags.
 
-    files = []
-
-    html_typepart = ""
-    html_creatorpart = ""
-    html_trainingpart = ""
-    html_modelpart = ""
-    html_versionpart = ""
-    html_descpart = ""
-    html_dnurlpart = ""
-    html_imgpart = ""
-    html_modelurlpart = ""
-    html_model_tags = ""
-
-    model_id = None
-
-    if version_info:
-        if 'modelId' in version_info:
-            model_id = version_info['modelId']
-            if not model_info:
-                model_info = get_model_info(model_id)
-
-    if version_info and model_info:
-
-        html_typepart = f"<br><b>Type: {model_info['type']}</b>"
-        model_url = civitai.Url_Page() + str(model_id)
-
-        html_modelpart = (
-            f'<br><b>Model: <a href="{model_url}" target="_blank">{model_info["name"]}</a></b>'
-        )
-        html_modelurlpart = (
-            f'<br><b><a href="{model_url}" target="_blank">Civitai Hompage << Here</a></b><br>'
-        )
-
-        model_version_name = version_info['name']
-
-        if 'trainedWords' in version_info:
-            output_training = ", ".join(version_info['trainedWords'])
-            html_trainingpart = f'<br><b>Training Tags:</b> {output_training}'
-
-        model_uploader = model_info['creator']['username']
-        html_creatorpart = f"<br><b>Uploaded by:</b> {model_uploader}"
-
-        html_descpart = f"<br><b>Version : {version_info['name']}</b><br> BaseModel : {version_info['baseModel']}<br>"
-
-        if 'description' in version_info:
-            if version_info['description']:
-                html_descpart = (
-                    html_descpart + f"<b>Description</b><br>{version_info['description']}<br>"
-                )
-
-        if 'tags' in model_info:
-            model_tags = model_info["tags"]
-            if len(model_tags) > 0:
-                html_model_tags = "<br><b>Model Tags:</b>"
-                for tag in model_tags:
-                    html_model_tags = html_model_tags + f"<b> [{tag}]</b>"
-
-        if 'description' in model_info:
-            if model_info['description']:
-                html_descpart = (
-                    html_descpart + f"<br><b>Description</b><br>{model_info['description']}<br>"
-                )
-
-        html_versionpart = f"<br><b>Version:</b> {model_version_name}"
-
-        if 'files' in version_info:
-            for file in version_info['files']:
-                files.append(file)
-                html_dnurlpart = (
-                    html_dnurlpart
-                    + f"<br><a href={file['downloadUrl']}><b>Download << Here</b></a>"
-                )
-
-        output_html = (
-            html_typepart
-            + html_modelpart
-            + html_versionpart
-            + html_creatorpart
-            + html_trainingpart
-            + "<br>"
-            + html_model_tags
-            + "<br>"
-            + html_modelurlpart
-            + html_dnurlpart
-            + "<br>"
-            + html_descpart
-            + "<br>"
-            + html_imgpart
-        )
-
-        return output_html, output_training, files
-
-    return "", None, None
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_version_description(version_info, model_info)
 
 
 def sort_shortcut_by_value(ISC, key, reverse=False):
+    """Sort shortcuts by a specific value key."""
     sorted_data = sorted(ISC.items(), key=lambda x: x[1][key], reverse=reverse)
     return dict(sorted_data)
 
 
 def sort_shortcut_by_modelid(ISC, reverse=False):
+    """Sort shortcuts by model ID."""
     sorted_data = {}
     for key in sorted(ISC.keys(), reverse=reverse):
         sorted_data[key] = ISC[key]
@@ -268,210 +129,169 @@ def sort_shortcut_by_modelid(ISC, reverse=False):
 
 
 def get_tags():
+    """Get all unique tags from shortcuts."""
     ISC = load()
     if not ISC:
         return
 
     result = []
-
     for item in ISC.values():
         name_values = set(tag['name'] for tag in item['tags'])
         result.extend(name_values)
 
     result = list(set(result))
-    # logger.debug(f"{len(result)}:{result}")
     return result
 
 
-# 현재 소유한 버전에서 최신 버전을 얻는다.
 def get_latest_version_info_by_model_id(id: str) -> dict:
+    """
+    Get latest version info by model ID.
 
-    model_info = get_model_info(id)
-    if not model_info:
-        return
-
-    if "modelVersions" not in model_info.keys():
-        return
-
-    def_version = model_info["modelVersions"][0]
-    if not def_version:
-        return
-
-    if "id" not in def_version.keys():
-        return
-
-    return def_version
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_latest_version_info_by_model_id(id)
 
 
 def get_model_filenames(modelid: str):
+    """
+    Get model filenames for a given model ID.
 
-    model_info = get_model_info(modelid)
-    if not model_info:
-        return None
-
-    filenames = []
-
-    if "modelVersions" in model_info.keys():
-        for ver in model_info["modelVersions"]:
-            for ver_file in ver["files"]:
-                filenames.append(ver_file["name"])
-
-    return filenames
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_model_filenames(modelid)
 
 
 def is_baseModel(modelid: str, baseModels):
+    """
+    Check if model matches base models.
 
-    model_info = get_model_info(modelid)
-    if not model_info:
-        return None
-
-    if "modelVersions" in model_info.keys():
-        for ver in model_info["modelVersions"]:
-            try:
-                # logger.debug(ver["baseModel"])
-                if ver["baseModel"] in baseModels:
-                    return True
-            except:
-                pass
-
-    return False
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.is_baseModel(modelid, baseModels)
 
 
 def get_model_info(modelid: str):
-    if not modelid:
-        return
-    contents = None
-    model_path = os.path.join(
-        setting.shortcut_info_folder, modelid, f"{modelid}{setting.info_suffix}{setting.info_ext}"
-    )
-    try:
-        with open(model_path, 'r') as f:
-            contents = json.load(f)
+    """
+    Get model info from local storage.
 
-        if 'id' not in contents.keys():
-            return None
-    except:
-        return None
-
-    return contents
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_model_info(modelid)
 
 
 def get_version_info(modelid: str, versionid: str):
+    """
+    Get version info for a specific model and version.
 
-    model_info = get_model_info(modelid)
-    if not model_info:
-        return None
-
-    if "modelVersions" in model_info.keys():
-        for ver in model_info["modelVersions"]:
-            if str(versionid) == str(ver["id"]):
-                return ver
-    return None
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_version_info(modelid, versionid)
 
 
 def get_version_images(modelid: str, versionid: str):
+    """
+    Get version images for a specific model and version.
 
-    version_info = get_version_info(modelid, versionid)
-    if not version_info:
-        return None
-
-    if "images" in version_info.keys():
-        return version_info["images"]
-
-    return None
+    This function delegates to ModelProcessor for the actual implementation.
+    """
+    return _model_processor.get_version_images(modelid, versionid)
 
 
 def get_version_image_id(filename):
+    """Extract version and image ID from filename."""
     version_image, ext = os.path.splitext(filename)
-
     ids = version_image.split("-")
-
     if len(ids) > 1:
         return ids
-
     return None
 
 
-# 모델에 해당하는 shortcut에서 note를 변경한다.
 def update_shortcut_model_note(modelid, note):
+    """Update note for a specific model shortcut."""
     if modelid:
         ISC = load()
         try:
             ISC[str(modelid)]["note"] = str(note)
             save(ISC)
-        except:
+        except Exception:
             pass
 
 
-# 모델에 해당하는 shortcut에서 note를 가져온다
 def get_shortcut_model_note(modelid):
+    """Get note for a specific model shortcut."""
     if modelid:
         ISC = load()
         try:
             return ISC[str(modelid)]["note"]
-        except:
+        except Exception:
             pass
     return None
 
 
-# 모델에 해당하는 shortcut 을 가져온다
 def get_shortcut_model(modelid):
+    """Get shortcut for a specific model."""
     if modelid:
         ISC = load()
         try:
             return ISC[str(modelid)]
-        except:
+        except Exception:
             pass
     return None
 
 
-# 모델에 해당하는 shortcut 을 지운다
 def delete_shortcut_model(modelid):
+    """Delete shortcut for a specific model."""
     if modelid:
         ISC = load()
         ISC = delete(ISC, modelid)
         save(ISC)
 
 
-# 이중으로 하지 않으면 gr.Progress 오류가 난다 아마도 중첩에서 에러가 나는것 같다. progress.tqdm
-# 솟컷을 업데이트하며 없으면 해당 아이디의 모델을 새로 생성한다.
 def update_shortcut(modelid, progress=None):
-    if modelid:
-        note = None
-        date = datetime.datetime.now()
-        date = date.strftime("%Y-%m-%d %H:%M:%S")
+    """
+    Update or create a shortcut for a model.
 
-        add_ISC = add(None, str(modelid), False, progress)
-        ISC = load()
-        if ISC:
-            if str(modelid) in ISC:
+    This function delegates to ModelFactory for the actual implementation.
+    """
+    if not modelid:
+        return
 
-                # 만일 civitai 에서 정보를 가져올수 없다면 기존것을 그대로 사용한다.
-                if str(modelid) not in add_ISC:
-                    add_ISC[str(modelid)] = ISC[str(modelid)]
+    # Get existing shortcut data to preserve notes and dates
+    ISC = load()
+    existing_data = {}
+    if ISC and str(modelid) in ISC:
+        existing_data = ISC[str(modelid)]
 
-                # 기존의 개별적으로 저장한 정보를 가져온다.
-                if "note" in ISC[str(modelid)]:
-                    note = ISC[str(modelid)]["note"]
+    # Create/update shortcut using ModelFactory
+    result_shortcuts = _model_factory.create_model_shortcut(
+        str(modelid), register_information_only=False, progress=progress
+    )
 
-                # 기존의 등록날짜 정보를 가져온다.
-                if "date" in ISC[str(modelid)]:
-                    if ISC[str(modelid)]["date"]:
-                        date = ISC[str(modelid)]["date"]
-
-                add_ISC[str(modelid)]["note"] = str(note)
-                add_ISC[str(modelid)]["date"] = date
-
-                if 'nsfw' not in add_ISC[str(modelid)].keys():
-                    add_ISC[str(modelid)]["nsfw"] = False
-
-            ISC.update(add_ISC)
+    if result_shortcuts and str(modelid) in result_shortcuts:
+        # Preserve existing note and date
+        if "note" in existing_data:
+            result_shortcuts[str(modelid)]["note"] = existing_data["note"]
+        if "date" in existing_data and existing_data["date"]:
+            result_shortcuts[str(modelid)]["date"] = existing_data["date"]
         else:
-            ISC = add_ISC
+            # Set current date if no existing date
+            date = datetime.datetime.now()
+            result_shortcuts[str(modelid)]["date"] = date.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Ensure NSFW field exists
+        if 'nsfw' not in result_shortcuts[str(modelid)]:
+            result_shortcuts[str(modelid)]["nsfw"] = False
+
+        # Update the shortcuts database
+        if ISC:
+            ISC.update(result_shortcuts)
+        else:
+            ISC = result_shortcuts
         save(ISC)
 
 
 def update_shortcut_models(modelid_list: list, progress):
+    """Update multiple shortcuts."""
     if not modelid_list:
         return
 
@@ -480,57 +300,17 @@ def update_shortcut_models(modelid_list: list, progress):
 
 
 def update_shortcut_informations(modelid_list: list, progress):
+    """Update shortcut information for multiple models."""
     if not modelid_list:
         return
 
-    # shortcut 의 데이터만 새로 갱신한다.
-    # for modelid in progress.tqdm(modelid_list, desc="Updating Shortcut Information"):
-    #     write_model_information(modelid, False, progress)
-
     for modelid in progress.tqdm(modelid_list, desc="Updating Models Information"):
         if modelid:
-            note = None
-            date = datetime.datetime.now()
-            date = date.strftime("%Y-%m-%d %H:%M:%S")
-            add_ISC = add(None, str(modelid), False, progress)
-
-            ISC = load()
-
-            if str(modelid) in ISC:
-
-                # 만일 civitai 에서 정보를 가져올수 없다면 기존것을 그대로 사용한다.
-                if str(modelid) not in add_ISC:
-                    add_ISC[str(modelid)] = ISC[str(modelid)]
-
-                # 개별적으로 저장한 정보를 가져온다.
-                if "note" in ISC[str(modelid)]:
-                    note = ISC[str(modelid)]["note"]
-
-                # 기존의 등록날짜 정보를 가져온다.
-                if "date" in ISC[str(modelid)]:
-                    if ISC[str(modelid)]["date"]:
-                        date = ISC[str(modelid)]["date"]
-
-                add_ISC[str(modelid)]["note"] = str(note)
-                add_ISC[str(modelid)]["date"] = date
-
-                if 'nsfw' not in add_ISC[str(modelid)].keys():
-                    add_ISC[str(modelid)]["nsfw"] = False
-
-                # hot fix and delete model
-                # civitiai 에서 제거된 모델때문임
-                # tags 를 변경해줘야함
-                # 이슈가 해결되면 제거할코드
-                # ISC[str(modelid)]["tags"]=[]
-
-            if ISC:
-                ISC.update(add_ISC)
-            else:
-                ISC = add_ISC
-            save(ISC)
+            update_shortcut(modelid, progress)
 
 
 def update_all_shortcut_informations(progress):
+    """Update all shortcut information."""
     preISC = load()
     if not preISC:
         return
@@ -548,463 +328,31 @@ def update_all_shortcut_informations(progress):
 )
 def write_model_information(modelid: str, register_only_information=False, progress=None):
     """
-    Write model information to local storage and optionally download images.
+    Write model information to local storage.
 
-    Args:
-        modelid: The model ID to process
-        register_only_information: If True, skip image downloads
-        progress: Progress callback for UI updates
-
-    Returns:
-        dict: Model information from Civitai API, or None if failed
+    This function delegates to FileProcessor for the actual implementation.
     """
-    logger.info(f"[ishortcut.write_model_information] Starting process for modelid: {modelid}")
-
-    if not modelid:
-        logger.warning("[ishortcut.write_model_information] No modelid provided, aborting")
-        return None
-
-    # Fetch model information from Civitai API
-    logger.info("[ishortcut.write_model_information] Fetching model info from Civitai API")
-    model_info = civitai.get_model_info(modelid)
-
-    if not model_info:
-        logger.error(f"[ishortcut.write_model_information] Failed to get model info for {modelid}")
-        return None
-
-    logger.info("[ishortcut.write_model_information] Successfully fetched model info")
-
-    # Process model versions and extract image information
-    version_list = _extract_version_images(model_info, modelid)
-
-    # Create model directory and save information
-    model_path = _create_model_directory(modelid)
-    if not model_path:
-        return None
-
-    if not _save_model_information(model_info, model_path, modelid):
-        return None
-
-    # Download images if requested
-    if not register_only_information:
-        _download_model_images(version_list, modelid, progress)
-    else:
-        logger.info(
-            "[ishortcut.write_model_information] Skipping image downloads "
-            "(register_only_information=True)"
-        )
-
-    logger.info(f"[ishortcut.write_model_information] Process completed successfully for {modelid}")
-    return model_info
-
-
-@with_error_handling(
-    fallback_value=[],
-    exception_types=(Exception,),
-    retry_count=0,
-    user_message="Failed to extract version images",
-)
-def _extract_version_images(model_info: dict, modelid: str) -> list:
-    """
-    Extract image information from model versions.
-
-    Args:
-        model_info: Model information from Civitai API
-        modelid: Model ID for debug logging
-
-    Returns:
-        list: List of image lists for each version
-    """
-    logger.info(f"[ishortcut._extract_version_images] Processing versions for model {modelid}")
-    version_list = []
-
-    if "modelVersions" not in model_info:
-        logger.warning(f"[ishortcut._extract_version_images] No modelVersions found for {modelid}")
-        return version_list
-
-    version_count = len(model_info["modelVersions"])
-    logger.info(f"[ishortcut._extract_version_images] Found {version_count} versions")
-
-    for idx, version_info in enumerate(model_info["modelVersions"]):
-        version_id = version_info.get('id')
-        logger.debug(
-            f"[ishortcut._extract_version_images] Processing version "
-            f"{idx+1}/{version_count}, ID: {version_id}"
-        )
-
-        if not version_id:
-            logger.warning(
-                f"[ishortcut._extract_version_images] Version {idx+1} has no ID, skipping"
-            )
-            continue
-
-        if "images" not in version_info:
-            logger.warning(
-                f"[ishortcut._extract_version_images] Version {version_id} has no images"
-            )
-            continue
-
-        image_list = _process_version_images(version_info["images"], version_id)
-        if image_list:
-            version_list.append(image_list)
-            logger.info(
-                f"[ishortcut._extract_version_images] Added {len(image_list)} images for version {version_id}"
-            )
-        else:
-            logger.warning(
-                f"[ishortcut._extract_version_images] No valid images found for version {version_id}"
-            )
-
-    logger.debug(
-        f"[ishortcut._extract_version_images] Processed {len(version_list)} versions with images"
-    )
-    return version_list
-
-
-@with_error_handling(
-    fallback_value=[],
-    exception_types=(Exception,),
-    retry_count=0,
-    user_message="Failed to process version images",
-)
-def _process_version_images(images: list, version_id: str) -> list:
-    """
-    Process images for a specific version.
-
-    Args:
-        images: List of image data from API
-        version_id: Version ID for this set of images
-
-    Returns:
-        list: List of [version_id, img_url] pairs
-    """
-    image_list = []
-    image_count = len(images)
-    logger.info(
-        f"[ishortcut._process_version_images] Processing {image_count} images for version {version_id}"
-    )
-
-    for idx, img in enumerate(images):
-        if "url" not in img:
-            logger.warning(
-                f"[ishortcut._process_version_images] Image {idx+1}/{image_count} has no URL, skipping"
-            )
-            continue
-
-        img_url = img["url"]
-
-        # Use max width if available
-        if "width" in img and img["width"]:
-            original_url = img_url
-            img_url = util.change_width_from_image_url(img_url, img["width"])
-            logger.debug(
-                f"[ishortcut._process_version_images] Adjusted image URL width: {original_url} -> {img_url}"
-            )
-
-        image_list.append([version_id, img_url])
-        logger.debug(
-            f"[ishortcut._process_version_images] Added image {idx+1}/{image_count}: {img_url}"
-        )
-
-    return image_list
-
-
-@with_error_handling(
-    fallback_value=None,
-    exception_types=(FileOperationError,),
-    retry_count=1,
-    retry_delay=1.0,
-    user_message="Failed to create model directory",
-)
-def _create_model_directory(modelid: str) -> str:
-    """
-    Create directory for model information storage.
-
-    Args:
-        modelid: Model ID to create directory for
-
-    Returns:
-        str: Path to created directory, or None if failed
-    """
-    logger.info(f"[ishortcut._create_model_directory] Creating directory for model {modelid}")
-
-    try:
-        model_path = os.path.join(setting.shortcut_info_folder, modelid)
-        logger.debug(f"[ishortcut._create_model_directory] Target path: {model_path}")
-
-        if os.path.exists(model_path):
-            logger.info("[ishortcut._create_model_directory] Directory already exists")
-        else:
-            os.makedirs(model_path)
-            logger.info("[ishortcut._create_model_directory] Directory created successfully")
-
-        return model_path
-
-    except Exception as e:
-        logger.error(f"[ishortcut._create_model_directory] Failed to create directory: {e}")
-        return None
-
-
-@with_error_handling(
-    fallback_value=False,
-    exception_types=(FileOperationError,),
-    retry_count=1,
-    retry_delay=1.0,
-    user_message="Failed to save model information",
-)
-def _save_model_information(model_info: dict, model_path: str, modelid: str) -> bool:
-    """
-    Save model information to JSON file.
-
-    Args:
-        model_info: Model information to save
-        model_path: Directory path to save in
-        modelid: Model ID for filename
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    logger.info(f"[ishortcut._save_model_information] Saving model info for {modelid}")
-
-    try:
-        tmp_info_file = os.path.join(model_path, f"tmp{setting.info_suffix}{setting.info_ext}")
-        model_info_file = os.path.join(
-            model_path, f"{modelid}{setting.info_suffix}{setting.info_ext}"
-        )
-
-        logger.debug(f"[ishortcut._save_model_information] Temp file: {tmp_info_file}")
-        logger.debug(f"[ishortcut._save_model_information] Final file: {model_info_file}")
-
-        # Write to temporary file first for atomic operation
-        with open(tmp_info_file, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(model_info, indent=4, ensure_ascii=False))
-
-        # Atomically replace the target file
-        os.replace(tmp_info_file, model_info_file)
-        logger.info("[ishortcut._save_model_information] Model info saved successfully")
-        return True
-
-    except Exception as e:
-        logger.error(f"[ishortcut._save_model_information] Failed to save model info: {e}")
-        return False
-
-
-@with_error_handling(
-    fallback_value=None,
-    exception_types=(NetworkError, FileOperationError, CivitaiShortcutError),
-    retry_count=1,
-    retry_delay=1.0,
-    user_message="Failed to download model images",
-)
-def _download_model_images(version_list: list, modelid: str, progress=None):
-    """
-    Download images for all model versions.
-
-    Args:
-        version_list: List of image lists for each version
-        modelid: Model ID for debug logging
-        progress: Progress callback for UI updates
-    """
-    # Ensure latest configuration values loaded before downloading
-    setting.load_data()
-    logger.debug(
-        f"[ishortcut._download_model_images] Current shortcut_max_download_image_per_version: "
-        f"{setting.shortcut_max_download_image_per_version}"
-    )
-    if not version_list:
-        logger.info(f"[ishortcut._download_model_images] No images to download for {modelid}")
-        return
-
-    logger.info(f"[ishortcut._download_model_images] Starting image downloads for model {modelid}")
-
-    # Get HTTP client for downloads
-    try:
-        client = get_http_client()
-        logger.debug("[ishortcut._download_model_images] HTTP client obtained successfully")
-    except Exception as e:
-        logger.error(f"[ishortcut._download_model_images] Failed to get HTTP client: {e}")
-        return
-
-    # Collect all images that need downloading
-    all_images_to_download = _collect_images_to_download(version_list, modelid)
-
-    if not all_images_to_download:
-        logger.info(f"[ishortcut._download_model_images] No new images to download for {modelid}")
-        return
-
-    # Download images with progress tracking
-    _perform_image_downloads(all_images_to_download, client, progress)
-    logger.info(f"[ishortcut._download_model_images] Image downloads completed for {modelid}")
-
-
-@with_error_handling(
-    fallback_value=[],
-    exception_types=(Exception,),
-    retry_count=0,
-    user_message="Failed to collect images to download",
-)
-def _collect_images_to_download(version_list: list, modelid: str) -> list:
-    """
-    Collect images that need to be downloaded (don't already exist).
-
-    Args:
-        version_list: List of image lists for each version
-        modelid: Model ID for debug logging
-
-    Returns:
-        list: List of (version_id, url, filepath) tuples to download
-    """
-    logger.info(f"[ishortcut._collect_images_to_download] Collecting images for {modelid}")
-    logger.debug(
-        "[ishortcut._collect_images_to_download] "
-        f"shortcut_max_download_image_per_version = {setting.shortcut_max_download_image_per_version}"
-    )
-    all_images_to_download = []
-
-    for version_idx, image_list in enumerate(version_list):
-        logger.debug(
-            f"[ishortcut._collect_images_to_download] Processing version "
-            f"{version_idx+1}/{len(version_list)}"
-        )
-        images_for_version = []
-
-        for img_idx, (vid, url) in enumerate(image_list):
-            description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
-
-            if os.path.exists(description_img):
-                logger.debug(
-                    f"[ishortcut._collect_images_to_download] Image {img_idx+1} already exists: {description_img}"
-                )
-                continue
-
-            images_for_version.append((vid, url, description_img))
-            logger.info(
-                f"[ishortcut._collect_images_to_download] Added image {img_idx+1} for download: {url}"
-            )
-
-        # Apply per-version download limit
-        if (
-            setting.shortcut_max_download_image_per_version
-            and len(images_for_version) > setting.shortcut_max_download_image_per_version
-        ):
-            original_count = len(images_for_version)
-            images_for_version = images_for_version[
-                : setting.shortcut_max_download_image_per_version
-            ]
-            logger.info(
-                f"[ishortcut._collect_images_to_download] Limited images from "
-                f"{original_count} to {len(images_for_version)} per version limit"
-            )
-        else:
-            logger.debug(
-                f"[ishortcut._collect_images_to_download] No limit applied: "
-                f"setting={setting.shortcut_max_download_image_per_version}, "
-                f"count={len(images_for_version)}"
-            )
-
-        all_images_to_download.extend(images_for_version)
-
-    logger.info(
-        f"[ishortcut._collect_images_to_download] Total images to download: {len(all_images_to_download)}"
-    )
-    return all_images_to_download
-
-
-@with_error_handling(
-    fallback_value=None,
-    exception_types=(Exception,),
-    retry_count=0,
-    user_message="Failed to perform image downloads",
-)
-def _perform_image_downloads(all_images_to_download: list, client, progress=None):
-    """Perform parallel image downloads with progress tracking."""
-    if not all_images_to_download:
-        return
-
-    logger.info(
-        f"[ishortcut._perform_image_downloads] Starting parallel downloads for {len(all_images_to_download)} images"
-    )
-
-    # Prepare download tasks
-    image_tasks = [(url, filepath) for _, url, filepath in all_images_to_download]
-
-    # Setup progress wrapper matching new progress_callback signature (done, total, desc)
-    def progress_wrapper(done, total, desc):
-        # Only update progress if a valid Progress callback was provided
-        if progress is not None:
-            try:
-                # Convert completed count to progress fraction
-                progress(done / total if total else 0, desc=desc)
-            except Exception as e:
-                logger.debug(f"[ishortcut._perform_image_downloads] Progress update failed: {e}")
-
-    # Execute parallel download
-    downloader = ParallelImageDownloader(max_workers=10)
-    success_count = downloader.download_images(image_tasks, progress_wrapper)
-
-    logger.debug(
-        f"[ishortcut._perform_image_downloads] Parallel downloads completed:"
-        f" {success_count}/{len(all_images_to_download)} successful"
-    )
-
-
-def _setup_progress_tracking(all_images_to_download: list, progress=None):
-    """
-    Setup progress tracking with improved reset resilience.
-
-    Args:
-        all_images_to_download: List of images to download
-        progress: Progress callback
-
-    Returns:
-        tuple: (images_list, progress_tracker)
-    """
-    if progress is None:
-        logger.debug("[ishortcut._setup_progress_tracking] No progress callback provided")
-        return all_images_to_download, None
-
-    try:
-        total_images = len(all_images_to_download)
-
-        # Initialize progress with robust error handling
-        try:
-            # Send initial progress update including total images
-            progress(0, desc="Initializing image downloads...", total=total_images)
-            logger.debug(
-                f"[ishortcut._setup_progress_tracking] Initialized progress for {total_images} images"
-            )
-        except Exception as e:
-            logger.debug(
-                f"[ishortcut._setup_progress_tracking] Initial progress update failed: {e}"
-            )
-
-        return all_images_to_download, progress
-
-    except Exception as e:
-        logger.debug(f"[ishortcut._setup_progress_tracking] Failed to setup progress tracking: {e}")
-        return all_images_to_download, None
+    return _file_processor.write_model_information(modelid, register_only_information, progress)
 
 
 def delete_model_information(modelid: str):
-    if not modelid:
-        return
+    """
+    Delete model information files.
 
-    model_path = os.path.join(setting.shortcut_info_folder, modelid)
-    if setting.shortcut_info_folder != model_path:
-        if os.path.exists(model_path):
-            shutil.rmtree(model_path)
+    This function delegates to FileProcessor for the actual implementation.
+    """
+    return _file_processor.delete_model_information(modelid)
 
 
 def update_thumbnail_images(progress):
+    """Update thumbnail images for all shortcuts."""
     preISC = load()
     if not preISC:
         return
 
-    # nsfw_levels = setting.NSFW_levels #[nsfw_level for nsfw_level in setting.NSFW_level.keys()]
-
     for k, v in progress.tqdm(preISC.items(), desc="Update Shortcut's Thumbnails"):
         if v:
-            # 사이트에서 최신 정보를 가져온다.
+            # Get latest information from the site
             version_info = civitai.get_latest_version_info_by_model_id(v['id'])
             if not version_info:
                 continue
@@ -1012,16 +360,11 @@ def update_thumbnail_images(progress):
             if 'images' not in version_info.keys():
                 continue
 
-            # if len(version_info['images']) > 0:
-            #     v['imageurl'] = version_info['images'][0]['url']
-            #     download_thumbnail_image(v['id'], v['imageurl'])
-
-            # nsfw 검색해서 최대한 건전한 이미지를 골라낸다.
+            # Select the most appropriate image by NSFW level
             if len(version_info["images"]) > 0:
                 cur_nsfw_level = len(setting.NSFW_levels)
                 def_image = None
                 for img_dict in version_info["images"]:
-
                     img_nsfw_level = 1
 
                     if "nsfw" in img_dict.keys():
@@ -1042,7 +385,7 @@ def update_thumbnail_images(progress):
                 v['imageurl'] = def_image
                 download_thumbnail_image(v['id'], v['imageurl'])
 
-    # 중간에 변동이 있을수 있으므로 병합한다.
+    # Merge changes back to shortcuts
     ISC = load()
     if ISC:
         ISC.update(preISC)
@@ -1052,7 +395,7 @@ def update_thumbnail_images(progress):
 
 
 def get_list(shortcut_types=None) -> str:
-
+    """Get list of shortcut names."""
     ISC = load()
     if not ISC:
         return
@@ -1062,12 +405,11 @@ def get_list(shortcut_types=None) -> str:
         for sc_type in shortcut_types:
             try:
                 tmp_types.append(setting.ui_typenames[sc_type])
-            except:
+            except Exception:
                 pass
 
     shotcutlist = list()
     for k, v in ISC.items():
-        # logger.debug(ISC[k])
         if v:
             if tmp_types:
                 if v['type'] in tmp_types:
@@ -1081,7 +423,7 @@ def get_list(shortcut_types=None) -> str:
 def get_image_list(
     shortcut_types=None, search=None, shortcut_basemodels=None, shortcut_classification=None
 ) -> str:
-
+    """Get filtered list of shortcut images."""
     ISC = load()
     if not ISC:
         return
@@ -1089,9 +431,8 @@ def get_image_list(
     result_list = list()
 
     keys, tags, notes = util.get_search_keyword(search)
-    # logger.debug(f"keys:{keys} ,tags:{tags},notes:{notes}")
 
-    # classification # and 연산으로 변경한다.
+    # Classification filtering with AND operation
     if shortcut_classification:
         clfs_list = list()
         CISC = classification.load()
@@ -1105,7 +446,6 @@ def get_image_list(
                         clfs_list = name_list
                 else:
                     clfs_list = list()
-                    # 결과가 없다면 교집합으로 나올수 있는것이 없으므로
                     break
 
             clfs_list = list(set(clfs_list))
@@ -1117,19 +457,19 @@ def get_image_list(
     else:
         result_list = ISC.values()
 
-    # filtering type
+    # Type filtering
     tmp_types = list()
     if shortcut_types:
         for sc_type in shortcut_types:
             try:
                 tmp_types.append(setting.ui_typenames[sc_type])
-            except:
+            except Exception:
                 pass
 
     if tmp_types:
         result_list = [v for v in result_list if v['type'] in tmp_types]
 
-    # filtering key
+    # Keyword filtering
     if keys:
         key_list = list()
         for v in result_list:
@@ -1140,21 +480,20 @@ def get_image_list(
                         break
         result_list = key_list
 
-    # filtering tags
+    # Tag filtering
     if tags:
         tags_list = list()
         for v in result_list:
             if v:
                 if "tags" not in v.keys():
                     continue
-                # v_tags = [tag["name"].lower() for tag in v["tags"]]
                 v_tags = [tag.lower() for tag in v["tags"]]
                 common_tags = set(v_tags) & set(tags)
                 if common_tags:
                     tags_list.append(v)
         result_list = tags_list
 
-    # filtering personal note key
+    # Note filtering
     if notes:
         note_list = list()
         for v in result_list:
@@ -1171,212 +510,101 @@ def get_image_list(
                         break
         result_list = note_list
 
-    # basemodel 검색
+    # Base model filtering
     tmp_basemodels = list()
     if shortcut_basemodels:
         tmp_basemodels.extend(shortcut_basemodels)
         result_list = [v for v in result_list if is_baseModel(str(v['id']), tmp_basemodels)]
 
-    # filename검색
-    # if filenames:
-    #     filenames_list = list()
-    #     for v in result_list:
-    #         if v:
-    #             if "id" not in v.keys():
-    #                 continue
-
-    #             v_filenames = get_model_filenames(v["id"])
-    #             common_filenames = set(v_filenames) & set(filenames)
-    #             if common_filenames:
-    #                 filenames_list.append(v)
-    #     result_list = filenames_list
-
     return result_list
 
 
 def create_thumbnail(model_id, input_image_path):
-    global thumbnail_max_size
+    """
+    Create thumbnail from input image.
 
-    if not model_id:
-        return False
-
-    thumbnail_path = os.path.join(
-        setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-    )
-    # shutil.copy(input_image_path, thumbnail_path)
-    try:
-        with Image.open(input_image_path) as image:
-            image.thumbnail(thumbnail_max_size)
-            image.save(thumbnail_path)
-    except Exception as e:
-        return False
-
-    return True
+    This function delegates to ImageProcessor for the actual implementation.
+    """
+    return _image_processor.create_thumbnail(model_id, input_image_path)
 
 
 def delete_thumbnail_image(model_id):
-    if is_sc_image(model_id):
-        try:
-            os.remove(
-                os.path.join(
-                    setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-                )
-            )
-        except:
-            return
+    """
+    Delete thumbnail image.
+
+    This function delegates to ImageProcessor for the actual implementation.
+    """
+    return _image_processor.delete_thumbnail_image(model_id)
 
 
 def download_thumbnail_image(model_id, url):
-    """Download and generate thumbnail for a shortcut image."""
-    if not model_id or not url:
-        return False
+    """
+    Download and generate thumbnail for a shortcut image.
 
-    os.makedirs(setting.shortcut_thumbnail_folder, exist_ok=True)
-    thumbnail_path = os.path.join(
-        setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-    )
-    client = get_http_client()
-    if not util.download_image_safe(url, thumbnail_path, client, show_error=False):
-        return False
-    try:
-        with Image.open(thumbnail_path) as image:
-            image.thumbnail(thumbnail_max_size)
-            image.save(thumbnail_path)
-    except Exception as e:
-        logger.warning(f"[ishortcut] Thumbnail generation failed for {thumbnail_path}: {e}")
-    return True
+    This function delegates to ImageProcessor for the actual implementation.
+    """
+    return _image_processor.download_thumbnail_image(model_id, url)
 
 
-# 섬네일이 있는지 체크한다.
 def is_sc_image(model_id):
-    if not model_id:
-        return False
+    """
+    Check if thumbnail image exists.
 
-    if os.path.isfile(
-        os.path.join(setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}")
-    ):
-        return True
-
-    return False
+    This function delegates to ImageProcessor for the actual implementation.
+    """
+    return _image_processor.is_sc_image(model_id)
 
 
 def add(ISC: dict, model_id, register_information_only=False, progress=None) -> dict:
+    """
+    Add a model to shortcuts.
 
+    This function delegates to ModelFactory for the actual implementation.
+    """
     if not model_id:
         return ISC
 
     if not ISC:
         ISC = dict()
 
-    model_info = write_model_information(model_id, register_information_only, progress)
+    # Use ModelFactory to create the shortcut
+    new_shortcuts = _model_factory.create_model_shortcut(
+        str(model_id), register_information_only, progress
+    )
 
-    def_id = None
-    def_image = None
-
-    if model_info:
-        filenames = list()
-
-        if "modelVersions" in model_info.keys() and len(model_info["modelVersions"]) > 0:
-            def_version = model_info["modelVersions"][0]
-            def_id = def_version['id']
-
-            if 'images' in def_version.keys():
-                # if len(def_version["images"]) > 0:
-                #     def_image = def_version["images"][0]["url"]
-
-                # nsfw 검색해서 최대한 건전한 이미지를 골라낸다.
-                if len(def_version["images"]) > 0:
-                    # nsfw_levels = [nsfw_level for nsfw_level in setting.NSFW_level.keys()]
-                    cur_nsfw_level = len(setting.NSFW_levels)
-                    def_image = None
-                    for img_dict in def_version["images"]:
-
-                        img_nsfw_level = 1
-
-                        if "nsfw" in img_dict.keys():
-                            img_nsfw_level = setting.NSFW_levels.index(img_dict["nsfw"])
-
-                        if "nsfwLevel" in img_dict.keys():
-                            img_nsfw_level = img_dict["nsfwLevel"] - 1
-                            if img_nsfw_level < 0:
-                                img_nsfw_level = 0
-
-                        if img_nsfw_level < cur_nsfw_level:
-                            cur_nsfw_level = img_nsfw_level
-                            def_image = img_dict["url"]
-
-                    if not def_image:
-                        def_image = def_version["images"][0]["url"]
-
-            # 현재 모델의 모델 파일 정보를 추출한다.
-            # for ver in model_info["modelVersions"]:
-            #     for ver_file in ver["files"]:
-            #         filenames.append(ver_file["name"])
-
-        # 모델정보가 바뀌어도 피해를 줄이기 위함
-        tags = list()
-        try:
-            if model_info['tags']:
-                tags = [tag for tag in model_info['tags']]
-        except:
-            pass
-
-        date = datetime.datetime.now()
-        ISC[str(model_id)] = {
-            "id": model_info['id'],
-            "type": model_info['type'],
-            "name": model_info['name'],
-            "tags": tags,
-            "nsfw": model_info['nsfw'],
-            "url": f"{civitai.Url_ModelId()}{model_id}",
-            "versionid": def_id,
-            "imageurl": def_image,
-            "note": "",
-            "date": date.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-
-        cis_to_file(ISC[str(model_id)])
-
-        # 섬네일이 없을때만 새로 다운받는다.
-        if not is_sc_image(model_id):
-            download_thumbnail_image(model_id, def_image)
-
-        # download_thumbnail_image(model_id, def_image)
+    if new_shortcuts and str(model_id) in new_shortcuts:
+        ISC.update(new_shortcuts)
 
     return ISC
 
 
 def delete(ISC: dict, model_id) -> dict:
+    """Delete a model from shortcuts."""
     if not model_id:
-        return
+        return ISC
 
     if not ISC:
-        return
+        return ISC
 
     cis = ISC.pop(str(model_id), None)
-
     cis_to_file(cis)
-
     delete_thumbnail_image(model_id)
-
     delete_model_information(model_id)
 
     return ISC
 
 
 def cis_to_file(cis):
+    """Save shortcut to backup file."""
     if not cis:
         return
 
     if "name" in cis.keys() and 'id' in cis.keys():
         backup_cis(cis['name'], f"{civitai.Url_Page()}{cis['id']}")
-        # if not os.path.exists(setting.shortcut_save_folder):
-        #     os.makedirs(setting.shortcut_save_folder)
-        # util.write_InternetShortcut(os.path.join(setting.shortcut_save_folder,f"{util.replace_filename(cis['name'])}.url"),f"{civitai.Url_Page()}{cis['id']}")
 
 
 def backup_cis(name, url):
-
+    """Backup shortcut information."""
     if not name or not url:
         return
 
@@ -1384,7 +612,7 @@ def backup_cis(name, url):
     try:
         with open(setting.shortcut_civitai_internet_shortcut_url, 'r') as f:
             backup_dict = json.load(f)
-    except:
+    except Exception:
         backup_dict = dict()
 
     backup_dict[f"url={url}"] = name
@@ -1392,33 +620,28 @@ def backup_cis(name, url):
     try:
         with open(setting.shortcut_civitai_internet_shortcut_url, 'w') as f:
             json.dump(backup_dict, f, indent=4)
-    except Exception as e:
+    except Exception:
         logger.error("Error when writing file:" + setting.shortcut_civitai_internet_shortcut_url)
         pass
 
 
 def save(ISC: dict):
-    # print("Saving Civitai Internet Shortcut to: " + setting.shortcut)
-
+    """Save shortcuts to file."""
     output = ""
 
-    # write to file
     try:
         with open(setting.shortcut, 'w') as f:
             json.dump(ISC, f, indent=4)
-    except Exception as e:
+    except Exception:
         logger.error("Error when writing file:" + setting.shortcut)
         return output
 
     output = "Civitai Internet Shortcut saved to: " + setting.shortcut
-    # logger.debug(output)
-
     return output
 
 
 def load() -> dict:
-    # logger.debug("Load Civitai Internet Shortcut from: " + setting.shortcut)
-
+    """Load shortcuts from file."""
     if not os.path.isfile(setting.shortcut):
         logger.debug("Unable to load the shortcut file. Starting with an empty file.")
         save({})
@@ -1428,16 +651,20 @@ def load() -> dict:
     try:
         with open(setting.shortcut, 'r') as f:
             json_data = json.load(f)
-    except:
+    except Exception:
         return None
 
-    # check error
     if not json_data:
         logger.debug("There are no registered shortcuts.")
         return None
 
-    # check for new key
     return json_data
+
+
+# =============================================================================
+# Legacy functions - kept for backward compatibility
+# These functions provide preview image functionality
+# =============================================================================
 
 
 def _get_preview_image_url(model_info) -> str:

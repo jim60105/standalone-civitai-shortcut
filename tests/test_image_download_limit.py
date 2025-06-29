@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-import civitai_manager_libs.ishortcut as ishortcut
 import civitai_manager_libs.setting as setting
+from civitai_manager_libs.ishortcut_core.image_processor import ImageProcessor
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +32,10 @@ def test_collect_images_no_limit():
         [(4, "url4"), (5, "url5")],
     ]
     setting.shortcut_max_download_image_per_version = 0
-    result = ishortcut._collect_images_to_download(version_list, modelid="123")
+    
+    # Use ImageProcessor instead of the moved private function
+    image_processor = ImageProcessor()
+    result = image_processor._collect_images_to_download(version_list, modelid="123")
     assert len(result) == 5
     expected = [
         (1, "url1", "/tmp/123_1.jpg"),
@@ -51,7 +54,10 @@ def test_collect_images_with_limit():
     """
     version_list = [[(1, "url1"), (2, "url2"), (3, "url3")]]
     setting.shortcut_max_download_image_per_version = 2
-    result = ishortcut._collect_images_to_download(version_list, modelid="abc")
+    
+    # Use ImageProcessor instead of the moved private function
+    image_processor = ImageProcessor()
+    result = image_processor._collect_images_to_download(version_list, modelid="abc")
     assert len(result) == 2
     expected = [
         (1, "url1", "/tmp/abc_1.jpg"),
