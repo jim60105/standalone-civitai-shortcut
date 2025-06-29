@@ -30,6 +30,7 @@ from .data_validator import DataValidator
 from .model_factory import ModelFactory
 from .shortcut_collection_manager import ShortcutCollectionManager
 from .shortcut_search_filter import ShortcutSearchFilter
+from .shortcut_thumbnail_manager import ShortcutThumbnailManager
 
 __version__ = "1.0.0"
 __all__ = [
@@ -41,4 +42,5 @@ __all__ = [
     "ModelFactory",
     "ShortcutCollectionManager",
     "ShortcutSearchFilter",
+    "ShortcutThumbnailManager",
 ]

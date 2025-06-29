@@ -26,7 +26,6 @@ except ImportError:
 
 from . import util
 from . import setting
-from . import civitai
 
 from .logging_config import get_logger
 
@@ -42,6 +41,7 @@ from .ishortcut_core import (
     ModelFactory,
     ShortcutCollectionManager,
     ShortcutSearchFilter,
+    ShortcutThumbnailManager,
 )
 
 # Initialize processors
@@ -53,6 +53,7 @@ _data_validator = DataValidator()
 _model_factory = ModelFactory()
 _collection_manager = ShortcutCollectionManager()
 _search_filter = ShortcutSearchFilter(_collection_manager, _model_processor)
+_thumbnail_manager = ShortcutThumbnailManager(_image_processor, _collection_manager)
 
 # Legacy constants for backward compatibility
 thumbnail_max_size = (400, 400)
@@ -263,54 +264,16 @@ def delete_model_information(modelid: str):
     return _file_processor.delete_model_information(modelid)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, FileOperationError, CivitaiShortcutError),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Failed to update thumbnail images",
+)
 def update_thumbnail_images(progress):
     """Update thumbnail images for all shortcuts."""
-    preISC = load()
-    if not preISC:
-        return
-
-    for k, v in progress.tqdm(preISC.items(), desc="Update Shortcut's Thumbnails"):
-        if v:
-            # Get latest information from the site
-            version_info = civitai.get_latest_version_info_by_model_id(v['id'])
-            if not version_info:
-                continue
-
-            if 'images' not in version_info.keys():
-                continue
-
-            # Select the most appropriate image by NSFW level
-            if len(version_info["images"]) > 0:
-                cur_nsfw_level = len(setting.NSFW_levels)
-                def_image = None
-                for img_dict in version_info["images"]:
-                    img_nsfw_level = 1
-
-                    if "nsfw" in img_dict.keys():
-                        img_nsfw_level = setting.NSFW_levels.index(img_dict["nsfw"])
-
-                    if "nsfwLevel" in img_dict.keys():
-                        img_nsfw_level = img_dict["nsfwLevel"] - 1
-                        if img_nsfw_level < 0:
-                            img_nsfw_level = 0
-
-                    if img_nsfw_level < cur_nsfw_level:
-                        cur_nsfw_level = img_nsfw_level
-                        def_image = img_dict["url"]
-
-                if not def_image:
-                    def_image = version_info["images"][0]["url"]
-
-                v['imageurl'] = def_image
-                download_thumbnail_image(v['id'], v['imageurl'])
-
-    # Merge changes back to shortcuts
-    ISC = load()
-    if ISC:
-        ISC.update(preISC)
-    else:
-        ISC = preISC
-    save(ISC)
+    return _thumbnail_manager.update_all_thumbnails(progress)
 
 
 def get_list(shortcut_types=None) -> str:
