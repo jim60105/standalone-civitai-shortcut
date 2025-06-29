@@ -14,7 +14,27 @@ from . import ishortcut
 from . import ishortcut_action
 from .http_client import get_http_client
 
+# Error handling imports
+# Error handling imports
+from .error_handler import with_error_handling
+from .exceptions import (  # noqa: F401
+    CivitaiShortcutError,  # noqa: F401
+    NetworkError,  # noqa: F401
+    FileOperationError,  # noqa: F401
+    ConfigurationError,  # noqa: F401
+    ValidationError,  # noqa: F401
+    APIError,  # noqa: F401
+)  # noqa: F401
+from .recovery import ErrorRecoveryManager  # noqa: F401
 
+
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=3,
+    retry_delay=2.0,
+    user_message="Failed to download scan image",
+)
 def download_scan_image(url: str, save_path: str) -> bool:
     """Download image during scan operation."""
     logger.info(f"Downloading scan image: {url}")
@@ -343,6 +363,16 @@ def scan_models(fix_information_filename, progress=gr.Progress()):
 #             pass
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(choices=[], value=[]),
+        gr.update(visible=False),
+        gr.update(visible=False),
+    ),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=1,
+    user_message="Failed to create model information",
+)
 def on_create_models_info_btn_click(
     files, mfolder, vsfolder, register_shortcut, progress=gr.Progress()
 ):
@@ -365,6 +395,17 @@ def on_create_models_info_btn_click(
     )
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(choices=[], value=[]),
+        gr.update(visible=False),
+        gr.update(visible=False),
+        gr.update(value=False),
+        gr.update(value=False),
+    ),
+    exception_types=(FileOperationError, NetworkError),
+    user_message="Failed to scan models",
+)
 def on_scan_models_btn_click(fix_information_filename, progress=gr.Progress()):
     files = scan_models(fix_information_filename, progress)
     return (
@@ -376,12 +417,24 @@ def on_scan_models_btn_click(fix_information_filename, progress=gr.Progress()):
     )
 
 
+@with_error_handling(
+    fallback_value=gr.update(value="Scan failed"),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=1,
+    user_message="Failed to scan shortcuts",
+)
 def on_scan_to_shortcut_click(progress=gr.Progress()):
     model.update_downloaded_model()
     ishortcut_action.scan_downloadedmodel_to_shortcut(progress)
     return gr.update(visible=True)
 
 
+@with_error_handling(
+    fallback_value=gr.update(value="Update failed"),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=1,
+    user_message="Failed to update shortcuts",
+)
 def on_update_all_shortcuts_btn_click(progress=gr.Progress()):
     ishortcut.update_all_shortcut_informations(progress)
     return gr.update(visible=True)

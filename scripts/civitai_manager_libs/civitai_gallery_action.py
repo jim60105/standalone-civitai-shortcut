@@ -40,6 +40,20 @@ _current_page_metadata = {}
 # HTTP client factory for gallery operations
 from .http_client import get_http_client, ParallelImageDownloader
 
+# Error handling imports
+# Error handling imports
+# Error handling imports
+from .error_handler import with_error_handling
+from .exceptions import (  # noqa: F401
+    CivitaiShortcutError,  # noqa: F401
+    NetworkError,  # noqa: F401
+    FileOperationError,  # noqa: F401
+    ConfigurationError,  # noqa: F401
+    ValidationError,  # noqa: F401
+    APIError,  # noqa: F401
+)
+from .recovery import ErrorRecoveryManager  # noqa: F401
+
 
 def _download_single_image(img_url: str, save_path: str) -> bool:
     """Download a single image with proper error handling."""
@@ -392,6 +406,13 @@ def on_open_image_folder_click(modelid):
                 util.open_folder(image_folder)
 
 
+@with_error_handling(
+    fallback_value=gr.update(visible=False),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=2,
+    retry_delay=3.0,
+    user_message="Failed to download images",
+)
 def on_download_images_click(page_url, images_url):
     is_image_folder = False
     if page_url:
@@ -435,6 +456,11 @@ def on_end_btn_click(usergal_page_url, paging_information):
     return page_url
 
 
+@with_error_handling(
+    fallback_value=gr.update(visible=False),
+    exception_types=(NetworkError, ValidationError),
+    user_message="Failed to navigate pages",
+)
 def on_next_btn_click(usergal_page_url, paging_information):
     page_url = usergal_page_url
 
@@ -448,6 +474,11 @@ def on_next_btn_click(usergal_page_url, paging_information):
     return page_url
 
 
+@with_error_handling(
+    fallback_value=gr.update(visible=False),
+    exception_types=(NetworkError, ValidationError),
+    user_message="Failed to navigate pages",
+)
 def on_prev_btn_click(usergal_page_url, paging_information):
     page_url = usergal_page_url
 
@@ -523,6 +554,16 @@ def on_civitai_hidden_change(hidden, index):
     return ""
 
 
+@with_error_handling(
+    fallback_value=(
+        None,
+        gr.update(visible=False),
+        gr.update(selected=""),
+        gr.update(visible=False),
+    ),
+    exception_types=(ValidationError, NetworkError),
+    user_message="Failed to process gallery selection",
+)
 def on_gallery_select(evt: gr.SelectData, civitai_images):
     """Extract generation parameters from PNG info first, then Civitai API metadata."""
     selected = civitai_images[evt.index]
