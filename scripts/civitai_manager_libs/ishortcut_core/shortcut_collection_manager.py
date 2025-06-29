@@ -12,7 +12,7 @@ import datetime
 from tqdm import tqdm
 
 from ..logging_config import get_logger
-from ..setting import setting
+from .. import setting
 from .model_factory import ModelFactory
 from .file_processor import FileProcessor
 from .image_processor import ImageProcessor
