@@ -621,8 +621,15 @@ def get_http_client() -> CivitaiHttpClient:
                     retry_delay=setting.http_retry_delay,
                 )
     else:
+        # Update all configuration values to reflect current settings
         if _global_http_client.api_key != setting.civitai_api_key:
             _global_http_client.update_api_key(setting.civitai_api_key)
+        if _global_http_client.timeout != setting.http_timeout:
+            _global_http_client.timeout = setting.http_timeout
+        if _global_http_client.max_retries != setting.http_max_retries:
+            _global_http_client.max_retries = setting.http_max_retries
+        if _global_http_client.retry_delay != setting.http_retry_delay:
+            _global_http_client.retry_delay = setting.http_retry_delay
     return _global_http_client
 
 
