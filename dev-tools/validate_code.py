@@ -57,10 +57,10 @@ class CodeValidator:
 
     def check_imports(self, file_path: Path) -> bool:
         """Check if all imports can be resolved."""
-        try:
-            # Add project root to path for imports
-            sys.path.insert(0, str(self.project_root))
+        # Add project root to path for imports
+        sys.path.insert(0, str(self.project_root))
 
+        try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
 
@@ -81,6 +81,7 @@ class CodeValidator:
                         )
 
             return True
+
         except Exception as e:
             self.errors.append(f"IMPORT CHECK ERROR in {file_path}: {e}")
             return False
@@ -147,19 +148,18 @@ class CodeValidator:
 
             # Check for undefined usage
             for node in ast.walk(tree):
-                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
-                    name = node.id
-                    if (
-                        name not in defined_names
-                        and name not in dir(__builtins__)
-                        and name not in ['self', 'cls']
-                    ):
+                if not (isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)):
+                    continue
 
-                        # Get line number for better error reporting
-                        line_no = getattr(node, 'lineno', 'unknown')
-                        self.warnings.append(
-                            f"UNDEFINED VAR in {file_path}:{line_no}: '{name}' may be undefined"
-                        )
+                name = node.id
+                if name in defined_names or name in dir(__builtins__) or name in ['self', 'cls']:
+                    continue
+
+                # Get line number for better error reporting
+                line_no = getattr(node, 'lineno', 'unknown')
+                self.warnings.append(
+                    f"UNDEFINED VAR in {file_path}:{line_no}: '{name}' may be undefined"
+                )
 
             return True
         except Exception as e:
@@ -170,9 +170,7 @@ class CodeValidator:
         """Run flake8 linting on project files only."""
         try:
             # Create a list of project files to check
-            files_to_check = []
-            for file_path in self.python_files:
-                files_to_check.append(str(file_path))
+            files_to_check = [str(file_path) for file_path in self.python_files]
 
             if not files_to_check:
                 self.warnings.append("No Python files found to check with flake8")
@@ -187,6 +185,7 @@ class CodeValidator:
                 self.warnings.append(f"FLAKE8 ISSUES:\n{result.stdout}")
 
             return True
+
         except FileNotFoundError:
             self.warnings.append("FLAKE8 not found - install with: pip install flake8")
             return False
@@ -206,7 +205,7 @@ class CodeValidator:
         for file_path in files:
             print(f"📄 Validating {file_path.relative_to(self.project_root)}")
 
-            # Check syntax
+            # Check syntax - skip further checks if syntax is invalid
             if not self.validate_syntax(file_path):
                 continue
 
@@ -243,10 +242,13 @@ class CodeValidator:
 
         if not self.errors and not self.warnings:
             print("\n✅ All validation checks passed!")
-        elif not self.errors:
+            return
+
+        if not self.errors:
             print(f"\n✅ No critical errors found (only {len(self.warnings)} warnings)")
-        else:
-            print(f"\n❌ Found {len(self.errors)} errors and {len(self.warnings)} warnings")
+            return
+
+        print(f"\n❌ Found {len(self.errors)} errors and {len(self.warnings)} warnings")
 
 
 def main():

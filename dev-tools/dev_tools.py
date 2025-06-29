@@ -33,6 +33,7 @@ def run_basic_validation():
 def run_type_check():
     """Run mypy type checking if available."""
     print("🔧 Running type checking...")
+
     try:
         result = subprocess.run(
             [
@@ -48,97 +49,104 @@ def run_type_check():
             capture_output=True,
             text=True,
         )
-
-        if result.returncode == 0:
-            print("✅ Type checking passed!")
-            return True
-        else:
-            # Check if it's just an internal error with otherwise clean results
-            stdout_lines = result.stdout.split('\n') if result.stdout else []
-            stderr_lines = result.stderr.split('\n') if result.stderr else []
-            
-            # Count actual errors (not internal errors)
-            error_lines = [line for line in stdout_lines
-                           if ': error:' in line and 'INTERNAL ERROR' not in line]
-            note_lines = [line for line in stdout_lines if ': note:' in line]
-            internal_errors = [line for line in stderr_lines if 'INTERNAL ERROR' in line]
-            
-            if len(error_lines) == 0 and len(internal_errors) > 0:
-                print("⚠️ Type checking completed with mypy internal error (not code issue):")
-                print("   All actual type errors have been resolved!")
-                if note_lines:
-                    print("❌ Type issues found:")
-                    print(result.stdout)
-                    if result.stderr:
-                        print("Stderr:")
-                        print(result.stderr)
-                    summary = (f"\n📊 Summary: {len(error_lines)} errors, "
-                               f"{len(note_lines)} notes, {len(internal_errors)} internal errors")
-                    print(summary)
-                return True  # Consider success if no actual type errors
-            else:
-                print("❌ Type issues found:")
-                print(result.stdout)
-                if result.stderr:
-                    print("Stderr:")
-                    print(result.stderr)
-                print(f"\n📊 Summary: {len(error_lines)} errors, {len(note_lines)} notes")
-                return False
-
     except FileNotFoundError:
         print("⚠️ mypy not installed. Install with: pip install mypy")
         return True
+
+    if result.returncode == 0:
+        print("✅ Type checking passed!")
+        return True
+
+    # Parse output for error analysis
+    stdout_lines = result.stdout.split('\n') if result.stdout else []
+    stderr_lines = result.stderr.split('\n') if result.stderr else []
+
+    # Count actual errors (not internal errors)
+    error_lines = [
+        line for line in stdout_lines if ': error:' in line and 'INTERNAL ERROR' not in line
+    ]
+    note_lines = [line for line in stdout_lines if ': note:' in line]
+    internal_errors = [line for line in stderr_lines if 'INTERNAL ERROR' in line]
+
+    # Handle case with only internal errors
+    if len(error_lines) == 0 and len(internal_errors) > 0:
+        print("⚠️ Type checking completed with mypy internal error (not code issue):")
+        print("   All actual type errors have been resolved!")
+
+        if note_lines:
+            print("❌ Type issues found:")
+            print(result.stdout)
+            if result.stderr:
+                print("Stderr:")
+                print(result.stderr)
+            summary = (
+                f"\n📊 Summary: {len(error_lines)} errors, "
+                f"{len(note_lines)} notes, {len(internal_errors)} internal errors"
+            )
+            print(summary)
+
+        return True  # Consider success if no actual type errors
+
+    # Handle case with actual type errors
+    print("❌ Type issues found:")
+    print(result.stdout)
+    if result.stderr:
+        print("Stderr:")
+        print(result.stderr)
+    print(f"\n📊 Summary: {len(error_lines)} errors, {len(note_lines)} notes")
+    return False
 
 
 def run_tests():
     """Run the test suite."""
     print("🔧 Running tests...")
+
     try:
         result = subprocess.run(
             ["python", "-m", "pytest", "tests/", "-v", "--tb=short"], capture_output=True, text=True
         )
-
-        if result.returncode == 0:
-            print("✅ All tests passed!")
-            # Extract summary information from output
-            lines = result.stdout.split('\n')
-            for line in lines[-10:]:  # Look at last 10 lines for summary
-                if ' passed' in line and ('skipped' in line or 'warnings' in line):
-                    print(f"📊 {line.strip()}")
-                    break
-        else:
-            print("❌ Test failures:")
-            print(result.stdout)
-            if result.stderr:
-                print("Stderr:")
-                print(result.stderr)
-
-        return result.returncode == 0
     except FileNotFoundError:
         print("⚠️ pytest not installed. Install with: pip install pytest")
         return True
+
+    if result.returncode == 0:
+        print("✅ All tests passed!")
+        # Extract summary information from output
+        lines = result.stdout.split('\n')
+        for line in lines[-10:]:  # Look at last 10 lines for summary
+            if ' passed' in line and ('skipped' in line or 'warnings' in line):
+                print(f"📊 {line.strip()}")
+                break
+        return True
+
+    print("❌ Test failures:")
+    print(result.stdout)
+    if result.stderr:
+        print("Stderr:")
+        print(result.stderr)
+    return False
 
 
 def run_tests_verbose():
     """Run the test suite with verbose output."""
     print("🔧 Running tests with verbose output...")
     print("💡 Tip: For specific tests, use: python -m pytest tests/test_specific.py -v")
+
     try:
         result = subprocess.run(
-            ["python", "-m", "pytest", "tests/", "-v", "--tb=short", "-x"],
-            text=True
+            ["python", "-m", "pytest", "tests/", "-v", "--tb=short", "-x"], text=True
         )
-
-        # Since we're not capturing output, the results appear directly
-        if result.returncode == 0:
-            print("\n✅ All tests completed successfully!")
-        else:
-            print("\n❌ Some tests failed!")
-
-        return result.returncode == 0
     except FileNotFoundError:
         print("⚠️ pytest not installed. Install with: pip install pytest")
         return True
+
+    # Since we're not capturing output, the results appear directly
+    if result.returncode == 0:
+        print("\n✅ All tests completed successfully!")
+        return True
+
+    print("\n❌ Some tests failed!")
+    return False
 
 
 def run_quick_check():
@@ -171,9 +179,9 @@ def run_quick_check():
         for error in errors:
             print(error)
         return False
-    else:
-        print(f"\n✅ All {len(files)} files have valid syntax!")
-        return True
+
+    print(f"\n✅ All {len(files)} files have valid syntax!")
+    return True
 
 
 def run_comprehensive_validation():
@@ -210,7 +218,7 @@ def main():
     )
 
     args = parser.parse_args()
-    
+
     # Show help if no command provided
     if args.command is None:
         parser.print_help()
