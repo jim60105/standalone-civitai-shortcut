@@ -49,10 +49,10 @@ class ImageMetadataProcessor:
     def _extract_exif(self, img: Image.Image) -> Dict[str, Any]:
         """Extract EXIF tags from image if present."""
         try:
-            exif_data = img._getexif()
+            exif_data = img.getexif()
             if not exif_data:
                 return {}
-            return {TAGS.get(tag_id, tag_id): val for tag_id, val in exif_data.items()}
+            return {TAGS.get(tag_id, str(tag_id)): val for tag_id, val in exif_data.items()}
         except Exception:
             return {}
 

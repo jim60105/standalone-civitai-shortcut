@@ -10,7 +10,7 @@ from . import util
 from . import model
 from . import setting
 from . import civitai
-from . import ishortcut
+import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import ishortcut_action
 from .http_client import get_http_client
 
@@ -276,7 +276,7 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
             # 숏컷 추가
             if register_shortcut:
                 if version_info['modelId']:
-                    ishortcut.update_shortcut(version_info['modelId'], progress)
+                    ishortcut.shortcutcollectionmanager.update_shortcut(version_info['modelId'], progress)
                     model.update_downloaded_model()
 
     return non_list
@@ -435,7 +435,7 @@ def on_scan_to_shortcut_click(progress=gr.Progress()):
     user_message="Failed to update shortcuts",
 )
 def on_update_all_shortcuts_btn_click(progress=gr.Progress()):
-    ishortcut.update_all_shortcut_informations(progress)
+    ishortcut.shortcutcollectionmanager.update_all_shortcuts(progress)
     return gr.update(visible=True)
 
 

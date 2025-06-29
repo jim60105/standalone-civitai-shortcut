@@ -70,9 +70,11 @@ class TestEndToEndRegression:
         assert model_info["id"] == 12345
 
         # Test 2: Download preview image
-        from civitai_manager_libs import ishortcut
+        from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import PreviewImageManager
 
-        preview_path = ishortcut.download_model_preview_image_by_model_info(model_info)
+# instantiate PreviewImageManager for downloading preview image
+        preview_manager = PreviewImageManager(None)
+        preview_path = preview_manager.download_preview_image(model_info)
         assert preview_path is not None
 
         # Test 3: Download model file

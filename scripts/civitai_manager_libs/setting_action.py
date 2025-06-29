@@ -354,13 +354,24 @@ def on_setting_ui():
     )
 
     # reload the page
-    # Dynamically select the correct JS argument for Gradio v3/v4 compatibility
-    gradio_version = version.parse(gr.__version__)
-    # Gradio <=4.0.1 uses '_js', >4.0.1 uses 'js'
-    js_arg = '_js' if gradio_version <= version.parse('4.0.1') else 'js'
-    reload_btn.click(
-        fn=on_reload_btn_click, **{js_arg: 'restart_reload'}, inputs=None, outputs=None
-    )
+    # Check if we have a compatibility layer to determine environment
+    try:
+        # In WebUI mode, use the JavaScript function
+        if _compat_layer and _compat_layer.mode == 'webui':
+            # Dynamically select the correct JS argument for Gradio v3/v4 compatibility
+            gradio_version = version.parse(gr.__version__)
+            # Gradio <=4.0.1 uses '_js', >4.0.1 uses 'js'
+            js_arg = '_js' if gradio_version <= version.parse('4.0.1') else 'js'
+            reload_btn.click(
+                fn=on_reload_btn_click, **{js_arg: 'restart_reload'}, inputs=None, outputs=None
+            )
+        else:
+            # In standalone mode, use Python-only restart (no JavaScript needed)
+            reload_btn.click(fn=on_reload_btn_click, inputs=None, outputs=None)
+    except Exception as e:
+        logger.warning(f"Failed to determine environment for reload button: {e}")
+        # Fallback to Python-only reload
+        reload_btn.click(fn=on_reload_btn_click, inputs=None, outputs=None)
 
     usergallery_openfolder_btn.click(
         fn=on_usergallery_openfolder_btn_click, inputs=None, outputs=None
@@ -574,7 +585,7 @@ def save_setting(
 
     environment['temporary'] = temporary
 
-    setting.save(environment)
+    setting.save_setting(environment)
     setting.load_data()
 
     # notify user based on whether layout reload is needed
@@ -631,16 +642,41 @@ def on_reload_btn_click():
 
 
 def request_restart():
+    """Request application restart."""
     try:
-        from modules import shared
+        # Check if we have a compatibility layer to determine environment
+        if _compat_layer and _compat_layer.mode == 'webui':
+            # WebUI mode: use shared.state for restart
+            try:
+                from modules import shared  # noqa: F401
 
-        shared.state.interrupt()
-        shared.state.need_restart = True
+                shared.state.interrupt()
+                shared.state.need_restart = True
+                logger.info("WebUI restart requested")
+            except ImportError as e:
+                logger.warning(f"Failed to import WebUI modules: {e}")
+                raise
+        else:
+            # Standalone mode: perform process restart
+            import sys
+            import os
+
+            try:
+                import psutil
+
+                p = psutil.Process(os.getpid())
+                for handler in p.open_files() + p.connections():
+                    os.close(handler.fd)
+            except Exception as e:
+                logger.error(f"Failed to cleanup process resources: {e}")
+
+            logger.info("Performing process restart for standalone mode")
+            python = sys.executable
+            os.execl(python, python, *sys.argv)
     except ImportError:
-        # Standalone mode: perform process restart
+        # Fallback for standalone mode when modules are not available
         import sys
         import os
-        import logging
 
         try:
             import psutil
@@ -649,7 +685,27 @@ def request_restart():
             for handler in p.open_files() + p.connections():
                 os.close(handler.fd)
         except Exception as e:
-            logging.error(e)
+            logger.error(f"Failed to cleanup process resources: {e}")
+
+        logger.info("Performing fallback process restart")
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+    except Exception as e:
+        logger.error(f"Failed to request restart: {e}")
+        # Last resort: perform process restart
+        import sys
+        import os
+
+        try:
+            import psutil
+
+            p = psutil.Process(os.getpid())
+            for handler in p.open_files() + p.connections():
+                os.close(handler.fd)
+        except Exception as cleanup_e:
+            logger.error(f"Failed to cleanup process resources: {cleanup_e}")
+
+        logger.warning("Performing process restart as last resort")
         python = sys.executable
         os.execl(python, python, *sys.argv)
 

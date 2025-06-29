@@ -28,7 +28,8 @@ except ImportError:
 from . import util
 from . import civitai
 from . import setting
-from . import ishortcut
+from scripts.civitai_manager_libs.ishortcut_core.model_processor import ModelProcessor
+modelprocessor = ModelProcessor()
 from .compat.compat_layer import CompatibilityLayer
 
 # Compatibility layer variables
@@ -397,7 +398,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
 def on_open_image_folder_click(modelid):
     if modelid:
         # model_info = civitai.get_model_info(modelid)
-        model_info = ishortcut.get_model_info(modelid)
+        model_info = modelprocessor.get_model_info(modelid)
         if model_info:
             model_name = model_info['name']
             image_folder = util.get_download_image_folder(model_name)
@@ -746,7 +747,7 @@ def on_versions_list_select(evt: gr.SelectData, modelid=None):
         if evt.index > 0:
             ver_index = evt.index - 1
             # model_info = civitai.get_model_info(modelid)
-            model_info = ishortcut.get_model_info(modelid)
+            model_info = modelprocessor.get_model_info(modelid)
             version_info = dict()
             if model_info:
                 if "modelVersions" in model_info.keys():
@@ -792,7 +793,7 @@ def get_model_information(page_url=None):
 
     if modelid:
         # model_info = civitai.get_model_info(modelid)
-        model_info = ishortcut.get_model_info(modelid)
+        model_info = modelprocessor.get_model_info(modelid)
 
     if model_info:
         model_name = model_info['name']
@@ -1136,7 +1137,7 @@ def download_user_gallery_images(model_id, image_urls):
         return None
 
     # model_info = civitai.get_model_info(model_id)
-    model_info = ishortcut.get_model_info(model_id)
+    model_info = modelprocessor.get_model_info(model_id)
 
     if not model_info:
         return None

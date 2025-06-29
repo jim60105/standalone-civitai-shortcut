@@ -185,7 +185,7 @@ class WebUIMetadataProcessor(IMetadataProcessor):
 
     def _parse_parameters_fallback(self, parameters_text: str) -> Dict[str, Any]:
         """Fallback parameter parsing implementation."""
-        params = {}
+        params: Dict[str, Any] = {}
 
         if not parameters_text:
             return params

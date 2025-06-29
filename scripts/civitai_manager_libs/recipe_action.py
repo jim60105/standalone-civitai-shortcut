@@ -22,7 +22,7 @@ from . import prompt
 
 # from . import prompt_ui
 from . import sc_browser_page
-from . import ishortcut
+import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import recipe_browser_page
 
 from .compat.compat_layer import CompatibilityLayer
@@ -117,9 +117,13 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                             # recipe_output = gr.Textbox(label="Generate Info", interactive=False, lines=6, placeholder="The prompt and parameters are combined and displayed here.", container=True, show_copy_button=True)
                             with gr.Row():
                                 try:
-                                    send_to_buttons = parameters_copypaste.create_buttons(
-                                        ["txt2img", "img2img", "inpaint", "extras"]
+                                    parameters_copypaste = import_manager.get_webui_module(
+                                        'extras', 'parameters_copypaste'
                                     )
+                                    if parameters_copypaste:
+                                        send_to_buttons = parameters_copypaste.create_buttons(
+                                            ["txt2img", "img2img", "inpaint", "extras"]
+                                        )
                                 except:
                                     pass
                             recipe_classification = gr.Dropdown(
@@ -238,7 +242,9 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         reference_shortcuts = gr.State()
         refresh_reference_gallery = gr.Textbox()
     try:
-        parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, recipe_output)
+        parameters_copypaste = import_manager.get_webui_module('extras', 'parameters_copypaste')
+        if parameters_copypaste and 'send_to_buttons' in locals():
+            parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, recipe_output)
     except:
         pass
 
@@ -550,7 +556,7 @@ def load_model_information(modelid=None, ver_index=None):
             dhtml,
             triger,
             files,
-        ) = ishortcut.get_model_information(modelid, None, ver_index)
+        ) = ishortcut.modelprocessor.get_model_information(modelid, None, ver_index)
         if model_info:
             insert_btn_visible = False
             weight_visible = False
@@ -1243,7 +1249,7 @@ def on_recipe_delete_btn_click(select_name):
     user_message="Failed to load reference gallery",
 )
 def on_reference_gallery_loading(shortcuts):
-    ISC = ishortcut.load()
+    ISC = ishortcut.shortcutcollectionmanager.load_shortcuts()
     if not ISC:
         return None
 
@@ -1254,7 +1260,7 @@ def on_reference_gallery_loading(shortcuts):
         for mid in shortcuts:
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
-                if ishortcut.is_sc_image(v['id']):
+                if ishortcut.imageprocessor.is_sc_image(v['id']):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result_list.append(
                             (

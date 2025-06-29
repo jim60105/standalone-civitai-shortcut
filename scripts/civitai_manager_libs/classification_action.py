@@ -13,7 +13,7 @@ from .exceptions import (
     FileOperationError,
     ValidationError,
 )
-from . import ishortcut
+import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import classification
 from . import classification_browser_page
 
@@ -410,7 +410,7 @@ def load_model_information(modelid=None, ver_index=None):
             dhtml,
             triger,
             files,
-        ) = ishortcut.get_model_information(modelid, None, ver_index)
+        ) = ishortcut.modelprocessor.get_model_information(modelid, None, ver_index)
         if model_info:
             flist = list()
             for file in files:
@@ -625,7 +625,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
     totals = 0
     max_page = 1
     cur_page = 1
-    ISC = ishortcut.load()
+    ISC = ishortcut.shortcutcollectionmanager.load_shortcuts()
     if not ISC:
         return None, gr.update(minimum=1), gr.update(visible=False)
 
@@ -642,7 +642,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
         for mid in shortcuts:
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
-                if ishortcut.is_sc_image(v['id']):
+                if ishortcut.imageprocessor.is_sc_image(v['id']):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result_list.append(
                             (

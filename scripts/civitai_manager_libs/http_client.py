@@ -94,33 +94,61 @@ class CivitaiHttpClient:
     def post_json(self, url: str, json_data: Dict = None) -> Optional[Dict]:
         """Make POST request with JSON payload and return JSON response or None on error."""
         for attempt in range(self.max_retries):
-            try:
-                logger.debug(f"[http_client] POST {url} attempt {attempt + 1}")
-                response = self.session.post(url, json=json_data, timeout=self.timeout)
-                logger.debug(f"[http_client] Response status: {response.status_code}")
-                if response.status_code >= 400:
-                    msg = _STATUS_CODE_MESSAGES.get(
-                        response.status_code,
-                        f"HTTP {response.status_code} Error",
-                    )
-                    logger.debug(f"[http_client] {msg}")
-                    gr.Error(f"Request failed: {msg}")
-                    return None
-                return response.json()
-            except (requests.ConnectionError, requests.Timeout) as e:
-                logger.warning(f"[http_client] Connection error: {e}")
-                if attempt == self.max_retries - 1:
-                    gr.Error(f"Network error: {type(e).__name__}")
-                    return None
-                time.sleep(self.retry_delay)
-            except json.JSONDecodeError as e:
-                logger.error(f"[http_client] JSON decode error: {e}")
-                gr.Error("Failed to parse JSON response")
+            result = self._attempt_post_request(url, json_data, attempt)
+            if result is not None or not self._should_retry_post(result, attempt):
+                return result
+            time.sleep(self.retry_delay)
+        return None
+
+    def _attempt_post_request(self, url: str, json_data: Dict, attempt: int) -> Optional[Dict]:
+        """Attempt a single POST request."""
+        try:
+            logger.debug(f"[http_client] POST {url} attempt {attempt + 1}")
+            response = self.session.post(url, json=json_data, timeout=self.timeout)
+            logger.debug(f"[http_client] Response status: {response.status_code}")
+
+            if response.status_code >= 400:
+                self._handle_post_error_response(response)
                 return None
-            except requests.RequestException as e:
-                logger.error(f"[http_client] Request exception: {e}")
-                gr.Error(f"Request error: {e}")
-                return None
+
+            return response.json()
+
+        except (requests.ConnectionError, requests.Timeout) as e:
+            return self._handle_post_connection_error(e, attempt)
+        except json.JSONDecodeError as e:
+            return self._handle_post_json_error(e)
+        except requests.RequestException as e:
+            return self._handle_post_request_error(e)
+
+    def _handle_post_error_response(self, response: requests.Response) -> None:
+        """Handle HTTP error responses for POST requests."""
+        msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
+        logger.debug(f"[http_client] {msg}")
+        gr.Error(f"Request failed: {msg}")
+
+    def _handle_post_connection_error(self, error: Exception, attempt: int) -> Optional[Dict]:
+        """Handle connection errors for POST requests."""
+        logger.warning(f"[http_client] Connection error: {error}")
+        if attempt == self.max_retries - 1:
+            gr.Error(f"Network error: {type(error).__name__}")
+            return None
+        return "retry"  # Signal to retry
+
+    def _handle_post_json_error(self, error: json.JSONDecodeError) -> None:
+        """Handle JSON decode errors for POST requests."""
+        logger.error(f"[http_client] JSON decode error: {error}")
+        gr.Error("Failed to parse JSON response")
+        return None
+
+    def _handle_post_request_error(self, error: requests.RequestException) -> None:
+        """Handle general request errors for POST requests."""
+        logger.error(f"[http_client] Request exception: {error}")
+        gr.Error(f"Request error: {error}")
+        return None
+
+    def _should_retry_post(self, result: Optional[Dict], attempt: int) -> bool:
+        """Determine if POST request should be retried."""
+        return result == "retry" and attempt < self.max_retries - 1
 
     def get_stream(self, url: str, headers: Dict = None) -> Optional[requests.Response]:
         """Make GET request for streaming download and return response or None on error."""
@@ -130,38 +158,56 @@ class CivitaiHttpClient:
                 url, headers=headers or {}, stream=True, timeout=self.timeout
             )
             logger.debug(f"[http_client] Response status: {response.status_code}")
-            # Detect authentication-required redirects and range errors
-            if response.status_code == 307:
-                location = response.headers.get('Location', '')
-                if 'login' in location.lower():
-                    logger.debug(f"[http_client] Authentication required for: {url}")
-                    gr.Error(
-                        "🔐 This resource requires login. "
-                        "Please configure your Civitai API key in settings."
-                    )
-                    return None
-            elif response.status_code == 416:
-                logger.debug(
-                    f"[http_client] Range request failed, may require authentication: {url}"
-                )
-                gr.Error(
-                    "🔐 Download failed. This resource may require authentication. "
-                    "Please check your API key."
-                )
+
+            # Check for authentication and error responses
+            if not self._is_stream_response_valid(response):
                 return None
-            if response.status_code >= 400:
-                msg = _STATUS_CODE_MESSAGES.get(
-                    response.status_code,
-                    f"HTTP {response.status_code} Error",
-                )
-                logger.debug(f"[http_client] {msg}")
-                gr.Error(f"Request failed: {msg}")
-                return None
+
             return response
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.warning(f"[http_client] Stream connection error: {e}")
             gr.Error(f"Network error: {type(e).__name__}")
             return None
+
+    def _is_stream_response_valid(self, response: requests.Response) -> bool:
+        """Validate streaming response and handle specific status codes."""
+        if response.status_code == 307:
+            return self._handle_redirect_response(response)
+        elif response.status_code == 416:
+            return self._handle_range_error_response(response)
+        elif response.status_code >= 400:
+            return self._handle_stream_error_response(response)
+        return True
+
+    def _handle_redirect_response(self, response: requests.Response) -> bool:
+        """Handle redirect responses that may require authentication."""
+        location = response.headers.get('Location', '')
+        if 'login' in location.lower():
+            logger.debug(f"[http_client] Authentication required for: {response.url}")
+            gr.Error(
+                "🔐 This resource requires login. "
+                "Please configure your Civitai API key in settings."
+            )
+            return False
+        return True
+
+    def _handle_range_error_response(self, response: requests.Response) -> bool:
+        """Handle range request errors that may require authentication."""
+        logger.debug(
+            f"[http_client] Range request failed, may require authentication: {response.url}"
+        )
+        gr.Error(
+            "🔐 Download failed. This resource may require authentication. "
+            "Please check your API key."
+        )
+        return False
+
+    def _handle_stream_error_response(self, response: requests.Response) -> bool:
+        """Handle general error responses for streaming requests."""
+        msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
+        logger.debug(f"[http_client] {msg}")
+        gr.Error(f"Request failed: {msg}")
+        return False
 
     def download_file(
         self,
@@ -209,58 +255,113 @@ class CivitaiHttpClient:
         headers: dict = None,
     ) -> bool:
         """Download file with resume capability and progress tracking."""
-        resume_pos = 0
-        if setting.download_resume_enabled and os.path.exists(filepath):
-            resume_pos = os.path.getsize(filepath)
-            logger.debug(f"[http_client] Resuming download from position: {resume_pos}")
-
-        # Prepare headers for resume
-        download_headers = headers.copy() if headers else {}
-        if resume_pos > 0:
-            download_headers["Range"] = f"bytes={resume_pos}-"
+        resume_pos = self._get_resume_position(filepath)
+        download_headers = self._prepare_download_headers(headers, resume_pos)
 
         try:
             response = self.get_stream(url, headers=download_headers)
             if not response:
                 return False
 
-            total_size = int(response.headers.get("Content-Length", 0))
-            if resume_pos > 0:
-                total_size += resume_pos
-
-            mode = "ab" if resume_pos > 0 else "wb"
-            with open(filepath, mode) as f:
-                downloaded = resume_pos
-                start_time = time.time()
-                last_update = start_time
-                update_interval = 2.0  # seconds between progress notifications
-
-                for chunk in response.iter_content(chunk_size=setting.download_chunk_size):
-                    if chunk:
-                        f.write(chunk)
-                        downloaded += len(chunk)
-                        if progress_callback:
-                            current_time = time.time()
-                            if current_time - last_update >= update_interval:
-                                speed = self._calculate_speed(
-                                    downloaded - resume_pos, current_time - start_time
-                                )
-                                progress_callback(downloaded, total_size, speed)
-                                last_update = current_time
-
-                # Final progress update after download completes
-                if progress_callback:
-                    total_time = time.time() - start_time
-                    final_speed = self._calculate_speed(downloaded - resume_pos, total_time)
-                    progress_callback(downloaded, total_size, final_speed)
-
-            # Validate file size after download (including resumed downloads)
-            if not self._validate_download_size(filepath, total_size):
-                return False
-            return True
+            total_size = self._calculate_total_size(response, resume_pos)
+            return self._perform_resume_download(
+                filepath, response, resume_pos, total_size, progress_callback
+            )
 
         except Exception as e:
             return self._handle_download_error(e, url, filepath)
+
+    def _get_resume_position(self, filepath: str) -> int:
+        """Get the position to resume download from."""
+        if setting.download_resume_enabled and os.path.exists(filepath):
+            resume_pos = os.path.getsize(filepath)
+            logger.debug(f"[http_client] Resuming download from position: {resume_pos}")
+            return resume_pos
+        return 0
+
+    def _prepare_download_headers(self, headers: dict, resume_pos: int) -> dict:
+        """Prepare headers for resume download."""
+        download_headers = headers.copy() if headers else {}
+        if resume_pos > 0:
+            download_headers["Range"] = f"bytes={resume_pos}-"
+        return download_headers
+
+    def _calculate_total_size(self, response: requests.Response, resume_pos: int) -> int:
+        """Calculate total file size including resume position."""
+        total_size = int(response.headers.get("Content-Length", 0))
+        if resume_pos > 0:
+            total_size += resume_pos
+        return total_size
+
+    def _perform_resume_download(
+        self,
+        filepath: str,
+        response: requests.Response,
+        resume_pos: int,
+        total_size: int,
+        progress_callback: Callable,
+    ) -> bool:
+        """Perform the actual download with resume capability."""
+        mode = "ab" if resume_pos > 0 else "wb"
+
+        with open(filepath, mode) as f:
+            downloaded = resume_pos
+            download_tracker = self._create_download_tracker()
+
+            for chunk in response.iter_content(chunk_size=setting.download_chunk_size):
+                if not chunk:
+                    continue
+
+                f.write(chunk)
+                downloaded += len(chunk)
+
+                if progress_callback:
+                    self._update_download_progress(
+                        progress_callback, downloaded, total_size, resume_pos, download_tracker
+                    )
+
+            # Final progress update
+            if progress_callback:
+                self._send_final_download_progress(
+                    progress_callback, downloaded, total_size, resume_pos, download_tracker
+                )
+
+        # Validate downloaded file
+        return self._validate_download_size(filepath, total_size)
+
+    def _create_download_tracker(self) -> dict:
+        """Create a tracker for download progress timing."""
+        return {'start_time': time.time(), 'last_update': time.time(), 'update_interval': 2.0}
+
+    def _update_download_progress(
+        self,
+        progress_callback: Callable,
+        downloaded: int,
+        total_size: int,
+        resume_pos: int,
+        tracker: dict,
+    ) -> None:
+        """Update download progress if enough time has passed."""
+        current_time = time.time()
+        if current_time - tracker['last_update'] >= tracker['update_interval']:
+            speed = self._calculate_speed(
+                downloaded - resume_pos, current_time - tracker['start_time']
+            )
+            progress_callback(downloaded, total_size, speed)
+            tracker['last_update'] = current_time
+
+    def _send_final_download_progress(
+        self,
+        progress_callback: Callable,
+        downloaded: int,
+        total_size: int,
+        resume_pos: int,
+        tracker: dict,
+    ) -> None:
+        """Send final progress update after download completion."""
+        total_time = time.time() - tracker['start_time']
+        final_speed = self._calculate_speed(downloaded - resume_pos, total_time)
+        progress_callback(downloaded, total_size, final_speed)
 
     def _calculate_speed(self, bytes_downloaded: int, elapsed_time: float) -> str:
         """Calculate download speed in human-readable format."""
@@ -278,36 +379,59 @@ class CivitaiHttpClient:
 
     def _handle_download_error(self, error: Exception, url: str, filepath: str) -> bool:
         """Handle download errors with recovery strategies."""
-        if isinstance(error, requests.exceptions.Timeout):
-            logger.warning(f"[http_client] Download timeout for {url}")
-            gr.Error("Download timeout, please check your network connection 💥!", duration=5)
-        elif isinstance(error, requests.exceptions.ConnectionError):
-            logger.warning(f"[http_client] Connection error for {url}")
-            gr.Error(
-                "Network connection failed, please check your network settings 💥!", duration=5
-            )
-        elif hasattr(error, "response") and error.response:
-            status_code = error.response.status_code
-            if status_code == 403:
-                gr.Error("Access denied, please check your API key 💥!", duration=8)
-            elif status_code == 404:
-                gr.Error("File does not exist or has been removed 💥!", duration=5)
-            elif status_code >= 500:
-                gr.Error("Server error, please try again later 💥!", duration=5)
-            else:
-                gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
-        else:
+        error_handled = self._process_download_error_type(error, url)
+
+        if not error_handled:
             logger.error(f"[http_client] Unknown download error: {error}")
             gr.Error("Unknown error occurred during download 💥!", duration=5)
 
-        # Clean up partial file if empty
+        self._cleanup_failed_download(filepath)
+        return False
+
+    def _process_download_error_type(self, error: Exception, url: str) -> bool:
+        """Process different types of download errors."""
+        if isinstance(error, requests.exceptions.Timeout):
+            return self._handle_timeout_error(url)
+        elif isinstance(error, requests.exceptions.ConnectionError):
+            return self._handle_connection_error(url)
+        elif hasattr(error, "response") and error.response:
+            return self._handle_download_response_error(error.response)
+        return False
+
+    def _handle_timeout_error(self, url: str) -> bool:
+        """Handle download timeout errors."""
+        logger.warning(f"[http_client] Download timeout for {url}")
+        gr.Error("Download timeout, please check your network connection 💥!", duration=5)
+        return True
+
+    def _handle_connection_error(self, url: str) -> bool:
+        """Handle download connection errors."""
+        logger.warning(f"[http_client] Connection error for {url}")
+        gr.Error("Network connection failed, please check your network settings 💥!", duration=5)
+        return True
+
+    def _handle_download_response_error(self, response: requests.Response) -> bool:
+        """Handle HTTP response errors during download."""
+        status_code = response.status_code
+
+        if status_code == 403:
+            gr.Error("Access denied, please check your API key 💥!", duration=8)
+        elif status_code == 404:
+            gr.Error("File does not exist or has been removed 💥!", duration=5)
+        elif status_code >= 500:
+            gr.Error("Server error, please try again later 💥!", duration=5)
+        else:
+            gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
+
+        return True
+
+    def _cleanup_failed_download(self, filepath: str) -> None:
+        """Clean up partial file if download failed."""
         try:
             if os.path.exists(filepath) and os.path.getsize(filepath) == 0:
                 os.remove(filepath)
         except Exception:
             pass
-
-        return False
 
     def _validate_download_size(
         self, filepath: str, expected_size: int, tolerance: float = 0.1
@@ -417,21 +541,26 @@ class ParallelImageDownloader:
             self.completed_count += 1
             current_time = time.time()
 
-            # Always send final update (100% completion)
-            is_final_update = self.completed_count >= self.total_count
-            time_since_last = current_time - self.last_progress_update
-            should_update = time_since_last >= self.progress_update_interval or is_final_update
-
+            should_update = self._should_send_progress_update(current_time)
             if should_update:
-                done = self.completed_count
-                total = self.total_count
-                desc = f"Downloading image {done}/{total}"
-                progress_callback(done, total, desc)
-                self.last_progress_update = current_time
-                self.pending_update = False
+                self._send_progress_update(progress_callback, current_time)
             else:
-                # Mark that there's a pending update to be sent later
                 self.pending_update = True
+
+    def _should_send_progress_update(self, current_time: float) -> bool:
+        """Determine if progress update should be sent now."""
+        is_final_update = self.completed_count >= self.total_count
+        time_since_last = current_time - self.last_progress_update
+        return time_since_last >= self.progress_update_interval or is_final_update
+
+    def _send_progress_update(self, progress_callback: Callable, current_time: float) -> None:
+        """Send progress update to callback."""
+        done = self.completed_count
+        total = self.total_count
+        desc = f"Downloading image {done}/{total}"
+        progress_callback(done, total, desc)
+        self.last_progress_update = current_time
+        self.pending_update = False
 
     def _start_progress_timer(self, progress_callback: Callable) -> threading.Timer:
         """Start periodic progress update timer."""
@@ -543,47 +672,118 @@ class ChunkedDownloader:
     ) -> bool:
         """Download file using parallel chunked requests."""
         logger.info(f"[chunked_downloader] Starting parallel download: {url}")
-        # divide into chunks
+
+        ranges = self._calculate_download_ranges(total_size)
+        chunk_progress, chunk_files = self._initialize_parallel_tracking(len(ranges))
+
+        # Execute parallel downloads
+        threads = self._start_parallel_downloads(
+            url, filepath, ranges, chunk_progress, progress_callback, total_size
+        )
+        self._wait_for_downloads(threads)
+
+        # Combine downloaded parts
+        return self._combine_download_parts(filepath, ranges)
+
+    def _calculate_download_ranges(self, total_size: int) -> List[Tuple[int, int]]:
+        """Calculate byte ranges for parallel downloading."""
         chunk_count = self.max_parallel
         base = total_size // chunk_count
         ranges = []
+
         for i in range(chunk_count):
             start = i * base
             end = start + base - 1 if i < chunk_count - 1 else total_size - 1
             ranges.append((start, end))
-        # progress tracking
-        chunk_progress: List[int] = [0] * chunk_count
-        chunk_files: List[str] = []
 
-        def _download_chunk(idx: int, start: int, end: int):
-            part_file = f"{filepath}.part{idx}"
-            chunk_files.append(part_file)
-            try:
-                headers = {'Range': f'bytes={start}-{end}'}
-                resp = self.client.session.get(url, headers=headers, stream=True)
-                if resp.ok:
-                    with open(part_file, 'wb') as pf:
-                        for data in resp.iter_content(chunk_size=8192):
-                            pf.write(data)
-                            chunk_progress[idx] += len(data)
-                            if progress_callback:
-                                total_dl = sum(chunk_progress)
-                                progress_callback(total_dl, total_size)
-                else:
-                    logger.error(f"[chunked_downloader] Chunk {idx} HTTP {resp.status_code}")
-            except Exception as e:
-                logger.error(f"[chunked_downloader] Chunk {idx} failed: {e}")
+        return ranges
 
-        # launch threads
-        threads: List[threading.Thread] = []
-        for i, (s, e) in enumerate(ranges):
-            t = threading.Thread(target=_download_chunk, args=(i, s, e))
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()
+    def _initialize_parallel_tracking(self, chunk_count: int) -> Tuple[List[int], List[str]]:
+        """Initialize tracking structures for parallel downloads."""
+        chunk_progress = [0] * chunk_count
+        chunk_files = []
+        return chunk_progress, chunk_files
 
-        # combine parts
+    def _start_parallel_downloads(
+        self,
+        url: str,
+        filepath: str,
+        ranges: List[Tuple[int, int]],
+        chunk_progress: List[int],
+        progress_callback: Optional[Callable],
+        total_size: int,
+    ) -> List[threading.Thread]:
+        """Start all parallel download threads."""
+        threads = []
+
+        for i, (start, end) in enumerate(ranges):
+
+            def create_download_task(idx, s, e):
+                return lambda: self._download_chunk(
+                    url, filepath, idx, s, e, chunk_progress, progress_callback, total_size
+                )
+
+            download_func = create_download_task(i, start, end)
+            thread = threading.Thread(target=download_func)
+            thread.start()
+            threads.append(thread)
+
+        return threads
+
+    def _wait_for_downloads(self, threads: List[threading.Thread]) -> None:
+        """Wait for all download threads to complete."""
+        for thread in threads:
+            thread.join()
+
+    def _download_chunk(
+        self,
+        url: str,
+        filepath: str,
+        idx: int,
+        start: int,
+        end: int,
+        chunk_progress: List[int],
+        progress_callback: Optional[Callable],
+        total_size: int,
+    ) -> None:
+        """Download a single chunk of the file."""
+        part_file = f"{filepath}.part{idx}"
+
+        try:
+            headers = {'Range': f'bytes={start}-{end}'}
+            response = self.client.session.get(url, headers=headers, stream=True)
+
+            if response.ok:
+                self._write_chunk_data(
+                    part_file, response, idx, chunk_progress, progress_callback, total_size
+                )
+            else:
+                logger.error(f"[chunked_downloader] Chunk {idx} HTTP {response.status_code}")
+
+        except Exception as e:
+            logger.error(f"[chunked_downloader] Chunk {idx} failed: {e}")
+
+    def _write_chunk_data(
+        self,
+        part_file: str,
+        response: requests.Response,
+        idx: int,
+        chunk_progress: List[int],
+        progress_callback: Optional[Callable],
+        total_size: int,
+    ) -> None:
+        """Write chunk data to file and update progress."""
+        with open(part_file, 'wb') as pf:
+            for data in response.iter_content(chunk_size=8192):
+                pf.write(data)
+                chunk_progress[idx] += len(data)
+
+                if progress_callback:
+                    total_dl = sum(chunk_progress)
+                    progress_callback(total_dl, total_size)
+
+    def _combine_download_parts(self, filepath: str, ranges: List[Tuple[int, int]]) -> bool:
+        """Combine all downloaded parts into final file."""
         try:
             with open(filepath, 'wb') as out:
                 for i in range(len(ranges)):
@@ -592,8 +792,10 @@ class ChunkedDownloader:
                         with open(part_file, 'rb') as pf:
                             out.write(pf.read())
                         os.remove(part_file)
+
             logger.info(f"[chunked_downloader] Parallel download completed: {filepath}")
             return True
+
         except Exception as e:
             logger.error(f"[chunked_downloader] Failed to combine chunks: {e}")
             return False
@@ -611,19 +813,47 @@ _client_lock = threading.Lock()
 def get_http_client() -> CivitaiHttpClient:
     """Get or create the global HTTP client instance."""
     global _global_http_client
-    if _global_http_client is None:
-        with _client_lock:
-            if _global_http_client is None:
-                _global_http_client = CivitaiHttpClient(
-                    api_key=setting.civitai_api_key,
-                    timeout=setting.http_timeout,
-                    max_retries=setting.http_max_retries,
-                    retry_delay=setting.http_retry_delay,
-                )
-    else:
-        if _global_http_client.api_key != setting.civitai_api_key:
-            _global_http_client.update_api_key(setting.civitai_api_key)
+
+    # Early return if client exists and update configuration
+    if _global_http_client is not None:
+        _update_client_configuration(_global_http_client)
+        return _global_http_client
+
+    # Create new client with thread safety
+    with _client_lock:
+        # Double-check after acquiring lock
+        if _global_http_client is None:
+            _global_http_client = _create_new_http_client()
+
     return _global_http_client
+
+
+def _create_new_http_client() -> CivitaiHttpClient:
+    """Create a new HTTP client with current settings."""
+    return CivitaiHttpClient(
+        api_key=setting.civitai_api_key,
+        timeout=setting.http_timeout,
+        max_retries=setting.http_max_retries,
+        retry_delay=setting.http_retry_delay,
+    )
+
+
+def _update_client_configuration(client: CivitaiHttpClient) -> None:
+    """Update client configuration to match current settings."""
+    # Batch configuration updates to reduce redundant checks
+    config_updates = [
+        (client.api_key != setting.civitai_api_key, 'api_key'),
+        (client.timeout != setting.http_timeout, 'timeout'),
+        (client.max_retries != setting.http_max_retries, 'max_retries'),
+        (client.retry_delay != setting.http_retry_delay, 'retry_delay'),
+    ]
+
+    for needs_update, config_name in config_updates:
+        if needs_update:
+            if config_name == 'api_key':
+                client.update_api_key(setting.civitai_api_key)
+            else:
+                setattr(client, config_name, getattr(setting, f'http_{config_name}'))
 
 
 def get_chunked_downloader() -> ChunkedDownloader:

@@ -35,9 +35,11 @@ class TestImageDownloadIntegration:
         }
 
         # Act
-        from civitai_manager_libs import ishortcut
+        from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import PreviewImageManager
 
-        result = ishortcut.download_model_preview_image_by_model_info(model_info)
+        # instantiate PreviewImageManager for preview image download
+        preview_manager = PreviewImageManager(None)
+        result = preview_manager.download_preview_image(model_info)
 
         # Assert
         assert result is not None
