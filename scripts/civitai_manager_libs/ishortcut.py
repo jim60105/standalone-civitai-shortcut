@@ -15,8 +15,6 @@ The actual implementation has been moved to:
 """
 
 import os
-import json
-import datetime
 
 try:
     from tqdm import tqdm
@@ -43,6 +41,7 @@ from .ishortcut_core import (
     MetadataProcessor,
     DataValidator,
     ModelFactory,
+    ShortcutCollectionManager,
 )
 
 # Initialize processors
@@ -52,6 +51,7 @@ _image_processor = ImageProcessor()
 _metadata_processor = MetadataProcessor()
 _data_validator = DataValidator()
 _model_factory = ModelFactory()
+_collection_manager = ShortcutCollectionManager()
 
 # Legacy constants for backward compatibility
 thumbnail_max_size = (400, 400)
@@ -206,117 +206,49 @@ def get_version_image_id(filename):
     return None
 
 
-def update_shortcut_model_note(modelid, note):
+def update_shortcut_note(model_id, note):
     """Update note for a specific model shortcut."""
-    if modelid:
-        ISC = load()
-        try:
-            ISC[str(modelid)]["note"] = str(note)
-            save(ISC)
-        except Exception:
-            pass
+    return _collection_manager.update_shortcut_note(model_id, note)
 
 
-def get_shortcut_model_note(modelid):
+def get_shortcut_note(model_id):
     """Get note for a specific model shortcut."""
-    if modelid:
-        ISC = load()
-        try:
-            return ISC[str(modelid)]["note"]
-        except Exception:
-            pass
-    return None
+    return _collection_manager.get_shortcut_note(model_id)
 
 
-def get_shortcut_model(modelid):
+def get_shortcut(model_id):
     """Get shortcut for a specific model."""
-    if modelid:
-        ISC = load()
-        try:
-            return ISC[str(modelid)]
-        except Exception:
-            pass
-    return None
+    return _collection_manager.get_shortcut(model_id)
 
 
-def delete_shortcut_model(modelid):
-    """Delete shortcut for a specific model."""
-    if modelid:
-        ISC = load()
-        ISC = delete(ISC, modelid)
-        save(ISC)
+def delete(ISC: dict, model_id):
+    """Delete a shortcut for a specific model."""
+    return _collection_manager.delete_shortcut(ISC, model_id)
 
 
-def update_shortcut(modelid, progress=None):
-    """
-    Update or create a shortcut for a model.
+def add(ISC: dict, model_id, register_information_only=False, progress=None) -> dict:
+    """Add a model to shortcuts."""
+    return _collection_manager.add_shortcut(ISC, model_id, register_information_only, progress)
 
-    This function delegates to ModelFactory for the actual implementation.
-    """
-    if not modelid:
-        return
 
-    # Get existing shortcut data to preserve notes and dates
-    ISC = load()
-    existing_data = {}
-    if ISC and str(modelid) in ISC:
-        existing_data = ISC[str(modelid)]
-
-    # Create/update shortcut using ModelFactory
-    result_shortcuts = _model_factory.create_model_shortcut(
-        str(modelid), register_information_only=False, progress=progress
-    )
-
-    if result_shortcuts and str(modelid) in result_shortcuts:
-        # Preserve existing note and date
-        if "note" in existing_data:
-            result_shortcuts[str(modelid)]["note"] = existing_data["note"]
-        if "date" in existing_data and existing_data["date"]:
-            result_shortcuts[str(modelid)]["date"] = existing_data["date"]
-        else:
-            # Set current date if no existing date
-            date = datetime.datetime.now()
-            result_shortcuts[str(modelid)]["date"] = date.strftime("%Y-%m-%d %H:%M:%S")
-
-        # Ensure NSFW field exists
-        if 'nsfw' not in result_shortcuts[str(modelid)]:
-            result_shortcuts[str(modelid)]["nsfw"] = False
-
-        # Update the shortcuts database
-        if ISC:
-            ISC.update(result_shortcuts)
-        else:
-            ISC = result_shortcuts
-        save(ISC)
+def update_shortcut(model_id, progress=None):
+    """Update or create a shortcut for a model."""
+    return _collection_manager.update_shortcut(model_id, progress)
 
 
 def update_shortcut_models(modelid_list: list, progress):
     """Update multiple shortcuts."""
-    if not modelid_list:
-        return
-
-    for k in progress.tqdm(modelid_list, desc="Updating Shortcut"):
-        update_shortcut(k, progress)
+    return _collection_manager.update_multiple_shortcuts(modelid_list, progress)
 
 
 def update_shortcut_informations(modelid_list: list, progress):
     """Update shortcut information for multiple models."""
-    if not modelid_list:
-        return
-
-    for modelid in progress.tqdm(modelid_list, desc="Updating Models Information"):
-        if modelid:
-            update_shortcut(modelid, progress)
+    return _collection_manager.update_multiple_shortcuts(modelid_list, progress)
 
 
 def update_all_shortcut_informations(progress):
     """Update all shortcut information."""
-    preISC = load()
-    if not preISC:
-        return
-
-    modelid_list = [k for k in preISC]
-    update_shortcut_informations(modelid_list, progress)
+    return _collection_manager.update_all_shortcuts(progress)
 
 
 @with_error_handling(
@@ -555,110 +487,14 @@ def is_sc_image(model_id):
     return _image_processor.is_sc_image(model_id)
 
 
-def add(ISC: dict, model_id, register_information_only=False, progress=None) -> dict:
-    """
-    Add a model to shortcuts.
-
-    This function delegates to ModelFactory for the actual implementation.
-    """
-    if not model_id:
-        return ISC
-
-    if not ISC:
-        ISC = dict()
-
-    # Use ModelFactory to create the shortcut
-    new_shortcuts = _model_factory.create_model_shortcut(
-        str(model_id), register_information_only, progress
-    )
-
-    if new_shortcuts and str(model_id) in new_shortcuts:
-        ISC.update(new_shortcuts)
-
-    return ISC
-
-
-def delete(ISC: dict, model_id) -> dict:
-    """Delete a model from shortcuts."""
-    if not model_id:
-        return ISC
-
-    if not ISC:
-        return ISC
-
-    cis = ISC.pop(str(model_id), None)
-    cis_to_file(cis)
-    delete_thumbnail_image(model_id)
-    delete_model_information(model_id)
-
-    return ISC
-
-
-def cis_to_file(cis):
-    """Save shortcut to backup file."""
-    if not cis:
-        return
-
-    if "name" in cis.keys() and 'id' in cis.keys():
-        backup_cis(cis['name'], f"{civitai.Url_Page()}{cis['id']}")
-
-
-def backup_cis(name, url):
-    """Backup shortcut information."""
-    if not name or not url:
-        return
-
-    backup_dict = None
-    try:
-        with open(setting.shortcut_civitai_internet_shortcut_url, 'r') as f:
-            backup_dict = json.load(f)
-    except Exception:
-        backup_dict = dict()
-
-    backup_dict[f"url={url}"] = name
-
-    try:
-        with open(setting.shortcut_civitai_internet_shortcut_url, 'w') as f:
-            json.dump(backup_dict, f, indent=4)
-    except Exception:
-        logger.error("Error when writing file:" + setting.shortcut_civitai_internet_shortcut_url)
-        pass
-
-
-def save(ISC: dict):
+def save(ISC: dict) -> str:
     """Save shortcuts to file."""
-    output = ""
-
-    try:
-        with open(setting.shortcut, 'w') as f:
-            json.dump(ISC, f, indent=4)
-    except Exception:
-        logger.error("Error when writing file:" + setting.shortcut)
-        return output
-
-    output = "Civitai Internet Shortcut saved to: " + setting.shortcut
-    return output
+    return _collection_manager.save_shortcuts(ISC)
 
 
 def load() -> dict:
     """Load shortcuts from file."""
-    if not os.path.isfile(setting.shortcut):
-        logger.debug("Unable to load the shortcut file. Starting with an empty file.")
-        save({})
-        return
-
-    json_data = None
-    try:
-        with open(setting.shortcut, 'r') as f:
-            json_data = json.load(f)
-    except Exception:
-        return None
-
-    if not json_data:
-        logger.debug("There are no registered shortcuts.")
-        return None
-
-    return json_data
+    return _collection_manager.load_shortcuts()
 
 
 # =============================================================================

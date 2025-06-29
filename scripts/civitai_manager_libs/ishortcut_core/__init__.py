@@ -28,6 +28,7 @@ from .data_validator import DataValidator
 
 # Import the ModelFactory class
 from .model_factory import ModelFactory
+from .shortcut_collection_manager import ShortcutCollectionManager
 
 __version__ = "1.0.0"
 __all__ = [
@@ -37,4 +38,5 @@ __all__ = [
     "MetadataProcessor",
     "DataValidator",
     "ModelFactory",
+    "ShortcutCollectionManager",
 ]
