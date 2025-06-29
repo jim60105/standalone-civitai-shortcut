@@ -29,6 +29,7 @@ from .data_validator import DataValidator
 # Import the ModelFactory class
 from .model_factory import ModelFactory
 from .shortcut_collection_manager import ShortcutCollectionManager
+from .shortcut_search_filter import ShortcutSearchFilter
 
 __version__ = "1.0.0"
 __all__ = [
@@ -39,4 +40,5 @@ __all__ = [
     "DataValidator",
     "ModelFactory",
     "ShortcutCollectionManager",
+    "ShortcutSearchFilter",
 ]

@@ -27,7 +27,6 @@ except ImportError:
 from . import util
 from . import setting
 from . import civitai
-from . import classification
 
 from .logging_config import get_logger
 
@@ -42,6 +41,7 @@ from .ishortcut_core import (
     DataValidator,
     ModelFactory,
     ShortcutCollectionManager,
+    ShortcutSearchFilter,
 )
 
 # Initialize processors
@@ -52,6 +52,7 @@ _metadata_processor = MetadataProcessor()
 _data_validator = DataValidator()
 _model_factory = ModelFactory()
 _collection_manager = ShortcutCollectionManager()
+_search_filter = ShortcutSearchFilter(_collection_manager, _model_processor)
 
 # Legacy constants for backward compatibility
 thumbnail_max_size = (400, 400)
@@ -116,31 +117,17 @@ def get_version_description(version_info: dict, model_info: dict = None):
 
 def sort_shortcut_by_value(ISC, key, reverse=False):
     """Sort shortcuts by a specific value key."""
-    sorted_data = sorted(ISC.items(), key=lambda x: x[1][key], reverse=reverse)
-    return dict(sorted_data)
+    return _search_filter.sort_shortcuts_by_value(ISC, key, reverse)
 
 
 def sort_shortcut_by_modelid(ISC, reverse=False):
     """Sort shortcuts by model ID."""
-    sorted_data = {}
-    for key in sorted(ISC.keys(), reverse=reverse):
-        sorted_data[key] = ISC[key]
-    return sorted_data
+    return _search_filter.sort_shortcuts_by_model_id(ISC, reverse)
 
 
 def get_tags():
     """Get all unique tags from shortcuts."""
-    ISC = load()
-    if not ISC:
-        return
-
-    result = []
-    for item in ISC.values():
-        name_values = set(tag['name'] for tag in item['tags'])
-        result.extend(name_values)
-
-    result = list(set(result))
-    return result
+    return _search_filter.extract_all_tags()
 
 
 def get_latest_version_info_by_model_id(id: str) -> dict:
@@ -328,127 +315,16 @@ def update_thumbnail_images(progress):
 
 def get_list(shortcut_types=None) -> str:
     """Get list of shortcut names."""
-    ISC = load()
-    if not ISC:
-        return
-
-    tmp_types = list()
-    if shortcut_types:
-        for sc_type in shortcut_types:
-            try:
-                tmp_types.append(setting.ui_typenames[sc_type])
-            except Exception:
-                pass
-
-    shotcutlist = list()
-    for k, v in ISC.items():
-        if v:
-            if tmp_types:
-                if v['type'] in tmp_types:
-                    shotcutlist.append(setting.set_shortcutname(v['name'], v['id']))
-            else:
-                shotcutlist.append(setting.set_shortcutname(v['name'], v['id']))
-
-    return shotcutlist
+    return _search_filter.get_shortcuts_list(shortcut_types)
 
 
 def get_image_list(
     shortcut_types=None, search=None, shortcut_basemodels=None, shortcut_classification=None
 ) -> str:
     """Get filtered list of shortcut images."""
-    ISC = load()
-    if not ISC:
-        return
-
-    result_list = list()
-
-    keys, tags, notes = util.get_search_keyword(search)
-
-    # Classification filtering with AND operation
-    if shortcut_classification:
-        clfs_list = list()
-        CISC = classification.load()
-        if CISC:
-            for name in shortcut_classification:
-                name_list = classification.get_shortcut_list(CISC, name)
-                if name_list:
-                    if len(clfs_list) > 0:
-                        clfs_list = list(set(clfs_list) & set(name_list))
-                    else:
-                        clfs_list = name_list
-                else:
-                    clfs_list = list()
-                    break
-
-            clfs_list = list(set(clfs_list))
-
-        if len(clfs_list) > 0:
-            for mid in clfs_list:
-                if str(mid) in ISC.keys():
-                    result_list.append(ISC[str(mid)])
-    else:
-        result_list = ISC.values()
-
-    # Type filtering
-    tmp_types = list()
-    if shortcut_types:
-        for sc_type in shortcut_types:
-            try:
-                tmp_types.append(setting.ui_typenames[sc_type])
-            except Exception:
-                pass
-
-    if tmp_types:
-        result_list = [v for v in result_list if v['type'] in tmp_types]
-
-    # Keyword filtering
-    if keys:
-        key_list = list()
-        for v in result_list:
-            if v:
-                for key in keys:
-                    if key in v['name'].lower():
-                        key_list.append(v)
-                        break
-        result_list = key_list
-
-    # Tag filtering
-    if tags:
-        tags_list = list()
-        for v in result_list:
-            if v:
-                if "tags" not in v.keys():
-                    continue
-                v_tags = [tag.lower() for tag in v["tags"]]
-                common_tags = set(v_tags) & set(tags)
-                if common_tags:
-                    tags_list.append(v)
-        result_list = tags_list
-
-    # Note filtering
-    if notes:
-        note_list = list()
-        for v in result_list:
-            if v:
-                if "note" not in v.keys():
-                    continue
-
-                if not v['note']:
-                    continue
-
-                for note in notes:
-                    if note in v['note'].lower():
-                        note_list.append(v)
-                        break
-        result_list = note_list
-
-    # Base model filtering
-    tmp_basemodels = list()
-    if shortcut_basemodels:
-        tmp_basemodels.extend(shortcut_basemodels)
-        result_list = [v for v in result_list if is_baseModel(str(v['id']), tmp_basemodels)]
-
-    return result_list
+    return _search_filter.get_filtered_shortcuts(
+        shortcut_types, search, shortcut_basemodels, shortcut_classification
+    )
 
 
 def create_thumbnail(model_id, input_image_path):
