@@ -13,6 +13,12 @@ import datetime
 from . import util
 from . import model
 from . import setting
+from .error_handler import with_error_handling
+from .exceptions import (
+    NetworkError,
+    FileOperationError,
+    ValidationError,
+)
 from . import ishortcut
 from .compat.compat_layer import CompatibilityLayer  # noqa: F401
 
@@ -120,12 +126,23 @@ def on_ui():
     return selected_model_id, refresh_information
 
 
+@with_error_handling(
+    fallback_value=datetime.datetime.now(),
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to update model folder",
+)
 def on_update_modelfolder_btn_click():
     model.update_downloaded_model()
     current_time = datetime.datetime.now()
     return current_time
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError, NetworkError),
+    user_message="Failed to open image folder",
+)
 def on_download_imagefolder_click(modelid):
     if modelid:
         # model_info = civitai.get_model_info(modelid)
@@ -137,6 +154,11 @@ def on_download_imagefolder_click(modelid):
                 util.open_folder(image_folder)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError,),
+    user_message="Failed to open info folder",
+)
 def on_saved_infofolder_click(modelid):
     if modelid:
         model_path = os.path.join(setting.shortcut_info_folder, modelid)
@@ -152,6 +174,11 @@ def on_download_openfolder_click(vlocation):
             util.open_folder(path)
 
 
+@with_error_handling(
+    fallback_value=(gr.update(label="", visible=False), None, None, None),
+    exception_types=(FileOperationError, ValidationError),
+    user_message="Failed to load download information",
+)
 def on_downloaded_information_select(evt: gr.SelectData, df):
     logger.debug(f"on_downloaded_information_select index: {evt.index}")
     vname = None
@@ -201,6 +228,18 @@ def on_downloaded_information_select(evt: gr.SelectData, df):
         return gr.update(label=vname, visible=False), vlocation, None, contents
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(label=None, visible=False),
+        None,
+        gr.update(label=None, visible=False),
+        None,
+        None,
+        None,
+    ),
+    exception_types=(FileOperationError, NetworkError),
+    user_message="Failed to load model",
+)
 def on_load_model(modelid=None):
     title_name = None
     data_list = list()

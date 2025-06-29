@@ -15,7 +15,13 @@ from .logging_config import get_logger
 
 logger = get_logger(__name__)
 from . import setting
+from . import util
 from .compat.compat_layer import CompatibilityLayer  # noqa: F401
+from .error_handler import with_error_handling
+from .exceptions import (
+    FileOperationError,
+    ConfigurationError,
+)
 
 # Compatibility layer variables
 _compat_layer = None
@@ -401,6 +407,12 @@ def on_setting_ui():
     return refresh_setting
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError, ConfigurationError),
+    retry_count=2,
+    user_message="Failed to save settings",
+)
 def on_save_btn_click(
     civitai_api_key,
     shortcut_update_when_start,
@@ -590,16 +602,30 @@ def save_setting(
         logger.info("Settings saved and applied successfully.")
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError,),
+    user_message="Failed to open gallery folder",
+)
 def on_usergallery_openfolder_btn_click():
     if os.path.exists(setting.shortcut_gallery_folder):
         util.open_folder(setting.shortcut_gallery_folder)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to clean gallery folder",
+)
 def on_usergallery_cleangallery_btn_click():
     if os.path.exists(setting.shortcut_gallery_folder):
         shutil.rmtree(setting.shortcut_gallery_folder)
 
 
+@with_error_handling(
+    fallback_value=None, exception_types=(Exception,), user_message="Failed to reload application"
+)
 def on_reload_btn_click():
     request_restart()
 
