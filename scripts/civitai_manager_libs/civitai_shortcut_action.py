@@ -8,14 +8,11 @@ import gradio as gr
 
 from .error_handler import with_error_handling
 from .exceptions import (
-    CivitaiShortcutError,
     NetworkError,
     FileOperationError,
     ConfigurationError,
     ValidationError,
-    APIError,
 )
-from .recovery import ErrorRecoveryManager
 
 from . import civitai
 from . import civitai_gallery_action
@@ -42,7 +39,7 @@ def set_compatibility_layer(compat_layer):
 @with_error_handling(
     fallback_value=(gr.update(visible=False), gr.update(selected=None), gr.update(visible=False)),
     exception_types=(ValidationError,),
-    user_message="Failed to process shortcut input"
+    user_message="Failed to process shortcut input",
 )
 def on_shortcut_input_change(shortcut_input):
     logger.debug(
@@ -302,7 +299,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
 @with_error_handling(
     fallback_value=(gr.update(value="Off"), gr.update(visible=False, value="None")),
     exception_types=(ConfigurationError,),
-    user_message="Failed to refresh NSFW settings"
+    user_message="Failed to refresh NSFW settings",
 )
 def on_refresh_NSFW_change():
     logger.debug(
@@ -319,7 +316,7 @@ def on_refresh_NSFW_change():
 @with_error_handling(
     fallback_value=(gr.update(visible=False), datetime.datetime.now(), datetime.datetime.now()),
     exception_types=(ConfigurationError,),
-    user_message="Failed to apply NSFW filter"
+    user_message="Failed to apply NSFW filter",
 )
 def on_nsfw_filter(enable, level):
     logger.debug(
@@ -339,7 +336,7 @@ def on_nsfw_filter(enable, level):
     fallback_value=None,
     exception_types=(FileOperationError, ConfigurationError),
     retry_count=1,
-    user_message="Failed to save NSFW settings"
+    user_message="Failed to save NSFW settings",
 )
 def on_nsfw_save_btn_click():
     logger.debug(" on_nsfw_save_btn_click called. Saving NSFW settings.")
@@ -376,7 +373,7 @@ def on_civitai_information_tabs_select(evt: gr.SelectData):
 @with_error_handling(
     fallback_value=None,
     exception_types=(ValidationError,),
-    user_message="Failed to process gallery selection"
+    user_message="Failed to process gallery selection",
 )
 def on_sc_gallery_select(evt: gr.SelectData):
     logger.debug(
@@ -427,7 +424,7 @@ def on_sc_modelid_change(sc_model_id, current_information_tabs):
     exception_types=(NetworkError, FileOperationError, ValidationError),
     retry_count=2,
     retry_delay=2.0,
-    user_message="Failed to upload shortcut files"
+    user_message="Failed to upload shortcut files",
 )
 def on_civitai_internet_url_upload(files, register_information_only, progress=gr.Progress()):
     logger.debug(
@@ -458,7 +455,7 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     exception_types=(NetworkError, ValidationError, FileOperationError),
     retry_count=2,
     retry_delay=2.0,
-    user_message="Failed to process URL"
+    user_message="Failed to process URL",
 )
 def on_civitai_internet_url_txt_upload(
     url, register_information_only, progress=gr.Progress(track_tqdm=True)
@@ -607,7 +604,7 @@ def on_update_modelfolder_btn_click():
     fallback_value=gr.update(value=None),
     exception_types=(NetworkError, FileOperationError),
     retry_count=1,
-    user_message="Failed to scan for new versions"
+    user_message="Failed to scan for new versions",
 )
 def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
     logger.debug(

@@ -9,14 +9,10 @@ logger = get_logger(__name__)
 from . import setting
 from .error_handler import with_error_handling
 from .exceptions import (
-    CivitaiShortcutError,
     NetworkError,
     FileOperationError,
-    ConfigurationError,
     ValidationError,
-    APIError,
 )
-from .recovery import ErrorRecoveryManager
 from . import ishortcut
 from . import classification
 from . import classification_browser_page
@@ -374,7 +370,7 @@ def on_ui(shortcut_input):
 @with_error_handling(
     fallback_value=(datetime.datetime.now(), 1),
     exception_types=(ValueError, TypeError),
-    user_message="Failed to navigate to next page"
+    user_message="Failed to navigate to next page",
 )
 def on_classification_nextPage_btn_click(page):
     page = page + 1
@@ -385,7 +381,7 @@ def on_classification_nextPage_btn_click(page):
 @with_error_handling(
     fallback_value=(datetime.datetime.now(), 1),
     exception_types=(ValueError, TypeError),
-    user_message="Failed to navigate to previous page"
+    user_message="Failed to navigate to previous page",
 )
 def on_classification_prevPage_btn_click(page):
     page = page - 1
@@ -399,7 +395,7 @@ def on_classification_prevPage_btn_click(page):
     fallback_value=(None, None, None, gr.update(value=None), gr.update(label="#", visible=False)),
     exception_types=(NetworkError, FileOperationError, ValidationError),
     retry_count=2,
-    user_message="Failed to load model information"
+    user_message="Failed to load model information",
 )
 def load_model_information(modelid=None, ver_index=None):
     if modelid:
@@ -616,10 +612,14 @@ def on_sc_gallery_select(evt: gr.SelectData, shortcuts, page):
 
 
 @with_error_handling(
-    fallback_value=(gr.update(value=None), gr.update(minimum=1, value=1, maximum=1, step=1, label=f"Total {1} Pages"), datetime.datetime.now()),
+    fallback_value=(
+        gr.update(value=None),
+        gr.update(minimum=1, value=1, maximum=1, step=1, label=f"Total {1} Pages"),
+        datetime.datetime.now(),
+    ),
     exception_types=(FileOperationError, NetworkError),
     retry_count=1,
-    user_message="Failed to load classification gallery"
+    user_message="Failed to load classification gallery",
 )
 def on_classification_gallery_loading(shortcuts, page=0):
     totals = 0
@@ -685,7 +685,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
 @with_error_handling(
     fallback_value=(None, gr.update(visible=False), gr.update(visible=True), None),
     exception_types=(ValidationError,),
-    user_message="Failed to process gallery selection"
+    user_message="Failed to process gallery selection",
 )
 def on_classification_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=True):
     if evt.value:
@@ -729,10 +729,17 @@ def on_classification_clear_shortcut_btn_click():
 
 
 @with_error_handling(
-    fallback_value=(gr.update(value=""), gr.update(choices=[]), datetime.datetime.now(), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False)),
+    fallback_value=(
+        gr.update(value=""),
+        gr.update(choices=[]),
+        datetime.datetime.now(),
+        gr.update(visible=True),
+        gr.update(visible=True),
+        gr.update(visible=False),
+    ),
     exception_types=(FileOperationError, ValidationError),
     retry_count=1,
-    user_message="Failed to create classification"
+    user_message="Failed to create classification",
 )
 def on_classification_create_btn_click(new_name, new_info, classification_shortcuts):
     current_time = datetime.datetime.now()
@@ -757,10 +764,15 @@ def on_classification_create_btn_click(new_name, new_info, classification_shortc
 
 
 @with_error_handling(
-    fallback_value=(gr.update(value=""), gr.update(choices=[]), datetime.datetime.now(), gr.update(label="")),
+    fallback_value=(
+        gr.update(value=""),
+        gr.update(choices=[]),
+        datetime.datetime.now(),
+        gr.update(label=""),
+    ),
     exception_types=(FileOperationError, ValidationError),
     retry_count=1,
-    user_message="Failed to update classification"
+    user_message="Failed to update classification",
 )
 def on_classification_update_btn_click(select_name, new_name, new_info, classification_shortcuts):
     chg_name = setting.NEWCLASSIFICATION
@@ -781,10 +793,17 @@ def on_classification_update_btn_click(select_name, new_name, new_info, classifi
 
 
 @with_error_handling(
-    fallback_value=(gr.update(value=""), gr.update(choices=[]), datetime.datetime.now(), gr.update(label=setting.NEWCLASSIFICATION), gr.update(visible=True), gr.update(visible=False)),
+    fallback_value=(
+        gr.update(value=""),
+        gr.update(choices=[]),
+        datetime.datetime.now(),
+        gr.update(label=setting.NEWCLASSIFICATION),
+        gr.update(visible=True),
+        gr.update(visible=False),
+    ),
     exception_types=(FileOperationError,),
     retry_count=1,
-    user_message="Failed to delete classification"
+    user_message="Failed to delete classification",
 )
 def on_classification_delete_btn_click(select_name):
     if select_name:
