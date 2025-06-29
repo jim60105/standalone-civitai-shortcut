@@ -5,7 +5,7 @@ This module provides conditional import management to handle optional dependenci
 on AUTOMATIC1111 WebUI modules while maintaining compatibility with standalone mode.
 """
 
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Callable
 import importlib
 
 
@@ -70,8 +70,8 @@ class ConditionalImportManager:
         return module
 
     def get_webui_function(
-        self, module_name: str, function_name: str, fallback_fn: callable = None
-    ) -> callable:
+        self, module_name: str, function_name: str, fallback_fn: Optional[Callable] = None
+    ) -> Callable:
         """
         Get WebUI function with fallback.
 

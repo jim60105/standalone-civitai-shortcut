@@ -103,7 +103,7 @@ class ParameterCopyPaste:
         params: Dict[str, Any] = {}
         for ui_key, param_key in self._parameter_mapping.items():
             comp = components.get(ui_key)
-            if hasattr(comp, 'value'):
+            if comp is not None and hasattr(comp, 'value'):
                 params[param_key] = comp.value
         parts = []
         for key, val in params.items():

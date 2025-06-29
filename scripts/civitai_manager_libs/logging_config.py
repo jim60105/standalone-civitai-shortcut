@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional
+from typing import Optional, Type
 from .compat.environment_detector import EnvironmentDetector
 
 try:
@@ -20,8 +20,9 @@ try:
             except Exception:
                 self.fallback_handler.emit(record)
 
+    TqdmLoggingHandlerClass: Optional[Type[TqdmLoggingHandler]] = TqdmLoggingHandler
 except ImportError:
-    TqdmLoggingHandler = None
+    TqdmLoggingHandlerClass = None
 
 
 def setup_logging_for_standalone(loglevel: Optional[str] = None, log_file: Optional[str] = None):
@@ -47,21 +48,21 @@ def setup_logging_for_standalone(loglevel: Optional[str] = None, log_file: Optio
     try:
         from rich.logging import RichHandler
 
-        handler = RichHandler()
+        handler: logging.Handler = RichHandler()
     except ImportError:
         handler = logging.StreamHandler()
 
-    if TqdmLoggingHandler:
-        handler = TqdmLoggingHandler(handler)
+    if TqdmLoggingHandlerClass:
+        handler = TqdmLoggingHandlerClass(handler)
 
     handler.setFormatter(formatter)
 
     handlers = [handler]
     if log_file:
-        file_handler = logging.FileHandler(log_file)
+        file_handler: logging.Handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
-        if TqdmLoggingHandler:
-            file_handler = TqdmLoggingHandler(file_handler)
+        if TqdmLoggingHandlerClass:
+            file_handler = TqdmLoggingHandlerClass(file_handler)
         handlers.append(file_handler)
 
     log_level = getattr(logging, loglevel.upper(), None) or logging.INFO

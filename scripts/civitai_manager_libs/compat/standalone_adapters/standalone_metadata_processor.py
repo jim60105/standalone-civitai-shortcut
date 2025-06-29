@@ -72,7 +72,7 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
             - Formatted display info.
         """
         # Handle different input types
-        image = None
+        image: Optional[Image.Image] = None
         temp_path = None
 
         try:
@@ -90,6 +90,9 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
             else:
                 # Unsupported input type
                 self._log_debug(f"Unsupported image_input type: {type(image_input)}")
+                return None, None, None
+
+            if image is None:
                 return None, None, None
 
             geninfo, items = self._extract_metadata(image)
@@ -118,7 +121,7 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
 
     def _extract_metadata(self, image: Image.Image) -> Tuple[Optional[str], Dict[str, Any]]:
         """Extract metadata from image file."""
-        items = {}
+        items: Dict[str, Any] = {}
         geninfo = None
 
         if not hasattr(image, 'info'):

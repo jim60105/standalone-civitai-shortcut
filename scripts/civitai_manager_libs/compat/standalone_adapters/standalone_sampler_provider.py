@@ -200,7 +200,7 @@ class StandaloneSamplerProvider(ISamplerProvider):
         sampler_info = self.get_sampler_info(sampler_name)
         return sampler_info["name"] if sampler_info else sampler_name
 
-    def get_samplers_by_category(self, category: str = None) -> List[str]:
+    def get_samplers_by_category(self, category: Optional[str] = None) -> List[str]:
         """
         Get samplers filtered by category.
 

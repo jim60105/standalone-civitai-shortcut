@@ -4,15 +4,15 @@ Provides unified access to image metadata processing across execution modes.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple, Optional, Any, Union
+from typing import Dict, Tuple, Optional, Any, Union, Type
 
 try:
     from PIL import Image
 
-    ImageType = Image.Image
+    ImageType: Type[Image.Image] = Image.Image
 except ImportError:
     # Fallback type for systems without PIL
-    ImageType = Any
+    ImageType = Any  # type: ignore[misc,assignment]
 
 
 class IMetadataProcessor(ABC):

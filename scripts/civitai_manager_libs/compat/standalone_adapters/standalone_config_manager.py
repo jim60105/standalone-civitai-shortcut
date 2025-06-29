@@ -287,44 +287,15 @@ class StandaloneConfigManager(IConfigManager):
 
         return value
 
-    def set(self, key: str, value: Any, is_api: bool = False, run_callbacks: bool = True) -> bool:
+    def set(self, key: str, value: Any) -> None:
         """
-        Set option value with validation and callbacks (exact AUTOMATIC1111 pattern).
+        Set option value (interface compliance).
 
         Args:
             key: Option key
             value: Value to set
-            is_api: Whether this is an API call
-            run_callbacks: Whether to run onchange callbacks
-
-        Returns:
-            True if the option changed, False otherwise.
         """
-        oldval = self.data.get(key, None)
-        if oldval == value:
-            return False
-
-        option = self.data_labels.get(key, None)
-        if option and option.do_not_save:
-            return False
-
-        if is_api and option and option.restrict_api:
-            return False
-
-        try:
-            setattr(self, key, value)
-        except RuntimeError:
-            return False
-
-        if run_callbacks and option and option.onchange is not None:
-            try:
-                option.onchange()
-            except Exception as e:
-                self._log_debug(f"Error in onchange callback for {key}: {e}")
-                setattr(self, key, oldval)
-                return False
-
-        return True
+        self.set_option(key, value, is_api=False, run_callbacks=True)
 
     def set_option(
         self, key: str, value: Any, is_api: bool = False, run_callbacks: bool = True
@@ -465,7 +436,7 @@ class StandaloneConfigManager(IConfigManager):
             if call:
                 func()
 
-    def same_type(self, x: Any, y: Any) -> bool:
+    def same_type(self, x: Any, y: Any) -> bool:  # type: ignore[misc]
         """
         Check if two values are of compatible types (exact AUTOMATIC1111 pattern).
 
@@ -479,8 +450,8 @@ class StandaloneConfigManager(IConfigManager):
         if x is None or y is None:
             return True
 
-        type_x = self.typemap.get(type(x), type(x))
-        type_y = self.typemap.get(type(y), type(y))
+        type_x = self.typemap.get(type(x), type(x))  # type: ignore[misc]
+        type_y = self.typemap.get(type(y), type(y))  # type: ignore[misc]
 
         return type_x == type_y
 

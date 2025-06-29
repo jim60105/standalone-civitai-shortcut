@@ -21,7 +21,7 @@ try:
     from tqdm import tqdm
 except ImportError:
 
-    def tqdm(iterable, **kwargs):
+    def tqdm(iterable, **kwargs):  # type: ignore[misc,no-redef]
         return iterable
 
 
