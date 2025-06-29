@@ -9,7 +9,12 @@ import os
 import json
 import datetime
 
-from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except ImportError:
+    # Fallback for environments without tqdm
+    def tqdm(iterable, **kwargs):
+        return iterable
 
 from ..logging_config import get_logger
 from .. import setting
@@ -61,14 +66,14 @@ class ShortcutCollectionManager:
         if shortcuts is None:
             shortcuts = {}
         # Create or update the shortcut via ModelFactory
-        new_entries = (
-            self._model_factory.create_model_shortcut(
-                str(model_id), register_information_only, progress
-            )
-            or {}
+        # Note: register_information_only controls whether to download images
+        download_images = not register_information_only
+        new_shortcut = self._model_factory.create_model_shortcut(
+            str(model_id), progress=progress, download_images=download_images
         )
-        if str(model_id) in new_entries:
-            shortcuts.update(new_entries)
+        if new_shortcut:
+            # ModelFactory returns a single shortcut object, not a dict of shortcuts
+            shortcuts[str(model_id)] = new_shortcut
         return shortcuts
 
     def delete_shortcut(self, shortcuts: dict, model_id: str) -> dict:
@@ -121,8 +126,7 @@ class ShortcutCollectionManager:
             return
         shortcuts = self.load_shortcuts()
         existing = shortcuts.get(str(model_id), {})
-        result = self._model_factory.create_model_shortcut(str(model_id), False, progress) or {}
-        entry = result.get(str(model_id))
+        entry = self._model_factory.create_model_shortcut(str(model_id), progress=progress)
         if entry:
             # Preserve note and date
             if 'note' in existing:
@@ -133,7 +137,7 @@ class ShortcutCollectionManager:
             )
             # Ensure nsfw field
             entry.setdefault('nsfw', False)
-            shortcuts.update({str(model_id): entry})
+            shortcuts[str(model_id)] = entry
             self.save_shortcuts(shortcuts)
 
     def update_multiple_shortcuts(self, model_ids: list, progress):

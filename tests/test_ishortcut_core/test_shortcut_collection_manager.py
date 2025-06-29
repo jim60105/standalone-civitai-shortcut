@@ -39,11 +39,11 @@ def test_load_and_save_shortcuts(isolate_settings):
 
 def test_add_and_get_shortcut(monkeypatch, isolate_settings):
     scm = ShortcutCollectionManager()
-    # stub factory to return new entry
+    # stub factory to return new entry (single shortcut object, not dict)
     monkeypatch.setattr(
         scm,
         '_model_factory',
-        type('F', (), {'create_model_shortcut': lambda self, mid, reg, prog: {mid: {'id': mid}}})(),
+        type('F', (), {'create_model_shortcut': lambda self, mid, **kwargs: {'id': mid}})(),
     )
     shortcuts = {}
     result = scm.add_shortcut(shortcuts, '123', False, None)
@@ -75,12 +75,12 @@ def test_update_and_note(monkeypatch, isolate_settings):
     # prepare shortcuts file
     initial = {'5': {'id': '5', 'note': 'old', 'date': '2020-01-01 00:00:00'}}
     scm.save_shortcuts(initial)
-    # stub factory create_model_shortcut
-    new_data = {'5': {'id': '5'}}
+    # stub factory create_model_shortcut (returns single shortcut object)
+    new_data = {'id': '5'}
     monkeypatch.setattr(
         scm._model_factory,
         'create_model_shortcut',
-        lambda mid, reg, prog: new_data,
+        lambda mid, **kwargs: new_data,
     )
     # update keeps note and date
     scm.update_shortcut('5', None)

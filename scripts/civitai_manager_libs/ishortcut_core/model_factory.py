@@ -17,9 +17,9 @@ Extracted from ishortcut.py functions:
 
 from typing import Dict, Optional, Any, Callable
 import os
+import datetime
 
 # Import dependencies from parent modules
-from .. import setting
 from ..logging_config import get_logger
 from ..error_handler import with_error_handling
 from ..exceptions import CivitaiShortcutError, NetworkError, FileOperationError
@@ -73,59 +73,74 @@ class ModelFactory:
         """
         logger.info(f"[ModelFactory] Creating model shortcut for ID: {model_id}")
 
+        # Extract model ID from URL if needed
+        from ..util import get_model_id_from_url
+
+        actual_model_id = get_model_id_from_url(str(model_id))
+        if not actual_model_id:
+            logger.error(f"[ModelFactory] Could not extract model ID from: {model_id}")
+            return None
+
+        logger.info(f"[ModelFactory] Extracted model ID: {actual_model_id}")
+
         # Validate input
-        if validate_data and not self.data_validator.validate_model_id(model_id):
-            logger.error(f"[ModelFactory] Invalid model ID: {model_id}")
+        if validate_data and not self.data_validator.validate_model_id(actual_model_id):
+            logger.error(f"[ModelFactory] Invalid model ID: {actual_model_id}")
             return None
 
         try:
             # Step 1: Get model information from API
-            if progress:
+            if progress is not None:
                 progress(0.1, desc="Fetching model information...")
 
-            model_info = self.model_processor.get_model_information(model_id)
+            # Import civitai module for API calls
+            from .. import civitai
+
+            model_info = civitai.get_model_info(actual_model_id)
             if not model_info:
-                logger.error(f"[ModelFactory] Failed to fetch model info for {model_id}")
+                logger.error(f"[ModelFactory] Failed to fetch model info for {actual_model_id}")
                 return None
 
             # Step 2: Validate model information
             if validate_data and not self.metadata_processor.validate_model_info(model_info):
-                logger.error(f"[ModelFactory] Model info validation failed for {model_id}")
+                logger.error(f"[ModelFactory] Model info validation failed for {actual_model_id}")
                 return None
 
             # Step 3: Process metadata
-            if progress:
+            if progress is not None:
                 progress(0.2, desc="Processing metadata...")
 
             metadata = self.metadata_processor.process_model_metadata(model_info)
             if not metadata:
-                logger.error(f"[ModelFactory] Metadata processing failed for {model_id}")
+                logger.error(f"[ModelFactory] Metadata processing failed for {actual_model_id}")
                 return None
 
             # Step 4: Create model directory structure
-            if progress:
+            if progress is not None:
                 progress(0.3, desc="Creating directories...")
 
-            model_dir = self.file_processor.create_model_directory(model_id)
+            model_dir = self.file_processor.create_model_directory(actual_model_id)
             if not model_dir:
-                logger.error(f"[ModelFactory] Failed to create directory for {model_id}")
+                logger.error(f"[ModelFactory] Failed to create directory for {actual_model_id}")
                 return None
 
             # Step 5: Save model information
-            if progress:
+            if progress is not None:
                 progress(0.4, desc="Saving model information...")
 
-            info_saved = self.file_processor.save_model_information(model_id, model_info)
+            info_saved = self.file_processor.save_model_information(
+                model_info, model_dir, actual_model_id
+            )
             if not info_saved:
-                logger.error(f"[ModelFactory] Failed to save model info for {model_id}")
+                logger.error(f"[ModelFactory] Failed to save model info for {actual_model_id}")
                 return None
 
             # Step 6: Download images (if requested)
             if download_images:
-                if progress:
+                if progress is not None:
                     progress(0.5, desc="Downloading images...")
 
-                image_success = self._download_model_images(model_info, model_id, progress)
+                image_success = self._download_model_images(model_info, actual_model_id, progress)
                 if not image_success:
                     logger.warning(f"[ModelFactory] Image download failed for {model_id}")
                     # Continue despite image download failure
@@ -133,36 +148,40 @@ class ModelFactory:
                 logger.info(f"[ModelFactory] Skipping image download for {model_id}")
 
             # Step 7: Generate thumbnail
-            if progress:
+            if progress is not None:
                 progress(0.8, desc="Generating thumbnail...")
 
-            thumbnail_created = self._create_model_thumbnail(model_info, model_id)
+            thumbnail_created = self._create_model_thumbnail(model_info, actual_model_id)
             if not thumbnail_created:
                 logger.warning(f"[ModelFactory] Thumbnail creation failed for {model_id}")
                 # Continue despite thumbnail failure
 
             # Step 8: Create final shortcut object
-            if progress:
+            if progress is not None:
                 progress(0.9, desc="Creating shortcut...")
 
             shortcut = self._create_shortcut_object(model_info, metadata, model_dir)
             if not shortcut:
-                logger.error(f"[ModelFactory] Failed to create shortcut object for {model_id}")
+                logger.error(
+                    f"[ModelFactory] Failed to create shortcut object for {actual_model_id}"
+                )
                 return None
 
             # Step 9: Final validation
             if validate_data and not self._validate_final_shortcut(shortcut):
-                logger.error(f"[ModelFactory] Final shortcut validation failed for {model_id}")
+                logger.error(
+                    f"[ModelFactory] Final shortcut validation failed for {actual_model_id}"
+                )
                 return None
 
-            if progress:
+            if progress is not None:
                 progress(1.0, desc="Complete!")
 
-            logger.info(f"[ModelFactory] Successfully created model shortcut for {model_id}")
+            logger.info(f"[ModelFactory] Successfully created model shortcut for {actual_model_id}")
             return shortcut
 
         except Exception as e:
-            logger.error(f"[ModelFactory] Error creating model shortcut for {model_id}: {e}")
+            logger.error(f"[ModelFactory] Error creating model shortcut for {actual_model_id}: {e}")
             return None
 
     def _download_model_images(
@@ -189,7 +208,7 @@ class ModelFactory:
 
             # Create progress wrapper for image downloads
             def image_progress(fraction, desc="Downloading images..."):
-                if progress:
+                if progress is not None:
                     # Map image progress to overall progress (0.5-0.7 range)
                     overall_progress = 0.5 + (fraction * 0.2)
                     progress(overall_progress, desc=desc)
@@ -264,37 +283,48 @@ class ModelFactory:
         try:
             model_id = str(model_info.get('id'))
 
-            # Create shortcut structure
+            # Create shortcut structure in the expected format
             shortcut = {
-                'id': model_id,
-                'name': metadata.get('name', ''),
+                'id': int(model_id),  # Should be integer in the shortcut format
                 'type': metadata.get('type', ''),
-                'description': metadata.get('description', ''),
-                'creator': metadata.get('creator', {}),
-                'stats': metadata.get('stats', {}),
+                'name': metadata.get('name', ''),
                 'tags': metadata.get('tags', []),
-                'is_nsfw': metadata.get('is_nsfw', False),
-                'version_count': metadata.get('version_count', 0),
-                'model_dir': model_dir,
-                'created_at': metadata.get('processed_at'),
-                'raw_data': model_info,  # Keep original data for reference
+                'nsfw': metadata.get('is_nsfw', False),
+                'url': f"https://civitai.com/api/v1/models/{model_id}",
+                'note': '',  # Default empty note
+                'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
 
-            # Add file paths
-            shortcut['info_file'] = os.path.join(model_dir, f"{model_id}.json")
-            shortcut['thumbnail_path'] = os.path.join(
-                setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
-            )
-
-            # Add image information
-            shortcut['has_thumbnail'] = self.image_processor.is_sc_image(model_id)
-            shortcut['image_count'] = self._count_model_images(model_info)
-
-            # Add download URLs for first version
-            if 'modelVersions' in model_info and model_info['modelVersions']:
-                first_version = model_info['modelVersions'][0]
-                shortcut['download_url'] = first_version.get('downloadUrl', '')
-                shortcut['latest_version_id'] = first_version.get('id', '')
+            # Add version information from first version
+            model_versions = model_info.get('modelVersions', [])
+            if isinstance(model_versions, list) and len(model_versions) > 0:
+                try:
+                    first_version = model_versions[0]
+                    if isinstance(first_version, dict):
+                        shortcut['versionid'] = first_version.get('id', '')
+                        # Get preview image URL from first version
+                        version_images = first_version.get('images', [])
+                        if version_images and len(version_images) > 0:
+                            first_image = version_images[0]
+                            if isinstance(first_image, dict):
+                                shortcut['imageurl'] = first_image.get('url', '')
+                            else:
+                                shortcut['imageurl'] = ''
+                        else:
+                            shortcut['imageurl'] = ''
+                    else:
+                        # Invalid version format, set defaults
+                        shortcut['versionid'] = ''
+                        shortcut['imageurl'] = ''
+                except (IndexError, TypeError, AttributeError):
+                    # Handle any unexpected errors in accessing version data
+                    logger.warning(f"[ModelFactory] Error accessing version data for {model_id}")
+                    shortcut['versionid'] = ''
+                    shortcut['imageurl'] = ''
+            else:
+                # No versions available, set defaults
+                shortcut['versionid'] = ''
+                shortcut['imageurl'] = ''
 
             logger.debug(f"[ModelFactory] Created shortcut object for {model_id}")
             return shortcut
@@ -337,27 +367,15 @@ class ModelFactory:
             True if valid, False otherwise
         """
         try:
-            required_keys = ['id', 'name', 'type', 'model_dir']
+            required_keys = ['id', 'name', 'type']
 
             for key in required_keys:
-                if key not in shortcut or not shortcut[key]:
-                    logger.error(f"[ModelFactory] Missing or empty required key: {key}")
+                if key not in shortcut:
+                    logger.error(f"[ModelFactory] Missing required key: {key}")
                     return False
 
             # Validate ID
-            if not self.data_validator.validate_model_id(shortcut['id']):
-                return False
-
-            # Validate directory exists
-            if not os.path.exists(shortcut['model_dir']):
-                logger.error(
-                    f"[ModelFactory] Model directory doesn't exist: {shortcut['model_dir']}"
-                )
-                return False
-
-            # Validate info file exists
-            if not os.path.exists(shortcut['info_file']):
-                logger.error(f"[ModelFactory] Info file doesn't exist: {shortcut['info_file']}")
+            if not self.data_validator.validate_model_id(str(shortcut['id'])):
                 return False
 
             logger.debug("[ModelFactory] Final shortcut validation passed")
@@ -396,7 +414,7 @@ class ModelFactory:
         shortcuts = []
 
         for i, model_id in enumerate(model_ids):
-            if progress:
+            if progress is not None:
                 overall_progress = i / len(model_ids)
                 progress(overall_progress, desc=f"Processing model {i+1}/{len(model_ids)}")
 
@@ -413,7 +431,7 @@ class ModelFactory:
             else:
                 logger.error(f"[ModelFactory] Failed to create shortcut for {model_id}")
 
-        if progress:
+        if progress is not None:
             progress(1.0, desc=f"Complete! Created {len(shortcuts)}/{len(model_ids)} shortcuts")
 
         logger.info(f"[ModelFactory] Batch creation complete: {len(shortcuts)}/{len(model_ids)}")
@@ -442,7 +460,9 @@ class ModelFactory:
                 return self.create_model_shortcut(model_id)
 
             # Get fresh model information
-            fresh_info = self.model_processor.get_model_information(model_id)
+            from .. import civitai
+
+            fresh_info = civitai.get_model_info(model_id)
             if not fresh_info:
                 logger.error(f"[ModelFactory] Failed to get fresh info for {model_id}")
                 return None
