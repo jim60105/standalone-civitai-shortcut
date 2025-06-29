@@ -24,7 +24,14 @@ from . import prompt
 from . import sc_browser_page
 from . import ishortcut
 from . import recipe_browser_page
+
 from .compat.compat_layer import CompatibilityLayer
+from .error_handler import with_error_handling
+from .exceptions import (
+    NetworkError,
+    FileOperationError,
+    ValidationError,
+)
 
 from PIL import Image
 
@@ -1015,6 +1022,19 @@ def on_recipe_new_btn_click():
     )
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(value=""),
+        gr.update(choices=[]),
+        datetime.datetime.now(),
+        gr.update(label=setting.NEWRECIPE),
+        gr.update(visible=True),
+        gr.update(visible=False),
+    ),
+    exception_types=(FileOperationError, ValidationError),
+    retry_count=1,
+    user_message="Failed to create recipe",
+)
 def on_recipe_create_btn_click(
     recipe_name,
     recipe_desc,
@@ -1112,6 +1132,17 @@ def on_recipe_create_btn_click(
     )
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(value=""),
+        gr.update(choices=[]),
+        datetime.datetime.now(),
+        gr.update(label=""),
+    ),
+    exception_types=(FileOperationError, ValidationError),
+    retry_count=1,
+    user_message="Failed to update recipe",
+)
 def on_recipe_update_btn_click(
     select_name,
     recipe_name,
@@ -1175,6 +1206,19 @@ def on_recipe_update_btn_click(
     )
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(value=""),
+        gr.update(choices=[]),
+        datetime.datetime.now(),
+        gr.update(label=setting.NEWRECIPE),
+        gr.update(visible=True),
+        gr.update(visible=False),
+    ),
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to delete recipe",
+)
 def on_recipe_delete_btn_click(select_name):
     if select_name:
         recipe.delete_recipe(select_name)
@@ -1193,6 +1237,11 @@ def on_recipe_delete_btn_click(select_name):
 
 
 # reference shortcuts
+@with_error_handling(
+    fallback_value=gr.update(value=None),
+    exception_types=(FileOperationError, NetworkError),
+    user_message="Failed to load reference gallery",
+)
 def on_reference_gallery_loading(shortcuts):
     ISC = ishortcut.load()
     if not ISC:
@@ -1238,6 +1287,11 @@ def on_reference_gallery_loading(shortcuts):
     return gr.update(value=result_list)
 
 
+@with_error_handling(
+    fallback_value=(None, datetime.datetime.now(), None, None),
+    exception_types=(ValidationError,),
+    user_message="Failed to process reference selection",
+)
 def on_reference_sc_gallery_select(evt: gr.SelectData, shortcuts):
     current_time = datetime.datetime.now()
 
