@@ -229,15 +229,25 @@ Return Result
 
 ## Error Handling Strategy
 
+### Unified Exception Handling Framework
+The project implements a comprehensive exception handling system with custom exception types, decorators, and recovery mechanisms. For detailed usage instructions, see the [Exception Handling Guide](exception_handling_guide.md).
+
+**Key Components**:
+- **Custom Exception Types**: Hierarchical exception classification (`NetworkError`, `FileOperationError`, `APIError`, etc.)
+- **Error Handling Decorator**: `@with_error_handling` for unified error management with retry logic
+- **Recovery Manager**: Automatic error recovery strategies for common failure scenarios
+- **User Feedback**: Integrated Gradio error display for user-friendly error messages
+
 ### Progressive Degradation
 1. **Primary**: Use WebUI functionality when available
 2. **Secondary**: Fall back to standalone implementation
 3. **Tertiary**: Return safe defaults
 
 ### Exception Management
-- All interfaces handle exceptions internally
+- All interfaces handle exceptions internally using the unified framework
 - Return None or empty collections on errors
 - Log errors for debugging without breaking functionality
+- Provide user-friendly error messages through Gradio UI
 
 ## Performance Considerations
 

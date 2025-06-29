@@ -4,8 +4,15 @@
 
 import datetime
 import os
-
 import gradio as gr
+
+from .error_handler import with_error_handling
+from .exceptions import (
+    NetworkError,
+    FileOperationError,
+    ConfigurationError,
+    ValidationError,
+)
 
 from . import civitai
 from . import civitai_gallery_action
@@ -29,6 +36,11 @@ def set_compatibility_layer(compat_layer):
     _compat_layer = compat_layer
 
 
+@with_error_handling(
+    fallback_value=(gr.update(visible=False), gr.update(selected=None), gr.update(visible=False)),
+    exception_types=(ValidationError,),
+    user_message="Failed to process shortcut input",
+)
 def on_shortcut_input_change(shortcut_input):
     logger.debug(
         f"[civitai_shortcut_action] on_shortcut_input_change called with "
@@ -284,6 +296,11 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     return refresh_sc_browser, refresh_civitai_information
 
 
+@with_error_handling(
+    fallback_value=(gr.update(value="Off"), gr.update(visible=False, value="None")),
+    exception_types=(ConfigurationError,),
+    user_message="Failed to refresh NSFW settings",
+)
 def on_refresh_NSFW_change():
     logger.debug(
         f"[civitai_shortcut_action] on_refresh_NSFW_change called. "
@@ -296,6 +313,11 @@ def on_refresh_NSFW_change():
         return gr.update(value="Off"), gr.update(visible=False, value=setting.NSFW_level_user)
 
 
+@with_error_handling(
+    fallback_value=(gr.update(visible=False), datetime.datetime.now(), datetime.datetime.now()),
+    exception_types=(ConfigurationError,),
+    user_message="Failed to apply NSFW filter",
+)
 def on_nsfw_filter(enable, level):
     logger.debug(
         f"[civitai_shortcut_action] on_nsfw_filter called with enable: {enable}, " f"level: {level}"
@@ -310,6 +332,12 @@ def on_nsfw_filter(enable, level):
     )
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError, ConfigurationError),
+    retry_count=1,
+    user_message="Failed to save NSFW settings",
+)
 def on_nsfw_save_btn_click():
     logger.debug(" on_nsfw_save_btn_click called. Saving NSFW settings.")
     setting.save_NSFW()
@@ -342,6 +370,11 @@ def on_civitai_information_tabs_select(evt: gr.SelectData):
 
 
 # sc_gallery function definition
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(ValidationError,),
+    user_message="Failed to process gallery selection",
+)
 def on_sc_gallery_select(evt: gr.SelectData):
     logger.debug(
         f"[civitai_shortcut_action] on_sc_gallery_select called with evt.value: {evt.value}"
@@ -386,6 +419,13 @@ def on_sc_modelid_change(sc_model_id, current_information_tabs):
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
 
+@with_error_handling(
+    fallback_value=(gr.update(visible=False), gr.update(visible=False), None),
+    exception_types=(NetworkError, FileOperationError, ValidationError),
+    retry_count=2,
+    retry_delay=2.0,
+    user_message="Failed to upload shortcut files",
+)
 def on_civitai_internet_url_upload(files, register_information_only, progress=gr.Progress()):
     logger.debug(
         f"[civitai_shortcut_action] on_civitai_internet_url_upload called with files: {files}, "
@@ -410,6 +450,13 @@ def on_civitai_internet_url_upload(files, register_information_only, progress=gr
     return model_id, current_time, None
 
 
+@with_error_handling(
+    fallback_value=(gr.update(visible=False), None, gr.update(visible=True)),
+    exception_types=(NetworkError, ValidationError, FileOperationError),
+    retry_count=2,
+    retry_delay=2.0,
+    user_message="Failed to process URL",
+)
 def on_civitai_internet_url_txt_upload(
     url, register_information_only, progress=gr.Progress(track_tqdm=True)
 ):
@@ -553,6 +600,12 @@ def on_update_modelfolder_btn_click():
 
 
 # 새 버전이 있는지 스캔한다
+@with_error_handling(
+    fallback_value=gr.update(value=None),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=1,
+    user_message="Failed to scan for new versions",
+)
 def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
     logger.debug(
         f"[civitai_shortcut_action] on_scan_new_version_btn called with sc_types: {sc_types}"

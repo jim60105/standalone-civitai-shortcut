@@ -34,7 +34,7 @@ class EventHandler:
     def setup_component_events(
         self, components: Dict[str, gr.Component], actions: Dict[str, Callable]
     ) -> None:
-        """Bind Gradio components to action functions with enhanced error handling."""
+        """Bind Gradio components to action functions with unified UI error prompt handling."""
         for name, comp in components.items():
             if name in actions:
                 action = actions[name]
@@ -45,8 +45,13 @@ class EventHandler:
                         try:
                             return original_action(*args, **kwargs)
                         except Exception as e:
-                            logger.error(f"Error in action {action_name}: {e}")
-                            # Return safe fallback instead of raising exception
+                            # Log the error and display a unified UI error prompt,
+                            # then return a safe fallback
+                            logger.error(f"Error in action {action_name}: {e}", exc_info=True)
+                            try:
+                                gr.Error(f"Error in {action_name}: {e}")
+                            except Exception:
+                                pass
                             return gr.update()
 
                     return wrapped_action

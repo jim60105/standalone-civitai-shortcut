@@ -8,6 +8,8 @@ logger = get_logger(__name__)
 from . import util
 from .conditional_imports import import_manager
 from .compat.compat_layer import CompatibilityLayer
+from .exceptions import FileOperationError
+from .error_handler import with_error_handling
 
 # Compatibility layer variables
 _compat_layer = None
@@ -370,7 +372,7 @@ def save_NSFW():
     nsfw_filter['nsfw_level'] = NSFW_level_user
     environment['NSFW_filter'] = nsfw_filter
 
-    save(environment)
+    save_setting(environment)
 
 
 def init():
@@ -724,32 +726,40 @@ def get_image_url_to_gallery_file(image_url):
     return None
 
 
-def save(env):
-    try:
-        logger.info(f"[setting] save: Saving environment to {shortcut_setting}")
-        with open(shortcut_setting, 'w') as f:
-            json.dump(env, f, indent=4)
-    except Exception as e:
-        logger.error(f"[setting] save: Exception occurred while saving: {e}")
-        return False
-
-    logger.info("[setting] save: Save successful.")
-    return True
-
-
-def load():
+@with_error_handling(
+    fallback_value={},
+    exception_types=(FileOperationError, json.JSONDecodeError),
+    retry_count=2,
+    user_message="Failed to load configuration, using defaults",
+)
+def load() -> dict:
+    """Load configuration with enhanced error handling."""
     if not os.path.isfile(shortcut_setting):
         logger.info(f"[setting] load: {shortcut_setting} not found, creating new file.")
-        save({})
-        return
+        save_setting({})
+        return {}
 
-    json_data = None
-    try:
-        with open(shortcut_setting, 'r') as f:
-            json_data = json.load(f)
-        logger.info(f"[setting] load: Loaded data from {shortcut_setting}")
-    except Exception as e:
-        logger.error(f"[setting] load: Exception occurred while loading: {e}")
-        pass
+    with open(shortcut_setting, 'r') as f:
+        data = json.load(f)
+    logger.info(f"[setting] load: Loaded data from {shortcut_setting}")
+    return data
 
-    return json_data
+
+@with_error_handling(
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to save configuration",
+)
+def save_setting(setting_dict: dict) -> bool:
+    """Save configuration with retry logic."""
+    # Create backup of existing config
+    if os.path.isfile(shortcut_setting):
+        backup_path = f"{shortcut_setting}.backup"
+        shutil.copy2(shortcut_setting, backup_path)
+
+    tmp_path = f"{shortcut_setting}.tmp"
+    with open(tmp_path, 'w') as f:
+        json.dump(setting_dict, f, indent=4)
+    os.replace(tmp_path, shortcut_setting)
+    logger.info(f"[setting] save_setting: Configuration saved to {shortcut_setting}")
+    return True

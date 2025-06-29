@@ -6,11 +6,16 @@ through the compatibility layer.
 """
 
 import os
-import json
 import gradio as gr
 import datetime
 import shutil
 
+from .error_handler import with_error_handling
+from .exceptions import (
+    NetworkError,
+    FileOperationError,
+    ValidationError,
+)
 from .conditional_imports import import_manager
 from .logging_config import get_logger
 
@@ -537,10 +542,22 @@ def on_ui(refresh_sc_browser, recipe_input):
 #     return gr.update(visible=True) ,current_time
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError,),
+    retry_count=1,
+    user_message="Failed to save personal note",
+)
 def on_personal_note_save_click(modelid, note):
     ishortcut.update_shortcut_model_note(modelid, note)
 
 
+@with_error_handling(
+    fallback_value=gr.update(visible=False),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=1,
+    user_message="Failed to send image to recipe",
+)
 def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
     logger.debug("on_send_to_recipe_click called")
     logger.debug(f"  model_id: {repr(model_id)}")
@@ -571,6 +588,11 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
         return gr.update(visible=False)
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(FileOperationError,),
+    user_message="Failed to open image folder",
+)
 def on_open_image_folder_click(modelid):
     if modelid:
         model_info = ishortcut.get_model_info(modelid)
@@ -581,6 +603,16 @@ def on_open_image_folder_click(modelid):
                 util.open_folder(image_folder)
 
 
+@with_error_handling(
+    fallback_value=(
+        gr.update(visible=True),
+        gr.update(visible=True),
+        gr.update(visible=False),
+        gr.update(visible=False),
+    ),
+    exception_types=(ValidationError,),
+    user_message="Failed to submit filename change",
+)
 def on_change_filename_submit(select_fileid, select_filename, df, filenames):
 
     if not select_fileid or not select_filename or len(select_filename.strip()) <= 0:
@@ -618,6 +650,11 @@ def on_change_filename_submit(select_fileid, select_filename, df, filenames):
     )
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(ValidationError,),
+    user_message="Failed to process downloadable files selection",
+)
 def on_downloadable_files_select(evt: gr.SelectData, df, filenames):
     # logger.debug(evt.index)
     # index[0] # 행,열
@@ -679,6 +716,12 @@ def on_downloadable_files_select(evt: gr.SelectData, df, filenames):
     )
 
 
+@with_error_handling(
+    fallback_value=gr.update(visible=False),
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=2,
+    user_message="Failed to download images",
+)
 def on_download_images_click(model_id: str, images_url):
     msg = None
     if model_id:
@@ -694,6 +737,13 @@ def on_download_images_click(model_id: str, images_url):
     return current_time
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(NetworkError, FileOperationError),
+    retry_count=3,
+    retry_delay=5.0,
+    user_message="Failed to download model",
+)
 def on_download_model_click(
     model_id,
     version_id,
@@ -1356,6 +1406,13 @@ def load_saved_model(modelid=None, ver_index=None):
     )
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, FileOperationError, ValidationError),
+    retry_count=2,
+    retry_delay=2.0,
+    user_message="Failed to upload shortcuts by files",
+)
 def upload_shortcut_by_files(files, register_information_only, progress):
     modelids = list()
     if files:
@@ -1384,6 +1441,13 @@ def upload_shortcut_by_files(files, register_information_only, progress):
     return modelids
 
 
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, FileOperationError, ValidationError),
+    retry_count=2,
+    retry_delay=2.0,
+    user_message="Failed to upload shortcuts by URLs",
+)
 def upload_shortcut_by_urls(urls, register_information_only, progress):
     logger.debug("[ishortcut_action] ========== UPLOAD_SHORTCUT_BY_URLS START ==========")
     logger.debug(f"[ishortcut_action] Function called with urls: {urls}")

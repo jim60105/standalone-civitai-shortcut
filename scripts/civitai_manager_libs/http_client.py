@@ -15,6 +15,8 @@ import gradio as gr
 import os
 
 from .logging_config import get_logger
+from .exceptions import APIError
+from .error_handler import with_error_handling
 
 from . import setting
 
@@ -68,36 +70,26 @@ class CivitaiHttpClient:
         if api_key:
             self.session.headers.update({"Authorization": f"Bearer {api_key}"})
 
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        retry_count=0,
+        retry_delay=0,
+        user_message=None,
+    )
     def get_json(self, url: str, params: Dict = None) -> Optional[Dict]:
-        """Make GET request and return JSON response or None on error."""
-        for attempt in range(self.max_retries):
-            try:
-                logger.debug(f"[http_client] GET {url} attempt {attempt + 1}")
-                response = self.session.get(url, params=params, timeout=self.timeout)
-                logger.debug(f"[http_client] Response status: {response.status_code}")
-                if response.status_code >= 400:
-                    msg = _STATUS_CODE_MESSAGES.get(
-                        response.status_code,
-                        f"HTTP {response.status_code} Error",
-                    )
-                    logger.debug(f"[http_client] {msg}")
-                    gr.Error(f"Request failed: {msg}")
-                    return None
-                return response.json()
-            except (requests.ConnectionError, requests.Timeout) as e:
-                logger.warning(f"[http_client] Connection error: {e}")
-                if attempt == self.max_retries - 1:
-                    gr.Error(f"Network error: {type(e).__name__}")
-                    return None
-                time.sleep(self.retry_delay)
-            except json.JSONDecodeError as e:
-                logger.error(f"[http_client] JSON decode error: {e}")
-                gr.Error("Failed to parse JSON response")
-                return None
-            except requests.RequestException as e:
-                logger.error(f"[http_client] Request exception: {e}")
-                gr.Error(f"Request error: {e}")
-                return None
+        """Enhanced GET request with unified error handling."""
+        response = self.session.get(url, params=params, timeout=self.timeout)
+        self._handle_response_error(response)
+        return response.json()
+
+    def _handle_response_error(self, response: requests.Response) -> None:
+        """Convert HTTP errors to our custom exceptions."""
+        if response.status_code >= 400:
+            error_msg = _STATUS_CODE_MESSAGES.get(
+                response.status_code, f"HTTP {response.status_code}"
+            )
+            raise APIError(message=error_msg, status_code=response.status_code)
 
     def post_json(self, url: str, json_data: Dict = None) -> Optional[Dict]:
         """Make POST request with JSON payload and return JSON response or None on error."""
