@@ -33,7 +33,6 @@ from .shortcut_search_filter import ShortcutSearchFilter
 from .shortcut_thumbnail_manager import ShortcutThumbnailManager
 from .shortcut_backup_manager import ShortcutBackupManager
 from .preview_image_manager import PreviewImageManager
-from .shortcut_utilities import ShortcutUtilities
 
 __version__ = "1.0.0"
 __all__ = [
@@ -48,5 +47,4 @@ __all__ = [
     "ShortcutThumbnailManager",
     "ShortcutBackupManager",
     "PreviewImageManager",
-    "ShortcutUtilities",
 ]
