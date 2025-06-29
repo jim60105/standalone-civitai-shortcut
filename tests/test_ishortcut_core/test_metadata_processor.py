@@ -9,26 +9,25 @@ from scripts.civitai_manager_libs.exceptions import DataValidationError
 
 def test_validate_model_info():
     mp = MetadataProcessor()
-    with pytest.raises(DataValidationError):
-        mp.validate_model_info({})
+    # These should return False due to error handling, not raise exceptions
+    assert mp.validate_model_info({}) is False
     valid = {'id': 1, 'name': 'n', 'type': 't'}
-    assert mp.validate_model_info(valid)
+    assert mp.validate_model_info(valid) is True
 
 
 def test_validate_model_versions():
     mp = MetadataProcessor()
     # No versions key
-    assert mp.validate_model_versions({})
-    # Not a list
-    with pytest.raises(DataValidationError):
-        mp.validate_model_versions({'modelVersions': 'bad'})
+    assert mp.validate_model_versions({}) is True
+    # Not a list - should return False due to error handling
+    assert mp.validate_model_versions({'modelVersions': 'bad'}) is False
     # Empty list
-    assert mp.validate_model_versions({'modelVersions': []})
-    # Incomplete version
-    with pytest.raises(DataValidationError):
-        mp.validate_model_versions({'modelVersions': [{'name': 'x'}]})
+    assert mp.validate_model_versions({'modelVersions': []}) is True
+    # Incomplete version - should return False due to error handling
+    assert mp.validate_model_versions({'modelVersions': [{'name': 'x'}]}) is False
     # Valid version
     valid_ver = {'id': 2, 'name': 'v', 'downloadUrl': 'u'}
+    assert mp.validate_model_versions({'modelVersions': [valid_ver]}) is True
     assert mp.validate_model_versions({'modelVersions': [valid_ver]})
 
 

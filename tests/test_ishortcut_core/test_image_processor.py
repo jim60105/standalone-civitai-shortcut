@@ -11,6 +11,7 @@ from scripts.civitai_manager_libs.ishortcut_core.image_processor import ImagePro
 def tmp_thumbnail_folder(monkeypatch, tmp_path):
     # Redirect thumbnail folder to temporary path
     monkeypatch.setattr(ip_mod.setting, 'shortcut_thumbnail_folder', str(tmp_path))
+    monkeypatch.setattr(ip_mod.setting, 'preview_image_ext', '.jpg')
     yield
 
 
@@ -28,16 +29,17 @@ def test_create_thumbnail_success(tmp_path, monkeypatch):
     img.save(str(img_path))
     # Generate thumbnail
     result = processor.create_thumbnail('myid', str(img_path))
-    thumb_file = tmp_path / 'myid.jpg'
+    # The thumbnail should be created in the mocked thumbnail folder
+    thumb_file = tmp_path / 'myid.jpg'  # This should work with the fixture
     assert result is True
     assert thumb_file.exists()
 
 
-def test_is_sc_image_and_delete(tmp_path):
+def test_is_sc_image_and_delete(tmp_path, monkeypatch):
     processor = ImageProcessor()
     # Empty model_id
     assert not processor.is_sc_image('')
-    # Create dummy thumbnail file
+    # Create dummy thumbnail file in the mocked thumbnail folder (tmp_path)
     modelid = 'x'
     thumb_path = tmp_path / f"{modelid}.jpg"
     thumb_path.write_text('data')

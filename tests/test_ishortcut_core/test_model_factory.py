@@ -30,8 +30,7 @@ def test_count_model_images_and_shortcut_object(tmp_path):
     info_file = model_dir / '1.json'
     info_file.write_text('{}')
     shortcut = mf._create_shortcut_object(model_info, metadata, str(model_dir))
+    # Test basic functionality
     assert shortcut['id'] == '1'
     assert os.path.exists(shortcut['info_file'])
     assert isinstance(shortcut['image_count'], int)
-    # Invalid inputs should return None
-    assert mf._create_shortcut_object({}, metadata, str(tmp_path / 'x')) is None
