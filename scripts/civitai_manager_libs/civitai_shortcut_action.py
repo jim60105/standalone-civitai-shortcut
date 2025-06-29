@@ -16,7 +16,7 @@ from .exceptions import (
 
 from . import civitai
 from . import civitai_gallery_action
-from . import ishortcut
+import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import ishortcut_action
 from . import model
 from . import model_action
@@ -626,7 +626,7 @@ def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
         result = list()
         for v in scan_list:
             if v:
-                if ishortcut.is_sc_image(v['id']):
+                if imageprocessor.is_sc_image(v['id']):
                     result.append(
                         (
                             os.path.join(
@@ -654,7 +654,7 @@ def get_shortcut_list(shortcut_types=None, downloaded_sc=False):
         f"[civitai_shortcut_action] get_shortcut_list called with shortcut_types: "
         f"{shortcut_types}, downloaded_sc: {downloaded_sc}"
     )
-    shortcut_list = ishortcut.get_image_list(shortcut_types, None, None, None)
+    shortcut_list = shortcutsearchfilter.get_filtered_shortcuts(shortcut_types, None, None, None)
     logger.debug(f" ishortcut.get_image_list returned: {shortcut_list}")
     if not shortcut_list:
         logger.debug(" shortcut_list is empty, returning None")
@@ -748,7 +748,7 @@ def create_parameter_components(copypaste, gr=gr):
 #         return
 #     try:
 #         if setting.shortcut_auto_update:
-#             ishortcut.write_model_information(modelid, False, None)
+#             fileprocessor.write_model_information(modelid, False, None)
 #     except:
 #         return
 #     return

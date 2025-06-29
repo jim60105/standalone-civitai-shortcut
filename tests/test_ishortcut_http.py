@@ -1,12 +1,15 @@
 import os
 
 from scripts.civitai_manager_libs import util
-from scripts.civitai_manager_libs.ishortcut import (
-    _get_preview_image_url,
-    _get_preview_image_path,
-    download_model_preview_image_by_model_info,
-    get_preview_image_by_model_info,
-)
+from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import PreviewImageManager
+
+# instantiate PreviewImageManager with a dummy collection_manager for testing
+preview_manager = PreviewImageManager(None)
+
+_get_preview_image_url = preview_manager.get_preview_image_url
+_get_preview_image_path = preview_manager.get_preview_image_path
+download_model_preview_image_by_model_info = preview_manager.download_preview_image
+get_preview_image_by_model_info = preview_manager.get_preview_image
 
 
 def test_get_preview_image_url_from_versions():
@@ -36,14 +39,14 @@ def test_download_model_preview_image(monkeypatch, tmp_path):
     expected_path = tmp_path / "model_42_preview.jpg"
     # Patch get_preview_image_path to use tmp_path
     monkeypatch.setattr(
-        'scripts.civitai_manager_libs.ishortcut._get_preview_image_path',
+        preview_manager,
+        'get_preview_image_path',
         lambda m: str(expected_path),
     )
-    # Patch download_image_safe
+    # Patch download_image_safe in preview_image_manager module
     calls = []
     monkeypatch.setattr(
-        util,
-        'download_image_safe',
+        'scripts.civitai_manager_libs.ishortcut_core.preview_image_manager.download_image_safe',
         lambda u, p, c, show_error=False: calls.append((u, p)) or True,
     )
     downloaded = download_model_preview_image_by_model_info(info)
@@ -56,21 +59,17 @@ def test_get_preview_image_by_model_info_existing(tmp_path, monkeypatch):
     fake_path = tmp_path / "model_99_preview.jpg"
     fake_path.write_text("data")
     monkeypatch.setattr(
-        'scripts.civitai_manager_libs.ishortcut._get_preview_image_path', lambda m: str(fake_path)
+        preview_manager,
+        'get_preview_image_path',
+        lambda m: str(fake_path),
     )
     assert get_preview_image_by_model_info(info) == str(fake_path)
 
 
 def test_get_preview_image_by_model_info_fallback(monkeypatch):
     info = {"id": "nope"}
-    monkeypatch.setattr(
-        'scripts.civitai_manager_libs.ishortcut._get_preview_image_path',
-        lambda m: None,
-    )
-    monkeypatch.setattr(
-        'scripts.civitai_manager_libs.ishortcut.download_model_preview_image_by_model_info',
-        lambda m: None,
-    )
+    monkeypatch.setattr(preview_manager, 'get_preview_image_path', lambda m: None)
+    monkeypatch.setattr(preview_manager, 'download_preview_image', lambda m: None)
     from scripts.civitai_manager_libs.setting import no_card_preview_image
 
     assert get_preview_image_by_model_info(info) == no_card_preview_image

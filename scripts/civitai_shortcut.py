@@ -173,14 +173,14 @@ def civitai_shortcut_ui():
 
 
 def update_all_shortcut_informations():
-    preISC = ishortcut.load()
+    preISC = shortcutcollectionmanager.load_shortcuts()
     if not preISC:
         return
 
     modelid_list = [k for k in preISC]
     logger.debug("shortcut update start")
     for modelid in modelid_list:
-        ishortcut.write_model_information(modelid, False, None)
+        fileprocessor.write_model_information(modelid, False, None)
     logger.debug("shortcut update end")
 
 

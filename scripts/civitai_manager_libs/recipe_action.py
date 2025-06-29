@@ -22,7 +22,7 @@ from . import prompt
 
 # from . import prompt_ui
 from . import sc_browser_page
-from . import ishortcut
+import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import recipe_browser_page
 
 from .compat.compat_layer import CompatibilityLayer
@@ -550,7 +550,7 @@ def load_model_information(modelid=None, ver_index=None):
             dhtml,
             triger,
             files,
-        ) = ishortcut.get_model_information(modelid, None, ver_index)
+        ) = modelprocessor.get_model_information(modelid, None, ver_index)
         if model_info:
             insert_btn_visible = False
             weight_visible = False
@@ -1243,7 +1243,7 @@ def on_recipe_delete_btn_click(select_name):
     user_message="Failed to load reference gallery",
 )
 def on_reference_gallery_loading(shortcuts):
-    ISC = ishortcut.load()
+    ISC = shortcutcollectionmanager.load_shortcuts()
     if not ISC:
         return None
 
@@ -1254,7 +1254,7 @@ def on_reference_gallery_loading(shortcuts):
         for mid in shortcuts:
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
-                if ishortcut.is_sc_image(v['id']):
+                if imageprocessor.is_sc_image(v['id']):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result_list.append(
                             (

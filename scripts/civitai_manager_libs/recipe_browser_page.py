@@ -5,7 +5,7 @@ import datetime
 
 from . import setting
 from . import recipe
-from . import ishortcut
+import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 
 from .logging_config import get_logger
 
@@ -329,12 +329,12 @@ def get_recipe_reference_list(page=0):
 
     if shortlist:
         result = list()
-        ISC = ishortcut.load()
+        ISC = shortcutcollectionmanager.load_shortcuts()
         for shortcut in shortlist:
             # v = ishortcut.get_shortcut_model(str(shortcut))
             v = get_shortcut_by_modelid(ISC, str(shortcut))
             if v:
-                if ishortcut.is_sc_image(v['id']):
+                if imageprocessor.is_sc_image(v['id']):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result.append(
                             (
@@ -520,7 +520,7 @@ def on_recipe_reference_select_gallery_select(evt: gr.SelectData, shortcuts):
 
 
 def on_recipe_reference_select_gallery_loading(shortcuts):
-    ISC = ishortcut.load()
+    ISC = shortcutcollectionmanager.load_shortcuts()
     if not ISC:
         return None, gr.update(visible=False)
 
@@ -531,7 +531,7 @@ def on_recipe_reference_select_gallery_loading(shortcuts):
         for mid in shortcuts:
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
-                if ishortcut.is_sc_image(v['id']):
+                if imageprocessor.is_sc_image(v['id']):
                     if bool(v['nsfw']) and setting.NSFW_filtering_enable:
                         result_list.append(
                             (
