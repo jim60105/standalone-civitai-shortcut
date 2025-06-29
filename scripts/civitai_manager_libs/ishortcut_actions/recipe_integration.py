@@ -8,27 +8,12 @@ migrated from ishortcut_action.py according to the design plan.
 import gradio as gr
 
 from ..error_handler import with_error_handling
-from ..exceptions import NetworkError, FileOperationError, ValidationError
-from ..conditional_imports import import_manager
+from ..exceptions import NetworkError, FileOperationError
 from ..logging_config import get_logger
 
 logger = get_logger(__name__)
 
-from .. import util
-from .. import model
-from .. import ishortcut
 from .. import setting
-
-
-@with_error_handling(
-    fallback_value=None,
-    exception_types=(FileOperationError,),
-    retry_count=1,
-    user_message="Failed to save personal note",
-)
-def on_personal_note_save_click(modelid, note):
-    """Handle personal note save button click"""
-    ishortcut.update_shortcut_model_note(modelid, note)
 
 
 @with_error_handling(

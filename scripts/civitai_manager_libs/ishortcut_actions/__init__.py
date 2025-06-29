@@ -20,6 +20,7 @@ from .model_info_actions import (
     on_model_classification_update_btn_click,
     on_versions_list_select,
     load_saved_model,
+    on_personal_note_save_click,
 )
 
 from .download_actions import (
@@ -45,7 +46,6 @@ from .gallery_actions import (
 
 from .recipe_integration import (
     on_send_to_recipe_click,
-    on_personal_note_save_click,
 )
 
 from .utility_actions import (
@@ -65,6 +65,7 @@ __all__ = [
     'on_model_classification_update_btn_click',
     'on_versions_list_select',
     'load_saved_model',
+    'on_personal_note_save_click',
     
     # Download actions
     'on_download_model_click',
@@ -86,7 +87,6 @@ __all__ = [
     
     # Recipe integration
     'on_send_to_recipe_click',
-    'on_personal_note_save_click',
     
     # Utility actions
     'upload_shortcut_by_files',
