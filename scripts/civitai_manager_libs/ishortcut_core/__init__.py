@@ -31,6 +31,8 @@ from .model_factory import ModelFactory
 from .shortcut_collection_manager import ShortcutCollectionManager
 from .shortcut_search_filter import ShortcutSearchFilter
 from .shortcut_thumbnail_manager import ShortcutThumbnailManager
+from .shortcut_backup_manager import ShortcutBackupManager
+from .preview_image_manager import PreviewImageManager
 
 __version__ = "1.0.0"
 __all__ = [
@@ -43,4 +45,6 @@ __all__ = [
     "ShortcutCollectionManager",
     "ShortcutSearchFilter",
     "ShortcutThumbnailManager",
+    "ShortcutBackupManager",
+    "PreviewImageManager",
 ]
