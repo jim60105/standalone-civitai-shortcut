@@ -52,7 +52,6 @@ from .exceptions import (  # noqa: F401
     ValidationError,  # noqa: F401
     APIError,  # noqa: F401
 )
-from .recovery import ErrorRecoveryManager  # noqa: F401
 
 
 def _download_single_image(img_url: str, save_path: str) -> bool:

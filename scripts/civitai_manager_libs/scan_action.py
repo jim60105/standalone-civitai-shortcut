@@ -25,7 +25,6 @@ from .exceptions import (  # noqa: F401
     ValidationError,  # noqa: F401
     APIError,  # noqa: F401
 )  # noqa: F401
-from .recovery import ErrorRecoveryManager  # noqa: F401
 
 
 @with_error_handling(

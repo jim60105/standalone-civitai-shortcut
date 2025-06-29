@@ -86,29 +86,6 @@ The decorator provides special handling for:
 2. **General Errors**: Shows the exception class name for user-friendly feedback
 3. **UI Integration**: Automatically displays errors using `gr.Error()` in Gradio UI
 
-### 3. Error Recovery (`recovery.py`)
-
-The `ErrorRecoveryManager` provides recovery strategies for common error scenarios.
-
-```python
-from scripts.civitai_manager_libs.recovery import ErrorRecoveryManager
-from scripts.civitai_manager_libs.exceptions import FileOperationError, NetworkError
-
-# File operation recovery
-success = ErrorRecoveryManager.handle_file_operation_error(
-    error=FileOperationError("Cannot read file"),
-    operation="read",
-    filepath="/path/to/file.txt"
-)
-
-# Network error recovery
-cached_data = ErrorRecoveryManager.handle_network_error(
-    error=NetworkError("Connection failed"),
-    url="https://api.civitai.com/data",
-    method="GET"
-)
-```
-
 ## Usage Patterns
 
 ### 1. Simple Function Protection
@@ -283,9 +260,8 @@ The decorator can be combined with recovery mechanisms:
 def read_config_file(filepath):
     # If this fails, the decorator will:
     # 1. Log the error
-    # 2. Potentially trigger recovery via ErrorRecoveryManager
-    # 3. Retry if configured
-    # 4. Return fallback value if all fails
+    # 2. Retry if configured
+    # 3. Return fallback value if all fails
     with open(filepath, 'r') as f:
         return json.load(f)
 ```
