@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from scripts.civitai_manager_libs.http_client import CivitaiHttpClient, _STATUS_CODE_MESSAGES
+from scripts.civitai_manager_libs.exceptions import AuthenticationError
 
 
 class DummyResponse:
@@ -244,8 +245,8 @@ def test_validate_download_size_custom_tolerance(tmp_path, monkeypatch):
 
 
 # Tests for redirect handling (307 fix)
-def test_handle_redirect_response_login_redirect():
-    """Test that login redirects are properly blocked."""
+def test_handle_authentication_error_307_login_redirect():
+    """Test that 307 login redirects are handled as authentication errors."""
     client = CivitaiHttpClient()
 
     # Create mock response with login redirect
@@ -257,12 +258,24 @@ def test_handle_redirect_response_login_redirect():
     )
     mock_response.url = 'https://civitai.com/api/download/models/1955810'
 
-    result = client._handle_redirect_response(mock_response)
+    result = client._handle_authentication_error(mock_response, "HTTP 307 login redirect")
+    assert result is False
+
+
+def test_handle_authentication_error_416_range_error():
+    """Test that 416 range errors are handled as authentication errors."""
+    client = CivitaiHttpClient()
+
+    # Create mock response with 416 error
+    mock_response = DummyResponse(status_code=416)
+    mock_response.url = 'https://civitai.com/api/download/models/1955810'
+
+    result = client._handle_authentication_error(mock_response, "HTTP 416")
     assert result is False
 
 
 def test_handle_redirect_response_valid_redirect():
-    """Test that valid redirects are allowed."""
+    """Test that valid (non-login) redirects are allowed."""
     client = CivitaiHttpClient()
 
     # Create mock response with valid redirect
@@ -275,11 +288,11 @@ def test_handle_redirect_response_valid_redirect():
     assert result is True
 
 
-def test_handle_redirect_response_login_case_insensitive():
-    """Test that login detection is case insensitive."""
+def test_authentication_error_login_case_insensitive():
+    """Test that login detection in 307 redirects is case insensitive."""
     client = CivitaiHttpClient()
 
-    # Test various cases of "login" in URL
+    # Test various cases of "login" in URL - should all be handled by _is_stream_response_valid
     test_cases = [
         'https://civitai.com/LOGIN?test=1',
         'https://civitai.com/Login?test=1',
@@ -291,17 +304,28 @@ def test_handle_redirect_response_login_case_insensitive():
         mock_response = DummyResponse(status_code=307, headers={'Location': location})
         mock_response.url = 'https://civitai.com/api/download/models/test'
 
-        result = client._handle_redirect_response(mock_response)
-        assert result is False, f"Should block redirect to {location}"
+        result = client._is_stream_response_valid(mock_response)
+        assert result is False, f"Should detect login redirect for {location}"
 
 
 def test_is_stream_response_valid_login_redirect():
-    """Test stream response validation with login redirect."""
+    """Test stream response validation with login redirect (now authentication error)."""
     client = CivitaiHttpClient()
 
     mock_response = DummyResponse(
         status_code=307, headers={'Location': 'https://civitai.com/login?test=1'}
     )
+    mock_response.url = 'https://test.com'
+
+    result = client._is_stream_response_valid(mock_response)
+    assert result is False
+
+
+def test_is_stream_response_valid_range_error():
+    """Test stream response validation with range error (now authentication error)."""
+    client = CivitaiHttpClient()
+
+    mock_response = DummyResponse(status_code=416)
     mock_response.url = 'https://test.com'
 
     result = client._is_stream_response_valid(mock_response)
@@ -316,17 +340,6 @@ def test_is_stream_response_valid_ok_response():
 
     result = client._is_stream_response_valid(mock_response)
     assert result is True
-
-
-def test_is_stream_response_valid_range_error():
-    """Test stream response validation with range error."""
-    client = CivitaiHttpClient()
-
-    mock_response = DummyResponse(status_code=416)
-    mock_response.url = 'https://test.com'
-
-    result = client._is_stream_response_valid(mock_response)
-    assert result is False
 
 
 def test_is_stream_response_valid_general_error():
@@ -381,6 +394,168 @@ def test_get_stream_login_redirect_blocked(monkeypatch):
         return resp
 
     monkeypatch.setattr(client.session, "get", mock_get)
-
     result = client.get_stream("http://test")
     assert result is None  # Should be blocked
+
+
+def test_error_handling_priority_416_before_307():
+    """Test that 416 errors are handled before 307 redirects when both could apply."""
+    client = CivitaiHttpClient()
+
+    # Test 416 error is handled first
+    mock_response_416 = DummyResponse(status_code=416)
+    mock_response_416.url = 'https://test.com'
+
+    result = client._is_stream_response_valid(mock_response_416)
+    assert result is False
+
+
+def test_error_handling_no_api_key_scenarios():
+    """Test error messages when no API key is configured."""
+    client = CivitaiHttpClient(api_key=None)  # Explicitly no API key
+
+    # Test 307 login redirect without API key
+    mock_307 = DummyResponse(
+        status_code=307, headers={'Location': 'https://civitai.com/login?returnUrl=test'}
+    )
+    mock_307.url = 'https://test.com'
+
+    result = client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
+    assert result is False
+
+    # Test 416 error without API key
+    mock_416 = DummyResponse(status_code=416)
+    mock_416.url = 'https://test.com'
+
+    result = client._handle_authentication_error(mock_416, "HTTP 416")
+    assert result is False
+
+
+def test_error_handling_with_api_key_scenarios():
+    """Test error messages when API key is configured."""
+    client = CivitaiHttpClient(api_key="test_key")
+
+    # Test 307 login redirect with API key (implies key is invalid)
+    mock_307 = DummyResponse(
+        status_code=307, headers={'Location': 'https://civitai.com/login?returnUrl=test'}
+    )
+    mock_307.url = 'https://test.com'
+
+    result = client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
+    assert result is False
+
+    # Test 416 error with API key (implies insufficient permissions)
+    mock_416 = DummyResponse(status_code=416)
+    mock_416.url = 'https://test.com'
+
+    result = client._handle_authentication_error(mock_416, "HTTP 416")
+    assert result is False
+
+
+def test_get_stream_allows_416_to_be_handled(monkeypatch):
+    """Test that 416 errors are properly handled and not masked by redirect logic."""
+    client = CivitaiHttpClient()
+
+    # Mock session.get to return 416 error directly
+    def mock_get(*args, **kwargs):
+        resp = DummyResponse(status_code=416)
+        resp.url = 'https://civitai.com/api/download/models/123'
+        return resp
+
+    monkeypatch.setattr(client.session, "get", mock_get)
+
+    result = client.get_stream("http://test")
+    assert result is None  # Should be blocked due to 416 error
+
+
+def test_get_stream_flow_with_different_status_codes(monkeypatch):
+    """Test the complete flow with different HTTP status codes."""
+    client = CivitaiHttpClient()
+
+    # Test 200 OK
+    def mock_get_200(*args, **kwargs):
+        return DummyResponse(status_code=200)
+
+    monkeypatch.setattr(client.session, "get", mock_get_200)
+    result = client.get_stream("http://test")
+    assert result is not None
+    assert result.status_code == 200
+
+    # Test 416 error
+    def mock_get_416(*args, **kwargs):
+        resp = DummyResponse(status_code=416)
+        resp.url = 'https://test.com'
+        return resp
+
+    monkeypatch.setattr(client.session, "get", mock_get_416)
+    result = client.get_stream("http://test")
+    assert result is None
+
+    # Test 404 error
+    def mock_get_404(*args, **kwargs):
+        return DummyResponse(status_code=404)
+
+    monkeypatch.setattr(client.session, "get", mock_get_404)
+    result = client.get_stream("http://test")
+    assert result is None
+
+
+def test_authentication_error_exception_from_background_thread():
+    """Test that authentication errors throw exceptions when called from background threads."""
+    import threading
+
+    client = CivitaiHttpClient()
+    results = {"exception": None, "error": None}
+
+    def background_task():
+        try:
+            # Create mock response with 416 error
+            mock_response = DummyResponse(status_code=416)
+            mock_response.url = 'https://civitai.com/api/download/models/test'
+
+            # This should throw AuthenticationError in background thread
+            client._handle_authentication_error(mock_response, "HTTP 416")
+            results["error"] = "Expected AuthenticationError but none was thrown"
+        except AuthenticationError as e:
+            results["exception"] = e
+        except Exception as e:
+            results["error"] = f"Unexpected exception: {e}"
+
+    # Run in background thread
+    thread = threading.Thread(target=background_task)
+    thread.start()
+    thread.join()
+
+    # Verify that AuthenticationError was thrown
+    assert results["error"] is None, f"Test error: {results['error']}"
+    assert results["exception"] is not None, "Expected AuthenticationError was not thrown"
+    assert isinstance(results["exception"], AuthenticationError)
+    assert results["exception"].status_code == 416
+    assert "authentication" in str(results["exception"]).lower()
+
+
+def test_unified_authentication_error_handling():
+    """Test that 307 login redirects and 416 errors are handled consistently."""
+    client_no_key = CivitaiHttpClient(api_key=None)
+    client_with_key = CivitaiHttpClient(api_key="test_key")
+
+    # Both 307 login redirect and 416 should behave the same
+    mock_307 = DummyResponse(
+        status_code=307, headers={'Location': 'https://civitai.com/login?test=1'}
+    )
+    mock_307.url = 'https://test.com'
+
+    mock_416 = DummyResponse(status_code=416)
+    mock_416.url = 'https://test.com'
+
+    # Test without API key - both should return False
+    result_307_no_key = client_no_key._is_stream_response_valid(mock_307)
+    result_416_no_key = client_no_key._is_stream_response_valid(mock_416)
+    assert result_307_no_key is False
+    assert result_416_no_key is False
+
+    # Test with API key - both should return False
+    result_307_with_key = client_with_key._is_stream_response_valid(mock_307)
+    result_416_with_key = client_with_key._is_stream_response_valid(mock_416)
+    assert result_307_with_key is False
+    assert result_416_with_key is False

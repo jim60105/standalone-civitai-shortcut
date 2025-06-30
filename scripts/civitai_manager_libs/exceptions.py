@@ -13,7 +13,7 @@ class CivitaiShortcutError(Exception):
         self,
         message: str,
         context: Optional[Dict[Any, Any]] = None,
-        cause: Optional[Exception] = None
+        cause: Optional[Exception] = None,
     ):
         super().__init__(message)
         self.context = context or {}
@@ -57,3 +57,17 @@ class APIError(NetworkError):
     def __init__(self, message: str, status_code: Optional[int] = None, **kwargs):
         super().__init__(message, **kwargs)
         self.status_code = status_code
+
+
+class AuthenticationError(APIError):
+    """Authentication errors (401, 403, 307 login redirects, 416 range errors requiring auth)."""
+
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        requires_api_key: bool = True,
+        **kwargs
+    ):
+        super().__init__(message, status_code, **kwargs)
+        self.requires_api_key = requires_api_key

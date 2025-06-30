@@ -19,6 +19,7 @@ from . import util, setting, civitai
 
 # Use centralized HTTP client and chunked downloader factories
 from .http_client import get_http_client, get_chunked_downloader, ParallelImageDownloader
+from .exceptions import AuthenticationError
 
 
 class DownloadNotifier:
@@ -94,9 +95,23 @@ def download_file_with_notifications(task: DownloadTask):
         if success:
             DownloadNotifier.notify_complete(task.filename, True)
         else:
-            # HTTP client already showed specific error message (e.g., for 416 errors)
-            # Only log the failure without showing duplicate UI error
+            # For failed downloads, show a general authentication error message
+            # since most download failures are due to missing/invalid API keys
+            try:
+                gr.Error(
+                    "🔐 Download failed. If this is a restricted resource, "
+                    "please configure your Civitai API key in settings."
+                )
+            except Exception:
+                pass
             logger.error(f"[downloader] Download failed: {task.filename}")
+    except AuthenticationError as e:
+        # Authentication error from background thread - show the specific message
+        try:
+            gr.Error(str(e))
+        except Exception:
+            pass
+        logger.error(f"[downloader] Authentication failed: {task.filename} - {e}")
     except Exception as e:
         DownloadNotifier.notify_complete(task.filename, False, str(e))
 

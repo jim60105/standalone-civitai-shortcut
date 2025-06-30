@@ -15,7 +15,7 @@ import gradio as gr
 import os
 
 from .logging_config import get_logger
-from .exceptions import APIError
+from .exceptions import APIError, AuthenticationError
 from .error_handler import with_error_handling
 
 from . import setting
@@ -159,11 +159,12 @@ class CivitaiHttpClient:
             )
             logger.debug(f"[http_client] Response status: {response.status_code}")
 
-            # Handle redirects manually
+            # Handle authentication and error responses
+            if not self._is_stream_response_valid(response):
+                return None
+
+            # Handle redirects manually only after validation passes
             if response.status_code in [301, 302, 303, 307, 308]:
-                if not self._is_stream_response_valid(response):
-                    return None
-                # If redirect is valid (not to login), follow it
                 location = response.headers.get('Location', '')
                 if location:
                     logger.debug(f"[http_client] Following redirect to: {location}")
@@ -171,8 +172,6 @@ class CivitaiHttpClient:
                 else:
                     logger.error("[http_client] Redirect without Location header")
                     return None
-            elif not self._is_stream_response_valid(response):
-                return None
 
             return response
         except (requests.ConnectionError, requests.Timeout) as e:
@@ -182,49 +181,85 @@ class CivitaiHttpClient:
 
     def _is_stream_response_valid(self, response: requests.Response) -> bool:
         """Validate streaming response and handle specific status codes."""
-        if response.status_code == 307:
+        # Handle authentication errors (both 307 login redirects and 416 range errors)
+        if response.status_code == 416:
+            return self._handle_authentication_error(response, "HTTP 416")
+        elif response.status_code == 307:
+            location = response.headers.get('Location', '')
+            if 'login' in location.lower():
+                return self._handle_authentication_error(response, "HTTP 307 login redirect")
+            else:
+                # Non-login 307 redirects are handled as normal redirects
+                return self._handle_redirect_response(response)
+        elif response.status_code in [301, 302, 303, 308]:
             return self._handle_redirect_response(response)
-        elif response.status_code == 416:
-            return self._handle_range_error_response(response)
         elif response.status_code >= 400:
             return self._handle_stream_error_response(response)
+
         return True
 
-    def _handle_redirect_response(self, response: requests.Response) -> bool:
-        """Handle redirect responses that may require authentication."""
-        location = response.headers.get('Location', '')
-        logger.debug(f"[http_client] Redirect detected from {response.url} to {location}")
-
-        if 'login' in location.lower():
+    def _handle_authentication_error(self, response: requests.Response, error_type: str) -> bool:
+        """Handle authentication errors from both 307 login redirects and 416 range errors."""
+        if error_type.startswith("HTTP 307"):
+            location = response.headers.get('Location', '')
             logger.warning(
                 f"[http_client] Authentication required - redirected to login page: {location}"
             )
-            gr.Error(
-                "🔐 This resource requires login. "
-                "Please configure your Civitai API key in settings."
+        else:
+            logger.warning(
+                f"[http_client] Authentication required - {error_type} for: {response.url}"
             )
-            return False
 
-        # For other redirects, allow them to be followed
-        logger.debug(f"[http_client] Valid redirect to: {location}")
-        return True
-
-    def _handle_range_error_response(self, response: requests.Response) -> bool:
-        """Handle range request errors that may require authentication."""
-        logger.debug(
-            f"[http_client] Range request failed, may require authentication: {response.url}"
-        )
+        # Prepare authentication error message
         if not self.api_key:
-            gr.Error(
-                "🔐 Download failed (HTTP 416). This resource requires a Civitai API key. "
-                "Please add your API key in the settings to download this file."
+            auth_msg = (
+                "🔐 This resource requires authentication. "
+                "Please configure your Civitai API key in settings to download this file."
             )
         else:
-            gr.Error(
-                "🔐 Download failed (HTTP 416). This resource may require authentication. "
-                "Please verify your API key is valid and has access to this resource."
+            auth_msg = (
+                "🔐 Authentication failed. Your API key may be invalid, expired, "
+                "or lack access to this resource. Please check your Civitai API key."
             )
-        return False
+
+        # Show error message only if we're in main thread (Gradio context)
+        # Otherwise, throw exception to propagate to main thread caller
+        try:
+            import threading
+
+            if threading.current_thread() is threading.main_thread():
+                try:
+                    gr.Error(auth_msg)
+                except Exception:
+                    pass
+                return False
+            else:
+                # In background thread - throw exception to propagate to main thread
+                logger.debug("[http_client] Throwing AuthenticationError from background thread")
+                raise AuthenticationError(
+                    message=auth_msg,
+                    status_code=response.status_code,
+                    requires_api_key=(not self.api_key),
+                    context={"url": str(response.url), "error_type": error_type},
+                )
+        except AuthenticationError:
+            # Re-raise authentication errors
+            raise
+        except Exception as e:
+            logger.debug(f"[http_client] Could not determine thread context: {e}")
+            # Fallback: throw exception to be safe
+            raise AuthenticationError(
+                message=auth_msg,
+                status_code=response.status_code,
+                requires_api_key=(not self.api_key),
+                context={"url": str(response.url), "error_type": error_type},
+            )
+
+    def _handle_redirect_response(self, response: requests.Response) -> bool:
+        """Handle non-login redirect responses."""
+        location = response.headers.get('Location', '')
+        logger.debug(f"[http_client] Valid redirect from {response.url} to {location}")
+        return True
 
     def _handle_stream_error_response(self, response: requests.Response) -> bool:
         """Handle general error responses for streaming requests."""
@@ -403,11 +438,19 @@ class CivitaiHttpClient:
 
     def _handle_download_error(self, error: Exception, url: str, filepath: str) -> bool:
         """Handle download errors with recovery strategies."""
+        # Re-raise AuthenticationError to let caller handle it properly
+        if isinstance(error, AuthenticationError):
+            logger.debug("[http_client] Re-raising AuthenticationError for proper handling")
+            raise error
+
         error_handled = self._process_download_error_type(error, url)
 
         if not error_handled:
             logger.error(f"[http_client] Unknown download error: {error}")
-            gr.Error("Unknown error occurred during download 💥!", duration=5)
+            try:
+                gr.Error("Unknown error occurred during download 💥!", duration=5)
+            except Exception:
+                pass
 
         self._cleanup_failed_download(filepath)
         return False
@@ -425,27 +468,38 @@ class CivitaiHttpClient:
     def _handle_timeout_error(self, url: str) -> bool:
         """Handle download timeout errors."""
         logger.warning(f"[http_client] Download timeout for {url}")
-        gr.Error("Download timeout, please check your network connection 💥!", duration=5)
+        try:
+            gr.Error("Download timeout, please check your network connection 💥!", duration=5)
+        except Exception:
+            pass
         return True
 
     def _handle_connection_error(self, url: str) -> bool:
         """Handle download connection errors."""
         logger.warning(f"[http_client] Connection error for {url}")
-        gr.Error("Network connection failed, please check your network settings 💥!", duration=5)
+        try:
+            gr.Error(
+                "Network connection failed, please check your network settings 💥!", duration=5
+            )
+        except Exception:
+            pass
         return True
 
     def _handle_download_response_error(self, response: requests.Response) -> bool:
         """Handle HTTP response errors during download."""
         status_code = response.status_code
 
-        if status_code == 403:
-            gr.Error("Access denied, please check your API key 💥!", duration=8)
-        elif status_code == 404:
-            gr.Error("File does not exist or has been removed 💥!", duration=5)
-        elif status_code >= 500:
-            gr.Error("Server error, please try again later 💥!", duration=5)
-        else:
-            gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
+        try:
+            if status_code == 403:
+                gr.Error("Access denied, please check your API key 💥!", duration=8)
+            elif status_code == 404:
+                gr.Error("File does not exist or has been removed 💥!", duration=5)
+            elif status_code >= 500:
+                gr.Error("Server error, please try again later 💥!", duration=5)
+            else:
+                gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
+        except Exception:
+            pass
 
         return True
 
@@ -516,6 +570,8 @@ class ParallelImageDownloader:
         # Initialize throttling state
         self.last_progress_update = time.time()
         self.pending_update = False
+        # Initialize authentication error tracking
+        self._auth_errors = []
         success_count = 0
 
         client = client or get_http_client()
@@ -544,10 +600,25 @@ class ParallelImageDownloader:
                             )
                         else:
                             logger.error(f"[parallel_downloader] Failed to download: {url}")
+                            # Note: Individual image download failures are often auth-related
+                            # Authentication errors are now collected and handled below
                     except Exception as e:
                         logger.error(f"[parallel_downloader] Download exception for {url}: {e}")
                     finally:
                         self._update_progress(progress_callback)
+
+            # Show authentication error if any images failed due to auth issues
+            if self._auth_errors:
+                # Show the first authentication error message in a toast
+                first_auth_error = self._auth_errors[0]
+                try:
+                    gr.Error(str(first_auth_error))
+                except Exception:
+                    pass
+                auth_count = len(self._auth_errors)
+                logger.error(
+                    f"[parallel_downloader] {auth_count} image(s) failed due to authentication"
+                )
 
             return success_count
         finally:
@@ -559,7 +630,16 @@ class ParallelImageDownloader:
 
     def _download_single_image(self, url: str, filepath: str, client) -> bool:
         """Download single image with error handling."""
-        return client.download_file(url, filepath)
+        try:
+            return client.download_file(url, filepath)
+        except AuthenticationError as e:
+            # Log authentication error and let the caller handle it
+            logger.warning(f"[parallel_downloader] Authentication error for {url}: {e}")
+            # Store the error for the main thread to handle
+            if not hasattr(self, '_auth_errors'):
+                self._auth_errors = []
+            self._auth_errors.append(e)
+            return False
 
     def _update_progress(self, progress_callback: Optional[Callable]):
         """Thread-safe progress update with throttling mechanism."""
@@ -676,10 +756,11 @@ class ChunkedDownloader:
         logger.info(f"[chunked_downloader] Starting sequential download: {url}")
         downloaded = 0
         try:
-            response = self.client.session.get(url, stream=True)
-            if not response.ok:
+            # Use the client's get_stream method to ensure proper error handling
+            response = self.client.get_stream(url)
+            if not response:
                 logger.error(
-                    f"[chunked_downloader] Sequential download failed: HTTP {response.status_code}"
+                    "[chunked_downloader] Sequential download failed: get_stream returned None"
                 )
                 return False
             with open(filepath, 'wb') as f:
