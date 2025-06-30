@@ -36,16 +36,6 @@ dependencies = [
     "python-dateutil>=2.8.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=6.0.0",
-    "black>=21.0.0",
-    "flake8>=3.9.0",
-    "mypy>=1.16.1",
-    "types-requests>=2.32.0",
-    "types-tqdm>=4.67.0",
-]
-
 [project.urls]
 Homepage = "https://github.com/jim60105/standalone-civitai-shortcut"
 Repository = "https://github.com/jim60105/standalone-civitai-shortcut"
@@ -183,4 +173,7 @@ dev = [
     "flake8>=7.3.0",
     "mypy>=1.16.1",
     "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "types-requests>=2.32.4.20250611",
+    "types-tqdm>=4.67.0.20250516",
 ]

@@ -5,7 +5,7 @@
         "fill-labs.dependi",
         "LittleFoxTeam.vscode-python-test-adapter",
         "hbenl.vscode-test-explorer",
-        "donjayamanne.python-extension-pack",
+        "ms-python.vscode-python-envs",
         "ms-python.black-formatter",
         "ms-python.flake8"
     ],
