@@ -155,12 +155,23 @@ class CivitaiHttpClient:
         try:
             logger.debug(f"[http_client] STREAM {url}")
             response = self.session.get(
-                url, headers=headers or {}, stream=True, timeout=self.timeout
+                url, headers=headers or {}, stream=True, timeout=self.timeout, allow_redirects=False
             )
             logger.debug(f"[http_client] Response status: {response.status_code}")
 
-            # Check for authentication and error responses
-            if not self._is_stream_response_valid(response):
+            # Handle redirects manually
+            if response.status_code in [301, 302, 303, 307, 308]:
+                if not self._is_stream_response_valid(response):
+                    return None
+                # If redirect is valid (not to login), follow it
+                location = response.headers.get('Location', '')
+                if location:
+                    logger.debug(f"[http_client] Following redirect to: {location}")
+                    return self.get_stream(location, headers)
+                else:
+                    logger.error("[http_client] Redirect without Location header")
+                    return None
+            elif not self._is_stream_response_valid(response):
                 return None
 
             return response
@@ -182,13 +193,20 @@ class CivitaiHttpClient:
     def _handle_redirect_response(self, response: requests.Response) -> bool:
         """Handle redirect responses that may require authentication."""
         location = response.headers.get('Location', '')
+        logger.debug(f"[http_client] Redirect detected from {response.url} to {location}")
+
         if 'login' in location.lower():
-            logger.debug(f"[http_client] Authentication required for: {response.url}")
+            logger.warning(
+                f"[http_client] Authentication required - redirected to login page: {location}"
+            )
             gr.Error(
                 "🔐 This resource requires login. "
                 "Please configure your Civitai API key in settings."
             )
             return False
+
+        # For other redirects, allow them to be followed
+        logger.debug(f"[http_client] Valid redirect to: {location}")
         return True
 
     def _handle_range_error_response(self, response: requests.Response) -> bool:

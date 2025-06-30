@@ -141,3 +141,246 @@ def test_status_code_messages_defined():
     # Common HTTP error codes should be present
     for code in (400, 401, 403, 404, 429, 500, 502, 503, 504, 524):
         assert code in _STATUS_CODE_MESSAGES
+
+
+# Tests for _validate_download_size method
+def test_validate_download_size_file_not_exists():
+    """Test validation when file doesn't exist."""
+    client = CivitaiHttpClient()
+    result = client._validate_download_size("/non/existent/file.bin", 1000)
+    assert result is False
+
+
+def test_validate_download_size_unknown_expected_size(tmp_path):
+    """Test validation when expected size is unknown (0 or negative)."""
+    client = CivitaiHttpClient()
+    test_file = tmp_path / "test.bin"
+    test_file.write_bytes(b"hello world")
+
+    # Should return True when expected size is 0 or negative
+    assert client._validate_download_size(str(test_file), 0) is True
+    assert client._validate_download_size(str(test_file), -1) is True
+
+
+def test_validate_download_size_exact_match(tmp_path):
+    """Test validation when file size matches exactly."""
+    client = CivitaiHttpClient()
+    test_file = tmp_path / "test.bin"
+    content = b"hello world"
+    test_file.write_bytes(content)
+
+    result = client._validate_download_size(str(test_file), len(content))
+    assert result is True
+
+
+def test_validate_download_size_within_tolerance(tmp_path, monkeypatch):
+    """Test validation when file size is within tolerance."""
+    client = CivitaiHttpClient()
+    test_file = tmp_path / "test.bin"
+    content = b"hello world" * 100  # 1100 bytes
+    test_file.write_bytes(content)
+
+    # Mock gr.Warning to avoid UI calls
+    monkeypatch.setattr(
+        "scripts.civitai_manager_libs.http_client.gr.Warning",
+        lambda *args, **kwargs: None,
+        raising=False,
+    )
+
+    # Test within 10% tolerance (default)
+    expected_size = 1050  # About 4.8% difference, should pass
+    result = client._validate_download_size(str(test_file), expected_size)
+    assert result is True
+
+
+def test_validate_download_size_exceeds_tolerance(tmp_path, monkeypatch):
+    """Test validation when file size exceeds tolerance."""
+    client = CivitaiHttpClient()
+    test_file = tmp_path / "test.bin"
+    content = b"hello world" * 100  # 1100 bytes
+    test_file.write_bytes(content)
+
+    # Mock gr.Warning to avoid UI calls
+    warning_called = []
+
+    def mock_warning(*args, **kwargs):
+        warning_called.append((args, kwargs))
+
+    monkeypatch.setattr(
+        "scripts.civitai_manager_libs.http_client.gr.Warning",
+        mock_warning,
+        raising=False,
+    )
+
+    # Test beyond 10% tolerance
+    expected_size = 500  # More than 50% difference, should fail
+    result = client._validate_download_size(str(test_file), expected_size)
+    assert result is False
+    assert len(warning_called) == 1
+
+
+def test_validate_download_size_custom_tolerance(tmp_path, monkeypatch):
+    """Test validation with custom tolerance."""
+    client = CivitaiHttpClient()
+    test_file = tmp_path / "test.bin"
+    content = b"hello world" * 100  # 1100 bytes
+    test_file.write_bytes(content)
+
+    # Mock gr.Warning to avoid UI calls
+    monkeypatch.setattr(
+        "scripts.civitai_manager_libs.http_client.gr.Warning",
+        lambda *args, **kwargs: None,
+        raising=False,
+    )
+
+    # Test with custom tolerance of 5%
+    expected_size = 1050  # About 4.8% difference
+    result = client._validate_download_size(str(test_file), expected_size, tolerance=0.05)
+    assert result is True
+
+    # Test with custom tolerance of 2%
+    result = client._validate_download_size(str(test_file), expected_size, tolerance=0.02)
+    assert result is False
+
+
+# Tests for redirect handling (307 fix)
+def test_handle_redirect_response_login_redirect():
+    """Test that login redirects are properly blocked."""
+    client = CivitaiHttpClient()
+
+    # Create mock response with login redirect
+    mock_response = DummyResponse(
+        status_code=307,
+        headers={
+            'Location': 'https://civitai.com/login?returnUrl=%2Fmodel-versions%2F1955810&reason=download-auth'  # noqa: E501
+        },
+    )
+    mock_response.url = 'https://civitai.com/api/download/models/1955810'
+
+    result = client._handle_redirect_response(mock_response)
+    assert result is False
+
+
+def test_handle_redirect_response_valid_redirect():
+    """Test that valid redirects are allowed."""
+    client = CivitaiHttpClient()
+
+    # Create mock response with valid redirect
+    mock_response = DummyResponse(
+        status_code=307, headers={'Location': 'https://cdn.civitai.com/files/model123.safetensors'}
+    )
+    mock_response.url = 'https://civitai.com/api/download/models/1955810'
+
+    result = client._handle_redirect_response(mock_response)
+    assert result is True
+
+
+def test_handle_redirect_response_login_case_insensitive():
+    """Test that login detection is case insensitive."""
+    client = CivitaiHttpClient()
+
+    # Test various cases of "login" in URL
+    test_cases = [
+        'https://civitai.com/LOGIN?test=1',
+        'https://civitai.com/Login?test=1',
+        'https://civitai.com/auth/login',
+        'https://test.com/user/LOGIN/page',
+    ]
+
+    for location in test_cases:
+        mock_response = DummyResponse(status_code=307, headers={'Location': location})
+        mock_response.url = 'https://civitai.com/api/download/models/test'
+
+        result = client._handle_redirect_response(mock_response)
+        assert result is False, f"Should block redirect to {location}"
+
+
+def test_is_stream_response_valid_login_redirect():
+    """Test stream response validation with login redirect."""
+    client = CivitaiHttpClient()
+
+    mock_response = DummyResponse(
+        status_code=307, headers={'Location': 'https://civitai.com/login?test=1'}
+    )
+    mock_response.url = 'https://test.com'
+
+    result = client._is_stream_response_valid(mock_response)
+    assert result is False
+
+
+def test_is_stream_response_valid_ok_response():
+    """Test stream response validation with OK response."""
+    client = CivitaiHttpClient()
+
+    mock_response = DummyResponse(status_code=200)
+
+    result = client._is_stream_response_valid(mock_response)
+    assert result is True
+
+
+def test_is_stream_response_valid_range_error():
+    """Test stream response validation with range error."""
+    client = CivitaiHttpClient()
+
+    mock_response = DummyResponse(status_code=416)
+    mock_response.url = 'https://test.com'
+
+    result = client._is_stream_response_valid(mock_response)
+    assert result is False
+
+
+def test_is_stream_response_valid_general_error():
+    """Test stream response validation with general HTTP error."""
+    client = CivitaiHttpClient()
+
+    mock_response = DummyResponse(status_code=404)
+
+    result = client._is_stream_response_valid(mock_response)
+    assert result is False
+
+
+def test_get_stream_redirect_handling(monkeypatch):
+    """Test that get_stream properly handles redirects."""
+    client = CivitaiHttpClient()
+
+    # Mock session.get to return redirect response first, then success
+    call_count = [0]
+
+    def mock_get(*args, **kwargs):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            # First call returns redirect
+            resp = DummyResponse(
+                status_code=307,
+                headers={'Location': 'https://cdn.civitai.com/files/model.safetensors'},
+            )
+            resp.url = 'https://civitai.com/api/download/models/123'
+            return resp
+        else:
+            # Second call returns success
+            return DummyResponse(status_code=200)
+
+    monkeypatch.setattr(client.session, "get", mock_get)
+
+    result = client.get_stream("http://test")
+    assert result is not None
+    assert result.status_code == 200
+    assert call_count[0] == 2  # Should have made 2 calls (original + redirect)
+
+
+def test_get_stream_login_redirect_blocked(monkeypatch):
+    """Test that get_stream blocks login redirects."""
+    client = CivitaiHttpClient()
+
+    # Mock session.get to return login redirect
+    def mock_get(*args, **kwargs):
+        resp = DummyResponse(
+            status_code=307, headers={'Location': 'https://civitai.com/login?returnUrl=test'}
+        )
+        resp.url = 'https://civitai.com/api/download/models/123'
+        return resp
+
+    monkeypatch.setattr(client.session, "get", mock_get)
+
+    result = client.get_stream("http://test")
+    assert result is None  # Should be blocked
