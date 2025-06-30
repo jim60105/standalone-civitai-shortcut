@@ -3,5 +3,13 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "black-formatter.args": ["--line-length=100", "--skip-string-normalization"]
+    "black-formatter.args": [
+        "--line-length=100",
+        "--skip-string-normalization"
+    ],
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": true,
+    "python.testing.pytestEnabled": true
 }

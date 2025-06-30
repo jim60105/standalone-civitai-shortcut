@@ -1,0 +1,186 @@
+[project]
+name = "civitai-shortcut"
+version = "0.1.0"
+description = "Stable Diffusion WebUI Extension for Civitai - Download models and manage shortcuts"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "jim60105", email = "jim60105@gmail.com"},
+]
+keywords = ["stable-diffusion", "civitai", "webui", "extension", "ai", "models"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "setuptools==69.5.1",
+    "gradio<5",
+    "audioop-lts<1.0; python_version >= '3.13'",
+    "requests>=2.25.0",
+    "Pillow>=9.5.0",
+    "pillow-avif-plugin>=1.4.3",
+    "numpy==1.26.2",
+    "packaging>=20.0",
+    "pydantic==2.8.2",
+    "psutil>=5.9.0",
+    "tqdm==4.66.1",
+    "rich>=13.0.0",
+    "python-dateutil>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0",
+    "black>=21.0.0",
+    "flake8>=3.9.0",
+    "mypy>=1.16.1",
+    "types-requests>=2.32.0",
+    "types-tqdm>=4.67.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jim60105/standalone-civitai-shortcut"
+Repository = "https://github.com/jim60105/standalone-civitai-shortcut"
+Issues = "https://github.com/jim60105/standalone-civitai-shortcut/issues"
+
+[project.scripts]
+civitai-shortcut = "main:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Black formatter configuration
+[tool.black]
+line-length = 100
+skip-string-normalization = true
+target-version = ["py311"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Exclude specific directories
+  __pycache__
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | venv
+  | build
+  | dist
+  | htmlcov
+)/
+'''
+
+# Flake8 configuration
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E131", "E302", "W503", "E402", "E203", "D100", "D102", "D103"]
+exclude = [
+    "__pycache__",
+    ".git",
+    ".mypy_cache", 
+    ".pytest_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "htmlcov",
+]
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+exclude = [
+    "__pycache__",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache", 
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "htmlcov",
+]
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+# Coverage configuration  
+[tool.coverage.run]
+source = ["scripts", "main.py", "ui_adapter.py"]
+omit = [
+    "tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    ".venv/*",
+    "venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# setuptools configuration
+[tool.setuptools]
+packages = ["scripts", "scripts.civitai_manager_libs", "scripts.civitai_manager_libs.compat"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.md", "*.txt", "*.yml", "*.yaml", "*.css", "*.png", "*.jpg", "*.jpeg"]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "flake8>=7.3.0",
+    "mypy>=1.16.1",
+    "pytest>=8.4.1",
+]

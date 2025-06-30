@@ -82,7 +82,7 @@ Use `gh` CLI commands to perform DevOps tasks.
 * Place tests in the `tests` folder; any test files located in the project root directory are considered temporary and should be deleted.
 * Follow the testing principles and practices outlined in [Test Guidelines](docs/testing_guidelines.md)`.
 * Always use Python's standard `logging` module for all log output.
-* Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Use the `.flake8` configuration file in the root directory for linting. Fix not only the errors but also styling warnings. Always run `flake8` with `|| true` since there's technical issue with `flake8` in the current project setup.
+* Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Fix not only the errors but also styling warnings. Always run `flake8` with `|| true` since there's technical issue with `flake8` in the current project setup.
 
 ## Gradio UI Guidelines
 
@@ -193,12 +193,12 @@ Main files:
 ├── main.py                  # Standalone application entry
 ├── ui_adapter.py           # UI adapter for standalone mode
 ├── install.py              # Installation script for WebUI
-├── requirements.txt        # Python dependencies
 ├── README.md               # Project documentation
 ├── README_STANDALONE.md    # Standalone mode documentation
 ├── start.sh               # Linux/Mac startup script
 ├── start.bat              # Windows startup script
 ├── Dockerfile             # Docker configuration
+├── pyproject.toml          # Project metadata
 ```
 
 ## Special Considerations
