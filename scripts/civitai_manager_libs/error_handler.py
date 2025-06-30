@@ -13,6 +13,7 @@ from .exceptions import (
     ValidationError,
 )
 from .logging_config import get_logger
+from .ui.notification_service import get_notification_service
 
 logger = get_logger(__name__)
 
@@ -24,6 +25,7 @@ def with_error_handling(
     retry_delay: float = 1.0,
     log_errors: bool = True,
     user_message: Optional[str] = None,
+    show_notification: bool = True,
 ) -> Callable:
     """Decorator for unified exception handling with retry logic."""
 
@@ -37,24 +39,31 @@ def with_error_handling(
                 if log_errors:
                     logger.error(
                         f"Error in {func.__name__}: {e}",
-                        extra={"func_name": func.__name__, "module_name": func.__module__},
+                        extra={
+                            "func_name": func.__name__,
+                            "module_name": func.__module__,
+                        },
                     )
-                # Special-case Cloudflare timeout (524): show specific message and fallback
-                if isinstance(e, APIError) and getattr(e, "status_code", None) == 524:
-                    try:
-                        import gradio as gr
 
-                        gr.Error(str(e))
-                    except Exception:
-                        pass
-                    return fallback_value
-                # General error handling: show exception class name for user-friendly error
-                try:
-                    import gradio as gr
+                # Use notification service instead of direct Gradio calls
+                if show_notification:
+                    notification_service = get_notification_service()
+                    if notification_service:
+                        # Preserve Cloudflare timeout (524) behavior
+                        if (
+                            isinstance(e, APIError)
+                            and getattr(
+                                e,
+                                "status_code",
+                                None,
+                            )
+                            == 524
+                        ):
+                            notification_service.show_error(str(e))
+                        else:
+                            error_msg = user_message or type(e).__name__
+                            notification_service.show_error(error_msg)
 
-                    gr.Error(type(e).__name__)
-                except Exception:
-                    pass
                 return fallback_value
 
         return wrapper
@@ -62,7 +71,9 @@ def with_error_handling(
     return decorator
 
 
-def _map_exception_type(original_exception: Exception) -> Type[CivitaiShortcutError]:
+def _map_exception_type(
+    original_exception: Exception,
+) -> Type[CivitaiShortcutError]:
     """Map standard exceptions to our custom exception types."""
     if isinstance(original_exception, (IOError, OSError, FileNotFoundError)):
         return FileOperationError
