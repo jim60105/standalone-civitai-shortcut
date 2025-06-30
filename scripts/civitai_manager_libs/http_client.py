@@ -196,10 +196,16 @@ class CivitaiHttpClient:
         logger.debug(
             f"[http_client] Range request failed, may require authentication: {response.url}"
         )
-        gr.Error(
-            "🔐 Download failed. This resource may require authentication. "
-            "Please check your API key."
-        )
+        if not self.api_key:
+            gr.Error(
+                "🔐 Download failed (HTTP 416). This resource requires a Civitai API key. "
+                "Please add your API key in the settings to download this file."
+            )
+        else:
+            gr.Error(
+                "🔐 Download failed (HTTP 416). This resource may require authentication. "
+                "Please verify your API key is valid and has access to this resource."
+            )
         return False
 
     def _handle_stream_error_response(self, response: requests.Response) -> bool:
@@ -446,12 +452,17 @@ class CivitaiHttpClient:
 
         size_diff_ratio = abs(actual_size - expected_size) / expected_size
         if size_diff_ratio > tolerance:
+            from . import util
+
+            expected_size_str = util.format_file_size(expected_size)
+            actual_size_str = util.format_file_size(actual_size)
             logger.warning(
                 f"[http_client] File size mismatch: expected {expected_size}, got {actual_size}"
             )
             gr.Warning(
-                "⚠️ Downloaded file size differs significantly from expected. "
-                "Please verify the download."
+                f"⚠️ Downloaded file size differs significantly from expected. "
+                f"Expected: {expected_size_str}, Actual: {actual_size_str}. "
+                f"Please verify the download."
             )
             return False
 

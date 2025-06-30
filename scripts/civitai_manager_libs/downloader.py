@@ -91,7 +91,12 @@ def download_file_with_notifications(task: DownloadTask):
         success = get_http_client().download_file_with_resume(
             task.url, task.path, progress_callback=progress_callback
         )
-        DownloadNotifier.notify_complete(task.filename, success)
+        if success:
+            DownloadNotifier.notify_complete(task.filename, True)
+        else:
+            # HTTP client already showed specific error message (e.g., for 416 errors)
+            # Only log the failure without showing duplicate UI error
+            logger.error(f"[downloader] Download failed: {task.filename}")
     except Exception as e:
         DownloadNotifier.notify_complete(task.filename, False, str(e))
 
@@ -297,9 +302,9 @@ def download_file_thread(
         url = files.get(str(fid), {}).get("downloadUrl")
         path = os.path.join(folder, fname)
 
-        # Schedule download with progress notifications
+        # Execute download directly on main thread
         task = DownloadTask(fid, fname, url, path, file_size)
-        threading.Thread(target=download_file_with_notifications, args=(task,)).start()
+        download_file_with_notifications(task)
 
         # Record primary file base name
         if file_info and file_info.get('primary'):
