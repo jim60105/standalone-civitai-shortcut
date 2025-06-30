@@ -16,39 +16,38 @@ FROM docker.io/library/python:3.11-slim-bookworm AS build
 ARG TARGETARCH
 ARG TARGETVARIANT
 
-WORKDIR /source
+WORKDIR /app
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV UV_PROJECT_ENVIRONMENT=/venv
+ENV VIRTUAL_ENV=/venv
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_DOWNLOADS=0
 
 # Install build dependencies
 RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/var/cache/apt \
     --mount=type=cache,id=aptlists-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
     # https://pillow.readthedocs.io/en/stable/installation/building-from-source.html
     libjpeg62-turbo-dev libwebp-dev zlib1g-dev \
-    build-essential
+    build-essential git curl
 
-# Install under /root/.local
-ENV PIP_USER="true"
-ARG PIP_NO_WARN_SCRIPT_LOCATION=0
-ARG PIP_ROOT_USER_ACTION="ignore"
-ARG PIP_NO_COMPILE="true"
-ARG PIP_DISABLE_PIP_VERSION_CHECK="true"
-
-# Install requirements
-RUN --mount=type=cache,id=pip-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/pip \
-    --mount=source=requirements.txt,target=requirements.txt,Z \
-    pip install -r requirements.txt
+# Install dependencies using uv sync
+RUN --mount=type=cache,id=uv-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/uv \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Replace pillow with pillow-simd (Only for x86)
 ARG TARGETPLATFORM
-RUN --mount=type=cache,id=pip-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/pip \
+RUN --mount=type=cache,id=uv-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/uv \
     if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-    pip uninstall -y pillow && \
-    CC="cc -mavx2" pip install -U --force-reinstall pillow-simd; \
+    uv pip uninstall pillow && \
+    CC="cc -mavx2" uv pip install pillow-simd; \
     fi
-
-# Cleanup
-RUN find "/root/.local" -name '*.pyc' -print0 | xargs -0 rm -f || true ; \
-    find "/root/.local" -type d -name '__pycache__' -print0 | xargs -0 rm -rf || true ;
 
 ########################################
 # Compile with Nuitka
@@ -74,13 +73,13 @@ RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/v
     patchelf ccache clang upx-ucl
 
 # Install Nuitka
-RUN --mount=type=cache,id=pip-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/pip \
-    pip install nuitka
+RUN --mount=type=cache,id=uv-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/uv \
+    uv pip install nuitka
 
 # Compile with nuitka
 RUN --mount=type=cache,id=nuitka-$TARGETARCH$TARGETVARIANT,target=/cache \
     --mount=source=.,target=.,rw,Z \
-    python3 -m nuitka \
+    /venv/bin/python3 -m nuitka \
     --python-flag=nosite,-O \
     --clang \
     --lto=no \
@@ -113,7 +112,8 @@ ARG TARGETVARIANT
 # Install runtime dependencies
 RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/var/cache/apt \
     --mount=type=cache,id=aptlists-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
     # https://pillow.readthedocs.io/en/stable/installation/building-from-source.html
     libjpeg62-turbo-dev libwebp-dev zlib1g-dev \
     libxcb1 dumb-init
