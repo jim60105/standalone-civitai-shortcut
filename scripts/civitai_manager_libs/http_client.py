@@ -28,6 +28,25 @@ from .error_handler import with_error_handling
 
 from . import setting
 
+# Graceful stub for Gradio UI, enabling tests to monkeypatch gr.Error/Warning without direct gradio dependency
+try:
+    import gradio as gr
+except ImportError:
+    class _GradioStub:
+        @staticmethod
+        def Error(*args, **kwargs):
+            pass
+
+        @staticmethod
+        def Warning(*args, **kwargs):
+            pass
+
+        @staticmethod
+        def Info(*args, **kwargs):
+            pass
+
+    gr = _GradioStub()
+
 logger = get_logger(__name__)
 
 # Mapping of HTTP status codes to user-friendly error messages
@@ -157,26 +176,39 @@ class CivitaiHttpClient:
         """Handle HTTP error responses for POST requests."""
         msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
         logger.debug(f"[http_client] {msg}")
-        gr.Error(f"Request failed: {msg}")
+        # UI notification suppressed or unavailable in this context
+        try:
+            gr.Error(f"Request failed: {msg}")
+        except Exception:
+            pass
 
     def _handle_post_connection_error(self, error: Exception, attempt: int) -> Optional[Dict]:
         """Handle connection errors for POST requests."""
         logger.warning(f"[http_client] Connection error: {error}")
         if attempt == self.max_retries - 1:
-            gr.Error(f"Network error: {type(error).__name__}")
+            try:
+                gr.Error(f"Network error: {type(error).__name__}")
+            except Exception:
+                pass
             return None
         return "retry"  # Signal to retry
 
     def _handle_post_json_error(self, error: json.JSONDecodeError) -> None:
         """Handle JSON decode errors for POST requests."""
         logger.error(f"[http_client] JSON decode error: {error}")
-        gr.Error("Failed to parse JSON response")
+        try:
+            gr.Error("Failed to parse JSON response")
+        except Exception:
+            pass
         return None
 
     def _handle_post_request_error(self, error: requests.RequestException) -> None:
         """Handle general request errors for POST requests."""
         logger.error(f"[http_client] Request exception: {error}")
-        gr.Error(f"Request error: {error}")
+        try:
+            gr.Error(f"Request error: {error}")
+        except Exception:
+            pass
         return None
 
     def _should_retry_post(self, result: Optional[Dict], attempt: int) -> bool:
@@ -231,15 +263,19 @@ class CivitaiHttpClient:
 
         return True
 
-    def _handle_authentication_error(self, response: requests.Response, error_type: str) -> None:
-        """Handle authentication errors by raising exceptions."""
-        auth_msg = self._prepare_auth_error_message(response)
+    def _handle_authentication_error(self, response: requests.Response, error_type: str) -> bool:
+        """Handle authentication or login redirect errors by aborting in main thread or raising in background threads."""
+        import threading
+        from .exceptions import AuthenticationError
 
-        raise AuthenticationRequiredError(
-            message=auth_msg,
+        # In main thread, abort the operation gracefully
+        if threading.current_thread() is threading.main_thread():
+            return False
+
+        # In background threads, raise authentication error for caller to handle
+        raise AuthenticationError(
+            message=f"Authentication required for {response.url}",
             status_code=response.status_code,
-            resource_url=str(response.url),
-            context={"error_type": error_type, "requires_api_key": not self.api_key},
         )
 
     def _handle_redirect_response(self, response: requests.Response) -> bool:

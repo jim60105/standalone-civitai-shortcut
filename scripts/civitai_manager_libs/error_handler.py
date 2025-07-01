@@ -49,16 +49,9 @@ def with_error_handling(
                 if show_notification:
                     notification_service = get_notification_service()
                     if notification_service:
-                        # Preserve Cloudflare timeout (524) behavior
-                        if (
-                            isinstance(e, APIError)
-                            and getattr(
-                                e,
-                                "status_code",
-                                None,
-                            )
-                            == 524
-                        ):
+                        # Preserve Cloudflare timeout (524) behavior regardless of exception type
+                        status_code = getattr(e, 'status_code', None)
+                        if status_code == 524:
                             notification_service.show_error(str(e))
                         else:
                             error_msg = user_message or type(e).__name__

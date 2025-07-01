@@ -30,12 +30,15 @@ class DummyResponse:
 
 @pytest.fixture(autouse=True)
 def disable_gr_error(monkeypatch):
-    # Prevent gradio.Error calls from interfering tests
-    monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.gr.Error",
-        lambda *args, **kwargs: None,
-        raising=False,
-    )
+    # Prevent gradio.Error calls from interfering tests; ignore if gr not in http_client
+    try:
+        monkeypatch.setattr(
+            "scripts.civitai_manager_libs.http_client.gr.Error",
+            lambda *args, **kwargs: None,
+            raising=False,
+        )
+    except ImportError:
+        pass
 
 
 def test_get_json_success(monkeypatch):
