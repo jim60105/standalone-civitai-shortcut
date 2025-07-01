@@ -8,7 +8,6 @@ supporting resume capability, progress tracking, and error handling.
 import os
 import time
 import threading
-import gradio as gr
 
 # Standard logging setup
 from .logging_config import get_logger
@@ -70,16 +69,28 @@ class DownloadNotifier:
             logger.debug(f"[downloader] Downloaded: {downloaded_str}{speed_str}")
 
     @staticmethod
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        show_notification=False,  # We handle notifications manually
+        user_message=None,
+    )
     def notify_complete(filename: str, success: bool, error_msg: str = None):
         """Notify download completion or failure using UI and logs."""
-        try:
+        from .ui.notification_service import get_notification_service
+
+        notification_service = get_notification_service()
+        error_detail = f" - {error_msg}" if error_msg else ""
+
+        if notification_service:
             if success:
-                gr.Info(f"✅ Download completed: {filename}", duration=5)
+                notification_service.show_info(f"✅ Download completed: {filename}", duration=5)
             else:
-                error_detail = f" - {error_msg}" if error_msg else ""
-                gr.Error(f"❌ Download failed: {filename}{error_detail}", duration=10)
-        except Exception:
-            pass
+                notification_service.show_error(
+                    f"❌ Download failed: {filename}{error_detail}", duration=10
+                )
+
+        # Always log the result
         if success:
             logger.info(f"[downloader] Download completed: {filename}")
         else:
