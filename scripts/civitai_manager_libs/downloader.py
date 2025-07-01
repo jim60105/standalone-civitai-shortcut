@@ -100,6 +100,12 @@ class DownloadNotifier:
                         logger.debug(
                             f"[downloader] Processed {len(processed)} queued notifications"
                         )
+                        # Also show these notifications immediately as console messages
+                        # since gradio context might not be available
+                        for notification in processed:
+                            msg_type = notification['type'].upper()
+                            msg_content = notification['message']
+                            print(f"[NOTIFICATION - {msg_type}] {msg_content}")
                 except Exception as e:
                     logger.debug(f"[downloader] Failed to process queued notifications: {e}")
 
@@ -161,7 +167,7 @@ def download_file_with_file_handling(task: DownloadTask):
 
 def download_file_with_notifications(task: DownloadTask):
     """Download file using the existing decorator-based error handling."""
-    DownloadNotifier.notify_start(task.filename, task.total)
+    # Don't call notify_start here since it's already called by the caller
 
     try:
         # Handle errors by priority using decorated functions
