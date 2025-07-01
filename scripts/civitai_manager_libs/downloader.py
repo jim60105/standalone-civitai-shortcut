@@ -8,15 +8,7 @@ supporting resume capability, progress tracking, and error handling.
 import os
 import time
 import threading
-# Safe import of gradio for UI contexts; stub in non-UI or test environments
-try:
-    import gradio as gr
-except Exception:
-    class _GrStub:
-        """Stub namespace for gradio in non-UI/test environments."""
-        pass
-
-    gr = _GrStub()
+import gradio as gr
 
 # Standard logging setup
 from .logging_config import get_logger

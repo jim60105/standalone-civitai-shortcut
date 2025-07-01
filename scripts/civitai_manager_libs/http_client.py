@@ -11,14 +11,8 @@ import threading
 import concurrent.futures
 
 import requests
+import gradio as gr
 import os
-
-# Legacy gradio stub for tests' monkeypatch fixtures
-class _GrStub:
-    """Stub namespace to allow test monkeypatching of gr.Error and gr.Warning."""
-    pass
-
-gr = _GrStub()
 
 from .logging_config import get_logger
 from .exceptions import APIError, AuthenticationError
@@ -130,26 +124,26 @@ class CivitaiHttpClient:
         """Handle HTTP error responses for POST requests."""
         msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
         logger.debug(f"[http_client] {msg}")
-        # Removed UI calls: errors are handled via exceptions
+        gr.Error(f"Request failed: {msg}")
 
     def _handle_post_connection_error(self, error: Exception, attempt: int) -> Optional[Dict]:
         """Handle connection errors for POST requests."""
         logger.warning(f"[http_client] Connection error: {error}")
         if attempt == self.max_retries - 1:
-            # No UI notification; signal failure
+            gr.Error(f"Network error: {type(error).__name__}")
             return None
         return "retry"  # Signal to retry
 
     def _handle_post_json_error(self, error: json.JSONDecodeError) -> None:
         """Handle JSON decode errors for POST requests."""
         logger.error(f"[http_client] JSON decode error: {error}")
-        # Removed UI calls: errors are handled via exceptions
+        gr.Error("Failed to parse JSON response")
         return None
 
     def _handle_post_request_error(self, error: requests.RequestException) -> None:
         """Handle general request errors for POST requests."""
         logger.error(f"[http_client] Request exception: {error}")
-        # Removed UI calls: errors are handled via exceptions
+        gr.Error(f"Request error: {error}")
         return None
 
     def _should_retry_post(self, result: Optional[Dict], attempt: int) -> bool:
@@ -182,7 +176,7 @@ class CivitaiHttpClient:
             return response
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.warning(f"[http_client] Stream connection error: {e}")
-            # Removed UI calls: errors are handled via exceptions
+            gr.Error(f"Network error: {type(e).__name__}")
             return None
 
     def _is_stream_response_valid(self, response: requests.Response) -> bool:
@@ -230,19 +224,36 @@ class CivitaiHttpClient:
 
         # Show error message only if we're in main thread (Gradio context)
         # Otherwise, throw exception to propagate to main thread caller
-        # Determine execution context: main thread indicates UI environment
-        import threading
-        if threading.current_thread() is threading.main_thread():
-            # Removed UI calls: errors are handled via exceptions
-            return False
-        # In background thread - throw exception to propagate to main thread
-        logger.debug("[http_client] Throwing AuthenticationError from background thread")
-        raise AuthenticationError(
-            message=auth_msg,
-            status_code=response.status_code,
-            requires_api_key=(not self.api_key),
-            context={"url": str(response.url), "error_type": error_type},
-        )
+        try:
+            import threading
+
+            if threading.current_thread() is threading.main_thread():
+                try:
+                    gr.Error(auth_msg)
+                except Exception:
+                    pass
+                return False
+            else:
+                # In background thread - throw exception to propagate to main thread
+                logger.debug("[http_client] Throwing AuthenticationError from background thread")
+                raise AuthenticationError(
+                    message=auth_msg,
+                    status_code=response.status_code,
+                    requires_api_key=(not self.api_key),
+                    context={"url": str(response.url), "error_type": error_type},
+                )
+        except AuthenticationError:
+            # Re-raise authentication errors
+            raise
+        except Exception as e:
+            logger.debug(f"[http_client] Could not determine thread context: {e}")
+            # Fallback: throw exception to be safe
+            raise AuthenticationError(
+                message=auth_msg,
+                status_code=response.status_code,
+                requires_api_key=(not self.api_key),
+                context={"url": str(response.url), "error_type": error_type},
+            )
 
     def _handle_redirect_response(self, response: requests.Response) -> bool:
         """Handle non-login redirect responses."""
@@ -254,7 +265,7 @@ class CivitaiHttpClient:
         """Handle general error responses for streaming requests."""
         msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
         logger.debug(f"[http_client] {msg}")
-        # Removed UI calls: errors are handled via exceptions
+        gr.Error(f"Request failed: {msg}")
         return False
 
     def download_file(
@@ -288,7 +299,7 @@ class CivitaiHttpClient:
             return True
         except Exception as e:
             logger.error(f"[http_client] File write error: {e}")
-            # Removed UI calls: errors are handled via exceptions
+            gr.Error(f"Failed to write file: {e}")
             return False
 
     def get_stream_response(self, url: str, headers: dict = None) -> Optional[requests.Response]:
@@ -436,7 +447,11 @@ class CivitaiHttpClient:
 
         if not error_handled:
             logger.error(f"[http_client] Unknown download error: {error}")
-            # Removed UI calls: errors are handled via exceptions
+            try:
+                gr.Error("Unknown error occurred during download 💥!", duration=5)
+            except Exception:
+                pass
+
         self._cleanup_failed_download(filepath)
         return False
 
@@ -453,20 +468,39 @@ class CivitaiHttpClient:
     def _handle_timeout_error(self, url: str) -> bool:
         """Handle download timeout errors."""
         logger.warning(f"[http_client] Download timeout for {url}")
-        # Removed UI calls: errors are handled via exceptions
+        try:
+            gr.Error("Download timeout, please check your network connection 💥!", duration=5)
+        except Exception:
+            pass
         return True
 
     def _handle_connection_error(self, url: str) -> bool:
         """Handle download connection errors."""
         logger.warning(f"[http_client] Connection error for {url}")
-        # Removed UI calls: errors are handled via exceptions
+        try:
+            gr.Error(
+                "Network connection failed, please check your network settings 💥!", duration=5
+            )
+        except Exception:
+            pass
         return True
 
     def _handle_download_response_error(self, response: requests.Response) -> bool:
         """Handle HTTP response errors during download."""
         status_code = response.status_code
 
-        # Removed UI calls: errors are handled via exceptions
+        try:
+            if status_code == 403:
+                gr.Error("Access denied, please check your API key 💥!", duration=8)
+            elif status_code == 404:
+                gr.Error("File does not exist or has been removed 💥!", duration=5)
+            elif status_code >= 500:
+                gr.Error("Server error, please try again later 💥!", duration=5)
+            else:
+                gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
+        except Exception:
+            pass
+
         return True
 
     def _cleanup_failed_download(self, filepath: str) -> None:
