@@ -184,13 +184,6 @@ def test_validate_download_size_within_tolerance(tmp_path, monkeypatch):
     content = b"hello world" * 100  # 1100 bytes
     test_file.write_bytes(content)
 
-    # Mock gr.Warning to avoid UI calls
-    monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.gr.Warning",
-        lambda *args, **kwargs: None,
-        raising=False,
-    )
-
     # Test within 10% tolerance (default)
     expected_size = 1050  # About 4.8% difference, should pass
     result = client._validate_download_size(str(test_file), expected_size)
