@@ -12,25 +12,7 @@ import concurrent.futures
 
 import requests
 import os
-
-
-# Stub for direct gradio UI calls to maintain backward compatibility; \
-# real notifications use NotificationService
-class _GradioStub:
-    @staticmethod
-    def Error(*args, **kwargs):
-        pass
-
-    @staticmethod
-    def Warning(*args, **kwargs):
-        pass
-
-    @staticmethod
-    def Info(*args, **kwargs):
-        pass
-
-
-gr = _GradioStub()
+import gradio as gr
 
 from .logging_config import get_logger
 from .exceptions import (
