@@ -241,7 +241,10 @@ class CivitaiHttpClient:
             return response
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.warning(f"[http_client] Stream connection error: {e}")
-            gr.Error(f"Network error: {type(e).__name__}")
+            try:
+                gr.Error(f"Network error: {type(e).__name__}")
+            except Exception:
+                pass
             return None
 
     def _is_stream_response_valid(self, response: requests.Response) -> bool:
