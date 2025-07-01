@@ -19,21 +19,36 @@ from . import util, setting, civitai
 
 # Use centralized HTTP client and chunked downloader factories
 from .http_client import get_http_client, get_chunked_downloader, ParallelImageDownloader
-from .exceptions import AuthenticationError
+from .error_handler import with_error_handling
+from .exceptions import (
+    AuthenticationRequiredError,
+    DownloadError,
+    NetworkError,
+    HTTPError,
+    TimeoutError,
+    FileOperationError,
+)
 
 
 class DownloadNotifier:
     """Notify users of download status via UI and logs."""
 
     @staticmethod
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        show_notification=True,
+        user_message=None,  # let decorator use exception type name
+    )
     def notify_start(filename: str, file_size: int = None):
-        """Notify download start using gr.Info and debug log."""
-        try:
+        from .ui.notification_service import get_notification_service
+
+        notification_service = get_notification_service()
+        if notification_service:
             size_str = f" ({util.format_file_size(file_size)})" if file_size else ""
-            gr.Info(f"🚀 Starting download: {filename}{size_str}", duration=3)
-        except Exception:
-            pass
-        logger.info(f"[downloader] Starting download: {filename}{size_str}")
+            notification_service.show_info(
+                f"🚀 Starting download: {filename}{size_str}", duration=3
+            )
 
     @staticmethod
     def notify_progress(filename: str, downloaded: int, total: int, speed: str = ""):
@@ -82,38 +97,67 @@ class DownloadTask:
         self.total = total_size
 
 
-def download_file_with_notifications(task: DownloadTask):
-    """Download file with progress notifications."""
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(AuthenticationRequiredError,),  # these errors abort the flow
+    retry_count=0,
+    user_message="🔐 Authentication required. Please check your API key and try again.",
+)
+def download_file_with_auth_handling(task: DownloadTask):
+    """Handle authenticated downloads, aborting on failure."""
+    client = get_http_client()
+    return client.download_file_with_resume(task.url, task.path)
 
-    def progress_callback(downloaded: int, total: int, speed: str = ""):
-        DownloadNotifier.notify_progress(task.filename, downloaded, total, speed)
+
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(NetworkError, HTTPError, TimeoutError),  # retryable network errors
+    retry_count=3,
+    retry_delay=2.0,
+    user_message="🌐 Network error occurred. Retrying...",
+)
+def download_file_with_retry(task: DownloadTask):
+    """Handle retryable network errors."""
+    client = get_http_client()
+    return client.download_file_with_resume(task.url, task.path)
+
+
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(DownloadError, FileOperationError),  # file-related errors
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="💾 File operation failed. Please check permissions and disk space.",
+)
+def download_file_with_file_handling(task: DownloadTask):
+    """Handle file operation related errors."""
+    client = get_http_client()
+    return client.download_file_with_resume(task.url, task.path)
+
+
+def download_file_with_notifications(task: DownloadTask):
+    """Download file using the existing decorator-based error handling."""
+    DownloadNotifier.notify_start(task.filename, task.total)
 
     try:
-        success = get_http_client().download_file_with_resume(
-            task.url, task.path, progress_callback=progress_callback
+        # Handle errors by priority using decorated functions
+        success = (
+            download_file_with_auth_handling(task)
+            or download_file_with_retry(task)
+            or download_file_with_file_handling(task)
         )
+
         if success:
             DownloadNotifier.notify_complete(task.filename, True)
         else:
-            # For failed downloads, show a general authentication error message
-            # since most download failures are due to missing/invalid API keys
-            try:
-                gr.Error(
-                    "🔐 Download failed. If this is a restricted resource, "
-                    "please configure your Civitai API key in settings."
-                )
-            except Exception:
-                pass
-            logger.error(f"[downloader] Download failed: {task.filename}")
-    except AuthenticationError as e:
-        # Authentication error from background thread - show the specific message
-        try:
-            gr.Error(str(e))
-        except Exception:
-            pass
-        logger.error(f"[downloader] Authentication failed: {task.filename} - {e}")
+            DownloadNotifier.notify_complete(
+                task.filename, False, "Download failed after all retry attempts"
+            )
+
     except Exception as e:
-        DownloadNotifier.notify_complete(task.filename, False, str(e))
+        # Final exception catch
+        logger.error(f"Unexpected download error: {e}")
+        DownloadNotifier.notify_complete(task.filename, False, "Unexpected error occurred")
 
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):

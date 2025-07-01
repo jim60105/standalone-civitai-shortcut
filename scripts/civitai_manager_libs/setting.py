@@ -10,6 +10,7 @@ from .conditional_imports import import_manager
 from .compat.compat_layer import CompatibilityLayer
 from .exceptions import FileOperationError
 from .error_handler import with_error_handling
+from .ui.notification_service import set_notification_service, GradioNotificationService
 
 # Compatibility layer variables
 _compat_layer = None
@@ -376,6 +377,10 @@ def save_NSFW():
 
 
 def init():
+    """Initialize application with notification service setup."""
+    # Ensure notification service is set up at application startup
+    set_notification_service(GradioNotificationService())
+
     global extension_base
     logger.info(f"[setting] init: Initializing with extension_base={extension_base}")
     # Ensure base data_sc directory exists before migrating old sc_* data
