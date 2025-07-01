@@ -11,11 +11,19 @@ import threading
 import concurrent.futures
 
 import requests
-import gradio as gr
 import os
 
 from .logging_config import get_logger
-from .exceptions import APIError, AuthenticationError
+from .exceptions import (
+    APIError,
+    AuthenticationError,
+    NetworkError,
+    HTTPError,
+    ConnectionError,
+    TimeoutError,
+    DownloadError,
+    AuthenticationRequiredError,
+)
 from .error_handler import with_error_handling
 
 from . import setting
@@ -84,12 +92,37 @@ class CivitaiHttpClient:
         return response.json()
 
     def _handle_response_error(self, response: requests.Response) -> None:
-        """Convert HTTP errors to our custom exceptions."""
+        """Convert HTTP errors to custom exceptions instead of showing UI."""
         if response.status_code >= 400:
             error_msg = _STATUS_CODE_MESSAGES.get(
                 response.status_code, f"HTTP {response.status_code}"
             )
-            raise APIError(message=error_msg, status_code=response.status_code)
+            raise HTTPError(
+                message=error_msg,
+                status_code=response.status_code,
+                url=str(response.url),
+            )
+
+    def _handle_connection_error(self, error: Exception, url: str) -> None:
+        """Handle connection errors by raising custom exceptions."""
+        if isinstance(error, requests.exceptions.Timeout):
+            raise TimeoutError(
+                message=f"Request timeout for {url}",
+                url=url,
+                timeout_duration=self.timeout,
+            )
+        elif isinstance(error, requests.exceptions.ConnectionError):
+            raise ConnectionError(
+                message=f"Failed to connect to {url}",
+                url=url,
+                retry_after=self.retry_delay,
+            )
+        else:
+            raise NetworkError(
+                message=f"Network error: {error}",
+                cause=error,
+                context={"url": url},
+            )
 
     def post_json(self, url: str, json_data: Dict = None) -> Optional[Dict]:
         """Make POST request with JSON payload and return JSON response or None on error."""
@@ -198,62 +231,16 @@ class CivitaiHttpClient:
 
         return True
 
-    def _handle_authentication_error(self, response: requests.Response, error_type: str) -> bool:
-        """Handle authentication errors from both 307 login redirects and 416 range errors."""
-        if error_type.startswith("HTTP 307"):
-            location = response.headers.get('Location', '')
-            logger.warning(
-                f"[http_client] Authentication required - redirected to login page: {location}"
-            )
-        else:
-            logger.warning(
-                f"[http_client] Authentication required - {error_type} for: {response.url}"
-            )
+    def _handle_authentication_error(self, response: requests.Response, error_type: str) -> None:
+        """Handle authentication errors by raising exceptions."""
+        auth_msg = self._prepare_auth_error_message(response)
 
-        # Prepare authentication error message
-        if not self.api_key:
-            auth_msg = (
-                "🔐 This resource requires authentication. "
-                "Please configure your Civitai API key in settings to download this file."
-            )
-        else:
-            auth_msg = (
-                "🔐 Authentication failed. Your API key may be invalid, expired, "
-                "or lack access to this resource. Please check your Civitai API key."
-            )
-
-        # Show error message only if we're in main thread (Gradio context)
-        # Otherwise, throw exception to propagate to main thread caller
-        try:
-            import threading
-
-            if threading.current_thread() is threading.main_thread():
-                try:
-                    gr.Error(auth_msg)
-                except Exception:
-                    pass
-                return False
-            else:
-                # In background thread - throw exception to propagate to main thread
-                logger.debug("[http_client] Throwing AuthenticationError from background thread")
-                raise AuthenticationError(
-                    message=auth_msg,
-                    status_code=response.status_code,
-                    requires_api_key=(not self.api_key),
-                    context={"url": str(response.url), "error_type": error_type},
-                )
-        except AuthenticationError:
-            # Re-raise authentication errors
-            raise
-        except Exception as e:
-            logger.debug(f"[http_client] Could not determine thread context: {e}")
-            # Fallback: throw exception to be safe
-            raise AuthenticationError(
-                message=auth_msg,
-                status_code=response.status_code,
-                requires_api_key=(not self.api_key),
-                context={"url": str(response.url), "error_type": error_type},
-            )
+        raise AuthenticationRequiredError(
+            message=auth_msg,
+            status_code=response.status_code,
+            resource_url=str(response.url),
+            context={"error_type": error_type, "requires_api_key": not self.api_key},
+        )
 
     def _handle_redirect_response(self, response: requests.Response) -> bool:
         """Handle non-login redirect responses."""
