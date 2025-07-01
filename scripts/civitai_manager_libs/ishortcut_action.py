@@ -18,6 +18,7 @@ from .exceptions import (
 )
 from .conditional_imports import import_manager
 from .logging_config import get_logger
+from .ui.notification_service import get_notification_service
 
 logger = get_logger(__name__)
 
@@ -771,10 +772,13 @@ def on_download_model_click(
                 file_name, version_id, False, False, None, cs_foldername, ms_foldername
             )
 
-        # 다운 받은 모델 정보를 갱신한다.
-        # 모델정보를 불러오기전에 한번 하기 때문에 필요 없을듯
-        # model.update_downloaded_model()
+        # Process any queued notifications from the download operation
+        # This ensures error notifications from background threads are displayed
+        notification_service = get_notification_service()
+        if notification_service and hasattr(notification_service, 'process_queued_notifications'):
+            notification_service.process_queued_notifications()
 
+        # 다운 받은 모델 정보를 갱신한다.
         current_time = datetime.datetime.now()
 
         return gr.update(value=current_time), gr.update(value=current_time)

@@ -83,6 +83,8 @@ class GradioNotificationService(NotificationService):
             if not success:
                 # If gradio execution failed, also print to console
                 print(f"[{notification_type.upper()}] {message}")
+                # Also queue it for later execution in a proper gradio context
+                self._queue_notification(notification_type, message, duration)
         else:
             # We're in a background thread, queue for later execution
             self._queue_notification(notification_type, message, duration)
