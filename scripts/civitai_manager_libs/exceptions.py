@@ -54,20 +54,25 @@ class DataValidationError(CivitaiShortcutError):
 class APIError(NetworkError):
     """Civitai API specific errors."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None, **kwargs):
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.status_code = status_code
 
 
 class AuthenticationError(APIError):
-    """Authentication errors (401, 403, 307 login redirects, 416 range errors requiring auth)."""
+    """Authentication errors (401, 403, 307, 416 requiring auth)."""
 
     def __init__(
         self,
         message: str,
         status_code: Optional[int] = None,
         requires_api_key: bool = True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(message, status_code, **kwargs)
         self.requires_api_key = requires_api_key
@@ -75,7 +80,14 @@ class AuthenticationError(APIError):
 
 class HTTPError(NetworkError):
     """HTTP request related error."""
-    def __init__(self, message: str, status_code: Optional[int] = None, url: Optional[str] = None, **kwargs):
+
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        url: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.status_code = status_code
         self.url = url
@@ -83,21 +95,40 @@ class HTTPError(NetworkError):
 
 class ConnectionError(NetworkError):
     """Network connection error."""
-    def __init__(self, message: str, retry_after: Optional[float] = None, **kwargs):
+
+    def __init__(
+        self,
+        message: str,
+        retry_after: Optional[float] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.retry_after = retry_after
 
 
 class TimeoutError(NetworkError):
     """Request timeout error."""
-    def __init__(self, message: str, timeout_duration: Optional[float] = None, **kwargs):
+
+    def __init__(
+        self,
+        message: str,
+        timeout_duration: Optional[float] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.timeout_duration = timeout_duration
 
 
 class DownloadError(FileOperationError):
     """File download error."""
-    def __init__(self, message: str, file_path: Optional[str] = None, bytes_downloaded: Optional[int] = None, **kwargs):
+
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        bytes_downloaded: Optional[int] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.file_path = file_path
         self.bytes_downloaded = bytes_downloaded
@@ -105,7 +136,13 @@ class DownloadError(FileOperationError):
 
 class AuthenticationRequiredError(APIError):
     """Authentication required error (inherits APIError)."""
-    def __init__(self, message: str, resource_url: Optional[str] = None, **kwargs):
+
+    def __init__(
+        self,
+        message: str,
+        resource_url: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.resource_url = resource_url
         self.should_abort_process = True
