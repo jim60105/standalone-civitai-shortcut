@@ -28,7 +28,8 @@ class GradioNotificationService(NotificationService):
         try:
             import gradio as gr
 
-            gr.Error(message, duration=duration)
+            # Display error using Gradio; duration is not supported by gr.Error
+            gr.Error(message)
         except Exception:
             print(f"[ERROR] {message}")
 
