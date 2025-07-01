@@ -40,6 +40,7 @@ class TestErrorHandlerUIDecoupling:
         set_notification_service(console_service)
 
         with patch.object(console_service, 'show_error') as mock_show_error:
+
             @with_error_handling(fallback_value="fallback")
             def failing_function():
                 raise ValueError("Test error")
@@ -65,12 +66,13 @@ class TestErrorHandlerUIDecoupling:
 
     def test_existing_usage_patterns_still_work(self):
         """Ensure existing usage patterns still function correctly."""
+
         @with_error_handling(
             fallback_value=None,
             exception_types=(NetworkError,),
             retry_count=2,
             retry_delay=1.0,
-            user_message="Network operation failed"
+            user_message="Network operation failed",
         )
         def network_operation():
             raise NetworkError("Connection failed")

@@ -17,6 +17,7 @@ from scripts.civitai_manager_libs.ui.notification_service import (
     ConsoleNotificationService,
 )
 
+
 @pytest.fixture(autouse=True)
 def setup_test_notification_service(request):
     """Set silent notification service for test environment, except for error handler unit tests."""
@@ -25,16 +26,19 @@ def setup_test_notification_service(request):
         yield
         return
     from scripts.civitai_manager_libs.ui.notification_service import get_notification_service
+
     original_service = get_notification_service()
 
     set_notification_service(SilentNotificationService())
     yield
     set_notification_service(original_service)
 
+
 @pytest.fixture
 def console_notification():
     """Provide console notification service for tests that inspect notifications."""
     from scripts.civitai_manager_libs.ui.notification_service import get_notification_service
+
     original_service = get_notification_service()
     console_service = ConsoleNotificationService()
     set_notification_service(console_service)
