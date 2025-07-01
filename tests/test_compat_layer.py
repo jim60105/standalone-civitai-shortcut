@@ -83,17 +83,14 @@ class TestCompatibilityLayer(unittest.TestCase):
 
     def test_property_access(self):
         """Test property access methods."""
-        with patch.object(CompatibilityLayer, '_create_path_manager') as mock_path, patch.object(
-            CompatibilityLayer, '_create_config_manager'
-        ) as mock_config, patch.object(
-            CompatibilityLayer, '_create_metadata_processor'
-        ) as mock_meta, patch.object(
-            CompatibilityLayer, '_create_ui_bridge'
-        ) as mock_ui, patch.object(
-            CompatibilityLayer, '_create_sampler_provider'
-        ) as mock_sampler, patch.object(
-            CompatibilityLayer, '_create_parameter_processor'
-        ) as mock_param:
+        with (
+            patch.object(CompatibilityLayer, '_create_path_manager') as mock_path,
+            patch.object(CompatibilityLayer, '_create_config_manager') as mock_config,
+            patch.object(CompatibilityLayer, '_create_metadata_processor') as mock_meta,
+            patch.object(CompatibilityLayer, '_create_ui_bridge') as mock_ui,
+            patch.object(CompatibilityLayer, '_create_sampler_provider') as mock_sampler,
+            patch.object(CompatibilityLayer, '_create_parameter_processor') as mock_param,
+        ):
 
             # Create mock objects
             mock_path_obj = MagicMock()
@@ -163,11 +160,15 @@ class TestCompatibilityLayerComponentCreation(unittest.TestCase):
 
     def test_create_webui_components(self):
         """Test creation of WebUI components."""
-        with patch(
-            'civitai_manager_libs.compat.webui_adapters.webui_path_manager.' 'WebUIPathManager'
-        ) as mock_path, patch(
-            'civitai_manager_libs.compat.webui_adapters.webui_config_manager.' 'WebUIConfigManager'
-        ) as mock_config:
+        with (
+            patch(
+                'civitai_manager_libs.compat.webui_adapters.webui_path_manager.' 'WebUIPathManager'
+            ) as mock_path,
+            patch(
+                'civitai_manager_libs.compat.webui_adapters.webui_config_manager.'
+                'WebUIConfigManager'
+            ) as mock_config,
+        ):
             CompatibilityLayer(mode='webui')
             # Verify WebUI adapters are imported and instantiated
             mock_path.assert_called_once()
@@ -177,13 +178,16 @@ class TestCompatibilityLayerComponentCreation(unittest.TestCase):
 
     def test_create_standalone_components(self):
         """Test creation of standalone components."""
-        with patch(
-            'civitai_manager_libs.compat.standalone_adapters.standalone_path_manager.'
-            'StandalonePathManager'
-        ) as mock_path, patch(
-            'civitai_manager_libs.compat.standalone_adapters.standalone_config_manager.'
-            'StandaloneConfigManager'
-        ) as mock_config:
+        with (
+            patch(
+                'civitai_manager_libs.compat.standalone_adapters.standalone_path_manager.'
+                'StandalonePathManager'
+            ) as mock_path,
+            patch(
+                'civitai_manager_libs.compat.standalone_adapters.standalone_config_manager.'
+                'StandaloneConfigManager'
+            ) as mock_config,
+        ):
             CompatibilityLayer(mode='standalone')
             # Verify standalone adapters are imported and instantiated
             mock_path.assert_called_once()
