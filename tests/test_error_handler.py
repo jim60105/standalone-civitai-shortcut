@@ -17,7 +17,7 @@ class DummyError:
 
     last_msg = None
 
-    def __init__(self, msg):
+    def __init__(self, msg, *args, **kwargs):
         DummyError.last_msg = msg
 
 
