@@ -1,10 +1,4 @@
-import os
-import json
-
-import pytest
-
 from scripts.civitai_manager_libs.ishortcut_core.data_validator import DataValidator
-from scripts.civitai_manager_libs.exceptions import DataValidationError
 
 
 def test_validate_model_id():

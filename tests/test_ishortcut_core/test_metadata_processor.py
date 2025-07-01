@@ -1,10 +1,7 @@
-import re
 from datetime import datetime
 
-import pytest
 
 from scripts.civitai_manager_libs.ishortcut_core.metadata_processor import MetadataProcessor
-from scripts.civitai_manager_libs.exceptions import DataValidationError
 
 
 def test_validate_model_info():
@@ -45,6 +42,7 @@ def test_clean_and_extract_description_and_parse_timestamp_and_stats_and_tags():
     assert mp._clean_html_tags('<p>hi</p>') == 'hi'
     # Extract description truncation
     import scripts.civitai_manager_libs.ishortcut_core.metadata_processor as mod
+
     setattr(mod.setting, 'max_description_length', 5)
     desc = mp.extract_model_description({'description': 'abcdef'})
     assert desc.endswith('...')
@@ -54,14 +52,16 @@ def test_clean_and_extract_description_and_parse_timestamp_and_stats_and_tags():
     dt = datetime(2020, 1, 1)
     assert mp._parse_timestamp(dt) == dt.isoformat()
     # Extract stats
-    stats = mp.extract_model_stats({
-        'downloadCount': 3,
-        'thumbsUpCount': 1,
-        'commentCount': 2,
-        'stats': {'rating': 4.5},
-        'createdAt': '2021-01-01T00:00:00Z',
-        'updatedAt': '2021-01-02T00:00:00Z',
-    })
+    stats = mp.extract_model_stats(
+        {
+            'downloadCount': 3,
+            'thumbsUpCount': 1,
+            'commentCount': 2,
+            'stats': {'rating': 4.5},
+            'createdAt': '2021-01-01T00:00:00Z',
+            'updatedAt': '2021-01-02T00:00:00Z',
+        }
+    )
     assert stats['download_count'] == 3 and stats['rating'] == 4.5
     # Extract tags normalization
     tags = mp.extract_model_tags({'tags': ['A', 'a', {'name': 'B'}]})

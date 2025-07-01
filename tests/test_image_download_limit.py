@@ -32,7 +32,7 @@ def test_collect_images_no_limit():
         [(4, "url4"), (5, "url5")],
     ]
     setting.shortcut_max_download_image_per_version = 0
-    
+
     # Use ImageProcessor instead of the moved private function
     image_processor = ImageProcessor()
     result = image_processor._collect_images_to_download(version_list, modelid="123")
@@ -54,7 +54,7 @@ def test_collect_images_with_limit():
     """
     version_list = [[(1, "url1"), (2, "url2"), (3, "url3")]]
     setting.shortcut_max_download_image_per_version = 2
-    
+
     # Use ImageProcessor instead of the moved private function
     image_processor = ImageProcessor()
     result = image_processor._collect_images_to_download(version_list, modelid="abc")
