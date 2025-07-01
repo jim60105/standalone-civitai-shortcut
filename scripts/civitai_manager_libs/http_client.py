@@ -28,24 +28,6 @@ from .error_handler import with_error_handling
 
 from . import setting
 
-# Graceful stub for Gradio UI, enabling tests to monkeypatch gr.Error/Warning without direct gradio dependency
-try:
-    import gradio as gr
-except ImportError:
-    class _GradioStub:
-        @staticmethod
-        def Error(*args, **kwargs):
-            pass
-
-        @staticmethod
-        def Warning(*args, **kwargs):
-            pass
-
-        @staticmethod
-        def Info(*args, **kwargs):
-            pass
-
-    gr = _GradioStub()
 
 logger = get_logger(__name__)
 
