@@ -204,16 +204,17 @@ def test_validate_download_size_exceeds_tolerance(tmp_path, monkeypatch):
     content = b"hello world" * 100  # 1100 bytes
     test_file.write_bytes(content)
 
-    # Mock gr.Warning to avoid UI calls
+    # Mock notification service to capture warnings instead of UI calls
     warning_called = []
 
-    def mock_warning(*args, **kwargs):
-        warning_called.append((args, kwargs))
+    class DummyService:
+        def show_warning(self, message, duration=3):
+            warning_called.append((message, duration))
 
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.gr.Warning",
-        mock_warning,
-        raising=False,
+        "scripts.civitai_manager_libs.http_client.get_notification_service",
+        lambda: DummyService(),
+        raising=True,
     )
 
     # Test beyond 10% tolerance
@@ -230,11 +231,15 @@ def test_validate_download_size_custom_tolerance(tmp_path, monkeypatch):
     content = b"hello world" * 100  # 1100 bytes
     test_file.write_bytes(content)
 
-    # Mock gr.Warning to avoid UI calls
+    # Mock notification service to avoid UI calls in tests
+    class DummyService:
+        def show_warning(self, message, duration=3):
+            pass
+
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.gr.Warning",
-        lambda *args, **kwargs: None,
-        raising=False,
+        "scripts.civitai_manager_libs.http_client.get_notification_service",
+        lambda: DummyService(),
+        raising=True,
     )
 
     # Test with custom tolerance of 5%

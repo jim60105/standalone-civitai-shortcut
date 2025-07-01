@@ -12,19 +12,18 @@ import concurrent.futures
 
 import requests
 import os
+import gradio as gr
 
 from .logging_config import get_logger
 from .exceptions import (
-    APIError,
     AuthenticationError,
     NetworkError,
     HTTPError,
     ConnectionError,
     TimeoutError,
-    DownloadError,
-    AuthenticationRequiredError,
 )
 from .error_handler import with_error_handling
+from .ui.notification_service import get_notification_service
 
 from . import setting
 
@@ -249,7 +248,10 @@ class CivitaiHttpClient:
         return True
 
     def _handle_authentication_error(self, response: requests.Response, error_type: str) -> bool:
-        """Handle authentication or login redirect errors by aborting in main thread or raising in background threads."""
+        """Handle authentication or login redirect errors.
+
+        Aborts in main thread or raises in background threads.
+        """
         import threading
         from .exceptions import AuthenticationError
 
@@ -273,7 +275,9 @@ class CivitaiHttpClient:
         """Handle general error responses for streaming requests."""
         msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
         logger.debug(f"[http_client] {msg}")
-        gr.Error(f"Request failed: {msg}")
+        notification_service = get_notification_service()
+        if notification_service:
+            notification_service.show_error(f"Request failed: {msg}")
         return False
 
     def download_file(
@@ -482,7 +486,7 @@ class CivitaiHttpClient:
             pass
         return True
 
-    def _handle_connection_error(self, url: str) -> bool:
+    def _handle_connection_error(self, url: str) -> bool:  # noqa: F811
         """Handle download connection errors."""
         logger.warning(f"[http_client] Connection error for {url}")
         try:
@@ -539,11 +543,13 @@ class CivitaiHttpClient:
             logger.warning(
                 f"[http_client] File size mismatch: expected {expected_size}, got {actual_size}"
             )
-            gr.Warning(
-                f"⚠️ Downloaded file size differs significantly from expected. "
-                f"Expected: {expected_size_str}, Actual: {actual_size_str}. "
-                f"Please verify the download."
-            )
+            notification_service = get_notification_service()
+            if notification_service:
+                notification_service.show_warning(
+                    f"⚠️ Downloaded file size differs significantly from expected. "
+                    f"Expected: {expected_size_str}, Actual: {actual_size_str}. "
+                    f"Please verify the download.",
+                )
             return False
 
         return True

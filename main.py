@@ -20,6 +20,11 @@ sys.path.insert(0, os.path.join(project_root, 'scripts'))
 
 os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
 
+from scripts.civitai_manager_libs.ui.notification_service import (
+    set_notification_service,
+    GradioNotificationService,
+)
+
 
 class CivitaiShortcutApp:
     """Civitai Shortcut standalone application"""
@@ -252,7 +257,10 @@ def apply_cli_overrides(app: CivitaiShortcutApp, args: argparse.Namespace):
 
 
 def main():
-    """Main application entry point"""
+    """Standalone 模式主函數"""
+    # Ensure notification service is properly initialized for standalone mode
+    set_notification_service(GradioNotificationService())
+
     try:
         # Parse command line arguments
         parser = create_argument_parser()

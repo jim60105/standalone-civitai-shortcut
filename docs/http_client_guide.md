@@ -76,6 +76,44 @@ except Exception:
     print("Failed to retrieve model data.")
 ```
 
+## UI Decoupling and Error Handling
+
+To improve separation of concerns and support multiple environments, the HTTP client no longer performs direct UI notifications. Instead, all HTTP errors are raised as custom exceptions and handled by the application layer via the `@with_error_handling` decorator and notification service.
+
+### HTTP Client Exception Mapping
+
+The client translates HTTP failures into structured exceptions:
+
+```python
+# scripts/civitai_manager_libs/http_client.py
+try:
+    response = self.session.get(url, timeout=self.timeout)
+    response.raise_for_status()
+except requests.RequestException as e:
+    raise NetworkError(f"Request failed: {e}")
+```
+
+### Handling Errors with @with_error_handling
+
+Use the unified error handling decorator to catch exceptions and display user-friendly messages without coupling to Gradio:
+
+```python
+from scripts.civitai_manager_libs.http_client import CivitaiHttpClient
+from scripts.civitai_manager_libs.error_handler import with_error_handling
+from scripts.civitai_manager_libs.exceptions import NetworkError, APIError
+
+client = CivitaiHttpClient(api_key="...", timeout=30)
+
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError),
+    retry_count=3,
+    user_message="Failed to fetch model data",
+)
+def get_model_data(model_id: int):
+    return client.get_json(f"https://civitai.com/api/v1/models/{model_id}")
+```
+
 ## Best Practices
 
 - Reuse the same client instance for multiple requests
