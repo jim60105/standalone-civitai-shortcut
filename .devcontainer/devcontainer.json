@@ -31,9 +31,9 @@
 
 	"postCreateCommand": {
 		"locale-gen": "echo \"zh_TW.UTF-8 UTF-8\" >> /etc/locale.gen && locale-gen",
-		"pip-install": "uv pip install -U pytest black flake8",
 		"codex-cli": "cd ~ && git clone --depth 1 --filter=blob:none --sparse https://github.com/openai/codex.git && git -C codex sparse-checkout set codex-rs && cargo install --path codex/codex-rs/cli",
-		"rustup": "rustup default stable"
+		"rustup": "rustup default stable",
+		"uv": "uv sync --frozen"
 	},
 
 	"containerEnv": {
