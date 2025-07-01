@@ -90,6 +90,19 @@ class DownloadNotifier:
                     f"❌ Download failed: {filename}{error_detail}", duration=10
                 )
 
+            # Process any queued notifications from background threads
+            # This ensures that background thread notifications get displayed
+            # when we're back in the main thread context
+            if hasattr(notification_service, 'process_queued_notifications'):
+                try:
+                    processed = notification_service.process_queued_notifications()
+                    if processed:
+                        logger.debug(
+                            f"[downloader] Processed {len(processed)} queued notifications"
+                        )
+                except Exception as e:
+                    logger.debug(f"[downloader] Failed to process queued notifications: {e}")
+
         # Always log the result
         if success:
             logger.info(f"[downloader] Download completed: {filename}")
