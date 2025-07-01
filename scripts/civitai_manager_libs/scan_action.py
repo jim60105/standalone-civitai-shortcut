@@ -1,5 +1,24 @@
 import os
-import gradio as gr
+# Safe import of gradio for UI contexts; stub in non-UI or test environments
+try:
+    import gradio as gr
+except Exception:
+    class _GrStub:
+        """Stub namespace for gradio in non-UI/test environments."""
+
+        def __getattr__(self, name):
+            # Return stub for any Gradio attribute or class
+            return self
+
+        def __call__(self, *args, **kwargs):
+            # Allow stub to be called like gr.Progress(), gr.Select(), etc.
+            return self
+
+        def update(self, **kwargs):
+            """Stub update method for fallback values."""
+            return None
+
+    gr = _GrStub()
 import json
 
 from .logging_config import get_logger
