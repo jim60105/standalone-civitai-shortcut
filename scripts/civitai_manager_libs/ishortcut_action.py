@@ -754,35 +754,33 @@ def on_download_model_click(
     cs_foldername=None,
     ms_foldername=None,
 ):
-    msg = None
-    if version_id and model_id:
-        # 프리뷰이미지와 파일 모두를 다운 받는다.
-        if cs_foldername == setting.CREATE_MODEL_FOLDER:
-            msg = downloader.download_file_thread(
-                file_name,
-                version_id,
-                True,
-                vs_folder,
-                vs_foldername.encode('utf-8'),
-                None,
-                ms_foldername,
-            )
-        else:
-            msg = downloader.download_file_thread(
-                file_name, version_id, False, False, None, cs_foldername, ms_foldername
-            )
+    if not version_id or not model_id:
+        return gr.update(visible=True), gr.update(visible=True)
 
-        # Process any queued notifications from the download operation
-        # This ensures error notifications from background threads are displayed
-        notification_service = get_notification_service()
-        if notification_service and hasattr(notification_service, 'process_queued_notifications'):
-            notification_service.process_queued_notifications()
+    if cs_foldername == setting.CREATE_MODEL_FOLDER:
+        downloader.download_file_thread(
+            file_name,
+            version_id,
+            True,
+            vs_folder,
+            vs_foldername.encode('utf-8'),
+            None,
+            ms_foldername,
+        )
+    else:
+        downloader.download_file_thread(
+            file_name, version_id, False, False, None, cs_foldername, ms_foldername
+        )
 
-        # 다운 받은 모델 정보를 갱신한다.
-        current_time = datetime.datetime.now()
+    # Process any queued notifications from the download operation
+    # This ensures error notifications from background threads are displayed
+    notification_service = get_notification_service()
+    if notification_service and hasattr(notification_service, 'process_queued_notifications'):
+        notification_service.process_queued_notifications()
 
-        return gr.update(value=current_time), gr.update(value=current_time)
-    return gr.update(visible=True), gr.update(visible=True)
+    current_time = datetime.datetime.now()
+
+    return gr.update(value=current_time), gr.update(value=current_time)
 
 
 # def on_download_model_click(model_id, version_id, file_name, vs_folder, vs_foldername, cs_foldername=None, ms_foldername=None):
