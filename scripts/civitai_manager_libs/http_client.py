@@ -244,14 +244,8 @@ class CivitaiHttpClient:
 
         Aborts in main thread or raises in background threads.
         """
-        import threading
         from .exceptions import AuthenticationError
 
-        # In main thread, abort the operation gracefully
-        if threading.current_thread() is threading.main_thread():
-            return False
-
-        # In background threads, raise authentication error for caller to handle
         raise AuthenticationError(
             message=f"Authentication required for {response.url}",
             status_code=response.status_code,

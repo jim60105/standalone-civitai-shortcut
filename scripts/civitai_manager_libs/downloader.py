@@ -69,12 +69,6 @@ class DownloadNotifier:
             logger.debug(f"[downloader] Downloaded: {downloaded_str}{speed_str}")
 
     @staticmethod
-    @with_error_handling(
-        fallback_value=None,
-        exception_types=(Exception,),
-        show_notification=False,  # We handle notifications manually
-        user_message=None,
-    )
     def notify_complete(filename: str, success: bool, error_msg: str = None):
         """Notify download completion or failure using UI and logs."""
         from .ui.notification_service import get_notification_service
@@ -89,25 +83,6 @@ class DownloadNotifier:
                 notification_service.show_error(
                     f"❌ Download failed: {filename}{error_detail}", duration=10
                 )
-
-            # Process any queued notifications from background threads
-            # This ensures that background thread notifications get displayed
-            # when we're back in the main thread context
-            if hasattr(notification_service, 'process_queued_notifications'):
-                try:
-                    processed = notification_service.process_queued_notifications()
-                    if processed:
-                        logger.debug(
-                            f"[downloader] Processed {len(processed)} queued notifications"
-                        )
-                        # Also show these notifications immediately as console messages
-                        # since gradio context might not be available
-                        for notification in processed:
-                            msg_type = notification['type'].upper()
-                            msg_content = notification['message']
-                            print(f"[NOTIFICATION - {msg_type}] {msg_content}")
-                except Exception as e:
-                    logger.debug(f"[downloader] Failed to process queued notifications: {e}")
 
         # Always log the result
         if success:
@@ -164,31 +139,21 @@ def download_file_with_file_handling(task: DownloadTask):
     client = get_http_client()
     return client.download_file_with_resume(task.url, task.path)
 
-
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(Exception),  # file-related errors
+    retry_count=1,
+    retry_delay=1.0,
+)
 def download_file_with_notifications(task: DownloadTask):
     """Download file using the existing decorator-based error handling."""
     # Don't call notify_start here since it's already called by the caller
 
-    try:
-        # Handle errors by priority using decorated functions
-        success = (
-            download_file_with_auth_handling(task)
-            or download_file_with_retry(task)
-            or download_file_with_file_handling(task)
-        )
-
-        if success:
-            DownloadNotifier.notify_complete(task.filename, True)
-        else:
-            DownloadNotifier.notify_complete(
-                task.filename, False, "Download failed after all retry attempts"
-            )
-
-    except Exception as e:
-        # Final exception catch
-        logger.error(f"Unexpected download error: {e}")
-        DownloadNotifier.notify_complete(task.filename, False, "Unexpected error occurred")
-
+    return (
+        download_file_with_auth_handling(task)
+        or download_file_with_retry(task)
+        or download_file_with_file_handling(task)
+    )
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):
     """Download model-related images with parallel processing."""
@@ -393,7 +358,14 @@ def download_file_thread(
 
         # Execute download directly on main thread
         task = DownloadTask(fid, fname, url, path, file_size)
-        download_file_with_notifications(task)
+        success = download_file_with_notifications(task)
+
+        if success:
+            DownloadNotifier.notify_complete(task.filename, True)
+        else:
+            DownloadNotifier.notify_complete(
+                task.filename, False, "Download failed after all retry attempts"
+            )
 
         # Record primary file base name
         if file_info and file_info.get('primary'):
@@ -421,7 +393,7 @@ def download_file_thread(
             metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
             if civitai.write_LoRa_metadata(metadata_path, vi):
                 logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
-    return "Download started with notifications"
+    return
 
 
 def _is_lora_model(version_info: dict) -> bool:

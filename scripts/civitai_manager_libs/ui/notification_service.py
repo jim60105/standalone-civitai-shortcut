@@ -4,6 +4,8 @@ import threading
 import queue
 import time
 
+from ..logging_config import get_logger
+logger = get_logger(__name__)
 
 class NotificationService(ABC):
     """Abstract interface for UI notification services."""
@@ -47,15 +49,15 @@ class GradioNotificationService(NotificationService):
             import gradio as gr
 
             if notification_type == "error":
-                gr.Error(message, duration=duration)
+                raise gr.Error(message, duration=duration)
             elif notification_type == "warning":
                 gr.Warning(message, duration=duration)
             elif notification_type == "info":
                 gr.Info(message, duration=duration)
             return True
-        except Exception:
+        except ImportError:
             # If gradio is not available or fails, fall back to console
-            print(f"[{notification_type.upper()}] {message}")
+            logger.info(f"[{notification_type.upper()}] {message}")
             return False
 
     def _queue_notification(self, notification_type: str, message: str, duration: int):
@@ -72,8 +74,8 @@ class GradioNotificationService(NotificationService):
         self._notification_queue.put(notification)
         self._pending_notifications.append(notification)
 
-        # Also print to console immediately for visibility
-        print(f"[{notification_type.upper()} - QUEUED] {message}")
+        # Also logger.debug to console immediately for visibility
+        logger.debug(f"[{notification_type.upper()} - QUEUED] {message}")
 
     def _execute_notification(self, notification_type: str, message: str, duration: int):
         """Execute a notification, handling thread context appropriately."""
@@ -81,8 +83,8 @@ class GradioNotificationService(NotificationService):
             # We're in the main thread, try direct execution
             success = self._execute_gradio_notification(notification_type, message, duration)
             if not success:
-                # If gradio execution failed, also print to console
-                print(f"[{notification_type.upper()}] {message}")
+                # If gradio execution failed, also log to console
+                logger.info(f"[{notification_type.upper()}] {message}")
                 # Also queue it for later execution in a proper gradio context
                 self._queue_notification(notification_type, message, duration)
         else:
@@ -90,7 +92,8 @@ class GradioNotificationService(NotificationService):
             self._queue_notification(notification_type, message, duration)
 
     def show_error(self, message: str, duration: int = 5) -> None:
-        self._execute_notification("error", message, duration)
+        # Raise exception directly
+        self._execute_gradio_notification("error", message, duration)
 
     def show_warning(self, message: str, duration: int = 3) -> None:
         self._execute_notification("warning", message, duration)
@@ -108,21 +111,15 @@ class GradioNotificationService(NotificationService):
         try:
             while not self._notification_queue.empty():
                 notification = self._notification_queue.get_nowait()
-                try:
-                    # Try to execute the gradio notification
-                    success = self._execute_gradio_notification(
-                        notification['type'], notification['message'], notification['duration']
-                    )
-                    if success:
-                        processed.append(notification)
-                    else:
-                        # Execution failed, but still count as processed since we logged to console
-                        processed.append(notification)
-                except Exception as e:
-                    # Log the processing failure but count as processed
-                    print(f"[ERROR] Failed to process queued notification: {e}")
-                    print(f"[{notification['type'].upper()}] {notification['message']}")
+                success = self._execute_gradio_notification(
+                    notification['type'], notification['message'], notification['duration']
+                )
+                if success:
                     processed.append(notification)
+                else:
+                    # Execution failed, but still count as processed since we logged to console
+                    processed.append(notification)
+
         except queue.Empty:
             pass
 
@@ -139,13 +136,13 @@ class ConsoleNotificationService(NotificationService):
     """Console notification service for non-UI environments."""
 
     def show_error(self, message: str, duration: int = 5) -> None:
-        print(f"[ERROR] {message}")
+        logger.error(f"[ERROR] {message}")
 
     def show_warning(self, message: str, duration: int = 3) -> None:
-        print(f"[WARNING] {message}")
+        logger.warning(f"[WARNING] {message}")
 
     def show_info(self, message: str, duration: int = 3) -> None:
-        print(f"[INFO] {message}")
+        logger.info(f"[INFO] {message}")
 
 
 class SilentNotificationService(NotificationService):

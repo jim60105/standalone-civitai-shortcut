@@ -9,7 +9,6 @@ from .exceptions import (
     CivitaiShortcutError,
     FileOperationError,
     NetworkError,
-    APIError,
     ValidationError,
 )
 from .logging_config import get_logger
@@ -35,6 +34,14 @@ def with_error_handling(
             try:
                 return func(*args, **kwargs)
             except exception_types as e:
+                # If the error is gradio.Error, re-raise it immediately
+                try:
+                    import gradio as gr
+                except ImportError:
+                    gr = None
+                if gr is not None and isinstance(e, getattr(gr, "Error", type(None))):
+                    raise
+
                 # Log the error with minimal context
                 if log_errors:
                     logger.error(
