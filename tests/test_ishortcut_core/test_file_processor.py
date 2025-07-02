@@ -1,5 +1,4 @@
 import os
-import json
 import pytest
 
 import scripts.civitai_manager_libs.ishortcut_core.file_processor as fp_mod

@@ -1,6 +1,5 @@
 import os
 
-from scripts.civitai_manager_libs import util
 from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import PreviewImageManager
 
 # instantiate PreviewImageManager with a dummy collection_manager for testing

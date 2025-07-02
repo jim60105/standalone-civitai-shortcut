@@ -84,7 +84,51 @@ The decorator provides special handling for:
 
 1. **Cloudflare 524 Errors**: Shows the full error message instead of just the exception type
 2. **General Errors**: Shows the exception class name for user-friendly feedback
-3. **UI Integration**: Automatically displays errors using `gr.Error()` in Gradio UI
+3. **Notification Service Integration**: Uses the configured `NotificationService` to display user notifications, abstracting direct UI calls and supporting multiple environments
+
+## Notification Service Abstraction
+
+To decouple UI notification logic from core modules, a `NotificationService` abstraction has been introduced. It defines a common interface for displaying errors, warnings, and informational messages:
+
+```python
+from scripts.civitai_manager_libs.ui.notification_service import (
+    NotificationService,
+    GradioNotificationService,
+    ConsoleNotificationService,
+    SilentNotificationService,
+)
+
+# Global service configuration
+from scripts.civitai_manager_libs.ui.notification_service import (
+    set_notification_service,
+    get_notification_service,
+)
+
+# By default, GradioNotificationService is used:
+set_notification_service(GradioNotificationService())
+```
+
+Implementations:
+- `GradioNotificationService`: Uses Gradio UI components  
+- `ConsoleNotificationService`: Prints messages to the console (for development or standalone mode)  
+- `SilentNotificationService`: No-op implementation (for testing environments)  
+
+## Decorator Integration with NotificationService
+
+The `@with_error_handling` decorator now accepts a `show_notification` flag and delegates user feedback to the `NotificationService` instead of direct Gradio calls:
+
+```python
+@with_error_handling(
+    fallback_value=None,
+    exception_types=(NetworkError, APIError),
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="Operation failed",
+    show_notification=True,
+)
+def my_function():
+    ...
+```
 
 ## Usage Patterns
 

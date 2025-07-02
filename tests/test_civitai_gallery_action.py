@@ -82,6 +82,7 @@ def test_download_user_gallery_images(tmp_path, monkeypatch):
     urls = ["u1.png", "u2.png"]
     # stub model info and folder creation
     from scripts.civitai_manager_libs.ishortcut_core.model_processor import ModelProcessor
+
     monkeypatch.setattr(ModelProcessor, "get_model_info", lambda self, mid: {"name": "modelname"})
     monkeypatch.setattr(cga.util, "make_download_image_folder", lambda name: str(tmp_path / name))
     monkeypatch.setattr(setting, "no_card_preview_image", "no.png")

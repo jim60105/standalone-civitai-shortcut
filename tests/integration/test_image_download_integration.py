@@ -35,7 +35,9 @@ class TestImageDownloadIntegration:
         }
 
         # Act
-        from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import PreviewImageManager
+        from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import (
+            PreviewImageManager,
+        )
 
         # instantiate PreviewImageManager for preview image download
         preview_manager = PreviewImageManager(None)

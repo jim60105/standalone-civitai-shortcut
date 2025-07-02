@@ -10,6 +10,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts.civitai_manager_libs.ui.notification_service import (
+    set_notification_service,
+    ConsoleNotificationService,
+)
+
+
+def setup_dev_environment():
+    """開發工具環境設定"""
+    # 使用控制台通知服務以便查看錯誤訊息
+    set_notification_service(ConsoleNotificationService())
+
 
 def run_basic_validation():
     """Run basic validation checks."""

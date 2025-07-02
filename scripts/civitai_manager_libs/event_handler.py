@@ -48,10 +48,13 @@ class EventHandler:
                             # Log the error and display a unified UI error prompt,
                             # then return a safe fallback
                             logger.error(f"Error in action {action_name}: {e}", exc_info=True)
-                            try:
-                                gr.Error(f"Error in {action_name}: {e}")
-                            except Exception:
-                                pass
+                            
+                            # Use notification service instead of direct Gradio call
+                            from .ui.notification_service import get_notification_service
+                            notification_service = get_notification_service()
+                            if notification_service:
+                                notification_service.show_error(f"Error in {action_name}: {e}")
+                            
                             return gr.update()
 
                     return wrapped_action

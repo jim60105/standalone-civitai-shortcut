@@ -11,14 +11,21 @@ import threading
 import concurrent.futures
 
 import requests
-import gradio as gr
 import os
 
 from .logging_config import get_logger
-from .exceptions import APIError
+from .exceptions import (
+    AuthenticationError,
+    NetworkError,
+    HTTPError,
+    ConnectionError,
+    TimeoutError,
+)
 from .error_handler import with_error_handling
+from .ui.notification_service import get_notification_service
 
 from . import setting
+
 
 logger = get_logger(__name__)
 
@@ -84,13 +91,45 @@ class CivitaiHttpClient:
         return response.json()
 
     def _handle_response_error(self, response: requests.Response) -> None:
-        """Convert HTTP errors to our custom exceptions."""
+        """Convert HTTP errors to custom exceptions instead of showing UI."""
         if response.status_code >= 400:
             error_msg = _STATUS_CODE_MESSAGES.get(
                 response.status_code, f"HTTP {response.status_code}"
             )
-            raise APIError(message=error_msg, status_code=response.status_code)
+            raise HTTPError(
+                message=error_msg,
+                status_code=response.status_code,
+                url=str(response.url),
+            )
 
+    def _handle_connection_error(self, error: Exception, url: str) -> None:
+        """Handle connection errors by raising custom exceptions."""
+        if isinstance(error, requests.exceptions.Timeout):
+            raise TimeoutError(
+                message=f"Request timeout for {url}",
+                url=url,
+                timeout_duration=self.timeout,
+            )
+        elif isinstance(error, requests.exceptions.ConnectionError):
+            raise ConnectionError(
+                message=f"Failed to connect to {url}",
+                url=url,
+                retry_after=self.retry_delay,
+            )
+        else:
+            raise NetworkError(
+                message=f"Network error: {error}",
+                cause=error,
+                context={"url": url},
+            )
+
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        retry_count=0,
+        retry_delay=0,
+        user_message=None,
+    )
     def post_json(self, url: str, json_data: Dict = None) -> Optional[Dict]:
         """Make POST request with JSON payload and return JSON response or None on error."""
         for attempt in range(self.max_retries):
@@ -124,97 +163,116 @@ class CivitaiHttpClient:
         """Handle HTTP error responses for POST requests."""
         msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
         logger.debug(f"[http_client] {msg}")
-        gr.Error(f"Request failed: {msg}")
 
     def _handle_post_connection_error(self, error: Exception, attempt: int) -> Optional[Dict]:
         """Handle connection errors for POST requests."""
         logger.warning(f"[http_client] Connection error: {error}")
         if attempt == self.max_retries - 1:
-            gr.Error(f"Network error: {type(error).__name__}")
             return None
-        return "retry"  # Signal to retry
+        return "retry"
 
     def _handle_post_json_error(self, error: json.JSONDecodeError) -> None:
         """Handle JSON decode errors for POST requests."""
         logger.error(f"[http_client] JSON decode error: {error}")
-        gr.Error("Failed to parse JSON response")
         return None
 
     def _handle_post_request_error(self, error: requests.RequestException) -> None:
         """Handle general request errors for POST requests."""
         logger.error(f"[http_client] Request exception: {error}")
-        gr.Error(f"Request error: {error}")
         return None
 
     def _should_retry_post(self, result: Optional[Dict], attempt: int) -> bool:
         """Determine if POST request should be retried."""
         return result == "retry" and attempt < self.max_retries - 1
 
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        retry_count=0,
+        retry_delay=0,
+        user_message=None,
+    )
     def get_stream(self, url: str, headers: Dict = None) -> Optional[requests.Response]:
         """Make GET request for streaming download and return response or None on error."""
         try:
             logger.debug(f"[http_client] STREAM {url}")
             response = self.session.get(
-                url, headers=headers or {}, stream=True, timeout=self.timeout
+                url, headers=headers or {}, stream=True, timeout=self.timeout, allow_redirects=False
             )
             logger.debug(f"[http_client] Response status: {response.status_code}")
 
-            # Check for authentication and error responses
+            # Handle authentication and error responses
             if not self._is_stream_response_valid(response):
                 return None
+
+            # Handle redirects manually only after validation passes
+            if response.status_code in [301, 302, 303, 307, 308]:
+                location = response.headers.get('Location', '')
+                if location:
+                    logger.debug(f"[http_client] Following redirect to: {location}")
+                    return self.get_stream(location, headers)
+                else:
+                    logger.error("[http_client] Redirect without Location header")
+                    return None
 
             return response
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.warning(f"[http_client] Stream connection error: {e}")
-            gr.Error(f"Network error: {type(e).__name__}")
             return None
 
     def _is_stream_response_valid(self, response: requests.Response) -> bool:
         """Validate streaming response and handle specific status codes."""
-        if response.status_code == 307:
+        # Handle authentication errors (both 307 login redirects and 416 range errors)
+        if response.status_code == 416:
+            return self._handle_authentication_error(response, "HTTP 416")
+        elif response.status_code == 307:
+            location = response.headers.get('Location', '')
+            if 'login' in location.lower():
+                return self._handle_authentication_error(response, "HTTP 307 login redirect")
+            else:
+                # Non-login 307 redirects are handled as normal redirects
+                return self._handle_redirect_response(response)
+        elif response.status_code in [301, 302, 303, 308]:
             return self._handle_redirect_response(response)
-        elif response.status_code == 416:
-            return self._handle_range_error_response(response)
         elif response.status_code >= 400:
             return self._handle_stream_error_response(response)
+
         return True
+
+    def _handle_authentication_error(self, response: requests.Response, error_type: str) -> bool:
+        """Handle authentication or login redirect errors.
+
+        Aborts in main thread or raises in background threads.
+        """
+        from .exceptions import AuthenticationError
+
+        raise AuthenticationError(
+            message=f"Authentication required for {response.url}",
+            status_code=response.status_code,
+        )
 
     def _handle_redirect_response(self, response: requests.Response) -> bool:
-        """Handle redirect responses that may require authentication."""
+        """Handle non-login redirect responses."""
         location = response.headers.get('Location', '')
-        if 'login' in location.lower():
-            logger.debug(f"[http_client] Authentication required for: {response.url}")
-            gr.Error(
-                "🔐 This resource requires login. "
-                "Please configure your Civitai API key in settings."
-            )
-            return False
+        logger.debug(f"[http_client] Valid redirect from {response.url} to {location}")
         return True
-
-    def _handle_range_error_response(self, response: requests.Response) -> bool:
-        """Handle range request errors that may require authentication."""
-        logger.debug(
-            f"[http_client] Range request failed, may require authentication: {response.url}"
-        )
-        if not self.api_key:
-            gr.Error(
-                "🔐 Download failed (HTTP 416). This resource requires a Civitai API key. "
-                "Please add your API key in the settings to download this file."
-            )
-        else:
-            gr.Error(
-                "🔐 Download failed (HTTP 416). This resource may require authentication. "
-                "Please verify your API key is valid and has access to this resource."
-            )
-        return False
 
     def _handle_stream_error_response(self, response: requests.Response) -> bool:
         """Handle general error responses for streaming requests."""
         msg = _STATUS_CODE_MESSAGES.get(response.status_code, f"HTTP {response.status_code} Error")
         logger.debug(f"[http_client] {msg}")
-        gr.Error(f"Request failed: {msg}")
+        notification_service = get_notification_service()
+        if notification_service:
+            notification_service.show_error(f"Request failed: {msg}")
         return False
 
+    @with_error_handling(
+        fallback_value=False,
+        exception_types=(Exception,),
+        retry_count=0,
+        retry_delay=0,
+        user_message=None,
+    )
     def download_file(
         self,
         url: str,
@@ -246,13 +304,26 @@ class CivitaiHttpClient:
             return True
         except Exception as e:
             logger.error(f"[http_client] File write error: {e}")
-            gr.Error(f"Failed to write file: {e}")
             return False
 
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        retry_count=0,
+        retry_delay=0,
+        user_message=None,
+    )
     def get_stream_response(self, url: str, headers: dict = None) -> Optional[requests.Response]:
         """Get streaming response for custom processing."""
         return self.get_stream(url, headers)
 
+    @with_error_handling(
+        fallback_value=False,
+        exception_types=(Exception,),
+        retry_count=0,
+        retry_delay=0,
+        user_message=None,
+    )
     def download_file_with_resume(
         self,
         url: str,
@@ -385,11 +456,15 @@ class CivitaiHttpClient:
 
     def _handle_download_error(self, error: Exception, url: str, filepath: str) -> bool:
         """Handle download errors with recovery strategies."""
+        # Re-raise AuthenticationError to let caller handle it properly
+        if isinstance(error, AuthenticationError):
+            logger.debug("[http_client] Re-raising AuthenticationError for proper handling")
+            raise error
+
         error_handled = self._process_download_error_type(error, url)
 
         if not error_handled:
             logger.error(f"[http_client] Unknown download error: {error}")
-            gr.Error("Unknown error occurred during download 💥!", duration=5)
 
         self._cleanup_failed_download(filepath)
         return False
@@ -407,28 +482,16 @@ class CivitaiHttpClient:
     def _handle_timeout_error(self, url: str) -> bool:
         """Handle download timeout errors."""
         logger.warning(f"[http_client] Download timeout for {url}")
-        gr.Error("Download timeout, please check your network connection 💥!", duration=5)
         return True
 
-    def _handle_connection_error(self, url: str) -> bool:
+    def _handle_connection_error(self, url: str) -> bool:  # noqa: F811
         """Handle download connection errors."""
         logger.warning(f"[http_client] Connection error for {url}")
-        gr.Error("Network connection failed, please check your network settings 💥!", duration=5)
         return True
 
     def _handle_download_response_error(self, response: requests.Response) -> bool:
         """Handle HTTP response errors during download."""
-        status_code = response.status_code
-
-        if status_code == 403:
-            gr.Error("Access denied, please check your API key 💥!", duration=8)
-        elif status_code == 404:
-            gr.Error("File does not exist or has been removed 💥!", duration=5)
-        elif status_code >= 500:
-            gr.Error("Server error, please try again later 💥!", duration=5)
-        else:
-            gr.Error(f"Download failed (HTTP {status_code}) 💥!", duration=5)
-
+        # Suppress HTTP response errors during download; signal handled
         return True
 
     def _cleanup_failed_download(self, filepath: str) -> None:
@@ -459,11 +522,13 @@ class CivitaiHttpClient:
             logger.warning(
                 f"[http_client] File size mismatch: expected {expected_size}, got {actual_size}"
             )
-            gr.Warning(
-                f"⚠️ Downloaded file size differs significantly from expected. "
-                f"Expected: {expected_size_str}, Actual: {actual_size_str}. "
-                f"Please verify the download."
-            )
+            notification_service = get_notification_service()
+            if notification_service:
+                notification_service.show_warning(
+                    f"⚠️ Downloaded file size differs significantly from expected. "
+                    f"Expected: {expected_size_str}, Actual: {actual_size_str}. "
+                    f"Please verify the download.",
+                )
             return False
 
         return True
@@ -498,6 +563,8 @@ class ParallelImageDownloader:
         # Initialize throttling state
         self.last_progress_update = time.time()
         self.pending_update = False
+        # Initialize authentication error tracking
+        self._auth_errors = []
         success_count = 0
 
         client = client or get_http_client()
@@ -526,10 +593,24 @@ class ParallelImageDownloader:
                             )
                         else:
                             logger.error(f"[parallel_downloader] Failed to download: {url}")
+                            # Note: Individual image download failures are often auth-related
+                            # Authentication errors are now collected and handled below
                     except Exception as e:
                         logger.error(f"[parallel_downloader] Download exception for {url}: {e}")
                     finally:
                         self._update_progress(progress_callback)
+
+            # Show authentication error if any images failed due to auth issues
+            if self._auth_errors:
+                # Notify the first authentication error via notification service
+                first_auth_error = self._auth_errors[0]
+                service = get_notification_service()
+                if service:
+                    service.show_error(str(first_auth_error))
+                auth_count = len(self._auth_errors)
+                logger.error(
+                    f"[parallel_downloader] {auth_count} image(s) failed due to authentication"
+                )
 
             return success_count
         finally:
@@ -541,7 +622,16 @@ class ParallelImageDownloader:
 
     def _download_single_image(self, url: str, filepath: str, client) -> bool:
         """Download single image with error handling."""
-        return client.download_file(url, filepath)
+        try:
+            return client.download_file(url, filepath)
+        except AuthenticationError as e:
+            # Log authentication error and let the caller handle it
+            logger.warning(f"[parallel_downloader] Authentication error for {url}: {e}")
+            # Store the error for the main thread to handle
+            if not hasattr(self, '_auth_errors'):
+                self._auth_errors = []
+            self._auth_errors.append(e)
+            return False
 
     def _update_progress(self, progress_callback: Optional[Callable]):
         """Thread-safe progress update with throttling mechanism."""
@@ -658,10 +748,11 @@ class ChunkedDownloader:
         logger.info(f"[chunked_downloader] Starting sequential download: {url}")
         downloaded = 0
         try:
-            response = self.client.session.get(url, stream=True)
-            if not response.ok:
+            # Use the client's get_stream method to ensure proper error handling
+            response = self.client.get_stream(url)
+            if not response:
                 logger.error(
-                    f"[chunked_downloader] Sequential download failed: HTTP {response.status_code}"
+                    "[chunked_downloader] Sequential download failed: get_stream returned None"
                 )
                 return False
             with open(filepath, 'wb') as f:

@@ -44,14 +44,17 @@ class TestEnvironmentDetector(unittest.TestCase):
         mock_modules.scripts = mock_modules_scripts
         mock_modules.shared = mock_modules_shared
 
-        with patch.dict(
-            'sys.modules',
-            {
-                'modules': mock_modules,
-                'modules.scripts': mock_modules_scripts,
-                'modules.shared': mock_modules_shared,
-            },
-        ), patch('os.path.exists') as mock_exists:
+        with (
+            patch.dict(
+                'sys.modules',
+                {
+                    'modules': mock_modules,
+                    'modules.scripts': mock_modules_scripts,
+                    'modules.shared': mock_modules_shared,
+                },
+            ),
+            patch('os.path.exists') as mock_exists,
+        ):
             # Mock os.path.exists to return True for our fake webui path
             mock_exists.return_value = True
 
@@ -165,9 +168,11 @@ class TestEnvironmentDetector(unittest.TestCase):
 
     def test_check_webui_markers_none_present(self):
         """Test _check_webui_markers when no markers are present."""
-        with patch('os.path.exists', return_value=False), patch(
-            'os.path.isdir', return_value=False
-        ), patch.dict(os.environ, {}, clear=True):
+        with (
+            patch('os.path.exists', return_value=False),
+            patch('os.path.isdir', return_value=False),
+            patch.dict(os.environ, {}, clear=True),
+        ):
 
             result = EnvironmentDetector._check_webui_markers()
             self.assertFalse(result)

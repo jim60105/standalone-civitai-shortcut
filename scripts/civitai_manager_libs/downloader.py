@@ -8,7 +8,6 @@ supporting resume capability, progress tracking, and error handling.
 import os
 import time
 import threading
-import gradio as gr
 
 # Standard logging setup
 from .logging_config import get_logger
@@ -19,20 +18,36 @@ from . import util, setting, civitai
 
 # Use centralized HTTP client and chunked downloader factories
 from .http_client import get_http_client, get_chunked_downloader, ParallelImageDownloader
+from .error_handler import with_error_handling
+from .exceptions import (
+    AuthenticationRequiredError,
+    DownloadError,
+    NetworkError,
+    HTTPError,
+    TimeoutError,
+    FileOperationError,
+)
 
 
 class DownloadNotifier:
     """Notify users of download status via UI and logs."""
 
     @staticmethod
+    @with_error_handling(
+        fallback_value=None,
+        exception_types=(Exception,),
+        show_notification=True,
+        user_message=None,  # let decorator use exception type name
+    )
     def notify_start(filename: str, file_size: int = None):
-        """Notify download start using gr.Info and debug log."""
-        try:
+        from .ui.notification_service import get_notification_service
+
+        notification_service = get_notification_service()
+        if notification_service:
             size_str = f" ({util.format_file_size(file_size)})" if file_size else ""
-            gr.Info(f"🚀 Starting download: {filename}{size_str}", duration=3)
-        except Exception:
-            pass
-        logger.info(f"[downloader] Starting download: {filename}{size_str}")
+            notification_service.show_info(
+                f"🚀 Starting download: {filename}{size_str}", duration=3
+            )
 
     @staticmethod
     def notify_progress(filename: str, downloaded: int, total: int, speed: str = ""):
@@ -56,14 +71,20 @@ class DownloadNotifier:
     @staticmethod
     def notify_complete(filename: str, success: bool, error_msg: str = None):
         """Notify download completion or failure using UI and logs."""
-        try:
+        from .ui.notification_service import get_notification_service
+
+        notification_service = get_notification_service()
+        error_detail = f" - {error_msg}" if error_msg else ""
+
+        if notification_service:
             if success:
-                gr.Info(f"✅ Download completed: {filename}", duration=5)
+                notification_service.show_info(f"✅ Download completed: {filename}", duration=5)
             else:
-                error_detail = f" - {error_msg}" if error_msg else ""
-                gr.Error(f"❌ Download failed: {filename}{error_detail}", duration=10)
-        except Exception:
-            pass
+                notification_service.show_error(
+                    f"❌ Download failed: {filename}{error_detail}", duration=10
+                )
+
+        # Always log the result
         if success:
             logger.info(f"[downloader] Download completed: {filename}")
         else:
@@ -81,25 +102,58 @@ class DownloadTask:
         self.total = total_size
 
 
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(AuthenticationRequiredError,),  # these errors abort the flow
+    retry_count=0,
+    user_message="🔐 Authentication required. Please check your API key and try again.",
+)
+def download_file_with_auth_handling(task: DownloadTask):
+    """Handle authenticated downloads, aborting on failure."""
+    client = get_http_client()
+    return client.download_file_with_resume(task.url, task.path)
+
+
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(NetworkError, HTTPError, TimeoutError),  # retryable network errors
+    retry_count=3,
+    retry_delay=2.0,
+    user_message="🌐 Network error occurred. Retrying...",
+)
+def download_file_with_retry(task: DownloadTask):
+    """Handle retryable network errors."""
+    client = get_http_client()
+    return client.download_file_with_resume(task.url, task.path)
+
+
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(DownloadError, FileOperationError),  # file-related errors
+    retry_count=1,
+    retry_delay=1.0,
+    user_message="💾 File operation failed. Please check permissions and disk space.",
+)
+def download_file_with_file_handling(task: DownloadTask):
+    """Handle file operation related errors."""
+    client = get_http_client()
+    return client.download_file_with_resume(task.url, task.path)
+
+@with_error_handling(
+    fallback_value=False,
+    exception_types=(Exception),  # file-related errors
+    retry_count=1,
+    retry_delay=1.0,
+)
 def download_file_with_notifications(task: DownloadTask):
-    """Download file with progress notifications."""
+    """Download file using the existing decorator-based error handling."""
+    # Don't call notify_start here since it's already called by the caller
 
-    def progress_callback(downloaded: int, total: int, speed: str = ""):
-        DownloadNotifier.notify_progress(task.filename, downloaded, total, speed)
-
-    try:
-        success = get_http_client().download_file_with_resume(
-            task.url, task.path, progress_callback=progress_callback
-        )
-        if success:
-            DownloadNotifier.notify_complete(task.filename, True)
-        else:
-            # HTTP client already showed specific error message (e.g., for 416 errors)
-            # Only log the failure without showing duplicate UI error
-            logger.error(f"[downloader] Download failed: {task.filename}")
-    except Exception as e:
-        DownloadNotifier.notify_complete(task.filename, False, str(e))
-
+    return (
+        download_file_with_auth_handling(task)
+        or download_file_with_retry(task)
+        or download_file_with_file_handling(task)
+    )
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):
     """Download model-related images with parallel processing."""
@@ -304,7 +358,14 @@ def download_file_thread(
 
         # Execute download directly on main thread
         task = DownloadTask(fid, fname, url, path, file_size)
-        download_file_with_notifications(task)
+        success = download_file_with_notifications(task)
+
+        if success:
+            DownloadNotifier.notify_complete(task.filename, True)
+        else:
+            DownloadNotifier.notify_complete(
+                task.filename, False, "Download failed after all retry attempts"
+            )
 
         # Record primary file base name
         if file_info and file_info.get('primary'):
@@ -332,7 +393,7 @@ def download_file_thread(
             metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
             if civitai.write_LoRa_metadata(metadata_path, vi):
                 logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
-    return "Download started with notifications"
+    return
 
 
 def _is_lora_model(version_info: dict) -> bool:

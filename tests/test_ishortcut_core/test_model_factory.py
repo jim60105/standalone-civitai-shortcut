@@ -95,18 +95,14 @@ def test_create_model_shortcut_api_call_fix(mock_get_model_info, tmp_path):
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Mock the file processor to avoid actual file operations
-    with patch.object(
-        mf.file_processor, "create_model_directory", return_value=str(model_dir)
-    ), patch.object(mf.file_processor, "save_model_information", return_value=True), patch.object(
-        mf.image_processor, "extract_version_images", return_value=[]
-    ), patch.object(
-        mf.image_processor, "download_model_images", return_value=True
-    ), patch.object(
-        mf.image_processor, "is_sc_image", return_value=True
-    ), patch.object(
-        mf.image_processor, "get_preview_image_by_model_info", return_value=None
-    ), patch.object(
-        mf.image_processor, "get_preview_image_url", return_value=None
+    with (
+        patch.object(mf.file_processor, "create_model_directory", return_value=str(model_dir)),
+        patch.object(mf.file_processor, "save_model_information", return_value=True),
+        patch.object(mf.image_processor, "extract_version_images", return_value=[]),
+        patch.object(mf.image_processor, "download_model_images", return_value=True),
+        patch.object(mf.image_processor, "is_sc_image", return_value=True),
+        patch.object(mf.image_processor, "get_preview_image_by_model_info", return_value=None),
+        patch.object(mf.image_processor, "get_preview_image_url", return_value=None),
     ):
 
         # Create required info file
@@ -212,18 +208,14 @@ def test_create_model_shortcut_with_problematic_gradio_progress(mock_get_model_i
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Mock all the required components to avoid actual file/network operations
-    with patch.object(
-        mf.file_processor, 'create_model_directory', return_value=str(model_dir)
-    ), patch.object(mf.file_processor, 'save_model_information', return_value=True), patch.object(
-        mf.image_processor, 'extract_version_images', return_value=[]
-    ), patch.object(
-        mf.image_processor, 'download_model_images', return_value=True
-    ), patch.object(
-        mf.image_processor, 'get_preview_image_by_model_info', return_value=None
-    ), patch.object(
-        mf.image_processor, 'get_preview_image_url', return_value=None
-    ), patch.object(
-        mf.image_processor, 'download_thumbnail_image', return_value=True
+    with (
+        patch.object(mf.file_processor, 'create_model_directory', return_value=str(model_dir)),
+        patch.object(mf.file_processor, 'save_model_information', return_value=True),
+        patch.object(mf.image_processor, 'extract_version_images', return_value=[]),
+        patch.object(mf.image_processor, 'download_model_images', return_value=True),
+        patch.object(mf.image_processor, 'get_preview_image_by_model_info', return_value=None),
+        patch.object(mf.image_processor, 'get_preview_image_url', return_value=None),
+        patch.object(mf.image_processor, 'download_thumbnail_image', return_value=True),
     ):
         # Act - This should NOT raise IndexError with the fix
         result = mf.create_model_shortcut(
@@ -300,18 +292,14 @@ def test_create_model_shortcut_with_none_progress(mock_get_model_info, tmp_path)
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Mock dependencies
-    with patch.object(
-        mf.file_processor, 'create_model_directory', return_value=str(model_dir)
-    ), patch.object(mf.file_processor, 'save_model_information', return_value=True), patch.object(
-        mf.image_processor, 'extract_version_images', return_value=[]
-    ), patch.object(
-        mf.image_processor, 'download_model_images', return_value=True
-    ), patch.object(
-        mf.image_processor, 'get_preview_image_by_model_info', return_value=None
-    ), patch.object(
-        mf.image_processor, 'get_preview_image_url', return_value=None
-    ), patch.object(
-        mf.image_processor, 'download_thumbnail_image', return_value=True
+    with (
+        patch.object(mf.file_processor, 'create_model_directory', return_value=str(model_dir)),
+        patch.object(mf.file_processor, 'save_model_information', return_value=True),
+        patch.object(mf.image_processor, 'extract_version_images', return_value=[]),
+        patch.object(mf.image_processor, 'download_model_images', return_value=True),
+        patch.object(mf.image_processor, 'get_preview_image_by_model_info', return_value=None),
+        patch.object(mf.image_processor, 'get_preview_image_url', return_value=None),
+        patch.object(mf.image_processor, 'download_thumbnail_image', return_value=True),
     ):
         # Act - Test with progress=None
         result = mf.create_model_shortcut(
@@ -364,18 +352,14 @@ def test_create_model_shortcut_with_normal_progress(mock_get_model_info, tmp_pat
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Mock dependencies
-    with patch.object(
-        mf.file_processor, 'create_model_directory', return_value=str(model_dir)
-    ), patch.object(mf.file_processor, 'save_model_information', return_value=True), patch.object(
-        mf.image_processor, 'extract_version_images', return_value=[]
-    ), patch.object(
-        mf.image_processor, 'download_model_images', return_value=True
-    ), patch.object(
-        mf.image_processor, 'get_preview_image_by_model_info', return_value=None
-    ), patch.object(
-        mf.image_processor, 'get_preview_image_url', return_value=None
-    ), patch.object(
-        mf.image_processor, 'download_thumbnail_image', return_value=True
+    with (
+        patch.object(mf.file_processor, 'create_model_directory', return_value=str(model_dir)),
+        patch.object(mf.file_processor, 'save_model_information', return_value=True),
+        patch.object(mf.image_processor, 'extract_version_images', return_value=[]),
+        patch.object(mf.image_processor, 'download_model_images', return_value=True),
+        patch.object(mf.image_processor, 'get_preview_image_by_model_info', return_value=None),
+        patch.object(mf.image_processor, 'get_preview_image_url', return_value=None),
+        patch.object(mf.image_processor, 'download_thumbnail_image', return_value=True),
     ):
         # Act
         result = mf.create_model_shortcut(
