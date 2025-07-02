@@ -39,7 +39,14 @@ def with_error_handling(
                     import gradio as gr
                 except ImportError:
                     gr = None
-                if gr is not None and isinstance(e, getattr(gr, "Error", type(None))):
+                gr_error = getattr(gr, "Error", None) if gr is not None else None
+                # Only check isinstance if gr.Error is a type (not a mock or None)
+                if (
+                    gr_error is not None
+                    and isinstance(gr_error, type)
+                    and issubclass(gr_error, BaseException)
+                    and isinstance(e, gr_error)
+                ):
                     raise
 
                 # Log the error with minimal context

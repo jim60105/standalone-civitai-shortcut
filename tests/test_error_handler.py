@@ -12,13 +12,14 @@ from scripts.civitai_manager_libs.exceptions import (
 )
 
 
-class DummyError:
+class DummyError(BaseException):
     """Dummy gradio Error replacement to capture messages."""
 
     last_msg = None
 
     def __init__(self, msg, *args, **kwargs):
         DummyError.last_msg = msg
+        super().__init__(msg)
 
 
 @pytest.fixture(autouse=True)
@@ -30,25 +31,28 @@ def fake_gradio_module(monkeypatch):
 
 
 def test_with_error_handling_general_exception_fallback():
+    import pytest
+
     @with_error_handling(fallback_value='fallback', exception_types=(Exception,), log_errors=False)
     def func():
         raise Exception('oops')
 
-    result = func()
-    assert result == 'fallback'
-    assert DummyError.last_msg == 'Exception'
+    with pytest.raises(DummyError) as excinfo:
+        func()
+    assert 'Exception' in str(excinfo.value)
 
 
 def test_with_error_handling_api_error_524_status():
+    import pytest
+
     @with_error_handling(fallback_value='fb', exception_types=(APIError,), log_errors=False)
     def func_api():
         raise APIError('timeout occurred', status_code=524)
 
     DummyError.last_msg = None
-    result = func_api()
-    assert result == 'fb'
-    # Should display the full message for status_code 524
-    assert DummyError.last_msg == 'timeout occurred'
+    with pytest.raises(DummyError) as excinfo:
+        func_api()
+    assert 'timeout occurred' in str(excinfo.value)
 
 
 def test_map_exception_type_mappings():

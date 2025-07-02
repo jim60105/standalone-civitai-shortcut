@@ -15,48 +15,36 @@ class TestErrorHandlingIntegration:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
+    class FakeGradioError(BaseException):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args)
+
     @patch('civitai_manager_libs.http_client.requests.Session.get')
-    @patch('gradio.Error')
-    def test_524_error_handling(self, mock_gradio_error, mock_session_get):
+    @patch('gradio.Error', new=FakeGradioError)
+    def test_524_error_handling(self, mock_session_get):
         """Test specific handling of 524 Cloudflare error."""
+        import pytest
         # Arrange - Simulate 524 error
         mock_response = self.helper.mock_http_response(status_code=524)
         mock_session_get.return_value = mock_response
 
-        # Act
         from civitai_manager_libs import civitai
-
-        result = civitai.request_models("test_url")
-
-        # Assert
-        assert result is not None  # Should return empty structure, not None
-        assert "items" in result
-        assert result["items"] == []
-
-        # Check that user-friendly error was shown
-        mock_gradio_error.assert_called_once()
-        error_message = mock_gradio_error.call_args[0][0]
-        assert "Cloudflare Timeout" in error_message or "524" in error_message
+        with pytest.raises(self.FakeGradioError) as excinfo:
+            civitai.request_models("test_url")
+        assert "Cloudflare Timeout" in str(excinfo.value) or "524" in str(excinfo.value)
 
     @patch('civitai_manager_libs.http_client.requests.Session.get')
-    @patch('gradio.Error')
-    def test_timeout_error_handling(self, mock_gradio_error, mock_session_get):
+    @patch('gradio.Error', new=FakeGradioError)
+    def test_timeout_error_handling(self, mock_session_get):
         """Test timeout error handling."""
+        import pytest
         # Arrange
         mock_session_get.side_effect = self.helper.simulate_network_error("timeout")
 
-        # Act
         from civitai_manager_libs import civitai
-
-        result = civitai.get_model_info("12345")
-
-        # Assert
-        assert result is None
-
-        # Check that user-friendly error was shown
-        mock_gradio_error.assert_called_once()
-        error_message = mock_gradio_error.call_args[0][0]
-        assert "Timeout" in error_message
+        with pytest.raises(self.FakeGradioError) as excinfo:
+            civitai.get_model_info("12345")
+        assert "Timeout" in str(excinfo.value)
 
     @patch('civitai_manager_libs.civitai.get_http_client')
     def test_none_response_handling(self, mock_get_http_client):

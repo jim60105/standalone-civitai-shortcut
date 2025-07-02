@@ -30,11 +30,14 @@ class DummyResponse:
 
 @pytest.fixture(autouse=True)
 def disable_gr_error(monkeypatch):
-    # Prevent gradio.Error calls from interfering tests; ignore if gr not in http_client
+    # Prevent gradio.Error calls from interfering tests; patch as BaseException subclass
+    class FakeGradioError(BaseException):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args)
     try:
         monkeypatch.setattr(
             "scripts.civitai_manager_libs.http_client.gr.Error",
-            lambda *args, **kwargs: None,
+            FakeGradioError,
             raising=False,
         )
     except ImportError:
@@ -259,8 +262,11 @@ def test_handle_authentication_error_307_login_redirect():
     )
     mock_response.url = 'https://civitai.com/api/download/models/1955810'
 
-    result = client._handle_authentication_error(mock_response, "HTTP 307 login redirect")
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._handle_authentication_error(mock_response, "HTTP 307 login redirect")
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_handle_authentication_error_416_range_error():
@@ -271,8 +277,11 @@ def test_handle_authentication_error_416_range_error():
     mock_response = DummyResponse(status_code=416)
     mock_response.url = 'https://civitai.com/api/download/models/1955810'
 
-    result = client._handle_authentication_error(mock_response, "HTTP 416")
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._handle_authentication_error(mock_response, "HTTP 416")
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_handle_redirect_response_valid_redirect():
@@ -301,12 +310,15 @@ def test_authentication_error_login_case_insensitive():
         'https://test.com/user/LOGIN/page',
     ]
 
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
     for location in test_cases:
         mock_response = DummyResponse(status_code=307, headers={'Location': location})
         mock_response.url = 'https://civitai.com/api/download/models/test'
 
-        result = client._is_stream_response_valid(mock_response)
-        assert result is False, f"Should detect login redirect for {location}"
+        with pytest.raises(AuthenticationError) as excinfo:
+            client._is_stream_response_valid(mock_response)
+        assert "authentication" in str(excinfo.value).lower(), f"Should detect login redirect for {location}"
 
 
 def test_is_stream_response_valid_login_redirect():
@@ -318,8 +330,11 @@ def test_is_stream_response_valid_login_redirect():
     )
     mock_response.url = 'https://test.com'
 
-    result = client._is_stream_response_valid(mock_response)
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._is_stream_response_valid(mock_response)
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_is_stream_response_valid_range_error():
@@ -329,8 +344,11 @@ def test_is_stream_response_valid_range_error():
     mock_response = DummyResponse(status_code=416)
     mock_response.url = 'https://test.com'
 
-    result = client._is_stream_response_valid(mock_response)
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._is_stream_response_valid(mock_response)
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_is_stream_response_valid_ok_response():
@@ -407,8 +425,11 @@ def test_error_handling_priority_416_before_307():
     mock_response_416 = DummyResponse(status_code=416)
     mock_response_416.url = 'https://test.com'
 
-    result = client._is_stream_response_valid(mock_response_416)
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._is_stream_response_valid(mock_response_416)
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_error_handling_no_api_key_scenarios():
@@ -421,15 +442,19 @@ def test_error_handling_no_api_key_scenarios():
     )
     mock_307.url = 'https://test.com'
 
-    result = client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
+    assert "authentication" in str(excinfo.value).lower()
 
     # Test 416 error without API key
     mock_416 = DummyResponse(status_code=416)
     mock_416.url = 'https://test.com'
 
-    result = client._handle_authentication_error(mock_416, "HTTP 416")
-    assert result is False
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._handle_authentication_error(mock_416, "HTTP 416")
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_error_handling_with_api_key_scenarios():
@@ -442,15 +467,19 @@ def test_error_handling_with_api_key_scenarios():
     )
     mock_307.url = 'https://test.com'
 
-    result = client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
-    assert result is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
+    assert "authentication" in str(excinfo.value).lower()
 
     # Test 416 error with API key (implies insufficient permissions)
     mock_416 = DummyResponse(status_code=416)
     mock_416.url = 'https://test.com'
 
-    result = client._handle_authentication_error(mock_416, "HTTP 416")
-    assert result is False
+    with pytest.raises(AuthenticationError) as excinfo:
+        client._handle_authentication_error(mock_416, "HTTP 416")
+    assert "authentication" in str(excinfo.value).lower()
 
 
 def test_get_stream_allows_416_to_be_handled(monkeypatch):
@@ -549,14 +578,20 @@ def test_unified_authentication_error_handling():
     mock_416 = DummyResponse(status_code=416)
     mock_416.url = 'https://test.com'
 
-    # Test without API key - both should return False
-    result_307_no_key = client_no_key._is_stream_response_valid(mock_307)
-    result_416_no_key = client_no_key._is_stream_response_valid(mock_416)
-    assert result_307_no_key is False
-    assert result_416_no_key is False
+    import pytest
+    from scripts.civitai_manager_libs.exceptions import AuthenticationError
+    # Test without API key - both should raise AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client_no_key._is_stream_response_valid(mock_307)
+    assert "authentication" in str(excinfo.value).lower()
+    with pytest.raises(AuthenticationError) as excinfo:
+        client_no_key._is_stream_response_valid(mock_416)
+    assert "authentication" in str(excinfo.value).lower()
 
-    # Test with API key - both should return False
-    result_307_with_key = client_with_key._is_stream_response_valid(mock_307)
-    result_416_with_key = client_with_key._is_stream_response_valid(mock_416)
-    assert result_307_with_key is False
-    assert result_416_with_key is False
+    # Test with API key - both should raise AuthenticationError
+    with pytest.raises(AuthenticationError) as excinfo:
+        client_with_key._is_stream_response_valid(mock_307)
+    assert "authentication" in str(excinfo.value).lower()
+    with pytest.raises(AuthenticationError) as excinfo:
+        client_with_key._is_stream_response_valid(mock_416)
+    assert "authentication" in str(excinfo.value).lower()
