@@ -244,8 +244,19 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     try:
         parameters_copypaste = import_manager.get_webui_module('extras', 'parameters_copypaste')
         if parameters_copypaste and 'send_to_buttons' in locals():
-            parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, recipe_output)
-    except:
+            # Standardize parameters for WebUI compatibility before binding
+            compat = CompatibilityLayer.get_compatibility_layer()
+            if compat and compat.parameter_processor:
+                standardized_info = gr.Textbox(
+                    value=compat.parameter_processor.standardize_parameters_for_webui(
+                        recipe_output.value or ""
+                    ),
+                    visible=False,
+                )
+                parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, standardized_info)
+            else:
+                parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, recipe_output)
+    except Exception:
         pass
 
     recipe_prompt_tabs.select(on_recipe_prompt_tabs_select, None, [recipe_reference_tabs])

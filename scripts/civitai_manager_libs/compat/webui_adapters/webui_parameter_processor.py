@@ -47,14 +47,35 @@ class WebUIParameterProcessor(IParameterProcessor):
         param_parts = []
         for key, value in params.items():
             if key not in ["prompt", "negative_prompt"] and value is not None:
-                # Format key name
                 formatted_key = self._format_parameter_key(key)
                 param_parts.append(f"{formatted_key}: {value}")
 
         if param_parts:
-            lines.append(", ".join(param_parts))
+            # Ensure 'Steps' is listed first for WebUI standard
+            steps_parts = [p for p in param_parts if p.startswith("Steps:")]
+            other_parts = [p for p in param_parts if not p.startswith("Steps:")]
+            ordered_parts = steps_parts + other_parts
+            lines.append(", ".join(ordered_parts))
 
         return "\n".join(lines)
+
+    def standardize_parameters_for_webui(self, text: str) -> str:
+        """Convert our parameter format to WebUI standard format."""
+        if not text:
+            return ""
+
+        # Remove Civitai header lines (e.g., "Generated using example parameters from Civitai:")
+        lines = text.split("\n")
+        if lines and lines[0].lower().startswith("generated using"):
+            lines = lines[1:]
+        # Strip leading "Prompt:" prefix if present
+        if lines and lines[0].lower().startswith("prompt:"):
+            lines[0] = lines[0].split(":", 1)[1].strip()
+        sanitized_text = "\n".join(lines)
+        # Parse using fallback logic to correctly handle Civitai formats
+        params = self._parse_parameters_fallback(sanitized_text)
+
+        return self.format_parameters(params)
 
     def extract_prompt_and_negative(self, text: str) -> tuple[str, str]:
         """Extract positive and negative prompts from parameters text."""
@@ -181,7 +202,11 @@ class WebUIParameterProcessor(IParameterProcessor):
         # Float parameters
         elif key in ["cfg_scale", "denoising_strength", "eta_noise_seed_delta"]:
             try:
-                return float(value)
+                val = float(value)
+                # Convert whole number floats to int for consistency
+                if val.is_integer():
+                    return int(val)
+                return val
             except ValueError:
                 return None
 

@@ -1666,7 +1666,17 @@ def _bind_send_to_buttons(send_to_buttons, hidden, img_file_info):
         infotext_utils = import_manager.get_webui_module('infotext_utils')
         if infotext_utils and hasattr(infotext_utils, 'bind_buttons'):
             try:
-                infotext_utils.bind_buttons(send_to_buttons, hidden, img_file_info)
+                # Standardize parameters for WebUI compatibility before binding
+                if compat and compat.parameter_processor:
+                    standardized_info = gr.Textbox(
+                        value=compat.parameter_processor.standardize_parameters_for_webui(
+                            img_file_info.value or ""
+                        ),
+                        visible=False,
+                    )
+                    infotext_utils.bind_buttons(send_to_buttons, hidden, standardized_info)
+                else:
+                    infotext_utils.bind_buttons(send_to_buttons, hidden, img_file_info)
                 return
             except Exception as e:
                 logger.debug(f"Error binding WebUI buttons: {e}")

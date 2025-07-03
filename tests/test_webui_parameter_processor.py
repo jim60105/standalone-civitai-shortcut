@@ -118,6 +118,22 @@ class TestWebUIParameterProcessor(unittest.TestCase):
         self.assertEqual(self.proc._format_parameter_key("sampler_name"), "Sampler")
         self.assertEqual(self.proc._format_parameter_key("custom_key"), "Custom Key")
 
+    def test_standardize_parameters_for_webui(self):
+        """Test standardization of parameters to WebUI standard format."""
+        civitai_format = (
+            "Generated using example parameters from Civitai:\n"
+            "Prompt: masterpiece, beautiful girl\n"
+            "Negative prompt: bad quality\n"
+            "Sampler: DPM++ 2M, CFG scale: 7, Steps: 20"
+        )
+        result = self.proc.standardize_parameters_for_webui(civitai_format)
+        expected = (
+            "masterpiece, beautiful girl\n"
+            "Negative prompt: bad quality\n"
+            "Steps: 20, Sampler: DPM++ 2M, CFG scale: 7"
+        )
+        self.assertEqual(result.strip(), expected.strip())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -29,6 +29,7 @@ from . import util
 from . import civitai
 from . import setting
 from scripts.civitai_manager_libs.ishortcut_core.model_processor import ModelProcessor
+
 modelprocessor = ModelProcessor()
 from .compat.compat_layer import CompatibilityLayer
 
@@ -235,7 +236,18 @@ def on_ui(recipe_input):
     try:
         parameters_copypaste = import_manager.get_webui_module('extras', 'parameters_copypaste')
         if parameters_copypaste and 'send_to_buttons' in locals():
-            parameters_copypaste.bind_buttons(send_to_buttons, hidden, img_file_info)
+            # Standardize parameters for WebUI compatibility before binding
+            compat = CompatibilityLayer.get_compatibility_layer()
+            if compat and compat.parameter_processor:
+                standardized_info = gr.Textbox(
+                    value=compat.parameter_processor.standardize_parameters_for_webui(
+                        img_file_info.value or ""
+                    ),
+                    visible=False,
+                )
+                parameters_copypaste.bind_buttons(send_to_buttons, hidden, standardized_info)
+            else:
+                parameters_copypaste.bind_buttons(send_to_buttons, hidden, img_file_info)
     except Exception:
         pass
 
