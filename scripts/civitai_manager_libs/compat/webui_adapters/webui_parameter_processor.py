@@ -6,6 +6,9 @@ Provides parameter processing using AUTOMATIC1111 WebUI modules.
 import re
 from typing import Dict, Any
 from ..interfaces.iparameter_processor import IParameterProcessor
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class WebUIParameterProcessor(IParameterProcessor):
@@ -64,6 +67,7 @@ class WebUIParameterProcessor(IParameterProcessor):
         if not text:
             return ""
 
+        logger.debug("standardize_parameters_for_webui input text: %s", text)
         # Remove Civitai header lines (e.g., "Generated using example parameters from Civitai:")
         lines = text.split("\n")
         if lines and lines[0].lower().startswith("generated using"):
@@ -72,10 +76,14 @@ class WebUIParameterProcessor(IParameterProcessor):
         if lines and lines[0].lower().startswith("prompt:"):
             lines[0] = lines[0].split(":", 1)[1].strip()
         sanitized_text = "\n".join(lines)
+        logger.debug("standardize_parameters_for_webui sanitized text: %s", sanitized_text)
         # Parse using fallback logic to correctly handle Civitai formats
         params = self._parse_parameters_fallback(sanitized_text)
+        logger.debug("standardize_parameters_for_webui parsed params: %s", params)
 
-        return self.format_parameters(params)
+        formatted = self.format_parameters(params)
+        logger.debug("standardize_parameters_for_webui formatted output: %s", formatted)
+        return formatted
 
     def extract_prompt_and_negative(self, text: str) -> tuple[str, str]:
         """Extract positive and negative prompts from parameters text."""

@@ -1666,7 +1666,10 @@ def _bind_send_to_buttons(send_to_buttons, hidden, img_file_info):
         infotext_utils = import_manager.get_webui_module('infotext_utils')
         if infotext_utils and hasattr(infotext_utils, 'bind_buttons'):
             try:
-                # Standardize parameters for WebUI compatibility before binding
+                # Log original info and standardize parameters for WebUI compatibility before binding
+                logger.debug(
+                    "_bind_send_to_buttons original img_file_info: %s", img_file_info.value
+                )
                 if compat and compat.parameter_processor:
                     standardized_info = gr.Textbox(
                         value=compat.parameter_processor.standardize_parameters_for_webui(
@@ -1674,12 +1677,17 @@ def _bind_send_to_buttons(send_to_buttons, hidden, img_file_info):
                         ),
                         visible=False,
                     )
+                    logger.debug(
+                        "_bind_send_to_buttons standardized img_file_info: %s",
+                        standardized_info.value,
+                    )
                     infotext_utils.bind_buttons(send_to_buttons, hidden, standardized_info)
                 else:
+                    logger.debug("_bind_send_to_buttons using raw img_file_info for binding")
                     infotext_utils.bind_buttons(send_to_buttons, hidden, img_file_info)
                 return
             except Exception as e:
-                logger.debug(f"Error binding WebUI buttons: {e}")
+                logger.exception("Error binding WebUI buttons in _bind_send_to_buttons: %s", e)
 
     # Fallback: Basic button handling for standalone mode
     # In standalone mode, these buttons won't do anything meaningful

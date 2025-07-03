@@ -244,7 +244,8 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     try:
         parameters_copypaste = import_manager.get_webui_module('extras', 'parameters_copypaste')
         if parameters_copypaste and 'send_to_buttons' in locals():
-            # Standardize parameters for WebUI compatibility before binding
+            # Log original info and standardize parameters for WebUI compatibility before binding
+            logger.debug("Recipe action original recipe_output: %s", recipe_output.value)
             compat = CompatibilityLayer.get_compatibility_layer()
             if compat and compat.parameter_processor:
                 standardized_info = gr.Textbox(
@@ -253,11 +254,15 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                     ),
                     visible=False,
                 )
+                logger.debug(
+                    "Recipe action standardized recipe_output: %s", standardized_info.value
+                )
                 parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, standardized_info)
             else:
+                logger.debug("Recipe action using raw recipe_output for binding")
                 parameters_copypaste.bind_buttons(send_to_buttons, recipe_image, recipe_output)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Error binding send_to_buttons in recipe action: %s", e)
 
     recipe_prompt_tabs.select(on_recipe_prompt_tabs_select, None, [recipe_reference_tabs])
 

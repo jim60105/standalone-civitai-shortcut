@@ -236,7 +236,8 @@ def on_ui(recipe_input):
     try:
         parameters_copypaste = import_manager.get_webui_module('extras', 'parameters_copypaste')
         if parameters_copypaste and 'send_to_buttons' in locals():
-            # Standardize parameters for WebUI compatibility before binding
+            # Log original info and standardize parameters for WebUI compatibility before binding
+            logger.debug("Gallery action original img_file_info: %s", img_file_info.value)
             compat = CompatibilityLayer.get_compatibility_layer()
             if compat and compat.parameter_processor:
                 standardized_info = gr.Textbox(
@@ -245,11 +246,15 @@ def on_ui(recipe_input):
                     ),
                     visible=False,
                 )
+                logger.debug(
+                    "Gallery action standardized img_file_info: %s", standardized_info.value
+                )
                 parameters_copypaste.bind_buttons(send_to_buttons, hidden, standardized_info)
             else:
+                logger.debug("Gallery action using raw img_file_info for binding")
                 parameters_copypaste.bind_buttons(send_to_buttons, hidden, img_file_info)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Error binding send_to_buttons in gallery action: %s", e)
 
     usergal_gallery.select(
         on_gallery_select, usergal_images, [img_index, hidden, info_tabs, img_file_info]
