@@ -169,7 +169,7 @@ class CivitaiHttpClient:
         logger.warning(f"[http_client] Connection error: {error}")
         if attempt == self.max_retries - 1:
             return None
-        return "retry"
+        return None
 
     def _handle_post_json_error(self, error: json.JSONDecodeError) -> None:
         """Handle JSON decode errors for POST requests."""
@@ -183,7 +183,7 @@ class CivitaiHttpClient:
 
     def _should_retry_post(self, result: Optional[Dict], attempt: int) -> bool:
         """Determine if POST request should be retried."""
-        return result == "retry" and attempt < self.max_retries - 1
+        return result is None and attempt < self.max_retries - 1
 
     @with_error_handling(
         fallback_value=None,
@@ -192,13 +192,52 @@ class CivitaiHttpClient:
         retry_delay=0,
         user_message=None,
     )
-    def get_stream(self, url: str, headers: Dict = None) -> Optional[requests.Response]:
-        """Make GET request for streaming download and return response or None on error."""
+    def get_stream(
+        self, url: str, headers: Dict = None, _origin_host: str = None
+    ) -> Optional[requests.Response]:
+        """Make GET request for streaming download and return response or None on error.
+        On redirect to a different host, remove Authorization header.
+        """
+        import urllib.parse
+
         try:
             logger.debug(f"[http_client] STREAM {url}")
-            response = self.session.get(
-                url, headers=headers or {}, stream=True, timeout=self.timeout, allow_redirects=False
-            )
+            # Determine host for redirect logic
+            parsed_url = urllib.parse.urlparse(url)
+            current_host = parsed_url.netloc
+            if _origin_host is None:
+                _origin_host = current_host
+
+            # Prepare headers (copy to avoid mutating caller's dict)
+            req_headers = dict(headers) if headers else {}
+
+            # If this is a redirect to a different host, remove Authorization header
+            if current_host != _origin_host:
+                if 'Authorization' in req_headers:
+                    logger.debug(
+                        f"[http_client] Removing Authorization header for cross-domain redirect: "
+                        f"{_origin_host} -> {current_host}"
+                    )
+                    req_headers.pop('Authorization')
+                # Remove from session headers if present (requests merges session and per-request headers)
+                session_headers = self.session.headers.copy()
+                if 'Authorization' in session_headers:
+                    session_headers.pop('Authorization')
+                response = requests.get(
+                    url,
+                    headers=req_headers,
+                    stream=True,
+                    timeout=self.timeout,
+                    allow_redirects=False,
+                )
+            else:
+                response = self.session.get(
+                    url,
+                    headers=req_headers,
+                    stream=True,
+                    timeout=self.timeout,
+                    allow_redirects=False,
+                )
             logger.debug(f"[http_client] Response status: {response.status_code}")
 
             # Handle authentication and error responses
@@ -210,7 +249,7 @@ class CivitaiHttpClient:
                 location = response.headers.get('Location', '')
                 if location:
                     logger.debug(f"[http_client] Following redirect to: {location}")
-                    return self.get_stream(location, headers)
+                    return self.get_stream(location, headers=req_headers, _origin_host=_origin_host)
                 else:
                     logger.error("[http_client] Redirect without Location header")
                     return None
