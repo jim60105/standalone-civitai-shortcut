@@ -229,17 +229,6 @@ v 1.4
 
   - The "Open Download Image Folder" function opens the folder containing the downloaded images.
   - The "Open Saved Information Folder" function opens the folder where the model's information files and images are downloaded when the shortcut is registered. If the folder is deleted, it can be restored using the "Update Model Information" function under "Civitai Shortcut -> Saved Model Information" or "Manage -> Scan and Update Models -> Update Shortcuts: Update the model information for the shortcut".
-
-### 開啟資料夾功能
-
-所有「開啟資料夾」功能只有在資料夾存在時才會工作。
-
-**注意**：在 Linux 容器環境中（如 Docker 容器），開啟資料夾按鈕會被自動隱藏，因為容器內部無法直接開啟主機的檔案管理器。
-
-- 「Open Download Image Folder」功能開啟包含下載圖片的資料夾
-- 「Open Saved Information Folder」功能開啟模型資訊檔案和圖片下載的資料夾
-- 在容器環境中，建議使用命令行或掛載的卷來訪問這些檔案
-
 * You can set the display style of the Shortcut Browser on the left side. This can be done in "Manage->Setting->Shortcut Browser and Information Images: Shortcut Browser Thumbnail Count per Page". If you set it to 0, the entire list will be displayed as before.
 * Additional feature description 1 (Update the model information for the shortcut):
   "Manage->Scan and Update Models->Update Shortcuts" is a function that updates the information of already registered shortcuts to the latest information. This applies to all registered shortcuts. Individual updates for shortcuts can be done in "Civitai Shortcut->Saved Model Information: Update Model Information".
