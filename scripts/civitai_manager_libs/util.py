@@ -210,6 +210,7 @@ def open_folder(path):
         printD(f"[util.open_folder] Exception: {e} (path: {path})")
         return False
 
+
 def is_linux_container():
     container_info = {'is_container': False, 'container_type': None, 'details': {}}
 
@@ -247,6 +248,23 @@ def is_linux_container():
             container_info['details'][f'env_{env}'] = os.environ.get(env)
 
     return container_info
+
+
+def should_show_open_folder_buttons():
+    """
+    Determine if 'open folder' buttons should be visible.
+    Returns False in Linux container environments where folder opening is unsupported.
+    """
+    container_info = is_linux_container()
+    is_container = container_info.get('is_container', False)
+    if is_container:
+        logger.debug(
+            f"Container detected ({container_info.get('container_type', 'unknown')}). "
+            "Hiding open folder buttons."
+        )
+        return False
+    return True
+
 
 def get_search_keyword(search: str):
     tags = []

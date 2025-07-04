@@ -1317,6 +1317,13 @@ def load_saved_model(modelid=None, ver_index=None):
                 modelid, version_info
             )
 
+            # Add container environment detection for folder button visibility
+            container_visibility = util.should_show_open_folder_buttons()
+            final_openfolder_visibility = is_visible_openfolder and container_visibility
+            final_preview_visibility = is_visible_changepreview and container_visibility
+            final_image_folder_visibility = (
+                is_visible_open_download_imagefolder and container_visibility
+            )
             return (
                 gr.update(value=versionid),
                 gr.update(value=model_url),
@@ -1333,9 +1340,9 @@ def load_saved_model(modelid=None, ver_index=None):
                 current_time,
                 images_url,
                 gr.update(value=None),
-                gr.update(visible=is_visible_openfolder),
-                gr.update(visible=is_visible_changepreview),
-                gr.update(visible=is_visible_open_download_imagefolder),
+                gr.update(visible=final_openfolder_visibility),
+                gr.update(visible=final_preview_visibility),
+                gr.update(visible=final_image_folder_visibility),
                 gr.update(
                     choices=classification.get_list(), value=classification_list, interactive=True
                 ),

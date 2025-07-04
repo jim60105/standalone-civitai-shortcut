@@ -48,10 +48,14 @@ def on_ui():
             )
             with gr.Row():
                 download_imagefolder = gr.Button(
-                    value="Open Download Image Folder", variant="primary", visible=True
+                    value="Open Download Image Folder",
+                    variant="primary",
+                    visible=util.should_show_open_folder_buttons(),
                 )
                 saved_infofolder = gr.Button(
-                    value="Open Saved Information Folder", variant="primary", visible=True
+                    value="Open Saved Information Folder",
+                    variant="primary",
+                    visible=util.should_show_open_folder_buttons(),
                 )
 
             downloaded_information = gr.DataFrame(
@@ -71,7 +75,11 @@ def on_ui():
                 interactive=False,
                 type="array",
             )
-            download_openfolder = gr.Button(value="Open Folder", variant="primary", visible=True)
+            download_openfolder = gr.Button(
+                value="Open Folder",
+                variant="primary",
+                visible=util.should_show_open_folder_buttons(),
+            )
             version_info = gr.JSON(label="Version information")
 
     with gr.Row(visible=False):
@@ -119,9 +127,10 @@ def on_ui():
         show_progress=False,
     )
 
-    download_openfolder.click(on_download_openfolder_click, [version_location], None)
-    download_imagefolder.click(on_download_imagefolder_click, [selected_model_id], None)
-    saved_infofolder.click(on_saved_infofolder_click, [selected_model_id], None)
+    if util.should_show_open_folder_buttons():
+        download_openfolder.click(on_download_openfolder_click, [version_location], None)
+        download_imagefolder.click(on_download_imagefolder_click, [selected_model_id], None)
+        saved_infofolder.click(on_saved_infofolder_click, [selected_model_id], None)
 
     return selected_model_id, refresh_information
 
