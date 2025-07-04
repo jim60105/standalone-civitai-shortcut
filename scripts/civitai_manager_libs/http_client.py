@@ -223,7 +223,8 @@ class CivitaiHttpClient:
                 session_headers = self.session.headers.copy()
                 if 'Authorization' in session_headers:
                     session_headers.pop('Authorization')
-                response = requests.get(
+                # Use self.session.get instead of requests.get for testability
+                response = self.session.get(
                     url,
                     headers=req_headers,
                     stream=True,
