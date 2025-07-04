@@ -13,7 +13,9 @@ class TestGalleryOpenFolderVisibility:
             lambda modelid, images_url: '/tmp',
         )
         update = on_download_images_click('dummy_url', 'dummy_images_url')
-        assert hasattr(update, 'visible') and update.visible is False
+        # open folder button should be hidden in container environment
+        assert isinstance(update, dict)
+        assert update.get('visible') is False
 
     def test_on_download_images_click_visible_on_host(self, monkeypatch):
         """When on host environment and images are downloaded, button is visible."""
@@ -25,4 +27,6 @@ class TestGalleryOpenFolderVisibility:
             lambda modelid, images_url: '/tmp',
         )
         update = on_download_images_click('dummy_url', 'dummy_images_url')
-        assert hasattr(update, 'visible') and update.visible is True
+        # open folder button should be visible on host environment
+        assert isinstance(update, dict)
+        assert update.get('visible') is True
