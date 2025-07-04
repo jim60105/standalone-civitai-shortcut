@@ -190,7 +190,9 @@ def on_setting_ui():
                         )
                     with gr.Row():
                         usergallery_openfolder_btn = gr.Button(
-                            value="Open Civitai User Gallery Cache Folder", variant="primary"
+                            value="Open Civitai User Gallery Cache Folder",
+                            variant="primary",
+                            visible=util.should_show_open_folder_buttons(),
                         )
                         with gr.Accordion("Clean User Gallery Cache", open=False):
                             usergallery_cleangallery_btn = gr.Button(
@@ -373,9 +375,10 @@ def on_setting_ui():
         # Fallback to Python-only reload
         reload_btn.click(fn=on_reload_btn_click, inputs=None, outputs=None)
 
-    usergallery_openfolder_btn.click(
-        fn=on_usergallery_openfolder_btn_click, inputs=None, outputs=None
-    )
+    if util.should_show_open_folder_buttons():
+        usergallery_openfolder_btn.click(
+            fn=on_usergallery_openfolder_btn_click, inputs=None, outputs=None
+        )
 
     usergallery_cleangallery_btn.click(
         fn=on_usergallery_cleangallery_btn_click, inputs=None, outputs=None

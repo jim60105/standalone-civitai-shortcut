@@ -179,7 +179,10 @@ def on_ui(recipe_input):
                     end_btn = gr.Button(value="End Page")
         with gr.Row():
             download_images = gr.Button(value="Download Images")
-            open_image_folder = gr.Button(value="Open Download Image Folder", visible=False)
+            open_image_folder = gr.Button(
+                value="Open Download Image Folder",
+                visible=False,  # initial, controlled by dynamic logic
+            )
 
     with gr.Column(scale=1):
         with gr.Tabs() as info_tabs:
@@ -421,7 +424,10 @@ def on_download_images_click(page_url, images_url):
         image_folder = download_user_gallery_images(modelid, images_url)
         if image_folder:
             is_image_folder = True
-    return gr.update(visible=is_image_folder)
+    # Add container environment detection for folder button visibility
+    container_visibility = util.should_show_open_folder_buttons()
+    final_visibility = is_image_folder and container_visibility
+    return gr.update(visible=final_visibility)
 
 
 def on_page_slider_release(usergal_page_url, page_slider, paging_information):
