@@ -84,7 +84,7 @@ class CivitaiHttpClient:
         retry_delay=0,
         user_message=None,
     )
-    def get_json(self, url: str, params: Dict = None) -> Optional[Dict]:
+    def get_json(self, url: str, params: Optional[Dict] = None) -> Optional[Dict]:
         """Enhanced GET request with unified error handling."""
         response = self.session.get(url, params=params, timeout=self.timeout)
         self._handle_response_error(response)
@@ -130,7 +130,7 @@ class CivitaiHttpClient:
         retry_delay=0,
         user_message=None,
     )
-    def post_json(self, url: str, json_data: Dict = None) -> Optional[Dict]:
+    def post_json(self, url: str, json_data: Optional[Dict] = None) -> Optional[Dict]:
         """Make POST request with JSON payload and return JSON response or None on error."""
         for attempt in range(self.max_retries):
             result = self._attempt_post_request(url, json_data, attempt)
@@ -139,7 +139,9 @@ class CivitaiHttpClient:
             time.sleep(self.retry_delay)
         return None
 
-    def _attempt_post_request(self, url: str, json_data: Dict, attempt: int) -> Optional[Dict]:
+    def _attempt_post_request(
+        self, url: str, json_data: Optional[Dict], attempt: int
+    ) -> Optional[Dict]:
         """Attempt a single POST request."""
         try:
             logger.debug(f"[http_client] POST {url} attempt {attempt + 1}")
@@ -193,7 +195,7 @@ class CivitaiHttpClient:
         user_message=None,
     )
     def get_stream(
-        self, url: str, headers: Dict = None, _origin_host: str = None
+        self, url: str, headers: Optional[Dict] = None, _origin_host: Optional[str] = None
     ) -> Optional[requests.Response]:
         """Make GET request for streaming download and return response or None on error.
         On redirect to a different host, remove Authorization header.
@@ -219,7 +221,8 @@ class CivitaiHttpClient:
                         f"{_origin_host} -> {current_host}"
                     )
                     req_headers.pop('Authorization')
-                # Remove from session headers if present (requests merges session and per-request headers)
+                # Remove from session headers if present
+                # (requests merges session and per-request headers)
                 session_headers = self.session.headers.copy()
                 if 'Authorization' in session_headers:
                     session_headers.pop('Authorization')
@@ -317,7 +320,7 @@ class CivitaiHttpClient:
         self,
         url: str,
         filepath: str,
-        progress_callback: Callable[[int, int], None] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> bool:
         """Download file with progress tracking. Returns True on success."""
         response = self.get_stream(url)
@@ -368,8 +371,8 @@ class CivitaiHttpClient:
         self,
         url: str,
         filepath: str,
-        progress_callback: Callable = None,
-        headers: dict = None,
+        progress_callback: Optional[Callable] = None,
+        headers: Optional[dict] = None,
     ) -> bool:
         """Download file with resume capability and progress tracking."""
         resume_pos = self._get_resume_position(filepath)
@@ -396,7 +399,7 @@ class CivitaiHttpClient:
             return resume_pos
         return 0
 
-    def _prepare_download_headers(self, headers: dict, resume_pos: int) -> dict:
+    def _prepare_download_headers(self, headers: Optional[dict], resume_pos: int) -> dict:
         """Prepare headers for resume download."""
         download_headers = headers.copy() if headers else {}
         if resume_pos > 0:
@@ -416,7 +419,7 @@ class CivitaiHttpClient:
         response: requests.Response,
         resume_pos: int,
         total_size: int,
-        progress_callback: Callable,
+        progress_callback: Optional[Callable],
     ) -> bool:
         """Perform the actual download with resume capability."""
         mode = "ab" if resume_pos > 0 else "wb"
