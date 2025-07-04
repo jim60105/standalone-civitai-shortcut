@@ -29,6 +29,7 @@ from . import util
 from . import civitai
 from . import setting
 from scripts.civitai_manager_libs.ishortcut_core.model_processor import ModelProcessor
+
 modelprocessor = ModelProcessor()
 from .compat.compat_layer import CompatibilityLayer
 
@@ -492,6 +493,93 @@ def on_prev_btn_click(usergal_page_url, paging_information):
     return page_url
 
 
+def format_civitai_metadata_to_auto1111(meta):
+    """Format Civitai metadata to Auto1111 generation parameters format."""
+    if not meta:
+        return ""
+
+    # Auto1111 format: prompt on first line, negative prompt on second line,
+    # then all other parameters on third line separated by commas
+    lines = []
+
+    # First line: prompt (no prefix)
+    if 'prompt' in meta and meta['prompt']:
+        lines.append(meta['prompt'])
+
+    # Second line: negative prompt (with prefix)
+    if 'negativePrompt' in meta and meta['negativePrompt']:
+        lines.append(f"Negative prompt: {meta['negativePrompt']}")
+
+    # Third line: all other parameters separated by commas
+    params = []
+
+    # Order parameters according to Auto1111 format
+    if 'steps' in meta:
+        params.append(f"Steps: {meta['steps']}")
+    if 'sampler' in meta:
+        params.append(f"Sampler: {meta['sampler']}")
+    if 'Schedule' in meta:
+        params.append(f"Schedule type: {meta['Schedule']}")
+    if 'cfgScale' in meta:
+        params.append(f"CFG scale: {meta['cfgScale']}")
+    if 'seed' in meta:
+        params.append(f"Seed: {meta['seed']}")
+    if 'Size' in meta:
+        params.append(f"Size: {meta['Size']}")
+    if 'Model hash' in meta:
+        params.append(f"Model hash: {meta['Model hash']}")
+    if 'Model' in meta:
+        params.append(f"Model: {meta['Model']}")
+    if 'Denoising strength' in meta:
+        params.append(f"Denoising strength: {meta['Denoising strength']}")
+    if 'Clip skip' in meta:
+        params.append(f"Clip skip: {meta['Clip skip']}")
+
+    # Add ADetailer parameters
+    if 'ADetailer model' in meta:
+        params.append(f"ADetailer model: {meta['ADetailer model']}")
+    if 'ADetailer confidence' in meta:
+        params.append(f"ADetailer confidence: {meta['ADetailer confidence']}")
+    if 'ADetailer mask only top k largest' in meta:
+        params.append(
+            f"ADetailer mask only top k largest: {meta['ADetailer mask only top k largest']}"
+        )
+    if 'ADetailer dilate erode' in meta:
+        params.append(f"ADetailer dilate erode: {meta['ADetailer dilate erode']}")
+    if 'ADetailer mask blur' in meta:
+        params.append(f"ADetailer mask blur: {meta['ADetailer mask blur']}")
+    if 'ADetailer denoising strength' in meta:
+        params.append(f"ADetailer denoising strength: {meta['ADetailer denoising strength']}")
+    if 'ADetailer inpaint only masked' in meta:
+        params.append(f"ADetailer inpaint only masked: {meta['ADetailer inpaint only masked']}")
+    if 'ADetailer inpaint padding' in meta:
+        params.append(f"ADetailer inpaint padding: {meta['ADetailer inpaint padding']}")
+    if 'ADetailer version' in meta:
+        params.append(f"ADetailer version: {meta['ADetailer version']}")
+
+    # Add Hires parameters
+    if 'Hires upscale' in meta:
+        params.append(f"Hires upscale: {meta['Hires upscale']}")
+    if 'Hires steps' in meta:
+        params.append(f"Hires steps: {meta['Hires steps']}")
+    if 'Hires upscaler' in meta:
+        params.append(f"Hires upscaler: {meta['Hires upscaler']}")
+
+    # Add Lora hashes
+    if 'Lora hashes' in meta:
+        params.append(f"Lora hashes: {meta['Lora hashes']}")
+
+    # Add Version
+    if 'Version' in meta:
+        params.append(f"Version: {meta['Version']}")
+
+    # Join parameters with commas and space
+    if params:
+        lines.append(', '.join(params))
+
+    return '\n'.join(lines)
+
+
 def on_civitai_hidden_change(hidden, index):
     """Process PNG info with compatibility layer support."""
     compat = CompatibilityLayer.get_compatibility_layer()
@@ -649,26 +737,8 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
                             logger.debug(
                                 f"[civitai_gallery_action] Meta fields: {list(meta.keys())}"
                             )
-                            # Format generation parameters
-                            params = []
-                            if 'prompt' in meta:
-                                params.append(f"Prompt: {meta['prompt']}")
-                            if 'negativePrompt' in meta:
-                                params.append(f"Negative prompt: {meta['negativePrompt']}")
-                            if 'sampler' in meta:
-                                params.append(f"Sampler: {meta['sampler']}")
-                            if 'cfgScale' in meta:
-                                params.append(f"CFG scale: {meta['cfgScale']}")
-                            if 'steps' in meta:
-                                params.append(f"Steps: {meta['steps']}")
-                            if 'seed' in meta:
-                                params.append(f"Seed: {meta['seed']}")
-                            if 'Model' in meta:
-                                params.append(f"Model: {meta['Model']}")
-                            if 'Size' in meta:
-                                params.append(f"Size: {meta['Size']}")
-
-                            png_info = '\n'.join(params)
+                            # Format generation parameters using Auto1111 format
+                            png_info = format_civitai_metadata_to_auto1111(meta)
                             logger.debug(
                                 f"[civitai_gallery_action] Extracted Civitai metadata: "
                                 f"{len(png_info)} chars"

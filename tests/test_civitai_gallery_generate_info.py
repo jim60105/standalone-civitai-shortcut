@@ -60,10 +60,14 @@ class TestCivitaiGalleryGenerateInfo:
 
             assert img_index == 0
             assert hidden_path == temp_path
-            assert 'Prompt: test prompt' in png_info
-            assert 'Negative prompt: test negative' in png_info
-            assert 'Sampler: DPM++ 2M' in png_info
-            assert 'CFG scale: 7' in png_info
+            # Check for Auto1111 format: prompt first line, negative prompt second line,
+            # params third line
+            lines = png_info.split('\n')
+            assert len(lines) >= 3
+            assert lines[0] == 'test prompt'  # First line should be prompt without prefix
+            assert lines[1] == 'Negative prompt: test negative'  # Second line with prefix
+            assert 'Sampler: DPM++ 2M' in lines[2]  # Third line should contain sampler
+            assert 'CFG scale: 7' in lines[2]  # Third line should contain CFG scale
 
         finally:
             if os.path.exists(temp_path):

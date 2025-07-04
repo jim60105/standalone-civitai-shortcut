@@ -1053,30 +1053,16 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
                         for item in response['items']:
                             if 'meta' in item and item['meta']:
                                 meta = item['meta']
-                                # Format generation parameters
-                                params = []
-                                if 'prompt' in meta:
-                                    params.append(f"Prompt: {meta['prompt']}")
-                                if 'negativePrompt' in meta:
-                                    params.append(f"Negative prompt: {meta['negativePrompt']}")
-                                if 'sampler' in meta:
-                                    params.append(f"Sampler: {meta['sampler']}")
-                                if 'cfgScale' in meta:
-                                    params.append(f"CFG scale: {meta['cfgScale']}")
-                                if 'steps' in meta:
-                                    params.append(f"Steps: {meta['steps']}")
-                                if 'seed' in meta:
-                                    params.append(f"Seed: {meta['seed']}")
-                                if 'Model' in meta:
-                                    params.append(f"Model: {meta['Model']}")
-                                if 'Size' in meta:
-                                    params.append(f"Size: {meta['Size']}")
+                                # Format generation parameters using Auto1111 format
+                                # Import the formatting function from gallery action
+                                from .civitai_gallery_action import (
+                                    format_civitai_metadata_to_auto1111,
+                                )
 
-                                if params:
-                                    png_info = (
-                                        f"Generated using example parameters from Civitai:\n\n"
-                                        f"{chr(10).join(params)}"
-                                    )
+                                formatted_params = format_civitai_metadata_to_auto1111(meta)
+
+                                if formatted_params:
+                                    png_info = formatted_params
                                     logger.debug(
                                         f"[ishortcut_action] Using Civitai API fallback: "
                                         f"{len(png_info)} chars"

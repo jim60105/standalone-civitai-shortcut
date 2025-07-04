@@ -81,7 +81,6 @@ class TestModelInfoCivitaiFallback(unittest.TestCase):
                 )
 
                 # Verify PNG info contains Civitai data
-                self.assertIn("Generated using example parameters from Civitai", png_info)
                 self.assertIn("A beautiful landscape", png_info)
                 self.assertIn("ugly, blurry", png_info)
                 self.assertIn("DPM++ 2M Karras", png_info)
