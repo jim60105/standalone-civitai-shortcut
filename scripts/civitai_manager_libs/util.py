@@ -171,10 +171,55 @@ def open_folder(path):
     Open the given folder in the system file explorer.
     Compatible with both WebUI and standalone modes.
     Returns True if successful, False otherwise.
+    In a Linux container environment, just log and return False.
     """
+
+    def is_linux_container():
+        container_info = {'is_container': False, 'container_type': None, 'details': {}}
+
+        if platform.system() != 'Linux':
+            return container_info
+
+        if os.path.exists('/.dockerenv'):
+            container_info['is_container'] = True
+            container_info['container_type'] = 'docker'
+            container_info['details']['dockerenv'] = True
+
+        try:
+            with open('/proc/1/cgroup', 'r') as f:
+                cgroup_content = f.read()
+                if 'docker' in cgroup_content:
+                    container_info['is_container'] = True
+                    container_info['container_type'] = 'docker'
+                    container_info['details']['cgroup_docker'] = True
+                elif 'containerd' in cgroup_content:
+                    container_info['is_container'] = True
+                    container_info['container_type'] = 'containerd'
+                    container_info['details']['cgroup_containerd'] = True
+        except (FileNotFoundError, PermissionError):
+            pass
+
+        if os.environ.get('KUBERNETES_SERVICE_HOST'):
+            container_info['is_container'] = True
+            container_info['container_type'] = 'kubernetes'
+            container_info['details']['kubernetes'] = True
+
+        container_envs = ['DOCKER_CONTAINER', 'CONTAINER', 'container']
+        for env in container_envs:
+            if os.environ.get(env):
+                container_info['is_container'] = True
+                container_info['details'][f'env_{env}'] = os.environ.get(env)
+
+        return container_info
+
     try:
         if not os.path.exists(path):
             printD(f"[util.open_folder] Path does not exist: {path}")
+            return False
+        if is_linux_container():
+            logger.info(
+                f"[util.open_folder] Running in a Linux container. Cannot open folder: {path}"
+            )
             return False
         if EnvironmentDetector.is_webui_mode():
             try:
