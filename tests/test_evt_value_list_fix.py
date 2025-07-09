@@ -100,9 +100,12 @@ class TestEvtValueListHandling:
 
         result = _recipe_gallery.on_recipe_gallery_select(evt)
 
-        # Should return empty tuple
-        expected_empty_result = ("", "", "", "", "", "", None, [])
-        assert result == expected_empty_result
+        # Should return tuple with gr.update() objects
+        assert result is not None
+        assert len(result) == 16  # Should return 16 values to match UI binding
+        # Check that first few values are gr.update objects with empty values
+        assert hasattr(result[0], '__getitem__') and result[0].get('value') == ""
+        assert hasattr(result[1], '__getitem__') and result[1].get('value') == ""
 
     def test_on_classification_list_select_with_string(self):
         """Test on_classification_list_select with string evt.value."""
@@ -165,8 +168,11 @@ class TestEvtValueListHandling:
         evt.value = []
 
         result = _recipe_gallery.on_recipe_gallery_select(evt)
-        expected_empty_result = ("", "", "", "", "", "", None, [])
-        assert result == expected_empty_result
+        # Should return tuple with gr.update() objects
+        assert result is not None
+        assert len(result) == 16  # Should return 16 values to match UI binding
+        # Check that first few values are gr.update objects with empty values
+        assert hasattr(result[0], '__getitem__') and result[0].get('value') == ""
 
     def test_edge_case_single_element_list(self):
         """Test handling of single element list."""
@@ -174,8 +180,11 @@ class TestEvtValueListHandling:
         evt.value = ['only_one_element']
 
         result = _recipe_gallery.on_recipe_gallery_select(evt)
-        expected_empty_result = ("", "", "", "", "", "", None, [])
-        assert result == expected_empty_result
+        # Should return tuple with gr.update() objects
+        assert result is not None
+        assert len(result) == 16  # Should return 16 values to match UI binding
+        # Check that first few values are gr.update objects with empty values
+        assert hasattr(result[0], '__getitem__') and result[0].get('value') == ""
 
     def test_recipe_functions_with_valid_string(self):
         """Test that recipe functions work correctly with valid string input."""

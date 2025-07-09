@@ -184,7 +184,24 @@ class RecipeGallery:
             logger.debug(
                 f"[RECIPE] Unexpected evt.value format in on_recipe_gallery_select: " f"{evt.value}"
             )
-            return ("", "", "", "", "", "", None, [])
+            return (
+                gr.update(value=""),  # selected_recipe_name
+                gr.update(value=""),  # recipe_name
+                gr.update(value=""),  # recipe_desc
+                gr.update(value=""),  # recipe_prompt
+                gr.update(value=""),  # recipe_negative
+                gr.update(value=""),  # recipe_option
+                gr.update(value=""),  # recipe_output
+                gr.update(choices=[], value=""),  # recipe_classification
+                gr.update(label=""),  # recipe_title_name
+                None,  # recipe_image
+                None,  # recipe_drop_image
+                gr.update(visible=True),  # recipe_create_btn
+                gr.update(visible=False),  # recipe_update_btn
+                [],  # reference_shortcuts
+                None,  # reference_modelid
+                current_time,  # refresh_reference_gallery
+            )
 
         from .recipe_utilities import RecipeUtilities
 
