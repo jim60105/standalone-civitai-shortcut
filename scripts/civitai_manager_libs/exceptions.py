@@ -146,3 +146,30 @@ class AuthenticationRequiredError(APIError):
         super().__init__(message, **kwargs)
         self.resource_url = resource_url
         self.should_abort_process = True
+
+
+# Exceptions for model accessibility improvements
+class ModelNotAccessibleError(APIError):
+    """Raised when a model exists but is not accessible via the API."""
+
+    def __init__(
+        self,
+        message: str,
+        model_id: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        self.model_id = model_id
+
+
+class ModelNotFoundError(APIError):
+    """Raised when a model does not exist or cannot be retrieved."""
+
+    def __init__(
+        self,
+        message: str,
+        model_id: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        self.model_id = model_id
