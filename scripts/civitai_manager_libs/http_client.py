@@ -221,19 +221,21 @@ class CivitaiHttpClient:
                         f"{_origin_host} -> {current_host}"
                     )
                     req_headers.pop('Authorization')
-                # Remove from session headers if present
-                # (requests merges session and per-request headers)
-                session_headers = self.session.headers.copy()
-                if 'Authorization' in session_headers:
-                    session_headers.pop('Authorization')
-                # Use self.session.get instead of requests.get for testability
-                response = self.session.get(
-                    url,
-                    headers=req_headers,
-                    stream=True,
-                    timeout=self.timeout,
-                    allow_redirects=False,
-                )
+
+                # Temporarily remove Authorization from session headers for cross-domain requests
+                original_auth = self.session.headers.pop('Authorization', None)
+                try:
+                    response = self.session.get(
+                        url,
+                        headers=req_headers,
+                        stream=True,
+                        timeout=self.timeout,
+                        allow_redirects=False,
+                    )
+                finally:
+                    # Restore original Authorization header if it existed
+                    if original_auth is not None:
+                        self.session.headers['Authorization'] = original_auth
             else:
                 response = self.session.get(
                     url,
