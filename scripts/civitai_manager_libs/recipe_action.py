@@ -7,17 +7,20 @@ from .recipe_actions.recipe_gallery import RecipeGallery
 from .recipe_actions.recipe_utilities import RecipeUtilities
 
 from .logging_config import get_logger
-from .recipe_browser_page import on_recipe_reference_gallery_select
 
 # Module logger for this component
 logger = get_logger(__name__)
-from . import setting
 
 # Global instances
 _recipe_manager = RecipeManager()
 _recipe_browser = RecipeBrowser()
 _recipe_reference_manager = RecipeReferenceManager()
 _recipe_gallery = RecipeGallery()
+
+
+def on_ui(recipe_input, shortcut_input, civitai_tabs):
+    """Delegate to RecipeBrowser.on_ui."""
+    return _recipe_browser.on_ui(recipe_input, shortcut_input, civitai_tabs)
 
 
 def make_recipe_from_sc_information(*args, **kwargs):
@@ -145,154 +148,126 @@ def restore_recipe_data(*args, **kwargs):
     return RecipeUtilities.restore_recipe_data(*args, **kwargs)
 
 
-def generate_prompt(prompt_text: str, negative_prompt: str = None, options: dict = None) -> str:
-    """Combine prompt text with negative prompt and options into a single string."""
-    result = prompt_text or ""
-    if negative_prompt:
-        result = f"{result} {negative_prompt}"
-    if options:
-        # Append options as key=value pairs
-        for key, value in options.items():
-            result = f"{result} {key}={value}"
-    return result
+def on_recipe_drop_image_upload(*args, **kwargs):
+    """Delegate to RecipeGallery.on_recipe_drop_image_upload."""
+    return _recipe_gallery.on_recipe_drop_image_upload(*args, **kwargs)
 
 
-def on_reference_sc_gallery_select(evt, shortcuts):
-    """
-    Handle reference shortcut gallery select event, adding model ID on valid input.
-    Logs debug on invalid input formats.
-    """
-    val = getattr(evt, 'value', None)
-    if not val or not isinstance(val, (dict, list, str)):
-        logger.debug(f"Unexpected evt.value format: {val}")
-        return shortcuts, None
-    return on_recipe_reference_gallery_select(evt, shortcuts)
+def on_recipe_generate_data_change(*args, **kwargs):
+    """Delegate to RecipeGallery.on_recipe_generate_data_change."""
+    return _recipe_gallery.on_recipe_generate_data_change(*args, **kwargs)
 
 
-def on_reference_gallery_select(evt, shortcuts, delete_opt=True):
-    """
-    Handle reference gallery select toggle event. delete_opt parameter retained for compatibility.
-    """
-    # Support string, list, or FileData dict input; ignore delete_opt for compatibility
-    val = getattr(evt, 'value', None)
-    if isinstance(val, list) and len(val) > 1:
-        shortcut = val[1]
-    elif isinstance(val, dict) and 'caption' in val:
-        shortcut = val['caption']
-    elif isinstance(val, str):
-        shortcut = val
-    else:
-        return shortcuts, None, None, None
-    model_id = setting.get_modelid_from_shortcutname(shortcut)
-    return shortcuts, None, None, model_id
+def on_recipe_gallery_select(*args, **kwargs):
+    """Delegate to RecipeGallery.on_recipe_gallery_select."""
+    return _recipe_gallery.on_recipe_gallery_select(*args, **kwargs)
 
 
-def analyze_prompt(metadata: str):
-    """
-    Parse metadata string into prompt, negative prompt, options string, and return raw metadata.
-    """
-    raw = metadata
-    lines = [line.strip() for line in metadata.strip().splitlines() if line.strip()]
-    prompt = None
-    negative = None
-    options = None
-    for line in lines:
-        low = line.lower()
-        if low.startswith('prompt:'):
-            prompt = line[len('prompt:') :].strip()
-        elif low.startswith('negative prompt:'):
-            negative = line[len('negative prompt:') :].strip()
-        elif low.startswith('steps:') or low.startswith('sampler:') or low.startswith('cfg scale:'):
-            # Normalize spacing after colon for options
-            cleaned = line.replace(': ', ':')
-            options = options + cleaned if options else cleaned
-    if prompt is None and lines:
-        prompt = lines[0]
-    if negative is None and len(lines) > 1 and lines[1].lower().startswith('negative prompt:'):
-        negative = lines[1].split(':', 1)[1].strip()
-    if options is None and len(lines) > 2:
-        # Fallback options line, normalize colon spacing
-        opts = ', '.join(lines[2:])
-        options = opts.replace(': ', ':')
-    return prompt, negative, options, raw
+def on_refresh_recipe_change(*args, **kwargs):
+    """Delegate to RecipeBrowser.on_refresh_recipe_change."""
+    return _recipe_browser.on_refresh_recipe_change(*args, **kwargs)
 
 
-def on_recipe_input_change(recipe_input: str, _):
-    """
-    Handle recipe input change, parsing first line for image filename and metadata for prompts.
-    Returns list of updated values matching Gradio component order.
-    """
-    parts = recipe_input.splitlines()
-    first_line = parts[0] if parts else ''
-    img = ''
-    if ':' in first_line:
-        img = first_line.split(':', 1)[1]
-    base = [None, img, img, None, None, None, None, None]
-    metadata = recipe_input[len(first_line) + 1 :]
-    ap, an, ao, ag = analyze_prompt(metadata)
-    prompt_update = {'value': ap or ''}
-    negative_update = {'value': an or ''}
-    option_update = {'value': ao or ''}
-    output_update = {'value': ag}
-    return base + [prompt_update, negative_update, option_update, output_update]
+def on_recipe_new_btn_click(*args, **kwargs):
+    """Delegate to RecipeManager.on_recipe_new_btn_click."""
+    return _recipe_manager.on_recipe_new_btn_click(*args, **kwargs)
 
 
-def get_recipe_information(select_name):
-    """
-    Retrieve recipe data fields for given recipe name.
-    """
-    from . import recipe
-
-    data = recipe.get_recipe(select_name)
-    if not data:
-        return "", "", "", "", "", "", None
-    desc = data.get('description', '')
-    prompt = data.get('prompt') or data.get('generate', '')
-    negative = data.get('negative', '')
-    option = data.get('option', '')
-    generate = data.get('generate', '')
-    classification = data.get('classification', '')
-    page = None
-    return desc, prompt, negative, option, generate, classification, page
+def on_recipe_update_btn_click(*args, **kwargs):
+    """Delegate to RecipeManager.on_recipe_update_btn_click."""
+    return _recipe_manager.on_recipe_update_btn_click(*args, **kwargs)
 
 
-def on_recipe_gallery_select(evt):
-    """
-    Handle recipe gallery select event, supporting string or list evt.value.
-    """
-    val = getattr(evt, 'value', None)
-    if isinstance(val, list) and len(val) > 1:
-        name = val[1]
-    elif isinstance(val, str):
-        name = val
-    else:
-        return "", "", "", "", "", "", None, []
-    info = get_recipe_information(name)
-    from . import recipe
-
-    shortcuts = recipe.get_recipe_shortcuts(name) or []
-    return (*info, shortcuts)
+def on_recipe_delete_btn_click(*args, **kwargs):
+    """Delegate to RecipeManager.on_recipe_delete_btn_click."""
+    return _recipe_manager.on_recipe_delete_btn_click(*args, **kwargs)
 
 
-def on_recipe_create_btn_click(
-    recipe_name, recipe_desc, recipe_prompt, recipe_negative, recipe_option, recipe_classification
-):
-    """
-    Handle create recipe button click, validating recipe name before creation.
-    """
-    import gradio as gr
-    from . import recipe, setting
+def load_model_information(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.load_model_information."""
+    return _recipe_reference_manager.load_model_information(*args, **kwargs)
 
-    if not recipe_name or not recipe_name.strip() or recipe_name == setting.NEWRECIPE:
-        gr.Warning("Please enter a recipe name before creating.")
-        return ()
-    # Delegate creation
-    recipe.create_recipe(
-        recipe_name,
-        recipe_desc,
-        recipe_prompt,
-        recipe_negative,
-        recipe_option,
-        recipe_classification,
-    )
-    return ()
+
+def on_reference_modelid_change(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_reference_modelid_change."""
+    return _recipe_reference_manager.on_reference_modelid_change(*args, **kwargs)
+
+
+def on_reference_versions_select(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_reference_versions_select."""
+    return _recipe_reference_manager.on_reference_versions_select(*args, **kwargs)
+
+
+def on_delete_reference_model_btn_click(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_delete_reference_model_btn_click."""
+    return _recipe_reference_manager.on_delete_reference_model_btn_click(*args, **kwargs)
+
+
+def on_close_reference_model_information_btn_click(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_close_reference_model_information_btn_click."""
+    return _recipe_reference_manager.on_close_reference_model_information_btn_click(*args, **kwargs)
+
+
+def on_insert_prompt_btn_click(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_insert_prompt_btn_click."""
+    return _recipe_reference_manager.on_insert_prompt_btn_click(*args, **kwargs)
+
+
+def on_recipe_prompt_tabs_select(*args, **kwargs):
+    """Delegate to RecipeBrowser.on_recipe_prompt_tabs_select."""
+    return _recipe_browser.on_recipe_prompt_tabs_select(*args, **kwargs)
+
+
+def on_reference_gallery_loading(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_reference_gallery_loading."""
+    return _recipe_reference_manager.on_reference_gallery_loading(*args, **kwargs)
+
+
+def on_reference_sc_gallery_select(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_reference_sc_gallery_select."""
+    return _recipe_reference_manager.on_reference_sc_gallery_select(*args, **kwargs)
+
+
+def on_reference_gallery_select(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.on_reference_gallery_select."""
+    return _recipe_reference_manager.on_reference_gallery_select(*args, **kwargs)
+
+
+def add_string(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.add_string."""
+    return _recipe_reference_manager.add_string(*args, **kwargs)
+
+
+def remove_strings(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.remove_strings."""
+    return _recipe_reference_manager.remove_strings(*args, **kwargs)
+
+
+def is_string(*args, **kwargs):
+    """Delegate to RecipeReferenceManager.is_string."""
+    return _recipe_reference_manager.is_string(*args, **kwargs)
+
+
+def analyze_prompt(*args, **kwargs):
+    """Delegate to RecipeUtilities.analyze_prompt."""
+    return RecipeUtilities.analyze_prompt(*args, **kwargs)
+
+
+def on_recipe_input_change(*args, **kwargs):
+    """Delegate to RecipeBrowser.on_recipe_input_change."""
+    return _recipe_browser.on_recipe_input_change(*args, **kwargs)
+
+
+def get_recipe_information(*args, **kwargs):
+    """Delegate to RecipeUtilities.get_recipe_information."""
+    return RecipeUtilities.get_recipe_information(*args, **kwargs)
+
+
+def on_recipe_create_btn_click(*args, **kwargs):
+    """Delegate to RecipeManager.on_recipe_create_btn_click."""
+    return _recipe_manager.on_recipe_create_btn_click(*args, **kwargs)
+
+
+def generate_prompt(*args, **kwargs):
+    """Delegate to RecipeUtilities.generate_prompt."""
+    return RecipeUtilities.generate_prompt(*args, **kwargs)

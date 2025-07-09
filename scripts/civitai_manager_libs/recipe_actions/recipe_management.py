@@ -2,6 +2,8 @@
 Core CRUD operations and business logic for recipes.
 """
 
+from typing import Optional
+
 from ..logging_config import get_logger
 from ..exceptions import ValidationError, FileOperationError
 from ..recipe import (
@@ -10,6 +12,7 @@ from ..recipe import (
     delete_recipe as _raw_delete,
     get_recipe as _raw_get,
     get_list as _raw_list,
+    get_classifications,
 )
 from .recipe_utilities import RecipeUtilities
 
@@ -39,7 +42,7 @@ class RecipeManager:
         if not success:
             logger.error("create_recipe: failed to create recipe %s", name)
             raise FileOperationError(f"Failed to create recipe: {name}")
-        return name
+        return name or ""
 
     def update_recipe(self, recipe_id: str, recipe_data: dict) -> bool:
         """Update a recipe's content and return True if successful."""
@@ -71,14 +74,14 @@ class RecipeManager:
             return False
         return True
 
-    def get_recipe(self, recipe_id: str) -> dict:
+    def get_recipe(self, recipe_id: str) -> Optional[dict]:
         """Retrieve detailed information about a recipe by its identifier."""
         if not recipe_id:
             logger.error("get_recipe: recipe_id is required")
             raise ValidationError("Recipe ID is required to retrieve recipe")
         return _raw_get(recipe_id)
 
-    def list_recipes(self, filter_criteria: dict = None) -> list:
+    def list_recipes(self, filter_criteria: Optional[dict] = None) -> list:
         """List recipes with optional filtering criteria."""
         if filter_criteria and not isinstance(filter_criteria, dict):
             logger.warning(
@@ -91,7 +94,8 @@ class RecipeManager:
             search = filter_criteria.get("search")
             classification = filter_criteria.get("classification")
             shortcuts = filter_criteria.get("shortcuts")
-        return _raw_list(search=search, classification=classification, shortcuts=shortcuts)
+        result = _raw_list(search=search, classification=classification, shortcuts=shortcuts)
+        return result if result else []
 
     def duplicate_recipe(self, recipe_id: str, new_name: str) -> str:
         """Duplicate an existing recipe under a new name and return the new identifier."""
@@ -117,3 +121,126 @@ class RecipeManager:
         except Exception as e:
             logger.error("validate_recipe_data: validation error: %s", e)
             return False
+
+    def on_recipe_new_btn_click(self):
+        """Handle new recipe button click event."""
+        import gradio as gr
+        import datetime
+        from .. import setting
+
+        current_time = datetime.datetime.now()
+        return (
+            gr.update(value=""),  # selected_recipe_name
+            gr.update(value=""),  # recipe_name
+            gr.update(value=""),  # recipe_desc
+            gr.update(value=""),  # recipe_prompt
+            gr.update(value=""),  # recipe_negative
+            gr.update(value=""),  # recipe_option
+            gr.update(value=""),  # recipe_output
+            gr.update(
+                choices=[setting.PLACEHOLDER] + get_classifications(),
+                value=setting.PLACEHOLDER,
+            ),  # recipe_classification
+            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+            None,  # recipe_image
+            None,  # recipe_drop_image
+            gr.update(visible=True),  # recipe_create_btn
+            gr.update(visible=False),  # recipe_update_btn
+            [],  # reference_shortcuts
+            gr.update(),  # reference_modelid
+            current_time,  # refresh_reference_gallery
+        )
+
+    def on_recipe_update_btn_click(
+        self,
+        selected_recipe_name,
+        recipe_name,
+        recipe_desc,
+        recipe_prompt,
+        recipe_negative,
+        recipe_option,
+        recipe_classification,
+        recipe_image,
+        reference_shortcuts,
+    ):
+        """Handle recipe update button click event."""
+        import gradio as gr
+        from .. import recipe, setting
+
+        if not selected_recipe_name:
+            return ()
+
+        # Update recipe using the raw recipe module
+        try:
+            recipe.update_recipe(
+                selected_recipe_name,
+                recipe_name,
+                recipe_desc,
+                recipe_prompt,
+                recipe_classification,
+            )
+
+            # Return updated UI state
+            return (
+                gr.update(value=selected_recipe_name),
+                gr.update(
+                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                    value=recipe_classification,
+                ),
+                gr.update(label=selected_recipe_name),
+                gr.update(),  # refresh_recipe_browser
+            )
+        except Exception as e:
+            logger.error("Failed to update recipe: %s", e)
+            return ()
+
+    def on_recipe_delete_btn_click(self, select_name):
+        """Handle recipe delete button click event."""
+        import gradio as gr
+        from .. import recipe, setting
+
+        if not select_name:
+            return ()
+
+        try:
+            recipe.delete_recipe(select_name)
+
+            return (
+                gr.update(value=""),  # selected_recipe_name
+                gr.update(
+                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                    value=setting.PLACEHOLDER,
+                ),  # recipe_classification
+                gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+                gr.update(visible=True),  # recipe_create_btn
+                gr.update(visible=False),  # recipe_update_btn
+                gr.update(),  # refresh_recipe_browser
+            )
+        except Exception as e:
+            logger.error("Failed to delete recipe: %s", e)
+            return ()
+
+    def on_recipe_create_btn_click(
+        self,
+        recipe_name,
+        recipe_desc,
+        recipe_prompt,
+        recipe_negative,
+        recipe_option,
+        recipe_classification,
+    ):
+        """Handle create recipe button click, validating recipe name before creation."""
+        import gradio as gr
+        from .. import recipe, setting
+
+        if not recipe_name or not recipe_name.strip() or recipe_name == setting.NEWRECIPE:
+            gr.Warning("Please enter a recipe name before creating.")
+            return ()
+        # Delegate creation
+        recipe.create_recipe(
+            recipe_name,
+            recipe_desc,
+            recipe_prompt,
+            recipe_classification,
+        )
+        return ()

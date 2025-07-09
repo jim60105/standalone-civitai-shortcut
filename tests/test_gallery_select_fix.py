@@ -94,8 +94,7 @@ class TestGallerySelectFix:
         assert "12345" in result_shortcuts
         assert len(result_shortcuts) == 1
 
-    @patch('scripts.civitai_manager_libs.recipe_action.logger')
-    def test_on_reference_sc_gallery_select_with_invalid_input(self, mock_logger):
+    def test_on_reference_sc_gallery_select_with_invalid_input(self):
         """Test on_reference_sc_gallery_select with invalid input."""
         # Mock SelectData event
         evt = Mock()
@@ -107,7 +106,10 @@ class TestGallerySelectFix:
         # Should return original shortcuts without modification
         assert result_shortcuts == shortcuts
         assert len(result_shortcuts) == 0
-        mock_logger.debug.assert_called_once()
+        # Should return a datetime object as second element
+        import datetime
+
+        assert isinstance(result_time, datetime.datetime)
 
     @patch('scripts.civitai_manager_libs.recipe_action.logger')
     def test_on_reference_gallery_select_with_list(self, mock_logger):
@@ -133,6 +135,8 @@ class TestGallerySelectFix:
         page = 1
         result = on_sc_gallery_select(evt, shortcuts, page)
 
+        # Result should be a 4-tuple when successful
+        assert len(result) == 4
         shortcuts_result, page_result, time_result, selected_result = result
         assert "12345" in shortcuts_result
         assert len(shortcuts_result) == 1

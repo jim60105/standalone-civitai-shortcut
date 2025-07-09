@@ -122,3 +122,84 @@ class RecipeUtilities:
         except Exception as e:
             logger.error("restore_recipe_data: error restoring %s: %s", backup_path, e)
             raise FileOperationError(f"Failed to restore recipe data: {e}")
+
+    @staticmethod
+    def generate_prompt(prompt, negativePrompt, Options):
+        """Generate a formatted prompt string from components.
+
+        Args:
+            prompt (str): The main prompt text
+            negativePrompt (str): The negative prompt text
+            Options (str): The options/parameters string
+
+        Returns:
+            str: Formatted prompt string or None if all inputs are empty
+        """
+        meta_string = None
+        if prompt and len(prompt.strip()) > 0:
+            meta_string = f"""{prompt.strip()}""" + "\n"
+
+        if negativePrompt and len(negativePrompt.strip()) > 0:
+            if meta_string:
+                meta_string = meta_string + f"""Negative prompt:{negativePrompt.strip()}""" + "\n"
+            else:
+                meta_string = f"""Negative prompt:{negativePrompt.strip()}""" + "\n"
+
+        if Options and len(Options.strip()) > 0:
+            if meta_string:
+                meta_string = meta_string + Options.strip()
+            else:
+                meta_string = Options.strip()
+
+        return meta_string
+
+    @staticmethod
+    def analyze_prompt(metadata: str):
+        """
+        Parse metadata string into prompt, negative prompt, options string, and return raw metadata.
+        """
+        raw = metadata
+        lines = [line.strip() for line in metadata.strip().splitlines() if line.strip()]
+        prompt = None
+        negative = None
+        options = None
+        for line in lines:
+            low = line.lower()
+            if low.startswith('prompt:'):
+                prompt = line[len('prompt:') :].strip()
+            elif low.startswith('negative prompt:'):
+                negative = line[len('negative prompt:') :].strip()
+            elif (
+                low.startswith('steps:')
+                or low.startswith('sampler:')
+                or low.startswith('cfg scale:')
+            ):
+                # Normalize spacing after colon for options
+                cleaned = line.replace(': ', ':')
+                options = options + cleaned if options else cleaned
+        if prompt is None and lines:
+            prompt = lines[0]
+        if negative is None and len(lines) > 1 and lines[1].lower().startswith('negative prompt:'):
+            negative = lines[1].split(':', 1)[1].strip()
+        if options is None and len(lines) > 2:
+            # Fallback options line, normalize colon spacing
+            opts = ', '.join(lines[2:])
+            options = opts.replace(': ', ':')
+        return prompt, negative, options, raw
+
+    @staticmethod
+    def get_recipe_information(select_name: str):
+        """Retrieve recipe data fields for given recipe name."""
+        from .. import recipe
+
+        data = recipe.get_recipe(select_name)
+        if not data:
+            return "", "", "", "", "", "", None
+        desc = data.get('description', '')
+        prompt = data.get('prompt') or data.get('generate', '')
+        negative = data.get('negative', '')
+        option = data.get('option', '')
+        generate = data.get('generate', '')
+        classification = data.get('classification', '')
+        page = None
+        return desc, prompt, negative, option, generate, classification, page
