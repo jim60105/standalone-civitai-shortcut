@@ -276,6 +276,12 @@ class RecipeBrowser:
             'refresh_reference_sc_gallery': refresh_reference_sc_gallery,
         }
 
+        # Wire all events
+        from .recipe_event_wiring import RecipeEventWiring
+
+        event_wiring = RecipeEventWiring()
+        event_wiring.wire_all_events(self.components, recipe_input, shortcut_input, civitai_tabs)
+
         return refresh_recipe
 
     def create_browser_ui(self) -> tuple:

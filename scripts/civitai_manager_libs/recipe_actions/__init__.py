@@ -8,6 +8,7 @@ from .recipe_browser import RecipeBrowser
 from .recipe_reference import RecipeReferenceManager
 from .recipe_gallery import RecipeGallery
 from .recipe_utilities import RecipeUtilities
+from .recipe_event_wiring import RecipeEventWiring
 
 __all__ = [
     "RecipeManager",
@@ -15,4 +16,5 @@ __all__ = [
     "RecipeReferenceManager",
     "RecipeGallery",
     "RecipeUtilities",
+    "RecipeEventWiring",
 ]

@@ -214,6 +214,6 @@ class RecipeGallery:
             gr.update(visible=False),
             gr.update(visible=True),
             shortcuts,
-            gr.update(),
+            None,
             current_time,
         )
