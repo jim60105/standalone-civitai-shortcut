@@ -22,7 +22,7 @@ from scripts.civitai_manager_libs.logging_config import get_logger
 # Module logger
 logger = get_logger(__name__)
 from scripts.civitai_manager_libs import ishortcut_core as ishortcut
-from scripts.civitai_manager_libs import recipe_action
+from scripts.civitai_manager_libs.recipe_actions.recipe_browser import RecipeBrowser
 from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
 
 
@@ -52,6 +52,9 @@ def initialize_civitai_shortcut():
 
 # Initialize on import
 _compatibility_layer = initialize_civitai_shortcut()
+
+# Create recipe browser instance
+_recipe_browser = RecipeBrowser()
 
 
 def on_civitai_tabs_select(evt: gr.SelectData):
@@ -134,7 +137,7 @@ def civitai_shortcut_ui():
 
         with gr.TabItem("Prompt Recipe", id="Recipe"):
             with gr.Row():
-                refresh_recipe = recipe_action.on_ui(recipe_input, shortcut_input, civitai_tabs)
+                refresh_recipe = _recipe_browser.on_ui(recipe_input, shortcut_input, civitai_tabs)
 
         with gr.TabItem("Assistance", id="Assistance"):
             with gr.Tabs():

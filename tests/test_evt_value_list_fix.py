@@ -11,8 +11,14 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 # Import functions to test
-from scripts.civitai_manager_libs import recipe_action, classification_action
+from scripts.civitai_manager_libs import classification_action
 from scripts.civitai_manager_libs import recipe, classification
+from scripts.civitai_manager_libs.recipe_actions.recipe_reference import RecipeReferenceManager
+from scripts.civitai_manager_libs.recipe_actions.recipe_gallery import RecipeGallery
+
+# Create instances for testing
+_recipe_reference_manager = RecipeReferenceManager()
+_recipe_gallery = RecipeGallery()
 
 
 class TestEvtValueListHandling:
@@ -56,7 +62,7 @@ class TestEvtValueListHandling:
             ) as mock_get_shortcuts:
                 mock_get_shortcuts.return_value = []
 
-                result = recipe_action.on_recipe_gallery_select(evt)
+                result = _recipe_gallery.on_recipe_gallery_select(evt)
 
                 # Should call get_recipe_information with the string value
                 mock_get_info.assert_called_once_with('test_recipe')
@@ -80,7 +86,7 @@ class TestEvtValueListHandling:
             ) as mock_get_shortcuts:
                 mock_get_shortcuts.return_value = []
 
-                result = recipe_action.on_recipe_gallery_select(evt)
+                result = _recipe_gallery.on_recipe_gallery_select(evt)
 
                 # Should call get_recipe_information with the second element of the list
                 mock_get_info.assert_called_once_with('test_recipe')
@@ -92,7 +98,7 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = {'invalid': 'type'}
 
-        result = recipe_action.on_recipe_gallery_select(evt)
+        result = _recipe_gallery.on_recipe_gallery_select(evt)
 
         # Should return empty tuple
         expected_empty_result = ("", "", "", "", "", "", None, [])
@@ -158,7 +164,7 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = []
 
-        result = recipe_action.on_recipe_gallery_select(evt)
+        result = _recipe_gallery.on_recipe_gallery_select(evt)
         expected_empty_result = ("", "", "", "", "", "", None, [])
         assert result == expected_empty_result
 
@@ -167,7 +173,7 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = ['only_one_element']
 
-        result = recipe_action.on_recipe_gallery_select(evt)
+        result = _recipe_gallery.on_recipe_gallery_select(evt)
         expected_empty_result = ("", "", "", "", "", "", None, [])
         assert result == expected_empty_result
 
