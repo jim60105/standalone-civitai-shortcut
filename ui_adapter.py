@@ -12,12 +12,12 @@ import datetime
 
 from scripts.civitai_manager_libs import (
     civitai_shortcut_action,
-    recipe_action,
     classification_action,
     setting_action,
     scan_action,
     module_compatibility,
 )
+from scripts.civitai_manager_libs.recipe_actions.recipe_browser import RecipeBrowser
 
 from scripts.civitai_manager_libs.logging_config import get_logger
 
@@ -35,6 +35,9 @@ def create_civitai_shortcut_ui(compat_layer):
     # Initialize compatibility layer for all modules
     module_compatibility.initialize_compatibility_layer(compat_layer)
 
+    # Create recipe browser instance
+    recipe_browser = RecipeBrowser()
+
     # Create main UI structure
     with gr.Tabs(elem_id="civitai_shortcut_tabs_container") as civitai_tabs:
         with gr.Row(visible=False):
@@ -49,7 +52,7 @@ def create_civitai_shortcut_ui(compat_layer):
 
         with gr.TabItem("📝 Prompt Recipe", id="Recipe"):
             with gr.Row():
-                refresh_recipe = recipe_action.on_ui(recipe_input, shortcut_input, civitai_tabs)
+                refresh_recipe = recipe_browser.on_ui(recipe_input, shortcut_input, civitai_tabs)
 
         with gr.TabItem("🔧 Assistance", id="Assistance"):
             with gr.Tabs():

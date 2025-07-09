@@ -1,6 +1,10 @@
 from unittest.mock import patch
 
-from scripts.civitai_manager_libs import recipe_action, setting
+from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs.recipe_actions.recipe_management import RecipeManager
+
+# Create instance for testing
+_recipe_manager = RecipeManager()
 
 
 class TestRecipeNameValidation:
@@ -9,7 +13,7 @@ class TestRecipeNameValidation:
     @patch("gradio.Warning")
     def test_empty_recipe_name_shows_warning(self, mock_warning):
         """Test warning is shown when recipe name is empty."""
-        result = recipe_action.on_recipe_create_btn_click(
+        result = _recipe_manager.on_recipe_create_btn_click(
             recipe_name="",
             recipe_desc="Test description",
             recipe_prompt="Test prompt",
@@ -23,7 +27,7 @@ class TestRecipeNameValidation:
     @patch("gradio.Warning")
     def test_whitespace_only_name_shows_warning(self, mock_warning):
         """Test warning is shown when name contains only whitespace."""
-        result = recipe_action.on_recipe_create_btn_click(
+        result = _recipe_manager.on_recipe_create_btn_click(
             recipe_name="   \t\n   ",
             recipe_desc="Test description",
             recipe_prompt="Test prompt",
@@ -37,7 +41,7 @@ class TestRecipeNameValidation:
     @patch("gradio.Warning")
     def test_default_name_shows_warning(self, mock_warning):
         """Test warning is shown when using default recipe name."""
-        result = recipe_action.on_recipe_create_btn_click(
+        result = _recipe_manager.on_recipe_create_btn_click(
             recipe_name=setting.NEWRECIPE,
             recipe_desc="Test description",
             recipe_prompt="Test prompt",
@@ -51,7 +55,7 @@ class TestRecipeNameValidation:
     @patch("scripts.civitai_manager_libs.recipe.create_recipe", return_value=True)
     def test_valid_name_creates_recipe(self, mock_create):
         """Test successful creation with valid recipe name."""
-        result = recipe_action.on_recipe_create_btn_click(
+        result = _recipe_manager.on_recipe_create_btn_click(
             recipe_name="Valid Recipe Name",
             recipe_desc="Test description",
             recipe_prompt="Test prompt",

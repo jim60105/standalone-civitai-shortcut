@@ -216,6 +216,7 @@ def create_recipe(recipe, desc, prompt=None, classification=None):
 
 def get_recipe(s_name):
     if not s_name:
+        logger.debug("[RECIPE] get_recipe: No s_name provided")
         return None
 
     # Ensure s_name is a string, not a list
@@ -223,10 +224,15 @@ def get_recipe(s_name):
         logger.warning(f"get_recipe received list instead of string: {s_name}")
         return None
 
+    logger.debug(f"[RECIPE] get_recipe: Looking for recipe '{s_name}'")
     RecipeCollection = load()
+    logger.debug(f"[RECIPE] get_recipe: RecipeCollection loaded: {RecipeCollection is not None}")
+    
     if RecipeCollection and s_name in RecipeCollection:
+        logger.debug(f"[RECIPE] get_recipe: Found recipe '{s_name}'")
         return RecipeCollection[s_name]
 
+    logger.debug(f"[RECIPE] get_recipe: Recipe '{s_name}' not found")
     return None
 
 

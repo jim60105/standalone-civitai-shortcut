@@ -1,3 +1,4 @@
+# type: ignore
 """
 Test cases for evt.value list handling fix.
 
@@ -10,8 +11,14 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 # Import functions to test
-from scripts.civitai_manager_libs import recipe_action, classification_action
+from scripts.civitai_manager_libs import classification_action
 from scripts.civitai_manager_libs import recipe, classification
+from scripts.civitai_manager_libs.recipe_actions.recipe_reference import RecipeReferenceManager
+from scripts.civitai_manager_libs.recipe_actions.recipe_gallery import RecipeGallery
+
+# Create instances for testing
+_recipe_reference_manager = RecipeReferenceManager()
+_recipe_gallery = RecipeGallery()
 
 
 class TestEvtValueListHandling:
@@ -43,7 +50,10 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = 'test_recipe'
 
-        mock_path = 'scripts.civitai_manager_libs.recipe_action.get_recipe_information'
+        mock_path = (
+            'scripts.civitai_manager_libs.recipe_actions.recipe_utilities.'
+            'RecipeUtilities.get_recipe_information'
+        )
         with patch(mock_path) as mock_get_info:
             mock_get_info.return_value = ("desc", "prompt", "neg", "opts", "gen", "class", None)
 
@@ -52,7 +62,7 @@ class TestEvtValueListHandling:
             ) as mock_get_shortcuts:
                 mock_get_shortcuts.return_value = []
 
-                result = recipe_action.on_recipe_gallery_select(evt)
+                result = _recipe_gallery.on_recipe_gallery_select(evt)
 
                 # Should call get_recipe_information with the string value
                 mock_get_info.assert_called_once_with('test_recipe')
@@ -64,7 +74,10 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = ['image_url', 'test_recipe']
 
-        mock_path = 'scripts.civitai_manager_libs.recipe_action.get_recipe_information'
+        mock_path = (
+            'scripts.civitai_manager_libs.recipe_actions.recipe_utilities.'
+            'RecipeUtilities.get_recipe_information'
+        )
         with patch(mock_path) as mock_get_info:
             mock_get_info.return_value = ("desc", "prompt", "neg", "opts", "gen", "class", None)
 
@@ -73,7 +86,7 @@ class TestEvtValueListHandling:
             ) as mock_get_shortcuts:
                 mock_get_shortcuts.return_value = []
 
-                result = recipe_action.on_recipe_gallery_select(evt)
+                result = _recipe_gallery.on_recipe_gallery_select(evt)
 
                 # Should call get_recipe_information with the second element of the list
                 mock_get_info.assert_called_once_with('test_recipe')
@@ -85,11 +98,14 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = {'invalid': 'type'}
 
-        result = recipe_action.on_recipe_gallery_select(evt)
+        result = _recipe_gallery.on_recipe_gallery_select(evt)
 
-        # Should return empty tuple
-        expected_empty_result = ("", "", "", "", "", "", None, [])
-        assert result == expected_empty_result
+        # Should return tuple with gr.update() objects
+        assert result is not None
+        assert len(result) == 16  # Should return 16 values to match UI binding
+        # Check that first few values are gr.update objects with empty values
+        assert hasattr(result[0], '__getitem__') and result[0].get('value') == ""
+        assert hasattr(result[1], '__getitem__') and result[1].get('value') == ""
 
     def test_on_classification_list_select_with_string(self):
         """Test on_classification_list_select with string evt.value."""
@@ -139,7 +155,7 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = 123  # Invalid type
 
-        result = classification_action.on_classification_list_select(evt)
+        result = classification_action.on_classification_list_select(evt)  # type: ignore
 
         # Should return empty updates
         assert result is not None
@@ -151,18 +167,24 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = []
 
-        result = recipe_action.on_recipe_gallery_select(evt)
-        expected_empty_result = ("", "", "", "", "", "", None, [])
-        assert result == expected_empty_result
+        result = _recipe_gallery.on_recipe_gallery_select(evt)
+        # Should return tuple with gr.update() objects
+        assert result is not None
+        assert len(result) == 16  # Should return 16 values to match UI binding
+        # Check that first few values are gr.update objects with empty values
+        assert hasattr(result[0], '__getitem__') and result[0].get('value') == ""
 
     def test_edge_case_single_element_list(self):
         """Test handling of single element list."""
         evt = SimpleNamespace()
         evt.value = ['only_one_element']
 
-        result = recipe_action.on_recipe_gallery_select(evt)
-        expected_empty_result = ("", "", "", "", "", "", None, [])
-        assert result == expected_empty_result
+        result = _recipe_gallery.on_recipe_gallery_select(evt)
+        # Should return tuple with gr.update() objects
+        assert result is not None
+        assert len(result) == 16  # Should return 16 values to match UI binding
+        # Check that first few values are gr.update objects with empty values
+        assert hasattr(result[0], '__getitem__') and result[0].get('value') == ""
 
     def test_recipe_functions_with_valid_string(self):
         """Test that recipe functions work correctly with valid string input."""

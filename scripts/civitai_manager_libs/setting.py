@@ -39,7 +39,7 @@ def _initialize_extension_base():
     logger.debug("[setting] _initialize_extension_base: Initializing extension base path.")
     compat = CompatibilityLayer.get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):
-        extension_base = compat.path_manager.get_extension_path()
+        extension_base = str(compat.path_manager.get_extension_path())
 
         logger.debug(
             f"[setting] _initialize_extension_base: Set extension_base from compat.path_manager: {extension_base}"
@@ -585,44 +585,34 @@ def load_data():
                     globals()[attr] = value
                     logger.debug(f"[setting] load_data: Set {attr}: {value}")
 
-        if "model_folders" in environment.keys():
-            user_folders = environment['model_folders']
+        user_folders = environment['model_folders'] if 'model_folders' in environment.keys() else None
+        if user_folders:
+            if 'LoCon' in user_folders.keys():
+                model_folders['LoCon'] = user_folders['LoCon']
+                logger.debug(f"[setting] load_data: Set LoCon folder: {user_folders['LoCon']}")
+            if 'Wildcards' in user_folders.keys():
+                model_folders['Wildcards'] = user_folders['Wildcards']
+                logger.debug(f"[setting] load_data: Set Wildcards folder: {user_folders['Wildcards']}")
+            if 'Controlnet' in user_folders.keys():
+                model_folders['Controlnet'] = user_folders['Controlnet']
+                logger.debug(f"[setting] load_data: Set Controlnet folder: {user_folders['Controlnet']}")
+            if 'AestheticGradient' in user_folders.keys():
+                model_folders['AestheticGradient'] = user_folders['AestheticGradient']
+                logger.debug(f"[setting] load_data: Set AestheticGradient folder: {user_folders['AestheticGradient']}")
+            if 'Poses' in user_folders.keys():
+                model_folders['Poses'] = user_folders['Poses']
+                logger.debug(f"[setting] load_data: Set Poses folder: {user_folders['Poses']}")
+            if 'Other' in user_folders.keys():
+                model_folders['Other'] = user_folders['Other']
+                logger.debug(f"[setting] load_data: Set Other folder: {user_folders['Other']}")
 
-        if 'LoCon' in user_folders.keys():
-            model_folders['LoCon'] = user_folders['LoCon']
-            logger.debug(f"[setting] load_data: Set LoCon folder: {user_folders['LoCon']}")
-
-        if 'Wildcards' in user_folders.keys():
-            model_folders['Wildcards'] = user_folders['Wildcards']
-            logger.debug(f"[setting] load_data: Set Wildcards folder: {user_folders['Wildcards']}")
-
-        if 'Controlnet' in user_folders.keys():
-            model_folders['Controlnet'] = user_folders['Controlnet']
-            logger.debug(
-                f"[setting] load_data: Set Controlnet folder: {user_folders['Controlnet']}"
-            )
-
-        if 'AestheticGradient' in user_folders.keys():
-            model_folders['AestheticGradient'] = user_folders['AestheticGradient']
-            logger.debug(
-                f"[setting] load_data: Set AestheticGradient folder: {user_folders['AestheticGradient']}"
-            )
-
-        if 'Poses' in user_folders.keys():
-            model_folders['Poses'] = user_folders['Poses']
-            logger.debug(f"[setting] load_data: Set Poses folder: {user_folders['Poses']}")
-
-        if 'Other' in user_folders.keys():
-            model_folders['Other'] = user_folders['Other']
-            logger.debug(f"[setting] load_data: Set Other folder: {user_folders['Other']}")
-
-        if "download_folders" in environment.keys():
-            download_folders = environment['download_folders']
-        if 'download_images' in download_folders.keys():
-            download_images_folder = download_folders['download_images']
-            logger.debug(
-                f"[setting] load_data: Set download_images_folder: {download_images_folder}"
-            )
+        download_folders = environment['download_folders'] if 'download_folders' in environment.keys() else None
+        if download_folders:
+            if 'download_images' in download_folders.keys():
+                download_images_folder = download_folders['download_images']
+                logger.debug(
+                    f"[setting] load_data: Set download_images_folder: {download_images_folder}"
+                )
 
         if "temporary" in environment.keys():
             temporary = environment['temporary']

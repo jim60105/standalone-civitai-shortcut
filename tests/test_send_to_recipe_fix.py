@@ -2,7 +2,11 @@ from scripts.civitai_manager_libs.ishortcut_action import on_send_to_recipe_clic
 from scripts.civitai_manager_libs.civitai_gallery_action import (
     on_send_to_recipe_click as send_gallery,
 )
-from scripts.civitai_manager_libs.recipe_action import on_recipe_input_change, analyze_prompt
+from scripts.civitai_manager_libs.recipe_actions.recipe_browser import RecipeBrowser
+from scripts.civitai_manager_libs.recipe_actions.recipe_utilities import RecipeUtilities
+
+# Create instances for testing
+_recipe_browser = RecipeBrowser()
 
 
 def test_send_to_recipe_click_shortcut_with_metadata():
@@ -49,7 +53,7 @@ Steps: 5, Sampler: TestSampler
     first_line = "scid123:sample_image.png"
     recipe_input = first_line + "\n" + metadata
     # Invoke recipe input change handler
-    output = on_recipe_input_change(recipe_input, None)
+    output = _recipe_browser.on_recipe_input_change(recipe_input, None)
     # output structure: [selected_name, drop_image, image, generate_data, input, …]
     # followed by prompt, negative, option, output, and remaining fields
     # Check image values
@@ -68,7 +72,7 @@ Steps: 5, Sampler: TestSampler
     assert isinstance(option_update, dict) and "value" in option_update
     assert isinstance(output_update, dict) and "value" in output_update
     # Compare values: prompt fields from analyze_prompt, output raw metadata preserved
-    ap, an, ao, ag = analyze_prompt(metadata)
+    ap, an, ao, ag = RecipeUtilities.analyze_prompt(metadata)
     assert prompt_update["value"] == (ap or "")
     assert negative_update["value"] == (an or "")
     assert option_update["value"] == (ao or "")
@@ -87,7 +91,7 @@ Steps: 25, Sampler: DPM++ 2M Karras, CFG scale: 7"""
     recipe_input = first_line + "\n" + metadata
 
     # Invoke recipe input change handler
-    output = on_recipe_input_change(recipe_input, None)
+    output = _recipe_browser.on_recipe_input_change(recipe_input, None)
 
     # Check prompt fields are updated correctly
     prompt_update = output[8]
@@ -112,7 +116,7 @@ Steps: 25, Sampler: DPM++ 2M Karras, CFG scale: 7"""
     recipe_input = first_line + "\n" + metadata
 
     # Invoke recipe input change handler
-    output = on_recipe_input_change(recipe_input, None)
+    output = _recipe_browser.on_recipe_input_change(recipe_input, None)
 
     # Check prompt fields are updated correctly
     prompt_update = output[8]
