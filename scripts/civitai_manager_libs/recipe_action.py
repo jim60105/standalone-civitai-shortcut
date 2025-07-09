@@ -136,3 +136,15 @@ def backup_recipe_data(*args, **kwargs):
 def restore_recipe_data(*args, **kwargs):
     """Delegate to RecipeUtilities.restore_recipe_data."""
     return RecipeUtilities.restore_recipe_data(*args, **kwargs)
+
+
+def generate_prompt(prompt_text: str, negative_prompt: str = None, options: dict = None) -> str:
+    """Combine prompt text with negative prompt and options into a single string."""
+    result = prompt_text or ""
+    if negative_prompt:
+        result = f"{result} {negative_prompt}"
+    if options:
+        # Append options as key=value pairs
+        for key, value in options.items():
+            result = f"{result} {key}={value}"
+    return result

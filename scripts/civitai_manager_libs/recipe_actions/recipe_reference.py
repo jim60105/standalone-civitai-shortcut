@@ -8,11 +8,10 @@ import datetime
 import gradio as gr
 
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
-from ..setting import setting
+from .. import setting
 from ..logging_config import get_logger
 
 logger = get_logger(__name__)
-from ..recipe_action import generate_prompt
 
 
 class RecipeReferenceManager:
@@ -125,6 +124,9 @@ class RecipeReferenceManager:
         self, model_type, recipe_prompt, recipe_negative, recipe_option, filename, weight, triger
     ):
         """Gradio: handle insert/remove prompt button click for references."""
+        # Avoid circular import; import generate_prompt locally
+        from ..recipe_action import generate_prompt
+
         if model_type in ('LORA', 'LoCon'):
             mtype = 'lora'
         elif model_type == 'Hypernetwork':

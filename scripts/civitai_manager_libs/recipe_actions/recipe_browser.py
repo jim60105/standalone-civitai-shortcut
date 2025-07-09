@@ -2,7 +2,7 @@
 UI and interaction logic for browsing recipes.
 """
 
-from ..recipe import recipe
+from .. import recipe
 from ..logging_config import get_logger
 from ..recipe_browser_page import on_ui as _on_ui
 

@@ -7,8 +7,8 @@ import os
 import gradio as gr
 from PIL import Image
 
-from ..setting import setting
-from ..recipe import recipe
+from .. import setting
+from .. import recipe
 from ..logging_config import get_logger
 from ..compat.compat_layer import CompatibilityLayer
 from ..image_processor import ImageMetadataProcessor
