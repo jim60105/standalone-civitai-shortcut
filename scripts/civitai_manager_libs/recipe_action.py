@@ -543,143 +543,57 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
     return refresh_recipe
 
 
+from .recipe_actions.recipe_reference import RecipeReferenceManager
+
+_recipe_ref_manager = RecipeReferenceManager()
+
+
 def load_model_information(modelid=None, ver_index=None):
-    if modelid:
-        (
-            model_info,
-            version_info,
-            versionid,
-            version_name,
-            model_type,
-            model_basemodels,
-            versions_list,
-            dhtml,
-            triger,
-            files,
-        ) = ishortcut.modelprocessor.get_model_information(modelid, None, ver_index)
-        if model_info:
-            insert_btn_visible = False
-            weight_visible = False
-            triger_visible = False
-            if model_type == 'LORA' or model_type == 'LoCon' or model_type == 'Hypernetwork':
-                insert_btn_visible = True
-                weight_visible = True
-                triger_visible = True
-            elif model_type == 'TextualInversion':
-                insert_btn_visible = True
-
-            flist = list()
-            for file in files:
-                flist.append(file['name'])
-
-            file_name = ''
-            if len(flist) > 0:
-                file_name = flist[0]
-
-            title_name = f"# {model_info['name']} : {version_name}"
-
-            return (
-                gr.update(value=model_type),
-                gr.update(value=setting.get_ui_typename(model_type)),
-                gr.update(choices=versions_list, value=version_name),
-                gr.update(choices=flist, value=file_name),
-                gr.update(value=triger, visible=triger_visible),
-                gr.update(visible=weight_visible),
-                gr.update(visible=insert_btn_visible),
-                gr.update(label=title_name, visible=True),
-            )
-    return (
-        None,
-        None,
-        None,
-        None,
-        gr.update(value=None, visible=True),
-        gr.update(visible=True),
-        gr.update(visible=True),
-        gr.update(label="#", visible=False),
-    )
+    """Delegate to RecipeReferenceManager.load_model_information."""
+    return _recipe_ref_manager.load_model_information(modelid, ver_index)
 
 
 def on_reference_modelid_change(modelid=None):
-    return load_model_information(modelid, None)
+    """Delegate to RecipeReferenceManager.on_reference_modelid_change."""
+    return _recipe_ref_manager.on_reference_modelid_change(modelid)
 
 
 def on_reference_versions_select(evt: gr.SelectData, modelid: str):
-    return load_model_information(modelid, evt.index)
+    """Delegate to RecipeReferenceManager.on_reference_versions_select."""
+    return _recipe_ref_manager.on_reference_versions_select(evt, modelid)
 
 
 def on_delete_reference_model_btn_click(sc_model_id: str, shortcuts):
-    if sc_model_id:
-        current_time = datetime.datetime.now()
-
-        if not shortcuts:
-            shortcuts = list()
-
-        if sc_model_id in shortcuts:
-            shortcuts.remove(sc_model_id)
-            return shortcuts, current_time, None, None
-
-    return shortcuts, gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
+    """Delegate to RecipeReferenceManager.on_delete_reference_model_btn_click."""
+    return _recipe_ref_manager.on_delete_reference_model_btn_click(sc_model_id, shortcuts)
 
 
 def on_close_reference_model_information_btn_click(shortcuts):
-    current_time = datetime.datetime.now()
-    return shortcuts, current_time, None, None
+    """Delegate to RecipeReferenceManager.on_close_reference_model_information_btn_click."""
+    return _recipe_ref_manager.on_close_reference_model_information_btn_click(shortcuts)
 
 
 def add_string(text, mtype, filename, weight, triger=None):
-    pattern = f"<{mtype}:{filename}:{weight}>"
-    if triger:
-        pattern = pattern + ' ' + triger
-
-    return text.strip() + ' ' + pattern
+    """Delegate to RecipeReferenceManager.add_string."""
+    return _recipe_ref_manager.add_string(text, mtype, filename, weight, triger)
 
 
 def remove_strings(text, mtype, filename, triger=None):
-    # Use regular expression to find and remove all <lora:filename:number> strings
-    pattern = f"<{mtype}:{re.escape(filename)}:.*?>"
-    if triger:
-        pattern = pattern + ' ' + triger
-    text = re.sub(pattern, '', text)
-    return text
+    """Delegate to RecipeReferenceManager.remove_strings."""
+    return _recipe_ref_manager.remove_strings(text, mtype, filename, triger)
 
 
 def is_string(text, mtype, filename, triger=None):
-    pattern = f"<{mtype}:{re.escape(filename)}:.*?>"
-    if triger:
-        pattern = pattern + ' ' + triger
-    return re.search(pattern, text)
+    """Delegate to RecipeReferenceManager.is_string."""
+    return _recipe_ref_manager.is_string(text, mtype, filename, triger)
 
 
 def on_insert_prompt_btn_click(
     model_type, recipe_prompt, recipe_negative, recipe_option, filename, weight, triger
 ):
-
-    if model_type == 'LORA' or model_type == 'LoCon':
-        mtype = 'lora'
-    elif model_type == 'Hypernetwork':
-        mtype = 'hypernet'
-    elif model_type == 'TextualInversion':
-        mtype = 'ti'
-
-    if filename:
-        filename, ext = os.path.splitext(filename)
-
-    if mtype == 'lora' or mtype == 'hypernet':
-        if is_string(recipe_prompt, mtype, filename, triger):
-            recipe_prompt = remove_strings(recipe_prompt, mtype, filename, triger)
-        else:
-            recipe_prompt = remove_strings(recipe_prompt, mtype, filename)
-            recipe_prompt = add_string(recipe_prompt, mtype, filename, weight, triger)
-    elif mtype == 'ti':
-        if filename in recipe_prompt:
-            recipe_prompt = recipe_prompt.replace(filename, '')
-        else:
-            recipe_prompt = recipe_prompt.replace(filename, '')
-            recipe_prompt = recipe_prompt + ' ' + filename
-
-    return gr.update(value=recipe_prompt), gr.update(
-        value=generate_prompt(recipe_prompt, recipe_negative, recipe_option)
+    """Delegate to RecipeReferenceManager.on_insert_prompt_btn_click."""
+    return _recipe_ref_manager.on_insert_prompt_btn_click(
+        model_type, recipe_prompt, recipe_negative, recipe_option, filename, weight, triger
     )
 
 

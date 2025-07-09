@@ -2,37 +2,45 @@
 UI and interaction logic for browsing recipes.
 """
 
-import logging
+from ..recipe import recipe
+from ..logging_config import get_logger
+from ..recipe_browser_page import on_ui as _on_ui
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RecipeBrowser:
-    """Manages UI elements and events for recipe browsing."""
+    """Provides recipe browsing UI construction and list handling."""
 
     def __init__(self):
-        pass
+        self._logger = logger
 
-    def create_browser_ui(self) -> None:
-        """Construct and return the recipe browser UI."""
-        pass
+    def create_browser_ui(self) -> tuple:
+        """Construct and return the browser gallery and refresh trigger."""
+        return _on_ui()
 
     def refresh_recipe_list(self, search_term: str = "") -> list:
-        """Refresh the rendered list of recipes based on a search term."""
-        pass
+        """Refresh list of recipes matching the search term."""
+        return recipe.get_list(search=search_term)
 
     def filter_recipes(self, filter_type: str, filter_value: str) -> list:
-        """Filter recipes by a specified type and value."""
-        pass
+        """Filter recipes by classification or shortcuts."""
+        criteria = {filter_type: filter_value}
+        return recipe.get_list(**criteria)
 
     def sort_recipes(self, sort_by: str, ascending: bool = True) -> list:
-        """Sort recipes by a given field and order."""
-        pass
+        """Sort recipes by specified field."""
+        recipelist = recipe.get_list()
+        try:
+            return sorted(recipelist, key=lambda x: x.get(sort_by), reverse=not ascending)
+        except Exception:
+            self._logger.warning("sort_recipes: unable to sort by %s", sort_by)
+            return recipelist
 
     def handle_recipe_selection(self, recipe_id: str) -> dict:
-        """Handle logic when a recipe is selected in the UI."""
-        pass
+        """Retrieve detailed recipe information for selection event."""
+        return recipe.get_recipe(recipe_id)
 
     def search_recipes(self, query: str) -> list:
-        """Search recipes matching the provided query string."""
-        pass
+        """Search recipes by name, description, or classification."""
+        return recipe.get_list(search=query)
