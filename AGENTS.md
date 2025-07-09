@@ -78,11 +78,11 @@ Use `gh` CLI commands to perform DevOps tasks.
 * Instead of concentrating on backward compatibility, greater importance is given to removing unnecessary designs. When a module is no longer utilized, remove it. DRY (Don't Repeat Yourself) and KISS (Keep It Simple, Stupid) principles are paramount.
 * Any unimplemented code or tests must be marked with `//TODO` comment.
 * Unless the requirements or user asks you to implement in phases, using TODO is prohibited. TODO means there is still unfinished work. You are required to complete your work.
-* Use `pytest` for running tests and makesure this project is testable. Always run `pytest` with `|| true` since there's technical issue with `pytest` in the current project setup.
+* Use `pytest 2>&1 | tee test.log || true` for running tests instead of `cargo test` for better performance and parallel execution. Always run `pytest` with ` 2>&1 | tee test.log || true` since there's technical issue with `pytest` in the current project setup.
 * Place tests in the `tests` folder; any test files located in the project root directory are considered temporary and should be deleted.
 * Follow the testing principles and practices outlined in [Test Guidelines](docs/testing_guidelines.md)`.
 * Always use Python's standard `logging` module for all log output.
-* Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Fix not only the errors but also styling warnings. Always run `flake8` with `|| true` since there's technical issue with `flake8` in the current project setup.
+* Always `black --line-length=100 --skip-string-normalization` and `flake8` the submitting files and fix any warnings before submitting any code. Do not lint the whole project, only the files you are submitting. Fix not only the errors but also styling warnings. Always run `flake8` with ` 2>&1 | tee test.log || true` since there's technical issue with `flake8` in the current project setup.
 
 ## Gradio UI Guidelines
 
