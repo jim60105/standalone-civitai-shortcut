@@ -174,12 +174,16 @@ class RecipeGallery:
         import datetime
 
         current_time = datetime.datetime.now()
+        
+        logger.info(f"[RECIPE] Gallery selection triggered! evt.value: {evt.value}")
 
         # Handle evt.value which can be either a string or a list [image_url, shortcut_name]
         if isinstance(evt.value, list) and len(evt.value) > 1:
             select_name = evt.value[1]  # Use the shortcut name (second element)
+            logger.info(f"[RECIPE] Gallery select - using list element: {select_name}")
         elif isinstance(evt.value, str):
             select_name = evt.value
+            logger.info(f"[RECIPE] Gallery select - using string: {select_name}")
         else:
             logger.debug(
                 f"[RECIPE] Unexpected evt.value format in on_recipe_gallery_select: " f"{evt.value}"
@@ -205,8 +209,13 @@ class RecipeGallery:
 
         from .recipe_utilities import RecipeUtilities
 
+        logger.info(f"[RECIPE] Getting recipe information for: {select_name}")
         result = RecipeUtilities.get_recipe_information(select_name)
         description, Prompt, negativePrompt, options, gen_string, classification, imagefile = result
+        logger.info(
+            f"[RECIPE] Recipe info result - desc: {description}, "
+            f"prompt: {Prompt[:50] if Prompt else None}..."
+        )
 
         if imagefile:
             if not os.path.isfile(imagefile):
@@ -214,6 +223,8 @@ class RecipeGallery:
 
         shortcuts = recipe.get_recipe_shortcuts(select_name)
 
+        logger.info("[RECIPE] Returning 16 outputs for UI update")
+        
         return (
             gr.update(value=select_name),
             gr.update(value=select_name),

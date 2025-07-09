@@ -15,7 +15,18 @@ logger = get_logger(__name__)
 
 
 class RecipeBrowser:
-    """Provides recipe browsing UI construction and list handling."""
+    """Provides recipe browsing UI construc        logger = get_logger(__name__)
+    logger.info(f"[RECIPE_INPUT_CHANGE] Event triggered with input: {repr(recipe_input)}")
+
+    # If recipe_input is an empty string or contains no meaningful data,
+    # return immediately without any UI updates to avoid interfering with other events
+    if recipe_input is None or recipe_input == "" or not recipe_input.strip():
+        logger.info(
+            "[RECIPE_INPUT_CHANGE] Received empty/meaningless input, "
+            "returning no-op updates to avoid interference."
+        )
+        # Return no-op updates that don't change any UI components
+        return tuple(gr.update() for _ in range(22))st handling."""
 
     def __init__(self):
         self._logger = logger
@@ -341,15 +352,20 @@ class RecipeBrowser:
         from .recipe_utilities import RecipeUtilities
 
         logger = get_logger(__name__)
-        logger.debug(f" on_recipe_input_change called with: {repr(recipe_input)}")
+        logger.warning(f"[RECIPE_INPUT_CHANGE] Event triggered with input: {repr(recipe_input)}")
 
         # If recipe_input is an empty string, return immediately with no UI update
         if recipe_input is None or recipe_input == "":
-            logger.debug(
-                "[RECIPE] on_recipe_input_change received empty string, returning without changes."
+            logger.warning(
+                "[RECIPE_INPUT_CHANGE] Received empty string, "
+                "returning no-op updates to avoid interference."
             )
+            # Return no-op updates that don't change any UI components
             return tuple(gr.update() for _ in range(22))
 
+        logger.warning(
+            "[RECIPE_INPUT_CHANGE] Processing non-empty input, this will reset UI components!"
+        )
         current_time = datetime.datetime.now()
         param_data = None
         logger.debug(" recipe_input is not empty, processing...")

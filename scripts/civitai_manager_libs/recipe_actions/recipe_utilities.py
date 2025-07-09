@@ -225,6 +225,7 @@ class RecipeUtilities:
 
             if rc and "generate" in rc:
                 generate = rc['generate']
+                
                 if "options" in generate:
                     options = [f"{k}:{v}" for k, v in generate['options'].items()]
                     if options:
@@ -250,4 +251,5 @@ class RecipeUtilities:
                 if not classification or len(classification.strip()) == 0:
                     classification = setting.PLACEHOLDER
 
-        return description, Prompt, negativePrompt, options, gen_string, classification, imagefile
+        result = description, Prompt, negativePrompt, options, gen_string, classification, imagefile
+        return result
