@@ -174,7 +174,7 @@ class RecipeGallery:
         import datetime
 
         current_time = datetime.datetime.now()
-        
+
         logger.info(f"[RECIPE] Gallery selection triggered! evt.value: {evt.value}")
 
         # Handle evt.value which can be either a string or a list [image_url, shortcut_name]
@@ -184,6 +184,11 @@ class RecipeGallery:
         elif isinstance(evt.value, str):
             select_name = evt.value
             logger.info(f"[RECIPE] Gallery select - using string: {select_name}")
+        # Support new Gradio Gallery select event format
+        elif isinstance(evt.value, dict):
+            # Use caption as the recipe name
+            select_name = evt.value.get("caption")
+            logger.info(f"[RECIPE] Gallery select - using dict caption: {select_name}")
         else:
             logger.debug(
                 f"[RECIPE] Unexpected evt.value format in on_recipe_gallery_select: " f"{evt.value}"
@@ -224,7 +229,29 @@ class RecipeGallery:
         shortcuts = recipe.get_recipe_shortcuts(select_name)
 
         logger.info("[RECIPE] Returning 16 outputs for UI update")
-        
+
+        # Fallback if select_name is invalid
+        if not select_name:
+            logger.debug("[RECIPE] select_name is None or empty, fallback.")
+            return (
+                gr.update(value=""),  # selected_recipe_name
+                gr.update(value=""),  # recipe_name
+                gr.update(value=""),  # recipe_desc
+                gr.update(value=""),  # recipe_prompt
+                gr.update(value=""),  # recipe_negative
+                gr.update(value=""),  # recipe_option
+                gr.update(value=""),  # recipe_output
+                gr.update(choices=[], value=""),  # recipe_classification
+                gr.update(label=""),  # recipe_title_name
+                None,  # recipe_image
+                None,  # recipe_drop_image
+                gr.update(visible=True),  # recipe_create_btn
+                gr.update(visible=False),  # recipe_update_btn
+                [],  # reference_shortcuts
+                None,  # reference_modelid
+                current_time,  # refresh_reference_gallery
+            )
+
         return (
             gr.update(value=select_name),
             gr.update(value=select_name),
