@@ -4,7 +4,7 @@ UI and interaction logic for browsing recipes.
 
 from .. import recipe
 from ..logging_config import get_logger
-from ..recipe_browser_page import on_ui as _on_ui
+import importlib
 
 logger = get_logger(__name__)
 
@@ -17,7 +17,9 @@ class RecipeBrowser:
 
     def create_browser_ui(self) -> tuple:
         """Construct and return the browser gallery and refresh trigger."""
-        return _on_ui()
+        # Dynamically import on_ui to respect monkeypatch overrides
+        module = importlib.import_module('scripts.civitai_manager_libs.recipe_browser_page')
+        return module.on_ui()
 
     def refresh_recipe_list(self, search_term: str = "") -> list:
         """Refresh list of recipes matching the search term."""
