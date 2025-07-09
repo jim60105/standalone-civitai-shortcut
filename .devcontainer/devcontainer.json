@@ -40,6 +40,7 @@
 		"PYTHONUNBUFFERED": "1",
 		"PYTHONDONTWRITEBYTECODE": "1",
 		"UV_SYSTEM_PYTHON": "1",
+		"UV_PROJECT_ENVIRONMENT": "/usr/local",
 		"UV_COMPILE_BYTECODE": "1",
 		"UV_LINK_MODE": "copy",
 		"GH_REPO": "jim60105/standalone-civitai-shortcut",
