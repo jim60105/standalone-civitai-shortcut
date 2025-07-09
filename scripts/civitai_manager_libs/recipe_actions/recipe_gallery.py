@@ -145,10 +145,10 @@ class RecipeGallery:
                 try:
                     if isinstance(recipe_img, str):
                         with Image.open(recipe_img) as img:
-                            generate_data = img.info.get('parameters', '')
+                            generate_data = img.text.get('parameters', '')
                     elif hasattr(recipe_img, 'read'):
                         with Image.open(io.BytesIO(recipe_img.read())) as img:
-                            generate_data = img.info.get('parameters', '')
+                            generate_data = img.text.get('parameters', '')
 
                     if generate_data:
                         logger.debug(f" Extracted via PIL fallback: {len(generate_data)} chars")
@@ -156,9 +156,11 @@ class RecipeGallery:
                     logger.debug(f"Error in PNG info fallback processing: {e}")
 
         if generate_data:
-            from ..recipe_action import analyze_prompt
+            from .recipe_utilities import RecipeUtilities
 
-            positivePrompt, negativePrompt, options, gen_string = analyze_prompt(generate_data)
+            positivePrompt, negativePrompt, options, gen_string = RecipeUtilities.analyze_prompt(
+                generate_data
+            )
             return (
                 gr.update(value=positivePrompt),
                 gr.update(value=negativePrompt),
@@ -184,11 +186,10 @@ class RecipeGallery:
             )
             return ("", "", "", "", "", "", None, [])
 
-        from ..recipe_action import get_recipe_information
+        from .recipe_utilities import RecipeUtilities
 
-        description, Prompt, negativePrompt, options, gen_string, classification, imagefile = (
-            get_recipe_information(select_name)
-        )
+        result = RecipeUtilities.get_recipe_information(select_name)
+        description, Prompt, negativePrompt, options, gen_string, classification, imagefile = result
 
         if imagefile:
             if not os.path.isfile(imagefile):

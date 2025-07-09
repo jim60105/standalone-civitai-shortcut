@@ -310,32 +310,45 @@ class RecipeReferenceManager:
         return gr.update(value=result_list)
 
     def on_reference_sc_gallery_select(self, evt: gr.SelectData, shortcuts):
-        """Gradio: handle selection from shortcut gallery for references."""
-        current_time = datetime.datetime.now()
+        """Gradio: handle selection from shortcut gallery for references with error handling."""
+        import datetime
+        from ..error_handler import with_error_handling
+        from ..exceptions import ValidationError
 
-        if evt.value:
-            # evt.value can be Gradio v4+ FileData dict,
-            # v3.41+ list [image_url, shortcut_name], or legacy string
-            if isinstance(evt.value, dict) and 'caption' in evt.value:
-                shortcut = evt.value['caption']
-            elif isinstance(evt.value, list) and len(evt.value) > 1:
-                shortcut = evt.value[1]
-            elif isinstance(evt.value, str):
-                shortcut = evt.value
-            else:
-                self._logger.debug("Unexpected evt.value format: %s", evt.value)
+        @with_error_handling(
+            fallback_value=([], datetime.datetime.now()),
+            exception_types=(ValidationError,),
+            user_message="Failed to process reference selection",
+        )
+        def _handle_selection():
+            nonlocal shortcuts
+            current_time = datetime.datetime.now()
+
+            if evt.value:
+                # evt.value can be Gradio v4+ FileData dict,
+                # v3.41+ list [image_url, shortcut_name], or legacy string
+                if isinstance(evt.value, dict) and 'caption' in evt.value:
+                    shortcut = evt.value['caption']
+                elif isinstance(evt.value, list) and len(evt.value) > 1:
+                    shortcut = evt.value[1]
+                elif isinstance(evt.value, str):
+                    shortcut = evt.value
+                else:
+                    self._logger.debug("Unexpected evt.value format: %s", evt.value)
+                    return shortcuts, current_time
+
+                sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+
+                if not shortcuts:
+                    shortcuts = list()
+
+                if sc_model_id not in shortcuts:
+                    shortcuts.append(sc_model_id)
+
                 return shortcuts, current_time
+            return shortcuts, gr.update(visible=False)
 
-            sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
-
-            if not shortcuts:
-                shortcuts = list()
-
-            if sc_model_id not in shortcuts:
-                shortcuts.append(sc_model_id)
-
-            return shortcuts, current_time
-        return shortcuts, gr.update(visible=False)
+        return _handle_selection()
 
     def on_reference_gallery_select(self, evt: gr.SelectData, shortcuts, delete_opt=True):
         """Gradio: handle gallery selection for reference management."""

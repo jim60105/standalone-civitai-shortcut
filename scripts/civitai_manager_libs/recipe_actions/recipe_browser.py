@@ -323,26 +323,106 @@ class RecipeBrowser:
         current_time = datetime.datetime.now()
         return current_time, current_time, current_time
 
-    def on_recipe_input_change(self, recipe_input: str, _):
+    def on_recipe_input_change(self, recipe_input: str, shortcuts):
         """
-        Handle recipe input change, parsing first line for image filename and metadata for prompts.
-        Returns list of updated values matching Gradio component order.
+        Handle recipe input change with complete processing logic.
+        Parses recipe input for image info and parameters, returns full UI update.
         """
+        import gradio as gr
+        import datetime
+        from ..logging_config import get_logger
+        from .. import setting, recipe
         from .recipe_utilities import RecipeUtilities
 
-        parts = recipe_input.splitlines()
-        first_line = parts[0] if parts else ''
-        img = ''
-        if ':' in first_line:
-            img = first_line.split(':', 1)[1]
-        base = [None, img, img, None, None, None, None, None]
-        metadata = recipe_input[len(first_line) + 1 :]
-        ap, an, ao, ag = RecipeUtilities.analyze_prompt(metadata)
-        prompt_update = {'value': ap or ''}
-        negative_update = {'value': an or ''}
-        option_update = {'value': ao or ''}
-        output_update = {'value': ag}
-        return base + [prompt_update, negative_update, option_update, output_update]
+        logger = get_logger(__name__)
+        logger.debug(f" on_recipe_input_change called with: {repr(recipe_input)}")
+
+        # If recipe_input is an empty string, return immediately with no UI update
+        if recipe_input is None or recipe_input == "":
+            logger.debug(
+                "[RECIPE] on_recipe_input_change received empty string, returning without changes."
+            )
+            return tuple(gr.update() for _ in range(22))
+
+        current_time = datetime.datetime.now()
+        param_data = None
+        logger.debug(" recipe_input is not empty, processing...")
+        shortcuts = None
+        recipe_image = None
+        positivePrompt = None
+        negativePrompt = None
+        options = None
+        gen_string = None
+
+        # recipe_input may include both image info and parsed parameters separated by newline
+        try:
+            if isinstance(recipe_input, str) and '\n' in recipe_input:
+                logger.debug(" Found newline in recipe_input, splitting...")
+                first_line, param_data = recipe_input.split('\n', 1)
+                logger.debug(f" first_line: {repr(first_line)}")
+                logger.debug(f" param_data: {repr(param_data)}")
+
+                shortcutid, image_fn = first_line.split(':', 1)
+                recipe_image = image_fn
+                logger.debug(f" shortcutid: {repr(shortcutid)}, image_fn: {repr(image_fn)}")
+
+                logger.debug(" Calling analyze_prompt with param_data...")
+                prompt_result = RecipeUtilities.analyze_prompt(param_data)
+                positivePrompt, negativePrompt, options, gen_string = prompt_result
+                logger.debug(" analyze_prompt results:")
+                logger.debug(f"   positivePrompt: {repr(positivePrompt)}")
+                logger.debug(f"   negativePrompt: {repr(negativePrompt)}")
+                logger.debug(f"   options: {repr(options)}")
+                logger.debug(f"   gen_string: {repr(gen_string)}")
+
+                shortcuts = [shortcutid]
+            else:
+                logger.debug(
+                    "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
+                )
+                result = setting.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
+                if result:
+                    shortcutid, recipe_image = result
+                    if shortcutid:
+                        shortcuts = [shortcutid]
+        except Exception as e:
+            logger.debug(f" Exception in recipe_input processing: {e}")
+
+        logger.debug(" Final values before return:")
+        logger.debug(f"   recipe_image: {repr(recipe_image)}")
+        logger.debug(f"   positivePrompt: {repr(positivePrompt)}")
+        logger.debug(f"   negativePrompt: {repr(negativePrompt)}")
+        logger.debug(f"   options: {repr(options)}")
+        logger.debug(f"   param_data: {repr(param_data)}")
+        logger.debug(f"   shortcuts: {shortcuts}")
+
+        return (
+            gr.update(value=""),  # selected_recipe_name
+            recipe_image,  # recipe_drop_image
+            recipe_image,  # recipe_image
+            gr.update(),  # recipe_generate_data
+            gr.update(),  # recipe_input
+            gr.update(selected="Recipe"),  # civitai_tabs
+            gr.update(selected="Prompt"),  # recipe_prompt_tabs
+            gr.update(selected="reference_image"),  # recipe_reference_tabs
+            gr.update(value=positivePrompt or ""),  # recipe_prompt
+            gr.update(value=negativePrompt or ""),  # recipe_negative
+            gr.update(value=options or ""),  # recipe_option
+            gr.update(value=param_data or ""),  # recipe_output (raw generate info)
+            gr.update(value=""),  # recipe_name
+            gr.update(value=""),  # recipe_desc
+            gr.update(
+                choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                value=setting.PLACEHOLDER,
+            ),  # recipe_classification
+            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+            gr.update(visible=True),  # recipe_create_btn
+            gr.update(visible=False),  # recipe_update_btn
+            shortcuts or [],  # reference_shortcuts
+            gr.update(),  # reference_modelid
+            [],  # reference_gallery
+            current_time,  # refresh_reference_gallery
+        )
 
     def on_recipe_prompt_tabs_select(self, evt):
         """Handle recipe prompt tabs selection event."""

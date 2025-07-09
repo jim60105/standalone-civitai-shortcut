@@ -153,72 +153,134 @@ class RecipeManager:
 
     def on_recipe_update_btn_click(
         self,
-        selected_recipe_name,
+        select_name,
         recipe_name,
         recipe_desc,
         recipe_prompt,
         recipe_negative,
         recipe_option,
         recipe_classification,
-        recipe_image,
-        reference_shortcuts,
+        recipe_image=None,
+        recipe_shortcuts=None,
     ):
-        """Handle recipe update button click event."""
+        """Handle recipe update button click event with complete processing."""
         import gradio as gr
-        from .. import recipe, setting
+        import datetime
+        import os
+        import uuid
+        from .. import recipe, setting, prompt
+        from ..error_handler import with_error_handling
+        from ..exceptions import FileOperationError, ValidationError
 
-        if not selected_recipe_name:
-            return ()
+        @with_error_handling(
+            fallback_value=(
+                gr.update(value=""),
+                gr.update(choices=[]),
+                datetime.datetime.now(),
+                gr.update(label=""),
+            ),
+            exception_types=(FileOperationError, ValidationError),
+            retry_count=1,
+            user_message="Failed to update recipe",
+        )
+        def _update_recipe_with_error_handling():
+            nonlocal recipe_classification
+            chg_name = setting.NEWRECIPE
+            s_classification = setting.PLACEHOLDER
 
-        # Update recipe using the raw recipe module
-        try:
-            recipe.update_recipe(
-                selected_recipe_name,
-                recipe_name,
-                recipe_desc,
-                recipe_prompt,
-                recipe_classification,
-            )
+            if (
+                select_name
+                and select_name != setting.NEWRECIPE
+                and recipe_name
+                and recipe_name != setting.NEWRECIPE
+            ):
+                pmt = dict()
+                pmt['prompt'] = recipe_prompt
+                pmt['negativePrompt'] = recipe_negative
 
-            # Return updated UI state
+                options = prompt.parse_option_data(recipe_option)
+                if options:
+                    pmt['options'] = options
+
+                if recipe_classification:
+                    if recipe_classification == setting.PLACEHOLDER:
+                        recipe_classification = ""
+                        recipe_classification = recipe_classification.strip()
+                    else:
+                        recipe_classification = recipe_classification.strip()
+                        s_classification = recipe_classification
+
+                if recipe.update_recipe(
+                    select_name, recipe_name, recipe_desc, pmt, recipe_classification
+                ):
+                    chg_name = recipe_name
+                    if recipe_image:
+                        if not os.path.exists(setting.shortcut_recipe_folder):
+                            os.makedirs(setting.shortcut_recipe_folder)
+                        unique_filename = f"{str(uuid.uuid4())}{setting.preview_image_ext}"
+                        recipe_imgfile = os.path.join(
+                            setting.shortcut_recipe_folder, unique_filename
+                        )
+                        recipe_image.save(recipe_imgfile)
+                        recipe.update_recipe_image(recipe_name, unique_filename)
+                    else:
+                        recipe.update_recipe_image(recipe_name, None)
+
+                    if recipe_shortcuts:
+                        recipe.update_recipe_shortcuts(recipe_name, recipe_shortcuts)
+
+            current_time = datetime.datetime.now()
             return (
-                gr.update(value=selected_recipe_name),
+                gr.update(value=chg_name),
                 gr.update(
                     choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                    value=recipe_classification,
+                    value=s_classification,
                 ),
-                gr.update(label=selected_recipe_name),
-                gr.update(),  # refresh_recipe_browser
+                gr.update(label=chg_name),
+                current_time,
             )
-        except Exception as e:
-            logger.error("Failed to update recipe: %s", e)
-            return ()
+
+        return _update_recipe_with_error_handling()
 
     def on_recipe_delete_btn_click(self, select_name):
-        """Handle recipe delete button click event."""
+        """Handle recipe delete button click event with complete processing."""
         import gradio as gr
+        import datetime
         from .. import recipe, setting
+        from ..error_handler import with_error_handling
+        from ..exceptions import FileOperationError
 
-        if not select_name:
-            return ()
+        @with_error_handling(
+            fallback_value=(
+                gr.update(value=""),
+                gr.update(choices=[]),
+                datetime.datetime.now(),
+                gr.update(label=setting.NEWRECIPE),
+                gr.update(visible=True),
+                gr.update(visible=False),
+            ),
+            exception_types=(FileOperationError,),
+            retry_count=1,
+            user_message="Failed to delete recipe",
+        )
+        def _delete_recipe(name):
+            if name:
+                recipe.delete_recipe(name)
 
-        try:
-            recipe.delete_recipe(select_name)
-
+            current_time = datetime.datetime.now()
             return (
-                gr.update(value=""),  # selected_recipe_name
+                gr.update(value=""),
                 gr.update(
                     choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
                     value=setting.PLACEHOLDER,
-                ),  # recipe_classification
-                gr.update(label=setting.NEWRECIPE),  # recipe_title_name
-                gr.update(visible=True),  # recipe_create_btn
-                gr.update(visible=False),  # recipe_update_btn
-                gr.update(),  # refresh_recipe_browser
+                ),
+                gr.update(label=setting.NEWRECIPE),
+                gr.update(visible=True),
+                gr.update(visible=False),
+                current_time,
             )
-        except Exception as e:
-            logger.error("Failed to delete recipe: %s", e)
-            return ()
+
+        return _delete_recipe(select_name)
 
     def on_recipe_create_btn_click(
         self,
@@ -228,19 +290,103 @@ class RecipeManager:
         recipe_negative,
         recipe_option,
         recipe_classification,
+        recipe_image=None,
+        recipe_shortcuts=None,
     ):
-        """Handle create recipe button click, validating recipe name before creation."""
+        """Handle create recipe button click with name validation and complete processing."""
         import gradio as gr
-        from .. import recipe, setting
+        import datetime
+        import os
+        import uuid
+        from .. import recipe, setting, prompt
+        from ..error_handler import with_error_handling
+        from ..exceptions import FileOperationError, ValidationError
 
-        if not recipe_name or not recipe_name.strip() or recipe_name == setting.NEWRECIPE:
-            gr.Warning("Please enter a recipe name before creating.")
-            return ()
-        # Delegate creation
-        recipe.create_recipe(
-            recipe_name,
-            recipe_desc,
-            recipe_prompt,
-            recipe_classification,
+        @with_error_handling(
+            fallback_value=(
+                gr.update(value=""),
+                gr.update(choices=[]),
+                datetime.datetime.now(),
+                gr.update(label=setting.NEWRECIPE),
+                gr.update(visible=True),
+                gr.update(visible=False),
+            ),
+            exception_types=(FileOperationError, ValidationError),
+            retry_count=1,
+            user_message="Failed to create recipe",
         )
-        return ()
+        def _create_recipe_with_error_handling():
+            nonlocal recipe_classification
+            current_time = datetime.datetime.now()
+            s_classification = setting.PLACEHOLDER
+
+            # Validate recipe name before creating
+            if not recipe_name or not recipe_name.strip() or recipe_name == setting.NEWRECIPE:
+                gr.Warning("Please enter a recipe name before creating.")
+                return (
+                    gr.update(value=""),
+                    gr.update(
+                        choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                        value=s_classification,
+                    ),
+                    gr.update(label=setting.NEWRECIPE),
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                )
+
+            if recipe_name and len(recipe_name.strip()) > 0 and recipe_name != setting.NEWRECIPE:
+                pmt = dict()
+                pmt['prompt'] = recipe_prompt
+                pmt['negativePrompt'] = recipe_negative
+
+                options = prompt.parse_option_data(recipe_option)
+                if options:
+                    pmt['options'] = options
+
+                if recipe_classification:
+                    if recipe_classification == setting.PLACEHOLDER:
+                        recipe_classification = ""
+                        recipe_classification = recipe_classification.strip()
+                    else:
+                        recipe_classification = recipe_classification.strip()
+                        s_classification = recipe_classification
+
+                if recipe.create_recipe(recipe_name, recipe_desc, pmt, recipe_classification):
+                    if recipe_image:
+                        if not os.path.exists(setting.shortcut_recipe_folder):
+                            os.makedirs(setting.shortcut_recipe_folder)
+                        unique_filename = f"{str(uuid.uuid4())}{setting.preview_image_ext}"
+                        recipe_imgfile = os.path.join(
+                            setting.shortcut_recipe_folder, unique_filename
+                        )
+                        recipe_image.save(recipe_imgfile)
+                        recipe.update_recipe_image(recipe_name, unique_filename)
+                        if recipe_shortcuts:
+                            recipe.update_recipe_shortcuts(recipe_name, recipe_shortcuts)
+
+                    return (
+                        gr.update(value=recipe_name),
+                        gr.update(
+                            choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                            value=s_classification,
+                        ),
+                        gr.update(label=recipe_name),
+                        gr.update(visible=False),
+                        gr.update(visible=True),
+                        current_time,
+                    )
+
+            return (
+                gr.update(value=""),
+                gr.update(
+                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                    value=s_classification,
+                ),
+                gr.update(label=setting.NEWRECIPE),
+                gr.update(visible=True),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            )
+
+        return _create_recipe_with_error_handling()

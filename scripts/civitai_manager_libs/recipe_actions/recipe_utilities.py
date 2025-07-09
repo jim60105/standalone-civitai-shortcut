@@ -154,52 +154,100 @@ class RecipeUtilities:
         return meta_string
 
     @staticmethod
-    def analyze_prompt(metadata: str):
+    def analyze_prompt(generate_data):
         """
-        Parse metadata string into prompt, negative prompt, options string, and return raw metadata.
+        Parse generate data into prompt, negative prompt, options string, formatted string.
+        This maintains compatibility with the original analyze_prompt function behavior.
         """
-        raw = metadata
-        lines = [line.strip() for line in metadata.strip().splitlines() if line.strip()]
-        prompt = None
-        negative = None
+        from ..logging_config import get_logger
+        from .. import prompt
+
+        logger = get_logger(__name__)
+        logger.debug(f"analyze_prompt called with: {repr(generate_data)}")
+
+        positivePrompt = None
+        negativePrompt = None
         options = None
-        for line in lines:
-            low = line.lower()
-            if low.startswith('prompt:'):
-                prompt = line[len('prompt:') :].strip()
-            elif low.startswith('negative prompt:'):
-                negative = line[len('negative prompt:') :].strip()
-            elif (
-                low.startswith('steps:')
-                or low.startswith('sampler:')
-                or low.startswith('cfg scale:')
-            ):
-                # Normalize spacing after colon for options
-                cleaned = line.replace(': ', ':')
-                options = options + cleaned if options else cleaned
-        if prompt is None and lines:
-            prompt = lines[0]
-        if negative is None and len(lines) > 1 and lines[1].lower().startswith('negative prompt:'):
-            negative = lines[1].split(':', 1)[1].strip()
-        if options is None and len(lines) > 2:
-            # Fallback options line, normalize colon spacing
-            opts = ', '.join(lines[2:])
-            options = opts.replace(': ', ':')
-        return prompt, negative, options, raw
+        gen_string = None
+
+        if generate_data:
+            generate = None
+            try:
+                logger.debug(" Calling prompt.parse_data")
+                generate = prompt.parse_data(generate_data)
+                logger.debug(f" prompt.parse_data returned: {generate}")
+            except Exception as e:
+                logger.debug(f" Exception in prompt.parse_data: {e}")
+
+            if generate:
+                if "options" in generate:
+                    options = [f"{k}:{v}" for k, v in generate['options'].items()]
+                    if options:
+                        options = ", ".join(options)
+                    logger.debug(f" Processed options: {repr(options)}")
+
+                if 'prompt' in generate:
+                    positivePrompt = generate['prompt']
+                    logger.debug(f" Extracted positive prompt: {repr(positivePrompt)}")
+
+                if 'negativePrompt' in generate:
+                    negativePrompt = generate['negativePrompt']
+                    logger.debug(f" Extracted negative prompt: {repr(negativePrompt)}")
+            else:
+                logger.debug(" generate is None after parse_data")
+
+            gen_string = RecipeUtilities.generate_prompt(positivePrompt, negativePrompt, options)
+            logger.debug(f" Generated string: {repr(gen_string)}")
+        else:
+            logger.debug(" generate_data is empty")
+
+        result = (positivePrompt, negativePrompt, options, gen_string)
+        logger.debug(f" analyze_prompt returning: {result}")
+        return result
 
     @staticmethod
     def get_recipe_information(select_name: str):
-        """Retrieve recipe data fields for given recipe name."""
-        from .. import recipe
+        """Retrieve recipe data fields for given recipe name with complete processing."""
+        import os
+        from .. import recipe, setting
 
-        data = recipe.get_recipe(select_name)
-        if not data:
-            return "", "", "", "", "", "", None
-        desc = data.get('description', '')
-        prompt = data.get('prompt') or data.get('generate', '')
-        negative = data.get('negative', '')
-        option = data.get('option', '')
-        generate = data.get('generate', '')
-        classification = data.get('classification', '')
-        page = None
-        return desc, prompt, negative, option, generate, classification, page
+        generate = None
+        options = None
+        classification = None
+        gen_string = None
+        Prompt = None
+        negativePrompt = None
+        description = None
+        imagefile = None
+
+        if select_name:
+            rc = recipe.get_recipe(select_name)
+
+            if rc and "generate" in rc:
+                generate = rc['generate']
+                if "options" in generate:
+                    options = [f"{k}:{v}" for k, v in generate['options'].items()]
+                    if options:
+                        options = ", ".join(options)
+
+                if "prompt" in generate:
+                    Prompt = generate['prompt']
+
+                if "negativePrompt" in generate:
+                    negativePrompt = generate['negativePrompt']
+
+                gen_string = RecipeUtilities.generate_prompt(Prompt, negativePrompt, options)
+
+            if rc and "image" in rc:
+                if rc['image']:
+                    imagefile = os.path.join(setting.shortcut_recipe_folder, rc['image'])
+
+            if rc and "description" in rc:
+                description = rc['description']
+
+            if rc and "classification" in rc:
+                classification = rc['classification']
+                if not classification or len(classification.strip()) == 0:
+                    classification = setting.PLACEHOLDER
+
+        return description, Prompt, negativePrompt, options, gen_string, classification, imagefile
