@@ -2,43 +2,122 @@
 Utility functions and common logic for recipe operations.
 """
 
-import logging
+import os
+import json
+import uuid
+import shutil
+import datetime
 
-logger = logging.getLogger(__name__)
+from ..setting import shortcut_recipe, shortcut_recipe_folder
+from ..logging_config import get_logger
+from ..exceptions import ValidationError, FileOperationError
+from ..recipe import (
+    get_recipe as _raw_get,
+    create as _raw_create,
+)
+
+logger = get_logger(__name__)
 
 
 class RecipeUtilities:
     """Provides helper methods for recipe import/export, validation, and backup."""
 
     def __init__(self):
-        pass
+        """Initialize the utilities helper."""
+        super().__init__()
 
     @staticmethod
     def export_recipe(recipe_id: str, format: str) -> str:
-        """Export a recipe to the specified format."""
-        pass
+        """Export a recipe to the specified format (currently only 'json').
+        Returns export file path."""
+        recipe = _raw_get(recipe_id)
+        if not recipe:
+            logger.error("export_recipe: recipe %s not found", recipe_id)
+            raise ValidationError(f"Recipe not found: {recipe_id}")
+        fmt = format.lower()
+        if fmt != "json":
+            logger.error("export_recipe: unsupported format %s", format)
+            raise ValidationError(f"Unsupported export format: {format}")
+        export_dir = os.path.dirname(shortcut_recipe)
+        os.makedirs(export_dir, exist_ok=True)
+        export_path = os.path.join(export_dir, f"{recipe_id}.json")
+        try:
+            with open(export_path, "w", encoding="utf-8") as f:
+                json.dump({recipe_id: recipe}, f, indent=4)
+            logger.info("export_recipe: exported %s to %s", recipe_id, export_path)
+            return export_path
+        except Exception as e:
+            logger.error("export_recipe: error exporting recipe %s: %s", recipe_id, e)
+            raise FileOperationError(f"Failed to export recipe: {e}")
 
     @staticmethod
     def import_recipe(file_path: str) -> str:
-        """Import a recipe from a file path."""
-        pass
+        """Import a recipe from a JSON file path. Returns the created recipe ID."""
+        if not os.path.isfile(file_path):
+            logger.error("import_recipe: file not found %s", file_path)
+            raise ValidationError(f"Import file not found: {file_path}")
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            logger.error("import_recipe: error reading file %s: %s", file_path, e)
+            raise FileOperationError(f"Failed to read import file: {e}")
+        if not isinstance(data, dict) or len(data) != 1:
+            logger.error("import_recipe: invalid data format in %s", file_path)
+            raise ValidationError("Invalid recipe data format for import")
+        recipe_id, recipe_data = next(iter(data.items()))
+        desc = recipe_data.get("description", "")
+        prompt = recipe_data.get("generate")
+        classification = recipe_data.get("classification")
+        success = _raw_create(recipe_id, desc, prompt, classification)
+        if not success:
+            logger.error("import_recipe: failed to import %s", recipe_id)
+            raise FileOperationError(f"Failed to import recipe: {recipe_id}")
+        logger.info("import_recipe: imported recipe %s from %s", recipe_id, file_path)
+        return recipe_id
 
     @staticmethod
     def validate_recipe_format(recipe_data: dict) -> bool:
-        """Validate the format of recipe data."""
-        pass
+        """Validate the structure of recipe data. Requires 'name' non-empty string."""
+        if not isinstance(recipe_data, dict):
+            return False
+        name = recipe_data.get("name")
+        if not name or not isinstance(name, str) or not name.strip():
+            return False
+        return True
 
     @staticmethod
     def generate_recipe_id() -> str:
-        """Generate a unique identifier for a recipe."""
-        pass
+        """Generate a unique identifier for a recipe using UUID4."""
+        return uuid.uuid4().hex
 
     @staticmethod
     def backup_recipe_data(recipe_id: str) -> str:
-        """Backup data for a recipe and return backup path."""
-        pass
+        """Backup the recipe JSON file to a timestamped backup file and return its path."""
+        timestamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        backup_dir = os.path.join(shortcut_recipe_folder, "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_path = os.path.join(backup_dir, f"{recipe_id}_{timestamp}.json")
+        try:
+            export_path = os.path.join(os.path.dirname(shortcut_recipe), f"{recipe_id}.json")
+            shutil.copy2(export_path, backup_path)
+            logger.info("backup_recipe_data: backed up %s to %s", recipe_id, backup_path)
+            return backup_path
+        except Exception as e:
+            logger.error("backup_recipe_data: error backing up %s: %s", recipe_id, e)
+            raise FileOperationError(f"Failed to backup recipe data: {e}")
 
     @staticmethod
     def restore_recipe_data(backup_path: str) -> bool:
-        """Restore recipe data from a backup path."""
-        pass
+        """Restore recipe JSON file from a backup path."""
+        if not os.path.isfile(backup_path):
+            logger.error("restore_recipe_data: backup file not found %s", backup_path)
+            raise ValidationError(f"Backup file not found: {backup_path}")
+        dest = os.path.join(os.path.dirname(shortcut_recipe), os.path.basename(backup_path))
+        try:
+            shutil.copy2(backup_path, dest)
+            logger.info("restore_recipe_data: restored backup %s to %s", backup_path, dest)
+            return True
+        except Exception as e:
+            logger.error("restore_recipe_data: error restoring %s: %s", backup_path, e)
+            raise FileOperationError(f"Failed to restore recipe data: {e}")
