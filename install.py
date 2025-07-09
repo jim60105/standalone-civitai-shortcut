@@ -1,5 +1,6 @@
 """Script to install all dependencies listed in requirements.txt using launch utilities (WebUI)."""
 
+import os
 import re
 
 import launch
@@ -26,7 +27,9 @@ def get_package_name(requirement: str) -> str:
 
 def main() -> None:
     """Install missing packages from requirements.txt."""
-    reqs = parse_requirements("requirements.txt")
+    req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
+
+    reqs = parse_requirements(req_file)
     for req in reqs:
         pkg = get_package_name(req)
         if not launch.is_installed(pkg):
