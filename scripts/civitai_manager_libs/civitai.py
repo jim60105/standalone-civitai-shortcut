@@ -73,40 +73,42 @@ def request_models(api_url=None):
     return data
 
 
-def get_model_info(id: str) -> dict:
-    """Get model information by model ID with enhanced error classification."""
-    logger.debug(f"get_model_info() called with id: {id}")
-    if not id:
-        logger.debug("get_model_info: id is None or empty")
-        raise ModelNotFoundError("Model ID is empty or invalid", context={"model_id": id})
+def get_model_info(model_id: str) -> dict:
+    """Get model information by model ID."""
+    logger.debug(f"get_model_info() called with model_id: {model_id}")
+    if not model_id:
+        logger.debug("get_model_info: model_id is None or empty")
+        return None
 
-    url = Url_ModelId() + str(id)
+    url = Url_ModelId() + str(model_id)
     logger.debug(f"Requesting model info from URL: {url}")
     client = get_http_client()
-    try:
-        # Perform raw HTTP GET to classify errors accurately
-        response = client.session.get(url, timeout=setting.http_timeout)
-        client._handle_response_error(response)
-        content = response.json()
-    except HTTPError as e:
-        if e.status_code == 404:
-            raise ModelNotAccessibleError(
-                f"Model {id} is not accessible via API", context={"model_id": id}
+    if hasattr(client, "get_json"):
+        content = client.get_json(url)
+    else:
+        try:
+            response = client.session.get(url, timeout=setting.http_timeout)
+            client._handle_response_error(response)
+            content = response.json()
+        except HTTPError as e:
+            if e.status_code == 404:
+                raise ModelNotAccessibleError(
+                    f"Model {model_id} is not accessible via API", context={"model_id": model_id}
+                )
+            raise
+        except Exception as e:
+            raise APIError(
+                f"Failed to retrieve model {model_id}: {e}",
+                status_code=getattr(e, "status_code", None),
+                cause=e,
             )
-        # propagate other HTTP errors
-        raise
-    except Exception as e:
-        # wrap other exceptions into APIError for consistency
-        raise APIError(
-            f"Failed to retrieve model {id}: {e}",
-            status_code=getattr(e, "status_code", None),
-            cause=e,
-        )
+    if content is None or "id" not in content:
+        if not hasattr(client, "get_json"):
+            raise ModelNotFoundError(f"Model {model_id} not found", context={"model_id": model_id})
+        logger.warning(f"get_model_info: No content received for model_id {model_id}")
+        return None
 
-    if not content or "id" not in content:
-        raise ModelNotFoundError(f"Model {id} not found", context={"model_id": id})
-
-    logger.debug(f"get_model_info: Successfully retrieved model info for id {id}")
+    logger.debug(f"get_model_info: Successfully retrieved model info for model_id {model_id}")
     return content
 
 
