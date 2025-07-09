@@ -14,6 +14,9 @@ from .exceptions import (
     FileOperationError,
     CivitaiShortcutError,
     ValidationError,
+    HTTPError,
+    ModelNotAccessibleError,
+    ModelNotFoundError,
 )
 
 
@@ -70,29 +73,39 @@ def request_models(api_url=None):
     return data
 
 
-@with_error_handling(
-    fallback_value=None,
-    exception_types=(NetworkError, APIError),
-    retry_count=2,
-    retry_delay=1.0,
-    user_message="Failed to get model info",
-)
 def get_model_info(id: str) -> dict:
-    """Get model information by model ID."""
+    """Get model information by model ID with enhanced error classification."""
     logger.debug(f"get_model_info() called with id: {id}")
     if not id:
         logger.debug("get_model_info: id is None or empty")
-        return None
+        raise ModelNotFoundError("Model ID is empty or invalid", context={"model_id": id})
+
     url = Url_ModelId() + str(id)
     logger.debug(f"Requesting model info from URL: {url}")
     client = get_http_client()
-    content = client.get_json(url)
-    if content is None:
-        logger.warning(f"get_model_info: Failed to get data for id {id}")
-        return None
-    if 'id' not in content:
-        logger.warning(f"get_model_info: 'id' not in response content for id {id}")
-        return None
+    try:
+        # Perform raw HTTP GET to classify errors accurately
+        response = client.session.get(url, timeout=setting.http_timeout)
+        client._handle_response_error(response)
+        content = response.json()
+    except HTTPError as e:
+        if e.status_code == 404:
+            raise ModelNotAccessibleError(
+                f"Model {id} is not accessible via API", context={"model_id": id}
+            )
+        # propagate other HTTP errors
+        raise
+    except Exception as e:
+        # wrap other exceptions into APIError for consistency
+        raise APIError(
+            f"Failed to retrieve model {id}: {e}",
+            status_code=getattr(e, "status_code", None),
+            cause=e,
+        )
+
+    if not content or "id" not in content:
+        raise ModelNotFoundError(f"Model {id} not found", context={"model_id": id})
+
     logger.debug(f"get_model_info: Successfully retrieved model info for id {id}")
     return content
 

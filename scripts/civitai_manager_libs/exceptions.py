@@ -146,3 +146,16 @@ class AuthenticationRequiredError(APIError):
         super().__init__(message, **kwargs)
         self.resource_url = resource_url
         self.should_abort_process = True
+
+
+# Exceptions for model accessibility improvements
+class ModelNotAccessibleError(CivitaiShortcutError):
+    """Raised when a model exists but is not accessible via the API."""
+
+    pass
+
+
+class ModelNotFoundError(CivitaiShortcutError):
+    """Raised when a model does not exist or cannot be retrieved."""
+
+    pass
