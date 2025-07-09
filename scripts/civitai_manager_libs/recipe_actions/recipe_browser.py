@@ -354,10 +354,16 @@ class RecipeBrowser:
         logger = get_logger(__name__)
         logger.warning(f"[RECIPE_INPUT_CHANGE] Event triggered with input: {repr(recipe_input)}")
 
-        # If recipe_input is an empty string, return immediately with no UI update
-        if recipe_input is None or recipe_input == "":
+        # If recipe_input is an empty string or contains no meaningful data,
+        # return immediately without any UI updates to avoid interfering with other events
+        if (
+            recipe_input is None
+            or recipe_input == ""
+            or not recipe_input.strip()
+            or not self._is_valid_recipe_input_data(recipe_input)
+        ):
             logger.warning(
-                "[RECIPE_INPUT_CHANGE] Received empty string, "
+                "[RECIPE_INPUT_CHANGE] Received empty/invalid input, "
                 "returning no-op updates to avoid interference."
             )
             # Return no-op updates that don't change any UI components
@@ -453,3 +459,41 @@ class RecipeBrowser:
         if hasattr(evt, 'index') and evt.index == 1:
             return gr.update(selected="reference_model")
         return gr.update(selected=None)
+
+    def _is_valid_recipe_input_data(self, recipe_input: str) -> bool:
+        """
+        Check if recipe_input contains valid data that should trigger UI updates.
+        Returns True only if the input appears to be from 'send to recipe' functionality.
+        """
+        if not recipe_input or not recipe_input.strip():
+            return False
+
+        # Valid recipe input should contain either:
+        # 1. A shortcut ID with image filename and parameters
+        #    (format: "shortcutid:image.png\nparameters")
+        # 2. Just an image filename that can be resolved to a shortcut
+
+        # Check for the "shortcutid:image\nparameters" format
+        if '\n' in recipe_input and ':' in recipe_input.split('\n')[0]:
+            first_line = recipe_input.split('\n')[0]
+            # Should have format "shortcutid:image_filename"
+            if ':' in first_line and len(first_line.split(':', 1)) == 2:
+                shortcut_id, image_fn = first_line.split(':', 1)
+                # Basic validation: both parts should be non-empty
+                if shortcut_id.strip() and image_fn.strip():
+                    return True
+
+        # Check if it's a valid image path that can be resolved
+        from .. import setting
+
+        try:
+            result = setting.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
+            if result is not None:
+                shortcut_id, image_fn = result
+                # Only consider valid if both shortcut_id and image_fn are provided
+                return bool(shortcut_id and image_fn)
+        except Exception:
+            pass
+
+        # If nothing matches, it's probably not valid recipe input data
+        return False
