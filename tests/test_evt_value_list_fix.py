@@ -1,3 +1,4 @@
+# type: ignore
 """
 Test cases for evt.value list handling fix.
 
@@ -43,7 +44,10 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = 'test_recipe'
 
-        mock_path = 'scripts.civitai_manager_libs.recipe_action.get_recipe_information'
+        mock_path = (
+            'scripts.civitai_manager_libs.recipe_actions.recipe_utilities.'
+            'RecipeUtilities.get_recipe_information'
+        )
         with patch(mock_path) as mock_get_info:
             mock_get_info.return_value = ("desc", "prompt", "neg", "opts", "gen", "class", None)
 
@@ -64,7 +68,10 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = ['image_url', 'test_recipe']
 
-        mock_path = 'scripts.civitai_manager_libs.recipe_action.get_recipe_information'
+        mock_path = (
+            'scripts.civitai_manager_libs.recipe_actions.recipe_utilities.'
+            'RecipeUtilities.get_recipe_information'
+        )
         with patch(mock_path) as mock_get_info:
             mock_get_info.return_value = ("desc", "prompt", "neg", "opts", "gen", "class", None)
 
@@ -139,7 +146,7 @@ class TestEvtValueListHandling:
         evt = SimpleNamespace()
         evt.value = 123  # Invalid type
 
-        result = classification_action.on_classification_list_select(evt)
+        result = classification_action.on_classification_list_select(evt)  # type: ignore
 
         # Should return empty updates
         assert result is not None
