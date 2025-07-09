@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Optional, Dict, Any
 from . import setting
 from .logging_config import get_logger
 
@@ -73,7 +74,7 @@ def request_models(api_url=None):
     return data
 
 
-def get_model_info(model_id: str) -> dict:
+def get_model_info(model_id: str) -> Optional[Dict[str, Any]]:
     """Get model information by model ID."""
     logger.debug(f"get_model_info() called with model_id: {model_id}")
     if not model_id:
@@ -83,9 +84,14 @@ def get_model_info(model_id: str) -> dict:
     url = Url_ModelId() + str(model_id)
     logger.debug(f"Requesting model info from URL: {url}")
     client = get_http_client()
+
+    # Use the unified client interface if available
     if hasattr(client, "get_json"):
         content = client.get_json(url)
+        if content is None or "id" not in content:
+            raise ModelNotFoundError(f"Model {model_id} not found", model_id=model_id)
     else:
+        # Handle direct session usage for compatibility
         try:
             response = client.session.get(url, timeout=setting.http_timeout)
             client._handle_response_error(response)
@@ -93,20 +99,22 @@ def get_model_info(model_id: str) -> dict:
         except HTTPError as e:
             if e.status_code == 404:
                 raise ModelNotAccessibleError(
-                    f"Model {model_id} is not accessible via API", context={"model_id": model_id}
+                    f"Model {model_id} is not accessible via API", model_id=model_id
                 )
-            raise
+            raise APIError(
+                f"Failed to retrieve model {model_id}: HTTP {e.status_code}",
+                status_code=e.status_code,
+                cause=e,
+            )
         except Exception as e:
             raise APIError(
                 f"Failed to retrieve model {model_id}: {e}",
                 status_code=getattr(e, "status_code", None),
                 cause=e,
             )
-    if content is None or "id" not in content:
-        if not hasattr(client, "get_json"):
-            raise ModelNotFoundError(f"Model {model_id} not found", context={"model_id": model_id})
-        logger.warning(f"get_model_info: No content received for model_id {model_id}")
-        return None
+
+        if content is None or "id" not in content:
+            raise ModelNotFoundError(f"Model {model_id} not found", model_id=model_id)
 
     logger.debug(f"get_model_info: Successfully retrieved model info for model_id {model_id}")
     return content
@@ -132,7 +140,7 @@ def get_model_info(model_id: str) -> dict:
     retry_delay=1.0,
     user_message="Failed to get version info by hash",
 )
-def get_version_info_by_hash(hash_value) -> dict:
+def get_version_info_by_hash(hash_value) -> Optional[Dict[str, Any]]:
     """Get version information by hash value."""
     logger.debug(f"get_version_info_by_hash() called with hash: {hash_value}")
     if not hash_value:
@@ -163,7 +171,7 @@ def get_version_info_by_hash(hash_value) -> dict:
     retry_delay=1.0,
     user_message="Failed to get version info by version ID",
 )
-def get_version_info_by_version_id(version_id: str) -> dict:
+def get_version_info_by_version_id(version_id: str) -> Optional[Dict[str, Any]]:
     """Get version information by version ID."""
     logger.debug(f"get_version_info_by_version_id() called with version_id: {version_id}")
     if not version_id:
@@ -198,7 +206,7 @@ def get_version_info_by_version_id(version_id: str) -> dict:
     retry_delay=1.0,
     user_message="Failed to get latest version info",
 )
-def get_latest_version_info_by_model_id(id: str) -> dict:
+def get_latest_version_info_by_model_id(id: str) -> Optional[Dict[str, Any]]:
     logger.debug(f"get_latest_version_info_by_model_id() called with id: {id}")
     model_info = get_model_info(id)
     if not model_info:
@@ -240,7 +248,7 @@ def get_latest_version_info_by_model_id(id: str) -> dict:
     retry_delay=1.0,
     user_message="Failed to get version ID by name",
 )
-def get_version_id_by_version_name(model_id: str, name: str) -> str:
+def get_version_id_by_version_name(model_id: str, name: str) -> Optional[str]:
     logger.debug(
         f"[civitai] get_version_id_by_version_name() called with model_id: {model_id}, name: {name}"
     )
@@ -280,7 +288,7 @@ def get_version_id_by_version_name(model_id: str, name: str) -> str:
     retry_count=0,
     user_message="Failed to get files by version info",
 )
-def get_files_by_version_info(version_info: dict) -> dict:
+def get_files_by_version_info(version_info: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     logger.debug(" get_files_by_version_info() called")
     download_files = {}
     if not version_info:
@@ -299,12 +307,14 @@ def get_files_by_version_info(version_info: dict) -> dict:
     retry_count=0,
     user_message="Failed to get files by version ID",
 )
-def get_files_by_version_id(version_id=None) -> dict:
+def get_files_by_version_id(version_id=None) -> Optional[Dict[str, Any]]:
     logger.debug(f" get_files_by_version_id() called with version_id: {version_id}")
     if not version_id:
         logger.debug(" get_files_by_version_id: version_id is None or empty")
         return None
     version_info = get_version_info_by_version_id(version_id)
+    if not version_info:
+        return None
     return get_files_by_version_info(version_info)
 
 
@@ -314,7 +324,9 @@ def get_files_by_version_id(version_id=None) -> dict:
     retry_count=0,
     user_message="Failed to get primary file by version info",
 )
-def get_primary_file_by_version_info(version_info: dict) -> dict:
+def get_primary_file_by_version_info(
+    version_info: Optional[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
     logger.debug(" get_primary_file_by_version_info() called")
     if not version_info:
         logger.debug(" get_primary_file_by_version_info: version_info is None or empty")
@@ -335,12 +347,14 @@ def get_primary_file_by_version_info(version_info: dict) -> dict:
     retry_count=0,
     user_message="Failed to get primary file by version ID",
 )
-def get_primary_file_by_version_id(version_id=None) -> dict:
+def get_primary_file_by_version_id(version_id=None) -> Optional[Dict[str, Any]]:
     logger.debug(f" get_primary_file_by_version_id() called with version_id: {version_id}")
     if not version_id:
         logger.debug(" get_primary_file_by_version_id: version_id is None or empty")
         return None
     version_info = get_version_info_by_version_id(version_id)
+    if not version_info:
+        return None
     return get_primary_file_by_version_info(version_info)
 
 
@@ -350,12 +364,14 @@ def get_primary_file_by_version_id(version_id=None) -> dict:
     retry_count=0,
     user_message="Failed to get images by version ID",
 )
-def get_images_by_version_id(version_id=None) -> dict:
+def get_images_by_version_id(version_id=None) -> Optional[Dict[str, Any]]:
     logger.debug(f" get_images_by_version_id() called with version_id: {version_id}")
     if not version_id:
         logger.debug(" get_images_by_version_id: version_id is None or empty")
         return None
     version_info = get_version_info_by_version_id(version_id)
+    if not version_info:
+        return None
     return get_images_by_version_info(version_info)
 
 
@@ -365,7 +381,7 @@ def get_images_by_version_id(version_id=None) -> dict:
     retry_count=0,
     user_message="Failed to get images by version info",
 )
-def get_images_by_version_info(version_info: dict) -> dict:
+def get_images_by_version_info(version_info: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     logger.debug(" get_images_by_version_info() called")
     if not version_info:
         logger.debug(" get_images_by_version_info: version_info is None or empty")
@@ -379,7 +395,7 @@ def get_images_by_version_info(version_info: dict) -> dict:
     retry_count=0,
     user_message="Failed to get trigger words by version info",
 )
-def get_triger_by_version_info(version_info: dict) -> str:
+def get_triger_by_version_info(version_info: Optional[Dict[str, Any]]) -> Optional[str]:
     logger.debug(" get_triger_by_version_info() called")
     if not version_info:
         logger.debug(" get_triger_by_version_info: version_info is None or empty")
@@ -400,12 +416,14 @@ def get_triger_by_version_info(version_info: dict) -> str:
     retry_count=0,
     user_message="Failed to get trigger words by version ID",
 )
-def get_triger_by_version_id(version_id=None) -> str:
+def get_triger_by_version_id(version_id=None) -> Optional[str]:
     logger.debug(f" get_triger_by_version_id() called with version_id: {version_id}")
     if not version_id:
         logger.debug(" get_triger_by_version_id: version_id is None or empty")
         return None
     version_info = get_version_info_by_version_id(version_id)
+    if not version_info:
+        return None
     return get_triger_by_version_info(version_info)
 
 
@@ -466,6 +484,8 @@ def write_triger_words_by_version_id(file, version_id: str) -> bool:
         logger.debug(" write_triger_words_by_version_id: version_id is None or empty")
         return False
     version_info = get_version_info_by_version_id(version_id)
+    if not version_info:
+        return False
     return write_triger_words(file, version_info)
 
 
@@ -475,7 +495,7 @@ def write_triger_words_by_version_id(file, version_id: str) -> bool:
     retry_count=1,
     user_message="Failed to write trigger words",
 )
-def write_triger_words(file, version_info: dict) -> bool:
+def write_triger_words(file, version_info: Optional[Dict[str, Any]]) -> bool:
     logger.debug(f" write_triger_words() called with file: {file}")
     if not version_info:
         logger.debug(" write_triger_words: version_info is None or empty")

@@ -1,5 +1,6 @@
 """Integration tests for civitai.py module."""
 
+import pytest
 from unittest.mock import patch
 from tests.utils.test_helpers import HTTPClientTestHelper
 
@@ -41,11 +42,11 @@ class TestCivitaiIntegration:
 
         # Act
         from civitai_manager_libs import civitai
+        from civitai_manager_libs.exceptions import ModelNotFoundError
 
-        result = civitai.get_model_info("99999")
-
-        # Assert
-        assert result is None
+        # Assert - should raise ModelNotFoundError for missing models
+        with pytest.raises(ModelNotFoundError):
+            civitai.get_model_info("99999")
 
     @patch('civitai_manager_libs.civitai.get_http_client')
     def test_get_model_info_network_error(self, mock_get_http_client):
@@ -57,11 +58,11 @@ class TestCivitaiIntegration:
 
         # Act
         from civitai_manager_libs import civitai
+        from civitai_manager_libs.exceptions import ModelNotFoundError
 
-        result = civitai.get_model_info("12345")
-
-        # Assert
-        assert result is None
+        # Assert - should raise ModelNotFoundError for missing models
+        with pytest.raises(ModelNotFoundError):
+            civitai.get_model_info("12345")
 
     @patch('civitai_manager_libs.civitai.get_http_client')
     def test_request_models_with_pagination(self, mock_get_http_client):

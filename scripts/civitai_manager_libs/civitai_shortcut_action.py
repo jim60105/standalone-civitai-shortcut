@@ -503,13 +503,7 @@ def on_civitai_internet_url_txt_upload(
                     modelids = ishortcut_action.upload_shortcut_by_urls(
                         [url], register_information_only, progress
                     )
-                except ModelNotAccessibleError as e:
-                    notification_service = get_notification_service()
-                    if notification_service:
-                        notification_service.show_error(str(e))
-                    return gr.update(visible=False), None, gr.update(visible=True)
 
-                try:
                     logger.debug(
                         f"[civitai_shortcut_action] upload_shortcut_by_urls SUCCESS, "
                         f"returned: {modelids}"
@@ -525,6 +519,12 @@ def on_civitai_internet_url_txt_upload(
                         logger.debug(f" Extracted model_id: {model_id}")
                     else:
                         logger.debug(" modelids is empty!")
+
+                except ModelNotAccessibleError as e:
+                    notification_service = get_notification_service()
+                    if notification_service:
+                        notification_service.show_error(str(e))
+                    return gr.update(visible=False), None, gr.update(visible=True)
                 except Exception as e:
                     logger.debug(
                         f"[civitai_shortcut_action] EXCEPTION in upload_shortcut_by_urls: {e}"

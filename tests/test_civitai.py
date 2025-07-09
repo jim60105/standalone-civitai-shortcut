@@ -57,7 +57,11 @@ def test_get_model_info_success(monkeypatch):
 
 def test_get_model_info_fail(monkeypatch):
     monkeypatch.setattr(civitai, 'get_http_client', lambda: DummyClient(data=None))
-    assert civitai.get_model_info('1') is None
+    from scripts.civitai_manager_libs.exceptions import ModelNotFoundError
+    import pytest
+
+    with pytest.raises(ModelNotFoundError):
+        civitai.get_model_info('1')
 
 
 def test_get_version_info_by_hash_success(monkeypatch):

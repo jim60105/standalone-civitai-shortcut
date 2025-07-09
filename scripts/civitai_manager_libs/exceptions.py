@@ -149,13 +149,27 @@ class AuthenticationRequiredError(APIError):
 
 
 # Exceptions for model accessibility improvements
-class ModelNotAccessibleError(CivitaiShortcutError):
+class ModelNotAccessibleError(APIError):
     """Raised when a model exists but is not accessible via the API."""
 
-    pass
+    def __init__(
+        self,
+        message: str,
+        model_id: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        self.model_id = model_id
 
 
-class ModelNotFoundError(CivitaiShortcutError):
+class ModelNotFoundError(APIError):
     """Raised when a model does not exist or cannot be retrieved."""
 
-    pass
+    def __init__(
+        self,
+        message: str,
+        model_id: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        self.model_id = model_id
