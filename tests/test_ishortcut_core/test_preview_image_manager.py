@@ -1,7 +1,7 @@
 import os
 import pytest
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import (
     PreviewImageManager,
 )
@@ -11,8 +11,8 @@ from scripts.civitai_manager_libs.ishortcut_core.preview_image_manager import (
 def isolate_preview_dir(tmp_path, monkeypatch):
     # isolate preview directory and fallback image
     pd = tmp_path / 'previews'
-    monkeypatch.setattr(setting, 'shortcut_thumbnail_folder', str(pd))
-    monkeypatch.setattr(setting, 'no_card_preview_image', 'fallback.jpg')
+    monkeypatch.setattr(settings, 'shortcut_thumbnail_folder', str(pd))
+    monkeypatch.setattr(settings, 'no_card_preview_image', 'fallback.jpg')
     return tmp_path
 
 

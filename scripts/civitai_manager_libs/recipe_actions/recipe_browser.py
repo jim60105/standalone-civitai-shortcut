@@ -6,7 +6,7 @@ import gradio as gr
 import importlib
 
 from .. import recipe
-from .. import setting
+from .. import settings
 from .. import sc_browser_page
 from .. import recipe_browser_page
 from ..logging_config import get_logger
@@ -348,7 +348,7 @@ class RecipeBrowser:
         import gradio as gr
         import datetime
         from ..logging_config import get_logger
-        from .. import setting, recipe
+        from .. import settings, recipe
         from .recipe_utilities import RecipeUtilities
 
         logger = get_logger(__name__)
@@ -484,10 +484,10 @@ class RecipeBrowser:
                     return True
 
         # Check if it's a valid image path that can be resolved
-        from .. import setting
+        from .. import settings
 
         try:
-            result = setting.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
+            result = settings.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
             if result is not None:
                 shortcut_id, image_fn = result
                 # Only consider valid if both shortcut_id and image_fn are provided

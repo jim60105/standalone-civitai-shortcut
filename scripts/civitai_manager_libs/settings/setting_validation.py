@@ -1,9 +1,11 @@
 """Manages setting validation logic."""
+
 import os
 
 from ..logging_config import get_logger
 
 logger = get_logger(__name__)
+
 
 class SettingValidator:
     """Validates application settings."""
@@ -49,7 +51,9 @@ class SettingValidator:
     def validate_range_setting(self, value: any, min_val: any, max_val: any) -> tuple[bool, str]:
         """Validates a numeric setting, ensuring it is within a specified range."""
         if not (min_val <= value <= max_val):
-            logger.warning(f"Validation failed: Value {value} is out of range ({min_val}-{max_val}).")
+            logger.warning(
+                f"Validation failed: Value {value} is out of range ({min_val}-{max_val})."
+            )
             return False, f"Value {value} is out of range ({min_val}-{max_val})."
         return True, ""
 

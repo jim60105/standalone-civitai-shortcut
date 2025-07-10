@@ -1,4 +1,5 @@
 """Manages the persistence of application settings."""
+
 import json
 import os
 import shutil
@@ -7,6 +8,7 @@ from ..exceptions import FileOperationError
 from ..logging_config import get_logger
 
 logger = get_logger(__name__)
+
 
 class SettingPersistence:
     """Handles loading and saving settings to a file."""

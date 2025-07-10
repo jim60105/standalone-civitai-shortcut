@@ -3,7 +3,7 @@ import json
 import datetime
 import pytest
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.ishortcut_core.shortcut_backup_manager import (
     ShortcutBackupManager,
 )
@@ -13,9 +13,9 @@ from scripts.civitai_manager_libs.ishortcut_core.shortcut_backup_manager import 
 def isolate_backup_dir(tmp_path, monkeypatch):
     # isolate settings to temporary backup directory
     bk = tmp_path / 'backups'
-    monkeypatch.setattr(setting, 'shortcut_info_folder', str(bk))
+    monkeypatch.setattr(settings, 'shortcut_info_folder', str(bk))
     monkeypatch.setattr(
-        setting,
+        settings,
         'shortcut_civitai_internet_shortcut_url',
         str(tmp_path / 'urlmap.json'),
     )
@@ -29,7 +29,7 @@ def test_backup_shortcut_and_restore(isolate_backup_dir):
     # valid backup
     data = {'id': '7', 'name': 'n'}
     assert mgr.backup_shortcut(data)
-    files = os.listdir(setting.shortcut_info_folder)
+    files = os.listdir(settings.shortcut_info_folder)
     assert any(f.startswith('7_') and f.endswith('.json') for f in files)
     # restore latest
     restored = mgr.restore_from_backup('7')
@@ -43,7 +43,7 @@ def test_backup_url_mapping_and_list(isolate_backup_dir):
     # valid mapping
     assert mgr.backup_url_mapping('n', 'u')
     # mapping file should contain entry
-    mapping = json.load(open(setting.shortcut_civitai_internet_shortcut_url))
+    mapping = json.load(open(settings.shortcut_civitai_internet_shortcut_url))
     assert mapping.get('url=u') == 'n'
     # list backups returns empty list for no .json files
     assert mgr.get_backup_list() == []
@@ -52,7 +52,7 @@ def test_backup_url_mapping_and_list(isolate_backup_dir):
 def test_get_backup_list_and_cleanup(isolate_backup_dir, tmp_path):
     mgr = ShortcutBackupManager()
     # prepare backup files
-    bdir = setting.shortcut_info_folder
+    bdir = settings.shortcut_info_folder
     os.makedirs(bdir, exist_ok=True)
     now = datetime.datetime.now()
     old = now - datetime.timedelta(days=10)

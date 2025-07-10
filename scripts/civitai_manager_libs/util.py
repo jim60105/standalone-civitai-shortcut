@@ -6,7 +6,7 @@ import platform
 import subprocess
 import time
 from .compat.environment_detector import EnvironmentDetector
-from . import setting
+from . import settings
 
 import logging
 from .logging_config import get_logger
@@ -326,9 +326,9 @@ def write_json(contents, path):
 
 
 def scan_folder_for_info(folder):
-    from . import setting
+    from . import settings
 
-    info_list = search_file([folder], None, [setting.info_ext])
+    info_list = search_file([folder], None, [settings.info_ext])
 
     if not info_list:
         return None
@@ -341,14 +341,13 @@ def get_download_image_folder(ms_foldername):
     if not ms_foldername:
         return
 
-    from . import setting
+    from . import settings
 
-    if not setting.download_images_folder:
+    download_folder = settings.config_manager.get_setting('download_images_folder')
+    if not download_folder:
         return
 
-    model_folder = os.path.join(
-        setting.download_images_folder.strip(), replace_dirname(ms_foldername.strip())
-    )
+    model_folder = os.path.join(download_folder.strip(), replace_dirname(ms_foldername.strip()))
 
     if not os.path.exists(model_folder):
         return None
@@ -361,14 +360,13 @@ def make_download_image_folder(ms_foldername):
     if not ms_foldername:
         return
 
-    from . import setting
+    from . import settings
 
-    if not setting.download_images_folder:
+    download_folder = settings.config_manager.get_setting('download_images_folder')
+    if not download_folder:
         return
 
-    model_folder = os.path.join(
-        setting.download_images_folder.strip(), replace_dirname(ms_foldername.strip())
-    )
+    model_folder = os.path.join(download_folder.strip(), replace_dirname(ms_foldername.strip()))
 
     if not os.path.exists(model_folder):
         os.makedirs(model_folder)
@@ -392,10 +390,10 @@ def make_download_model_folder(
     if "model" not in version_info.keys():
         return
 
-    from . import setting
+    from . import settings
 
     content_type = version_info['model']['type']
-    model_folder = setting.generate_type_basefolder(content_type)
+    model_folder = settings.generate_type_basefolder(content_type)
 
     if not model_folder:
         return
@@ -414,9 +412,7 @@ def make_download_model_folder(
 
     if vs_folder:
         if not vs_foldername or len(vs_foldername.strip()) <= 0:
-            from . import setting
-
-            vs_foldername = setting.generate_version_foldername(
+            vs_foldername = settings.generate_version_foldername(
                 ms_foldername, version_info['name'], version_info['id']
             )
 
@@ -624,7 +620,8 @@ def download_with_cache_and_retry(
     max_age: int = 3600,
 ) -> str:
     """Download with caching and retry logic."""
-    cache_path = os.path.join(setting.cache_folder, f"{cache_key}.jpg")
+    cache_folder = settings.config_manager.get_setting('cache_folder', 'cache')
+    cache_path = os.path.join(cache_folder, f"{cache_key}.jpg")
 
     if os.path.exists(cache_path):
         if time.time() - os.path.getmtime(cache_path) < max_age:
@@ -641,7 +638,7 @@ def download_with_cache_and_retry(
     if os.path.exists(cache_path):
         printD("[cache] Using stale cached image due to download failure")
         return cache_path
-    return config_manager.get_setting('no_card_preview_image')
+    return settings.get_no_card_preview_image()
 
 
 def optimize_downloaded_image(

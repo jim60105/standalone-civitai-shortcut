@@ -589,7 +589,9 @@ def save_setting(
     environment['temporary'] = temporary
 
     setting.save_setting(environment)
-    setting.load_data()
+    from .settings.path_manager import load_model_folder_data
+    from .settings import config_manager
+    load_model_folder_data(config_manager)
 
     # notify user based on whether layout reload is needed
     ui_reload_needed = _check_ui_reload_required(old_env, environment)

@@ -78,7 +78,9 @@ class ImageProcessor:
         logger.info(f"[ImageProcessor] Starting image downloads for model {modelid}")
 
         # Ensure latest configuration values loaded before downloading
-        setting.load_data()
+        from ..settings.path_manager import load_model_folder_data
+        from ..settings import config_manager
+        load_model_folder_data(config_manager)
         logger.debug(
             f"[ImageProcessor] Current shortcut_max_download_image_per_version: "
             f"{setting.shortcut_max_download_image_per_version}"

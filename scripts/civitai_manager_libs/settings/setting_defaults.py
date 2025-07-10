@@ -1,5 +1,5 @@
-
 """Default settings for the application."""
+
 import os
 
 # Project-generated files root directory
@@ -96,6 +96,7 @@ TRIGER_EXT = ".txt"
 TRIGER_SUFFIX = ".triger"
 PREVIEW_IMAGE_EXT = ".png"
 PREVIEW_IMAGE_SUFFIX = ".preview"
+
 
 class SettingDefaults:
     """Manages default settings for the application."""
@@ -204,4 +205,3 @@ class SettingDefaults:
     def get_default_value(cls, key: str) -> any:
         """Returns the default value for a specific setting key."""
         return cls.get_all_defaults().get(key)
-

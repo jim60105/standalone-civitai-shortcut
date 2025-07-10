@@ -1,19 +1,24 @@
 import pytest
 from unittest.mock import Mock, patch
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.recipe_actions.recipe_gallery import RecipeGallery
 
-config_manager = setting.config_manager
+config_manager = settings.config_manager
+
 
 @pytest.fixture(autouse=True)
 def use_tmp_recipe_file(tmp_path, monkeypatch):
     """Redirect recipe storage to a temporary file for tests."""
     tmp_file = tmp_path / "recipes.json"
     tmp_folder = tmp_path / "sc_recipes"
-    monkeypatch.setattr(setting, "shortcut_recipe", str(tmp_file))
-    monkeypatch.setattr(setting, "shortcut_recipe_folder", str(tmp_folder))
-    monkeypatch.setattr(config_manager, "_set_setting", lambda key, value: config_manager.settings.update({key: value}))
+    monkeypatch.setattr(settings, "shortcut_recipe", str(tmp_file))
+    monkeypatch.setattr(settings, "shortcut_recipe_folder", str(tmp_folder))
+    monkeypatch.setattr(
+        config_manager,
+        "_set_setting",
+        lambda key, value: config_manager.settings.update({key: value}),
+    )
     config_manager.set_setting("prompt_shortcut_column", 4)
     config_manager.set_setting("gallery_thumbnail_image_style", "contain")
     config_manager.set_setting("preview_image_ext", ".jpg")

@@ -1,5 +1,6 @@
 """Manages setting categories and their definitions."""
 
+
 class SettingCategories:
     """Defines and manages setting categories."""
 

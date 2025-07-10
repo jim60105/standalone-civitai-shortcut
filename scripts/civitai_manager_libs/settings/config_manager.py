@@ -1,4 +1,5 @@
 """Configuration manager for the application."""
+
 from ..error_handler import with_error_handling
 from ..exceptions import FileOperationError
 from ..logging_config import get_logger
@@ -8,6 +9,7 @@ from .setting_persistence import SettingPersistence
 from .setting_validation import SettingValidator
 
 logger = get_logger(__name__)
+
 
 class ConfigManager:
     """Manages application settings by coordinating different setting modules."""

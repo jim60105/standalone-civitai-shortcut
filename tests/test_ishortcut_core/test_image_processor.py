@@ -8,7 +8,11 @@ from scripts.civitai_manager_libs.ishortcut_core.image_processor import ImagePro
 @pytest.fixture(autouse=True)
 def tmp_thumbnail_folder(monkeypatch, tmp_path):
     # Redirect thumbnail folder to temporary path
-    monkeypatch.setattr(config_manager, "_set_setting", lambda key, value: config_manager.settings.update({key: value}))
+    monkeypatch.setattr(
+        config_manager,
+        "_set_setting",
+        lambda key, value: config_manager.settings.update({key: value}),
+    )
     config_manager.set_setting('shortcut_thumbnail_folder', str(tmp_path))
     config_manager.set_setting('preview_image_ext', '.jpg')
     yield

@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-import civitai_manager_libs.setting as setting
-from civitai_manager_libs.ishortcut_core.image_processor import ImageProcessor
+from scripts.civitai_manager_libs import settings
+from scripts.civitai_manager_libs.ishortcut_core.image_processor import ImageProcessor
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +19,7 @@ def patch_exists_and_get(monkeypatch):
         return f"/tmp/{modelid}_{vid}.jpg"
 
     monkeypatch.setattr(
-        setting,
+        settings,
         "get_image_url_to_shortcut_file",
         fake_get_image_url_to_shortcut_file,
     )
@@ -31,7 +31,7 @@ def test_collect_images_no_limit():
         [(1, "url1"), (2, "url2"), (3, "url3")],
         [(4, "url4"), (5, "url5")],
     ]
-    setting.shortcut_max_download_image_per_version = 0
+    settings.config_manager.set_setting('shortcut_max_download_image_per_version', 0)
 
     # Use ImageProcessor instead of the moved private function
     image_processor = ImageProcessor()
@@ -53,7 +53,7 @@ def test_collect_images_with_limit():
     only up to the limit are collected per version.
     """
     version_list = [[(1, "url1"), (2, "url2"), (3, "url3")]]
-    config_manager.set_setting('shortcut_max_download_image_per_version', 2)
+    settings.config_manager.set_setting('shortcut_max_download_image_per_version', 2)
 
     # Use ImageProcessor instead of the moved private function
     image_processor = ImageProcessor()

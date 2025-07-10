@@ -47,12 +47,12 @@ class MockNormalProgress:
 def tmp_dirs(monkeypatch, tmp_path):
     # Redirect thumbnail folder for ImageProcessor operations
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.setting.shortcut_thumbnail_folder", str(tmp_path)
+        "scripts.civitai_manager_libs.settings.shortcut_thumbnail_folder", str(tmp_path)
     )
     # Redirect info folder
-    monkeypatch.setattr("scripts.civitai_manager_libs.setting.shortcut_info_folder", str(tmp_path))
+    monkeypatch.setattr("scripts.civitai_manager_libs.settings.shortcut_info_folder", str(tmp_path))
     # Set image extension
-    monkeypatch.setattr("scripts.civitai_manager_libs.setting.preview_image_ext", ".jpg")
+    monkeypatch.setattr("scripts.civitai_manager_libs.settings.preview_image_ext", ".jpg")
     yield
 
 

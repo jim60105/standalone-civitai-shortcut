@@ -6,7 +6,7 @@ for all modules that need it.
 """
 
 import sys
-from . import setting
+from . import settings
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -20,11 +20,11 @@ def initialize_compatibility_layer(compat_layer):
         compat_layer: The compatibility layer instance
     """
     # Set compatibility layer for all modules
-    setting.set_compatibility_layer(compat_layer)
+    settings.set_compatibility_layer(compat_layer)
 
     # Set compatibility layer for action modules
     modules_to_inject = [
-        'scripts.civitai_manager_libs.setting',
+        'scripts.civitai_manager_libs.settings',
         'scripts.civitai_manager_libs.setting_action',
         'scripts.civitai_manager_libs.civitai_shortcut_action',
         'scripts.civitai_manager_libs.civitai_gallery_action',
@@ -43,7 +43,7 @@ def initialize_compatibility_layer(compat_layer):
 
     # Initialize settings with compatibility layer; ignore errors to support mock layers
     try:
-        setting.init()
+        settings.init()
     except Exception:
         pass
 
