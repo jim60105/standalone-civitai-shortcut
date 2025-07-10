@@ -1,8 +1,7 @@
 import pytest
 
 from scripts.civitai_manager_libs import civitai
-
-config_manager = civitai.config_manager
+from scripts.civitai_manager_libs.settings import config_manager
 
 class DummyClient:
     def __init__(self, data=None):

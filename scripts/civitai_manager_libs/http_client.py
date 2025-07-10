@@ -24,7 +24,7 @@ from .exceptions import (
 from .error_handler import with_error_handling
 from .ui.notification_service import get_notification_service
 
-from . import setting
+from . import settings
 
 
 logger = get_logger(__name__)
@@ -60,14 +60,14 @@ class CivitaiHttpClient:
         retry_delay: Optional[float] = None,
     ):
         # Initialize configuration from settings when not provided
-        self.api_key = api_key or setting.civitai_api_key
-        self.timeout = timeout or setting.http_timeout
-        self.max_retries = max_retries or setting.http_max_retries
-        self.retry_delay = retry_delay or setting.http_retry_delay
+        self.api_key = api_key or settings.civitai_api_key
+        self.timeout = timeout or settings.http_timeout
+        self.max_retries = max_retries or settings.http_max_retries
+        self.retry_delay = retry_delay or settings.http_retry_delay
         # Prepare HTTP session
         self.session = requests.Session()
         # Default headers including user-agent and optional authorization
-        self.session.headers.update(setting.headers or {})
+        self.session.headers.update(settings.headers or {})
         if self.api_key:
             self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
 
@@ -758,8 +758,8 @@ class ChunkedDownloader:
 
     def __init__(self, client: CivitaiHttpClient):
         self.client = client
-        self.chunk_size = setting.http_chunk_size
-        self.max_parallel = setting.http_max_parallel_chunks
+        self.chunk_size = settings.http_chunk_size
+        self.max_parallel = settings.http_max_parallel_chunks
 
     def download_large_file(
         self, url: str, filepath: str, progress_callback: Optional[Callable] = None

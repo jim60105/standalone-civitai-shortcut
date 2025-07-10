@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 from . import util
 
 from . import model
-from . import setting
+from . import settings
 from . import civitai
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import ishortcut_action
@@ -245,7 +245,7 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
 
             # save info
             info_path = os.path.join(
-                model_folder, f"{basename}{setting.info_suffix}{setting.info_ext}"
+                model_folder, f"{basename}{settings.info_suffix}{settings.info_ext}"
             )
             result = civitai.write_version_info(info_path, version_info)
             if result:
@@ -260,7 +260,7 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
                         img_url = util.change_width_from_image_url(img_url, img_dict["width"])
                     description_img = os.path.join(
                         model_folder,
-                        f"{basename}{setting.preview_image_suffix}{setting.preview_image_ext}",
+                        f"{basename}{settings.preview_image_suffix}{settings.preview_image_ext}",
                     )
                     download_scan_image(img_url, description_img)
 
@@ -286,7 +286,7 @@ def is_filename_in_version_info_in_directory(directory, filename):
 
     file_list = []
     for file in os.listdir(directory):
-        if file.endswith(f"{setting.info_suffix}{setting.info_ext}"):
+        if file.endswith(f"{settings.info_suffix}{settings.info_ext}"):
             file_list.append(os.path.join(directory, file))
 
     if not file_list:
@@ -308,8 +308,8 @@ def is_filename_in_version_info_in_directory(directory, filename):
 
 
 def scan_models(fix_information_filename, progress=gr.Progress()):
-    root_dirs = list(set(setting.model_folders.values()))
-    file_list = util.search_file(root_dirs, None, setting.model_exts)
+    root_dirs = list(set(settings.model_folders.values()))
+    file_list = util.search_file(root_dirs, None, settings.model_exts)
 
     result = list()
 
@@ -321,7 +321,7 @@ def scan_models(fix_information_filename, progress=gr.Progress()):
 
         vfolder, vfile = os.path.split(file_path)
         basename, ext = os.path.splitext(vfile)
-        info = os.path.join(vfolder, f"{basename}{setting.info_suffix}{setting.info_ext}")
+        info = os.path.join(vfolder, f"{basename}{settings.info_suffix}{settings.info_ext}")
 
         if not os.path.isfile(info):
             # result.append(file_path)

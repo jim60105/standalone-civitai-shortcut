@@ -14,7 +14,7 @@ from .logging_config import get_logger
 
 logger = get_logger(__name__)
 
-from . import util, setting, civitai
+from . import util, settings, civitai
 
 # Use centralized HTTP client and chunked downloader factories
 from .http_client import get_http_client, get_chunked_downloader, ParallelImageDownloader
@@ -292,7 +292,7 @@ def get_save_base_name(version_info: dict) -> str:
     primary = civitai.get_primary_file_by_version_info(version_info)
     if primary:
         return os.path.splitext(primary["name"])[0]
-    return setting.generate_version_foldername(
+    return settings.generate_version_foldername(
         version_info["model"]["name"], version_info["name"], version_info["id"]
     )
 
@@ -376,14 +376,14 @@ def download_file_thread(
     if savefile_base:
         info_path = os.path.join(
             folder,
-            f"{util.replace_filename(savefile_base)}{setting.info_suffix}{setting.info_ext}",
+            f"{util.replace_filename(savefile_base)}{settings.info_suffix}{settings.info_ext}",
         )
         if civitai.write_version_info(info_path, vi):
             logger.info(f"[downloader] Wrote version info: {info_path}")
         preview_path = os.path.join(
             folder,
             f"{util.replace_filename(savefile_base)}"
-            f"{setting.preview_image_suffix}{setting.preview_image_ext}",
+            f"{settings.preview_image_suffix}{settings.preview_image_ext}",
         )
         if download_preview_image(preview_path, vi):
             logger.info(f"[downloader] Wrote preview image: {preview_path}")

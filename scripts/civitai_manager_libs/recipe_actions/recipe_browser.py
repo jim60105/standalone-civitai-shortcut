@@ -33,7 +33,7 @@ class RecipeBrowser:
 
     def on_ui(self, recipe_input, shortcut_input, civitai_tabs):
         """Create the complete recipe management UI."""
-        with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
+        with gr.Column(scale=settings.shortcut_browser_screen_split_ratio):
             with gr.Tabs():
                 with gr.TabItem("Prompt Recipe List"):
                     recipe_new_btn = gr.Button(value="New Recipe", variant="primary")
@@ -43,11 +43,11 @@ class RecipeBrowser:
 
         with gr.Column(
             scale=(
-                setting.shortcut_browser_screen_split_ratio_max
-                - setting.shortcut_browser_screen_split_ratio
+                settings.shortcut_browser_screen_split_ratio_max
+                - settings.shortcut_browser_screen_split_ratio
             )
         ):
-            with gr.Accordion(label=setting.NEWRECIPE, open=True) as recipe_title_name:
+            with gr.Accordion(label=settings.NEWRECIPE, open=True) as recipe_title_name:
                 with gr.Row():
                     with gr.Column(scale=4):
                         with gr.Tabs() as recipe_prompt_tabs:
@@ -408,7 +408,7 @@ class RecipeBrowser:
                 logger.debug(
                     "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
                 )
-                result = setting.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
+                result = settings.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
                 if result:
                     shortcutid, recipe_image = result
                     if shortcutid:
@@ -440,10 +440,10 @@ class RecipeBrowser:
             gr.update(value=""),  # recipe_name
             gr.update(value=""),  # recipe_desc
             gr.update(
-                choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                value=setting.PLACEHOLDER,
+                choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
+                value=settings.PLACEHOLDER,
             ),  # recipe_classification
-            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+            gr.update(label=settings.NEWRECIPE),  # recipe_title_name
             gr.update(visible=True),  # recipe_create_btn
             gr.update(visible=False),  # recipe_update_btn
             shortcuts or [],  # reference_shortcuts

@@ -24,7 +24,7 @@ import json
 from typing import Dict, List, Optional, Tuple
 
 # Import dependencies from parent modules
-from .. import setting
+from .. import settings
 from .. import civitai
 from ..logging_config import get_logger
 from ..error_handler import with_error_handling
@@ -280,15 +280,15 @@ class ModelProcessor:
                 continue
 
             # Get local image path
-            description_img = setting.get_image_url_to_shortcut_file(modelid, versionid, img_url)
+            description_img = settings.get_image_url_to_shortcut_file(modelid, versionid, img_url)
 
             # Apply NSFW filtering
-            if setting.NSFW_filtering_enable:
+            if settings.NSFW_filtering_enable:
                 img_nsfw_level = self._get_image_nsfw_level(img_dict)
-                user_nsfw_level = setting.NSFW_levels.index(setting.NSFW_level_user)
+                user_nsfw_level = settings.NSFW_levels.index(settings.NSFW_level_user)
 
                 if img_nsfw_level > user_nsfw_level:
-                    description_img = setting.nsfw_disable_image
+                    description_img = settings.nsfw_disable_image
 
             # Check if file exists locally
             if os.path.isfile(description_img):
@@ -327,9 +327,9 @@ class ModelProcessor:
             return None
 
         model_path = os.path.join(
-            setting.shortcut_info_folder,
+            settings.shortcut_info_folder,
             modelid,
-            f"{modelid}{setting.info_suffix}{setting.info_ext}",
+            f"{modelid}{settings.info_suffix}{settings.info_ext}",
         )
 
         try:

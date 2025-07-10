@@ -26,7 +26,6 @@ from . import util
 from . import model
 from . import civitai
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
-from . import setting
 from . import classification
 from . import downloader
 from .compat.compat_layer import CompatibilityLayer
@@ -46,9 +45,9 @@ def on_ui(refresh_sc_browser, recipe_input):
         with gr.Accordion("#", open=True) as model_title_name:
             versions_list = gr.Dropdown(
                 label="Model Version",
-                choices=[setting.NORESULT],
+                choices=[settings.NORESULT],
                 interactive=True,
-                value=setting.NORESULT,
+                value=settings.NORESULT,
             )
 
         with gr.Tabs():
@@ -569,7 +568,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
         # reference shortcut id를 넣어줄수 있다.
-        recipe_image = setting.set_imagefn_and_shortcutid_for_recipe_image(
+        recipe_image = settings.set_imagefn_and_shortcutid_for_recipe_image(
             model_id, civitai_images[int(img_index)]
         )
         logger.debug(f"   recipe_image: {repr(recipe_image)}")
@@ -757,7 +756,7 @@ def on_download_model_click(
     if not version_id or not model_id:
         return gr.update(visible=True), gr.update(visible=True)
 
-    if cs_foldername == setting.CREATE_MODEL_FOLDER:
+    if cs_foldername == settings.CREATE_MODEL_FOLDER:
         downloader.download_file_thread(
             file_name,
             version_id,
@@ -818,7 +817,7 @@ def on_download_model_click(
 
 
 def on_cs_foldername_select(evt: gr.SelectData, is_vsfolder):
-    if evt.value == setting.CREATE_MODEL_FOLDER:
+    if evt.value == settings.CREATE_MODEL_FOLDER:
         return (
             gr.update(visible=True),
             gr.update(visible=is_vsfolder),
@@ -905,13 +904,13 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
                 )
                 return
 
-            if not f"{setting.info_suffix}{setting.info_ext}" in infofile:
+            if not f"{settings.info_suffix}{settings.info_ext}" in infofile:
                 logger.debug(
                     "The selected version of the model has not been downloaded. The model must be downloaded first."
                 )
                 return
 
-            savefile_base = infofile[: infofile.rfind(f"{setting.info_suffix}{setting.info_ext}")]
+            savefile_base = infofile[: infofile.rfind(f"{settings.info_suffix}{settings.info_ext}")]
 
             if not savefile_base:
                 logger.debug(
@@ -921,7 +920,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
 
             preview_img_filepath = os.path.join(
                 path,
-                f"{util.replace_filename(savefile_base)}{setting.preview_image_suffix}{setting.preview_image_ext}",
+                f"{util.replace_filename(savefile_base)}{settings.preview_image_suffix}{settings.preview_image_ext}",
             )
 
             shutil.copy(selected_image_filepath, preview_img_filepath)
@@ -1207,7 +1206,7 @@ def load_saved_model(modelid=None, ver_index=None):
             # 분류 리스트를 가져온다.
             classification_list = classification.get_classification_names_by_modelid(modelid)
             ms_foldername = model_info['name']
-            cs_foldername = setting.CREATE_MODEL_FOLDER
+            cs_foldername = settings.CREATE_MODEL_FOLDER
             is_vsfolder = False
 
             try:
@@ -1260,7 +1259,7 @@ def load_saved_model(modelid=None, ver_index=None):
                                 is_vsfolder = True
             except:
                 ms_foldername = model_info['name']
-                cs_foldername = setting.CREATE_MODEL_FOLDER
+                cs_foldername = settings.CREATE_MODEL_FOLDER
                 is_vsfolder = False
 
             # 작성자와 tag를 이름으로 추천
@@ -1329,7 +1328,7 @@ def load_saved_model(modelid=None, ver_index=None):
                 gr.update(value=model_url),
                 gr.update(visible=is_downloaded),
                 gr.update(value=downloaded_info),
-                gr.update(value=setting.get_ui_typename(model_type)),
+                gr.update(value=settings.get_ui_typename(model_type)),
                 gr.update(value=model_basemodels),
                 gr.update(choices=versions_list, value=version_name),
                 gr.update(value=dhtml),
@@ -1348,22 +1347,22 @@ def load_saved_model(modelid=None, ver_index=None):
                 ),
                 gr.update(
                     value=is_vsfolder,
-                    visible=True if cs_foldername == setting.CREATE_MODEL_FOLDER else False,
+                    visible=True if cs_foldername == settings.CREATE_MODEL_FOLDER else False,
                 ),
                 gr.update(value=vs_foldername, visible=is_vsfolder),
                 gr.update(
-                    choices=[setting.CREATE_MODEL_FOLDER] + classification.get_list(),
+                    choices=[settings.CREATE_MODEL_FOLDER] + classification.get_list(),
                     value=cs_foldername,
                 ),
                 gr.update(
                     value=ms_foldername,
-                    visible=True if cs_foldername == setting.CREATE_MODEL_FOLDER else False,
+                    visible=True if cs_foldername == settings.CREATE_MODEL_FOLDER else False,
                 ),
                 gr.update(visible=False),
                 gr.update(
                     choices=suggested_names,
                     value=ms_foldername,
-                    visible=True if cs_foldername == setting.CREATE_MODEL_FOLDER else False,
+                    visible=True if cs_foldername == settings.CREATE_MODEL_FOLDER else False,
                 ),
                 gr.update(value=note),
             )

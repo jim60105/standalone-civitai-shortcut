@@ -6,7 +6,7 @@ import datetime
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
-from . import setting
+from . import settings
 from .error_handler import with_error_handling
 from .exceptions import (
     NetworkError,
@@ -26,7 +26,7 @@ def on_ui(shortcut_input):
         refresh_gallery = gr.Textbox()
         refresh_classification = gr.Textbox()
 
-    with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
+    with gr.Column(scale=settings.shortcut_browser_screen_split_ratio):
         classification_new_btn = gr.Button(value="New Classification", variant="primary")
         with gr.Tabs():
             with gr.TabItem("Classification List"):
@@ -44,11 +44,11 @@ def on_ui(shortcut_input):
 
     with gr.Column(
         scale=(
-            setting.shortcut_browser_screen_split_ratio_max
-            - setting.shortcut_browser_screen_split_ratio
+            settings.shortcut_browser_screen_split_ratio_max
+            - settings.shortcut_browser_screen_split_ratio
         )
     ):
-        with gr.Accordion(label=setting.PLACEHOLDER, open=True) as classification_title_name:
+        with gr.Accordion(label=settings.PLACEHOLDER, open=True) as classification_title_name:
             with gr.Row():
                 with gr.Column():
                     # with gr.Column(scale=4):
@@ -68,7 +68,7 @@ def on_ui(shortcut_input):
                                         interactive=True,
                                         visible=(
                                             True
-                                            if setting.classification_gallery_rows_per_page > 0
+                                            if settings.classification_gallery_rows_per_page > 0
                                             else False
                                         ),
                                     )
@@ -87,9 +87,9 @@ def on_ui(shortcut_input):
                                     classification_gallery = gr.Gallery(
                                         elem_id="classification_gallery",
                                         show_label=False,
-                                        columns=setting.classification_gallery_column,
+                                        columns=settings.classification_gallery_column,
                                         height="auto",
-                                        object_fit=setting.gallery_thumbnail_image_style,
+                                        object_fit=settings.gallery_thumbnail_image_style,
                                         preview=False,
                                         allow_preview=False,
                                     )
@@ -494,7 +494,7 @@ def paging_classification_shortcuts_list(shortcuts_list, page=0):
         # page 즉 페이징이 아닌 전체가 필요할때도 총페이지 수를 구할때도 있으므로..
         # page == 0 은 전체 리스트를 반환한다
         shortcut_count_per_page = (
-            setting.classification_gallery_column * setting.classification_gallery_rows_per_page
+            settings.classification_gallery_column * settings.classification_gallery_rows_per_page
         )
 
         if shortcut_count_per_page > 0:
@@ -527,7 +527,7 @@ def on_classification_new_btn_click():
         None,
         current_time,
         current_time,
-        gr.update(label=setting.NEWCLASSIFICATION),
+        gr.update(label=settings.NEWCLASSIFICATION),
         gr.update(visible=True),
         gr.update(visible=False),
     )
@@ -587,7 +587,7 @@ def on_sc_gallery_select(evt: gr.SelectData, shortcuts, page):
             logger.warning(f"Unexpected evt.value format in on_sc_gallery_select: {evt.value}")
             return shortcuts, page, current_time
 
-        sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+        sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
 
         if not shortcuts:
             shortcuts = list()
@@ -646,30 +646,30 @@ def on_classification_gallery_loading(shortcuts, page=0):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
                         result_list.append(
                             (
-                                setting.nsfw_disable_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.nsfw_disable_image,
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                     else:
                         result_list.append(
                             (
                                 os.path.join(
-                                    setting.shortcut_thumbnail_folder,
-                                    f"{v['id']}{setting.preview_image_ext}",
+                                    settings.shortcut_thumbnail_folder,
+                                    f"{v['id']}{settings.preview_image_ext}",
                                 ),
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result_list.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
             else:
                 result_list.append(
-                    (setting.no_card_preview_image, setting.set_shortcutname("delete", mid))
+                    (settings.no_card_preview_image, settings.set_shortcutname("delete", mid))
                 )
 
     current_time = datetime.datetime.now()
@@ -703,7 +703,7 @@ def on_classification_gallery_select(evt: gr.SelectData, shortcuts, delete_opt=T
             )
             return shortcuts, gr.update(visible=False), gr.update(visible=True), None
 
-        sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+        sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
         current_time = datetime.datetime.now()
 
         if not shortcuts:
@@ -814,7 +814,7 @@ def on_classification_delete_btn_click(select_name):
         gr.update(value=""),
         gr.update(choices=classification.get_list(), value=""),
         current_time,
-        gr.update(label=setting.NEWCLASSIFICATION),
+        gr.update(label=settings.NEWCLASSIFICATION),
         gr.update(visible=True),
         gr.update(visible=False),
     )

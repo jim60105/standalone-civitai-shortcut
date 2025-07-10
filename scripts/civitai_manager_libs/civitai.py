@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Optional, Dict, Any
-from . import setting
+from . import settings
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -557,8 +557,8 @@ def write_LoRa_metadata(filepath, version_info) -> bool:
         LoRa_metadata['description'] = version_info["description"]
     if "baseModel" in version_info:
         base_model = version_info["baseModel"]
-        if base_model in setting.model_basemodels:
-            LoRa_metadata['sd version'] = setting.model_basemodels[base_model]
+        if base_model in settings.model_basemodels:
+            LoRa_metadata['sd version'] = settings.model_basemodels[base_model]
         else:
             LoRa_metadata['sd version'] = 'Unknown'
     if "trainedWords" in version_info:

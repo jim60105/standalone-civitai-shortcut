@@ -13,7 +13,7 @@ from .image_processor import ImageProcessor
 from .shortcut_collection_manager import ShortcutCollectionManager
 
 from .. import civitai
-from .. import setting
+from .. import settings
 
 logger = get_logger(__name__)
 

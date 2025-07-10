@@ -4,7 +4,7 @@ import os
 import datetime
 
 from . import util
-from . import setting
+from . import settings
 from . import model
 from . import classification
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
@@ -20,9 +20,9 @@ def on_ui(
     user_shortcut_column=None,
     user_shortcut_rows_per_page=None,
 ):
-    shortcut_browser_search_up = setting.shortcut_browser_search_up
-    shortcut_column = setting.shortcut_column
-    shortcut_rows_per_page = setting.shortcut_rows_per_page
+    shortcut_browser_search_up = settings.shortcut_browser_search_up
+    shortcut_column = settings.shortcut_column
+    shortcut_rows_per_page = settings.shortcut_rows_per_page
 
     if user_shortcut_browser_search_up:
         if user_shortcut_browser_search_up == "UP":
@@ -57,7 +57,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in setting.ui_typenames],
+                choices=[k for k in settings.ui_typenames],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -77,7 +77,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in setting.model_basemodels.keys()],
+                choices=[k for k in settings.model_basemodels.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")
@@ -138,7 +138,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in setting.ui_typenames],
+                choices=[k for k in settings.ui_typenames],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -158,7 +158,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in setting.model_basemodels.keys()],
+                choices=[k for k in settings.model_basemodels.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")

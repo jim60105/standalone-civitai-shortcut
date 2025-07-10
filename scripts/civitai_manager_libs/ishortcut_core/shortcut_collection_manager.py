@@ -17,7 +17,7 @@ except ImportError:
         return iterable
 
 from ..logging_config import get_logger
-from .. import setting
+from .. import settings
 from .model_factory import ModelFactory
 from .file_processor import FileProcessor
 from .image_processor import ImageProcessor
