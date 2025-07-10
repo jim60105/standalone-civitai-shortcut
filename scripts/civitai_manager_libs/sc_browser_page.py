@@ -103,7 +103,7 @@ def on_ui(
             show_label=False,
             columns=shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             allow_preview=False,
             value=thumb_list,
         )
@@ -129,7 +129,7 @@ def on_ui(
             show_label=False,
             columns=shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             allow_preview=False,
             value=thumb_list,
         )
@@ -432,25 +432,25 @@ def get_thumbnail_list(
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
                         result.append(
                             (
-                                setting.nsfw_disable_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.nsfw_disable_image,
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                     else:
                         result.append(
                             (
                                 os.path.join(
-                                    setting.shortcut_thumbnail_folder,
-                                    f"{v['id']}{setting.preview_image_ext}",
+                                    settings.shortcut_thumbnail_folder,
+                                    f"{v['id']}{settings.preview_image_ext}",
                                 ),
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
 

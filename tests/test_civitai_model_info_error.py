@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from scripts.civitai_manager_libs import civitai, setting
+from scripts.civitai_manager_libs import civitai, settings
 from scripts.civitai_manager_libs.exceptions import (
     ModelNotAccessibleError,
     ModelNotFoundError,
@@ -10,7 +10,7 @@ from scripts.civitai_manager_libs.exceptions import (
     NetworkError,
 )
 
-config_manager = setting.config_manager
+config_manager = settings.config_manager
 
 
 class DummyResponse:

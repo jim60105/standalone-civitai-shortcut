@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 
 # Import dependencies from parent modules
-from .. import setting
+from .. import settings
 from ..logging_config import get_logger
 from ..error_handler import with_error_handling
 from ..exceptions import DataValidationError
@@ -246,7 +246,7 @@ class MetadataProcessor:
 
             # Truncate if too long
             default_max_length = 1000
-            max_length = getattr(setting, 'max_description_length', default_max_length)
+            max_length = getattr(settings, 'max_description_length', default_max_length)
             if len(description) > max_length:
                 description = description[:max_length] + "..."
                 logger.debug(

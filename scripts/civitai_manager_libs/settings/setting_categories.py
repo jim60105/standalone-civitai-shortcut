@@ -1,8 +1,8 @@
-"""Manages setting categories and their definitions."""
+"""Manages settings categories and their definitions."""
 
 
 class SettingCategories:
-    """Defines and manages setting categories."""
+    """Defines and manages settings categories."""
 
     # UI related settings
     UI_SETTINGS = {
@@ -80,7 +80,7 @@ class SettingCategories:
 
     @classmethod
     def get_all_categories(cls) -> dict:
-        """Returns all setting categories."""
+        """Returns all settings categories."""
         return {
             'ui': cls.UI_SETTINGS,
             'download': cls.DOWNLOAD_SETTINGS,
@@ -96,7 +96,7 @@ class SettingCategories:
 
     @classmethod
     def get_setting_type(cls, key: str) -> str:
-        """Returns the data type of a specific setting key."""
+        """Returns the data type of a specific settings key."""
         for category in cls.get_all_categories().values():
             if key in category:
                 return category[key]

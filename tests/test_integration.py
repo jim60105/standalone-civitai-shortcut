@@ -122,7 +122,7 @@ class TestIntegration(unittest.TestCase):
                 self.assertIn("DPM++ 2M", result)
 
     def test_setting_module_paths(self):
-        from civitai_manager_libs import setting
+        from civitai_manager_libs import settings
 
         mock_compat = Mock()
         mock_path_manager = Mock()
@@ -130,9 +130,9 @@ class TestIntegration(unittest.TestCase):
         mock_path_manager.get_extension_path.return_value = '/test/extension/path'
         mock_compat.path_manager = mock_path_manager
         with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
-            setting.extension_base = ""
-            setting._initialize_extension_base()
-            self.assertEqual(setting.extension_base, '/test/extension/path')
+            settings.extension_base = ""
+            settings._initialize_extension_base()
+            self.assertEqual(settings.extension_base, '/test/extension/path')
 
 
 if __name__ == '__main__':

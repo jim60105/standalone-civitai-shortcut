@@ -1,7 +1,7 @@
 from scripts.civitai_manager_libs.util import should_show_open_folder_buttons
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
 
-config_manager = setting.config_manager
+config_manager = settings.config_manager
 
 
 def test_should_show_open_folder_buttons_in_container(monkeypatch):

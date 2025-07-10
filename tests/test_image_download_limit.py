@@ -8,7 +8,7 @@ from scripts.civitai_manager_libs.ishortcut_core.image_processor import ImagePro
 
 @pytest.fixture(autouse=True)
 def patch_exists_and_get(monkeypatch):
-    """Patch os.path.exists and setting.get_image_url_to_shortcut_file for testing."""
+    """Patch os.path.exists and settings.get_image_url_to_shortcut_file for testing."""
 
     def fake_exists(path):
         return False

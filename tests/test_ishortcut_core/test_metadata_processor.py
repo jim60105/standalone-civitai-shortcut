@@ -43,7 +43,7 @@ def test_clean_and_extract_description_and_parse_timestamp_and_stats_and_tags():
     # Extract description truncation
     import scripts.civitai_manager_libs.ishortcut_core.metadata_processor as mod
 
-    setattr(mod.setting, 'max_description_length', 5)
+    setattr(mod.settings, 'max_description_length', 5)
     desc = mp.extract_model_description({'description': 'abcdef'})
     assert desc.endswith('...')
     # Parse timestamp formats

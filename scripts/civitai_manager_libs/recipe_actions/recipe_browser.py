@@ -112,8 +112,8 @@ class RecipeBrowser:
                                         pass
                                 recipe_classification = gr.Dropdown(
                                     label="Prompt Recipe Classification",
-                                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                                    value=setting.PLACEHOLDER,
+                                    choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
+                                    value=settings.PLACEHOLDER,
                                     info=(
                                         "You can choose from a list or enter manually. "
                                         "If you enter a classification that didn't exist before, "
@@ -130,8 +130,8 @@ class RecipeBrowser:
                                 ) = sc_browser_page.on_ui(
                                     False,
                                     "DOWN",
-                                    setting.prompt_reference_shortcut_column,
-                                    setting.prompt_reference_shortcut_rows_per_page,
+                                    settings.prompt_reference_shortcut_column,
+                                    settings.prompt_reference_shortcut_rows_per_page,
                                 )
                         with gr.Row():
                             recipe_create_btn = gr.Button(value="Create", variant="primary")
@@ -205,7 +205,7 @@ class RecipeBrowser:
                                     show_label=False,
                                     columns=3,
                                     height='auto',
-                                    object_fit=setting.gallery_thumbnail_image_style,
+                                    object_fit=settings.gallery_thumbnail_image_style,
                                     preview=False,
                                     allow_preview=False,
                                 )

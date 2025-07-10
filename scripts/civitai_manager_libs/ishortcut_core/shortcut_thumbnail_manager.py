@@ -56,7 +56,7 @@ class ShortcutThumbnailManager:
         if not images:
             return ""
 
-        cur_nsfw_level = len(setting.NSFW_levels)
+        cur_nsfw_level = len(settings.NSFW_levels)
         selected_url = ""
         for img in images:
             try:
@@ -82,11 +82,11 @@ class ShortcutThumbnailManager:
 
         if "nsfw" in image_dict:
             try:
-                return setting.NSFW_levels.index(image_dict["nsfw"])
+                return settings.NSFW_levels.index(image_dict["nsfw"])
             except ValueError:
                 logger.debug("Unknown NSFW tag, defaulting to max level")
 
-        return len(setting.NSFW_levels)
+        return len(settings.NSFW_levels)
 
     def _update_shortcut_thumbnail(self, shortcut_data: Dict[str, Any]) -> None:
         """Update thumbnail for single shortcut."""

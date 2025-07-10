@@ -423,7 +423,7 @@ def load_model_information(modelid=None, ver_index=None):
             title_name = f"# {model_info['name']} : {version_name}"
 
             return (
-                gr.update(value=setting.get_ui_typename(model_type)),
+                gr.update(value=settings.get_ui_typename(model_type)),
                 gr.update(choices=versions_list, value=version_name),
                 gr.update(choices=flist, value=file_name),
                 gr.update(value=triger),
@@ -565,7 +565,7 @@ def on_refresh_classification_change(select_name):
         gr.update(value=""),
         gr.update(value=""),
         current_time,
-        gr.update(label=setting.NEWCLASSIFICATION),
+        gr.update(label=settings.NEWCLASSIFICATION),
         gr.update(visible=True),
         gr.update(choices=classification.get_list()),
     )
@@ -597,7 +597,7 @@ def on_sc_gallery_select(evt: gr.SelectData, shortcuts, page):
 
         total = len(shortcuts)
         shortcut_count_per_page = (
-            setting.classification_gallery_column * setting.classification_gallery_rows_per_page
+            settings.classification_gallery_column * settings.classification_gallery_rows_per_page
         )
         if shortcut_count_per_page > 0:
             page = math.ceil(total / shortcut_count_per_page)
@@ -775,7 +775,7 @@ def on_classification_create_btn_click(new_name, new_info, classification_shortc
     user_message="Failed to update classification",
 )
 def on_classification_update_btn_click(select_name, new_name, new_info, classification_shortcuts):
-    chg_name = setting.NEWCLASSIFICATION
+    chg_name = settings.NEWCLASSIFICATION
 
     if select_name:
         # classification.update_classification_shortcut(select_name,new_shortcuts)
@@ -797,7 +797,7 @@ def on_classification_update_btn_click(select_name, new_name, new_info, classifi
         gr.update(value=""),
         gr.update(choices=[]),
         datetime.datetime.now(),
-        gr.update(label=setting.NEWCLASSIFICATION),
+        gr.update(label=settings.NEWCLASSIFICATION),
         gr.update(visible=True),
         gr.update(visible=False),
     ),

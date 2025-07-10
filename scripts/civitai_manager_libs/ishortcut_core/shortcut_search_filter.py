@@ -120,7 +120,7 @@ class ShortcutSearchFilter:
         tmp_types = []
         for sc_type in types:
             try:
-                tmp_types.append(setting.ui_typenames[sc_type])
+                tmp_types.append(settings.ui_typenames[sc_type])
             except Exception:
                 continue
 

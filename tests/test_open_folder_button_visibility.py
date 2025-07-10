@@ -1,7 +1,7 @@
 from scripts.civitai_manager_libs.civitai_gallery_action import on_download_images_click
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
 
-config_manager = setting.config_manager
+config_manager = settings.config_manager
 
 
 class TestGalleryOpenFolderVisibility:

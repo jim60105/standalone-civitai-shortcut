@@ -10,7 +10,7 @@ import json
 import datetime
 
 from ..logging_config import get_logger
-from .. import setting
+from .. import settings
 
 logger = get_logger(__name__)
 
@@ -20,7 +20,7 @@ class ShortcutBackupManager:
 
     def __init__(self):
         # Ensure the URL mapping directory exists
-        os.makedirs(os.path.dirname(setting.shortcut_civitai_internet_shortcut_url), exist_ok=True)
+        os.makedirs(os.path.dirname(settings.shortcut_civitai_internet_shortcut_url), exist_ok=True)
 
     def backup_shortcut(self, shortcut_data: dict) -> bool:
         """Backup single shortcut data to a timestamped backup file."""
@@ -29,7 +29,7 @@ class ShortcutBackupManager:
 
         model_id = str(shortcut_data["id"])
         try:
-            backup_dir = setting.shortcut_info_folder
+            backup_dir = settings.shortcut_info_folder
             os.makedirs(backup_dir, exist_ok=True)
             timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             backup_file = os.path.join(backup_dir, f"{model_id}_{timestamp}.json")
@@ -47,7 +47,7 @@ class ShortcutBackupManager:
             return False
 
         try:
-            mapping_file = setting.shortcut_civitai_internet_shortcut_url
+            mapping_file = settings.shortcut_civitai_internet_shortcut_url
             try:
                 with open(mapping_file, "r") as f:
                     mapping = json.load(f)
@@ -66,7 +66,7 @@ class ShortcutBackupManager:
     def restore_from_backup(self, model_id: str) -> dict:
         """Restore shortcut data from the latest backup if available."""
         try:
-            backup_dir = setting.shortcut_info_folder
+            backup_dir = settings.shortcut_info_folder
             files = [
                 f
                 for f in os.listdir(backup_dir)
@@ -90,7 +90,7 @@ class ShortcutBackupManager:
         """Get list of available shortcut backups with timestamps."""
         backups = []
         try:
-            backup_dir = setting.shortcut_info_folder
+            backup_dir = settings.shortcut_info_folder
             for f in os.listdir(backup_dir):
                 if f.endswith(".json"):
                     model_id, ts = f.rsplit("_", 1)
@@ -105,7 +105,7 @@ class ShortcutBackupManager:
         removed = 0
         try:
             cutoff = datetime.datetime.now() - datetime.timedelta(days=days_old)
-            backup_dir = setting.shortcut_info_folder
+            backup_dir = settings.shortcut_info_folder
             for f in os.listdir(backup_dir):
                 if not f.endswith(".json"):
                     continue

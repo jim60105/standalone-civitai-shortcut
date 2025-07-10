@@ -22,7 +22,7 @@ import shutil
 from typing import Dict, Optional
 
 # Import dependencies from parent modules
-from .. import setting
+from .. import settings
 from ..logging_config import get_logger
 from ..error_handler import with_error_handling
 from ..exceptions import NetworkError, FileOperationError, CivitaiShortcutError
@@ -102,7 +102,7 @@ class FileProcessor:
             return None
 
         try:
-            model_path = os.path.join(setting.shortcut_info_folder, modelid)
+            model_path = os.path.join(settings.shortcut_info_folder, modelid)
             logger.debug(f"[FileProcessor] Target path: {model_path}")
 
             if os.path.exists(model_path):
@@ -144,9 +144,9 @@ class FileProcessor:
 
         try:
             # Generate file paths
-            tmp_info_file = os.path.join(model_path, f"tmp{setting.info_suffix}{setting.info_ext}")
+            tmp_info_file = os.path.join(model_path, f"tmp{settings.info_suffix}{settings.info_ext}")
             model_info_file = os.path.join(
-                model_path, f"{modelid}{setting.info_suffix}{setting.info_ext}"
+                model_path, f"{modelid}{settings.info_suffix}{settings.info_ext}"
             )
 
             logger.debug(f"[FileProcessor] Temp file: {tmp_info_file}")
@@ -185,10 +185,10 @@ class FileProcessor:
             logger.warning("[FileProcessor] No modelid provided for deletion")
             return False
 
-        model_path = os.path.join(setting.shortcut_info_folder, modelid)
+        model_path = os.path.join(settings.shortcut_info_folder, modelid)
 
         # Safety check to prevent accidental deletion of parent directory
-        if setting.shortcut_info_folder == model_path:
+        if settings.shortcut_info_folder == model_path:
             logger.error("[FileProcessor] Refusing to delete shortcut info root folder")
             return False
 
@@ -218,9 +218,9 @@ class FileProcessor:
             return False
 
         model_info_file = os.path.join(
-            setting.shortcut_info_folder,
+            settings.shortcut_info_folder,
             modelid,
-            f"{modelid}{setting.info_suffix}{setting.info_ext}",
+            f"{modelid}{settings.info_suffix}{settings.info_ext}",
         )
 
         exists = os.path.isfile(model_info_file)
@@ -238,9 +238,9 @@ class FileProcessor:
             Full path to model information JSON file
         """
         return os.path.join(
-            setting.shortcut_info_folder,
+            settings.shortcut_info_folder,
             modelid,
-            f"{modelid}{setting.info_suffix}{setting.info_ext}",
+            f"{modelid}{settings.info_suffix}{settings.info_ext}",
         )
 
     def backup_model_information(self, modelid: str, backup_suffix: str = ".backup") -> bool:
@@ -282,10 +282,10 @@ class FileProcessor:
         """
         try:
             # Ensure shortcut info folder exists
-            if not os.path.exists(setting.shortcut_info_folder):
-                os.makedirs(setting.shortcut_info_folder, exist_ok=True)
+            if not os.path.exists(settings.shortcut_info_folder):
+                os.makedirs(settings.shortcut_info_folder, exist_ok=True)
                 logger.info(
-                    f"[FileProcessor] Created shortcut info folder: {setting.shortcut_info_folder}"
+                    f"[FileProcessor] Created shortcut info folder: {settings.shortcut_info_folder}"
                 )
 
             return True
@@ -307,7 +307,7 @@ class FileProcessor:
         if not modelid:
             return 0
 
-        model_path = os.path.join(setting.shortcut_info_folder, modelid)
+        model_path = os.path.join(settings.shortcut_info_folder, modelid)
 
         if not os.path.exists(model_path):
             return 0
@@ -340,7 +340,7 @@ class FileProcessor:
         if not modelid:
             return 0
 
-        model_path = os.path.join(setting.shortcut_info_folder, modelid)
+        model_path = os.path.join(settings.shortcut_info_folder, modelid)
 
         if not os.path.exists(model_path):
             return 0
@@ -349,7 +349,7 @@ class FileProcessor:
         try:
             for filename in os.listdir(model_path):
                 if filename.startswith('tmp') and (
-                    filename.endswith(setting.info_ext) or filename.endswith('.tmp')
+                    filename.endswith(settings.info_ext) or filename.endswith('.tmp')
                 ):
                     temp_file = os.path.join(model_path, filename)
                     try:

@@ -141,7 +141,7 @@ class TestModuleCompatibility(unittest.TestCase):
 
 
 class TestSettingModuleCompatibility(unittest.TestCase):
-    """Test setting module compatibility modifications."""
+    """Test settings module compatibility modifications."""
 
     def setUp(self):
         """Set up test environment."""

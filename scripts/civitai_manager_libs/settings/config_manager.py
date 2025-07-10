@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 
 class ConfigManager:
-    """Manages application settings by coordinating different setting modules."""
+    """Manages application settings by coordinating different settings modules."""
 
     def __init__(self, config_file: str = "CivitaiShortCutSetting.json"):
         """Initializes the ConfigManager."""
@@ -45,14 +45,14 @@ class ConfigManager:
         return self.persistence.save_to_file(settings)
 
     def get_setting(self, key: str, default=None) -> any:
-        """Gets a single setting value by key."""
+        """Gets a single settings value by key."""
         return self.settings.get(key, default if default is not None else self.defaults.get(key))
 
     def set_setting(self, key: str, value: any) -> bool:
-        """Sets a single setting value after validation."""
+        """Sets a single settings value after validation."""
         is_valid, message = self.validator.validate_setting(key, value)
         if not is_valid:
-            logger.warning(f"Invalid setting for {key}: {message}")
+            logger.warning(f"Invalid settings for {key}: {message}")
             return False
 
         self.settings[key] = value
@@ -66,14 +66,14 @@ class ConfigManager:
             if is_valid:
                 validated_settings[key] = value
             else:
-                logger.warning(f"Invalid setting for {key}: {message}")
+                logger.warning(f"Invalid settings for {key}: {message}")
 
         self.settings.update(validated_settings)
         self.save_settings()
         return validated_settings
 
     def reset_setting(self, key: str) -> bool:
-        """Resets a specific setting to its default value."""
+        """Resets a specific settings to its default value."""
         if key in self.defaults:
             return self.set_setting(key, self.defaults[key])
         return False

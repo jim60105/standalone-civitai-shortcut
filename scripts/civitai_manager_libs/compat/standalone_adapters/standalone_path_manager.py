@@ -130,7 +130,7 @@ class StandalonePathManager(IPathManager):
         if self._config_path:
             result = self._config_path
         else:
-            result = os.path.join(self._base_path, "setting.json")
+            result = os.path.join(self._base_path, "settings.json")
         logger.debug(f"get_config_path: {result}")
         return result
 

@@ -333,8 +333,8 @@ def scan_models(fix_information_filename, progress=gr.Progress()):
 
 
 # def fix_version_information_filename():
-#     root_dirs = list(set(setting.model_folders.values()))
-#     file_list = util.search_file(root_dirs,None,[setting.info_ext])
+#     root_dirs = list(set(settings.model_folders.values()))
+#     file_list = util.search_file(root_dirs,None,[settings.info_ext])
 
 #     version_info = None
 #     if not file_list:
@@ -352,7 +352,7 @@ def scan_models(fix_information_filename, progress=gr.Progress()):
 #             file_path = file_path.strip()
 #             vfolder , vfile = os.path.split(file_path)
 #             savefile_base = downloader.get_save_base_name(version_info)
-#             info_file = os.path.join(vfolder, f"{util.replace_filename(savefile_base)}{setting.info_suffix}{setting.info_ext}")
+#             info_file = os.path.join(vfolder, f"{util.replace_filename(savefile_base)}{settings.info_suffix}{settings.info_ext}")
 
 #             if file_path != info_file:
 #                 if not os.path.isfile(info_file):

@@ -308,8 +308,8 @@ class ModelProcessor:
             if img_nsfw_level < 0:
                 img_nsfw_level = 0
         # Fallback to old format
-        elif "nsfw" in img_dict and img_dict["nsfw"] in setting.NSFW_levels:
-            img_nsfw_level = setting.NSFW_levels.index(img_dict["nsfw"])
+        elif "nsfw" in img_dict and img_dict["nsfw"] in settings.NSFW_levels:
+            img_nsfw_level = settings.NSFW_levels.index(img_dict["nsfw"])
 
         return img_nsfw_level
 

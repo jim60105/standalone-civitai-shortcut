@@ -91,7 +91,7 @@ def on_setting_ui():
                         info=(
                             "When registering a shortcut of a model, you can specify the maximum "
                             "number of images to download. This is the maximum per version, and "
-                            "setting it to 0 means unlimited downloads."
+                            "settings it to 0 means unlimited downloads."
                         ),
                         label='Maximum number of download images per version',
                         interactive=True,
@@ -156,7 +156,7 @@ def on_setting_ui():
                             value=settings.shortcut_rows_per_page,
                             step=1,
                             label=(
-                                'Model Browser Thumbnails Rows per Page : setting it to 0 means '
+                                'Model Browser Thumbnails Rows per Page : settings it to 0 means '
                                 'displaying the entire list without a page.'
                             ),
                             interactive=True,
@@ -224,7 +224,7 @@ def on_setting_ui():
                         prompt_reference_shortcut_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.prompt_reference_shortcut_column,
+                            value=settings.prompt_reference_shortcut_column,
                             step=1,
                             label='Reference\'s Models Browser Thumbnail Counts per Row',
                             interactive=True,
@@ -232,7 +232,7 @@ def on_setting_ui():
                         prompt_reference_shortcut_rows_per_page = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.prompt_reference_shortcut_rows_per_page,
+                            value=settings.prompt_reference_shortcut_rows_per_page,
                             step=1,
                             label=' Reference\'s Models Browser Thumbnails Rows per Page',
                             interactive=True,
@@ -245,7 +245,7 @@ def on_setting_ui():
                         classification_shortcut_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.classification_shortcut_column,
+                            value=settings.classification_shortcut_column,
                             step=1,
                             label='Classification\'s Model Browser Thumbnail Counts per Row',
                             interactive=True,
@@ -253,11 +253,11 @@ def on_setting_ui():
                         classification_shortcut_rows_per_page = gr.Slider(
                             minimum=0,
                             maximum=14,
-                            value=setting.classification_shortcut_rows_per_page,
+                            value=settings.classification_shortcut_rows_per_page,
                             step=1,
                             label=(
                                 'Classification\'s Model Browser Thumbnails Rows per Page : '
-                                'setting it to 0 means displaying the entire list without a page.'
+                                'settings it to 0 means displaying the entire list without a page.'
                             ),
                             interactive=True,
                         )
@@ -265,7 +265,7 @@ def on_setting_ui():
                         classification_gallery_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.classification_gallery_column,
+                            value=settings.classification_gallery_column,
                             step=1,
                             label='Classification Model Counts per Row',
                             interactive=True,
@@ -273,10 +273,10 @@ def on_setting_ui():
                         classification_gallery_rows_per_page = gr.Slider(
                             minimum=0,
                             maximum=14,
-                            value=setting.classification_gallery_rows_per_page,
+                            value=settings.classification_gallery_rows_per_page,
                             step=1,
                             label=(
-                                'Classification Model Rows per Page : setting it to 0 means '
+                                'Classification Model Rows per Page : settings it to 0 means '
                                 'displaying the entire list without a page.'
                             ),
                             interactive=True,
@@ -518,7 +518,7 @@ def save_setting(
     download_images_folder,
 ):
 
-    environment = setting.load()
+    environment = settings.load()
     if not environment:
         environment = dict()
     # preserve a copy to detect reload-dependent changes
@@ -588,7 +588,7 @@ def save_setting(
 
     environment['temporary'] = temporary
 
-    setting.save_setting(environment)
+    settings.save_setting(environment)
     from .settings.path_manager import load_model_folder_data
     from .settings import config_manager
     load_model_folder_data(config_manager)
@@ -609,7 +609,7 @@ def save_setting(
                 duration=3,
             )
     except Exception as e:
-        logger.error(f"Failed to show setting save notification: {e}")
+        logger.error(f"Failed to show settings save notification: {e}")
 
     # log for debugging purposes
     if ui_reload_needed:
@@ -624,8 +624,8 @@ def save_setting(
     user_message="Failed to open gallery folder",
 )
 def on_usergallery_openfolder_btn_click():
-    if os.path.exists(setting.shortcut_gallery_folder):
-        util.open_folder(setting.shortcut_gallery_folder)
+    if os.path.exists(settings.shortcut_gallery_folder):
+        util.open_folder(settings.shortcut_gallery_folder)
 
 
 @with_error_handling(
@@ -635,8 +635,8 @@ def on_usergallery_openfolder_btn_click():
     user_message="Failed to clean gallery folder",
 )
 def on_usergallery_cleangallery_btn_click():
-    if os.path.exists(setting.shortcut_gallery_folder):
-        shutil.rmtree(setting.shortcut_gallery_folder)
+    if os.path.exists(settings.shortcut_gallery_folder):
+        shutil.rmtree(settings.shortcut_gallery_folder)
 
 
 @with_error_handling(

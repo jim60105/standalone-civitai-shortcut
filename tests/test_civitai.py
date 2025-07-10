@@ -102,12 +102,12 @@ def test_get_http_client_initialization(monkeypatch):
 
 
 def test_get_http_client_api_key_update(monkeypatch):
-    # Existing client updates api_key when setting changes
+    # Existing client updates api_key when settings changes
     civitai._http_client = None
     monkeypatch.setattr(config_manager, "_set_setting", lambda key, value: config_manager.settings.update({key: value}))
     config_manager.set_setting('civitai_api_key', 'initial')
     client = civitai.get_http_client()
-    # Change setting and retrieve again
+    # Change settings and retrieve again
     config_manager.set_setting('civitai_api_key', 'updated')
     client2 = civitai.get_http_client()
     assert client2 is client

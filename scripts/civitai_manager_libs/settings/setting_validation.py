@@ -1,4 +1,4 @@
-"""Manages setting validation logic."""
+"""Manages settings validation logic."""
 
 import os
 
@@ -16,7 +16,7 @@ class SettingValidator:
         self._setup_validation_rules()
 
     def validate_setting(self, key: str, value: any) -> tuple[bool, str]:
-        """Validates a single setting value based on predefined rules."""
+        """Validates a single settings value based on predefined rules."""
         if key in self.validation_rules:
             return self.validation_rules[key](value)
         return True, ""
@@ -42,14 +42,14 @@ class SettingValidator:
         return {k: self.validate_setting(k, v) for k, v in settings.items()}
 
     def validate_path_setting(self, path: str) -> tuple[bool, str]:
-        """Validates a path setting, ensuring it is a valid directory."""
+        """Validates a path settings, ensuring it is a valid directory."""
         if not os.path.isdir(path):
             logger.warning(f"Validation failed: Path '{path}' is not a valid directory.")
             return False, f"Path '{path}' is not a valid directory."
         return True, ""
 
     def validate_range_setting(self, value: any, min_val: any, max_val: any) -> tuple[bool, str]:
-        """Validates a numeric setting, ensuring it is within a specified range."""
+        """Validates a numeric settings, ensuring it is within a specified range."""
         if not (min_val <= value <= max_val):
             logger.warning(
                 f"Validation failed: Value {value} is out of range ({min_val}-{max_val})."

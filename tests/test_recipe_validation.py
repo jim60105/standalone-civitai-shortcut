@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.recipe_actions.recipe_management import RecipeManager
 
 # Create instance for testing
@@ -19,7 +19,7 @@ class TestRecipeNameValidation:
             recipe_prompt="Test prompt",
             recipe_negative="",
             recipe_option="",
-            recipe_classification=setting.PLACEHOLDER,
+            recipe_classification=settings.PLACEHOLDER,
         )
         mock_warning.assert_called_once_with("Please enter a recipe name before creating.")
         assert isinstance(result, tuple)
@@ -33,7 +33,7 @@ class TestRecipeNameValidation:
             recipe_prompt="Test prompt",
             recipe_negative="",
             recipe_option="",
-            recipe_classification=setting.PLACEHOLDER,
+            recipe_classification=settings.PLACEHOLDER,
         )
         mock_warning.assert_called_once_with("Please enter a recipe name before creating.")
         assert isinstance(result, tuple)
@@ -42,12 +42,12 @@ class TestRecipeNameValidation:
     def test_default_name_shows_warning(self, mock_warning):
         """Test warning is shown when using default recipe name."""
         result = _recipe_manager.on_recipe_create_btn_click(
-            recipe_name=setting.NEWRECIPE,
+            recipe_name=settings.NEWRECIPE,
             recipe_desc="Test description",
             recipe_prompt="Test prompt",
             recipe_negative="",
             recipe_option="",
-            recipe_classification=setting.PLACEHOLDER,
+            recipe_classification=settings.PLACEHOLDER,
         )
         mock_warning.assert_called_once_with("Please enter a recipe name before creating.")
         assert isinstance(result, tuple)
@@ -61,7 +61,7 @@ class TestRecipeNameValidation:
             recipe_prompt="Test prompt",
             recipe_negative="",
             recipe_option="",
-            recipe_classification=setting.PLACEHOLDER,
+            recipe_classification=settings.PLACEHOLDER,
         )
         mock_create.assert_called_once()
         assert isinstance(result, tuple)

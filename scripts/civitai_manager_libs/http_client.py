@@ -395,7 +395,7 @@ class CivitaiHttpClient:
 
     def _get_resume_position(self, filepath: str) -> int:
         """Get the position to resume download from."""
-        if setting.download_resume_enabled and os.path.exists(filepath):
+        if settings.download_resume_enabled and os.path.exists(filepath):
             resume_pos = os.path.getsize(filepath)
             logger.debug(f"[http_client] Resuming download from position: {resume_pos}")
             return resume_pos
@@ -430,7 +430,7 @@ class CivitaiHttpClient:
             downloaded = resume_pos
             download_tracker = self._create_download_tracker()
 
-            for chunk in response.iter_content(chunk_size=setting.download_chunk_size):
+            for chunk in response.iter_content(chunk_size=settings.download_chunk_size):
                 if not chunk:
                     continue
 
@@ -775,7 +775,7 @@ class ChunkedDownloader:
             logger.error(f"[chunked_downloader] Failed to get file info: {e}")
             return self._fallback_download(url, filepath, progress_callback)
 
-        if supports and total > 10 * setting.http_chunk_size and self.max_parallel > 1:
+        if supports and total > 10 * settings.http_chunk_size and self.max_parallel > 1:
             return self._parallel_download(url, filepath, total, progress_callback)
         return self._sequential_download(url, filepath, total, progress_callback)
 
@@ -978,10 +978,10 @@ def get_http_client() -> CivitaiHttpClient:
 def _create_new_http_client() -> CivitaiHttpClient:
     """Create a new HTTP client with current settings."""
     return CivitaiHttpClient(
-        api_key=setting.civitai_api_key,
-        timeout=setting.http_timeout,
-        max_retries=setting.http_max_retries,
-        retry_delay=setting.http_retry_delay,
+        api_key=settings.civitai_api_key,
+        timeout=settings.http_timeout,
+        max_retries=settings.http_max_retries,
+        retry_delay=settings.http_retry_delay,
     )
 
 
@@ -989,10 +989,10 @@ def _update_client_configuration(client: CivitaiHttpClient) -> None:
     """Update client configuration to match current settings."""
     # Batch configuration updates to reduce redundant checks
     config_updates = [
-        (client.api_key != setting.civitai_api_key, 'api_key'),
-        (client.timeout != setting.http_timeout, 'timeout'),
-        (client.max_retries != setting.http_max_retries, 'max_retries'),
-        (client.retry_delay != setting.http_retry_delay, 'retry_delay'),
+        (client.api_key != settings.civitai_api_key, 'api_key'),
+        (client.timeout != settings.http_timeout, 'timeout'),
+        (client.max_retries != settings.http_max_retries, 'max_retries'),
+        (client.retry_delay != settings.http_retry_delay, 'retry_delay'),
     ]
 
     for needs_update, config_name in config_updates:
@@ -1000,7 +1000,7 @@ def _update_client_configuration(client: CivitaiHttpClient) -> None:
             if config_name == 'api_key':
                 client.update_api_key(config_manager.get_setting('civitai_api_key'))
             else:
-                setattr(client, config_name, getattr(setting, f'http_{config_name}'))
+                setattr(client, config_name, getattr(settings, f'http_{config_name}'))
 
 
 def get_chunked_downloader() -> ChunkedDownloader:

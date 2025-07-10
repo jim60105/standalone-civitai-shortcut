@@ -93,7 +93,7 @@ def get_model_info(model_id: str) -> Optional[Dict[str, Any]]:
     else:
         # Handle direct session usage for compatibility
         try:
-            response = client.session.get(url, timeout=setting.http_timeout)
+            response = client.session.get(url, timeout=settings.http_timeout)
             client._handle_response_error(response)
             content = response.json()
         except HTTPError as e:

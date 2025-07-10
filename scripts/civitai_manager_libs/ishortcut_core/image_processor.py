@@ -31,7 +31,7 @@ except ImportError:
 
 # Import dependencies from parent modules
 from .. import util
-from .. import setting
+from .. import settings
 from ..logging_config import get_logger
 from ..http_client import get_http_client, ParallelImageDownloader
 from ..error_handler import with_error_handling
@@ -83,7 +83,7 @@ class ImageProcessor:
         load_model_folder_data(config_manager)
         logger.debug(
             f"[ImageProcessor] Current shortcut_max_download_image_per_version: "
-            f"{setting.shortcut_max_download_image_per_version}"
+            f"{settings.shortcut_max_download_image_per_version}"
         )
 
         # Get HTTP client for downloads
@@ -132,7 +132,7 @@ class ImageProcessor:
         logger.debug(
             "[ImageProcessor] "
             f"shortcut_max_download_image_per_version = "
-            f"{setting.shortcut_max_download_image_per_version}"
+            f"{settings.shortcut_max_download_image_per_version}"
         )
         all_images_to_download = []
 
@@ -141,7 +141,7 @@ class ImageProcessor:
             images_for_version = []
 
             for img_idx, (vid, url) in enumerate(image_list):
-                description_img = setting.get_image_url_to_shortcut_file(modelid, vid, url)
+                description_img = settings.get_image_url_to_shortcut_file(modelid, vid, url)
 
                 if os.path.exists(description_img):
                     logger.debug(
@@ -154,12 +154,12 @@ class ImageProcessor:
 
             # Apply per-version download limit
             if (
-                setting.shortcut_max_download_image_per_version
-                and len(images_for_version) > setting.shortcut_max_download_image_per_version
+                settings.shortcut_max_download_image_per_version
+                and len(images_for_version) > settings.shortcut_max_download_image_per_version
             ):
                 original_count = len(images_for_version)
                 images_for_version = images_for_version[
-                    : setting.shortcut_max_download_image_per_version
+                    : settings.shortcut_max_download_image_per_version
                 ]
                 logger.info(
                     f"[ImageProcessor] Limited images from "
@@ -168,7 +168,7 @@ class ImageProcessor:
             else:
                 logger.debug(
                     f"[ImageProcessor] No limit applied: "
-                    f"setting={setting.shortcut_max_download_image_per_version}, "
+                    f"settings={settings.shortcut_max_download_image_per_version}, "
                     f"count={len(images_for_version)}"
                 )
 
@@ -239,10 +239,10 @@ class ImageProcessor:
         logger.info(f"[ImageProcessor] Downloading thumbnail for model {model_id}")
 
         # Ensure thumbnail directory exists
-        os.makedirs(setting.shortcut_thumbnail_folder, exist_ok=True)
+        os.makedirs(settings.shortcut_thumbnail_folder, exist_ok=True)
 
         thumbnail_path = os.path.join(
-            setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
+            settings.shortcut_thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
         )
 
         try:
@@ -279,12 +279,12 @@ class ImageProcessor:
             return False
 
         thumbnail_path = os.path.join(
-            setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
+            settings.shortcut_thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
         )
 
         try:
             # Ensure thumbnail directory exists
-            os.makedirs(setting.shortcut_thumbnail_folder, exist_ok=True)
+            os.makedirs(settings.shortcut_thumbnail_folder, exist_ok=True)
 
             # Create thumbnail
             with Image.open(input_image_path) as image:
@@ -341,7 +341,7 @@ class ImageProcessor:
             return True
 
         thumbnail_path = os.path.join(
-            setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
+            settings.shortcut_thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
         )
 
         try:
@@ -366,7 +366,7 @@ class ImageProcessor:
             return False
 
         thumbnail_path = os.path.join(
-            setting.shortcut_thumbnail_folder, f"{model_id}{setting.preview_image_ext}"
+            settings.shortcut_thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
         )
 
         exists = os.path.isfile(thumbnail_path)
@@ -427,7 +427,7 @@ class ImageProcessor:
                 return None
 
             # Ensure preview directory exists
-            preview_dir = setting.shortcut_thumbnail_folder
+            preview_dir = settings.shortcut_thumbnail_folder
             os.makedirs(preview_dir, exist_ok=True)
 
             filename = f"model_{model_id}_preview.jpg"
@@ -506,7 +506,7 @@ class ImageProcessor:
         """
         if not model_info:
             logger.error("[ImageProcessor] get_preview_image_by_model_info: model_info is None")
-            return setting.no_card_preview_image
+            return settings.no_card_preview_image
 
         image_path = self.get_preview_image_path(model_info)
 
@@ -519,7 +519,7 @@ class ImageProcessor:
             return downloaded_path
 
         logger.info("[ImageProcessor] Using fallback preview image")
-        return setting.no_card_preview_image
+        return settings.no_card_preview_image
 
     def extract_version_images(self, model_info: Dict, modelid: str) -> List[List]:
         """

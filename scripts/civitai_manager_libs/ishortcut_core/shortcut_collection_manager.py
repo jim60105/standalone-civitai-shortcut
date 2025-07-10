@@ -36,26 +36,26 @@ class ShortcutCollectionManager:
 
     def load_shortcuts(self) -> dict:
         """Load shortcuts from persistent storage."""
-        if not os.path.isfile(setting.shortcut):
+        if not os.path.isfile(settings.shortcut):
             logger.debug("Shortcut file not found, initializing empty collection.")
             return {}
         try:
-            with open(setting.shortcut, 'r') as f:
+            with open(settings.shortcut, 'r') as f:
                 data = json.load(f)
         except Exception:
-            logger.error(f"Error loading shortcut file: {setting.shortcut}", exc_info=True)
+            logger.error(f"Error loading shortcut file: {settings.shortcut}", exc_info=True)
             return {}
         return data or {}
 
     def save_shortcuts(self, shortcuts: dict) -> str:
         """Save shortcuts to persistent storage with error handling."""
         try:
-            with open(setting.shortcut, 'w') as f:
+            with open(settings.shortcut, 'w') as f:
                 json.dump(shortcuts, f, indent=4)
         except Exception:
-            logger.error(f"Error writing shortcut file: {setting.shortcut}", exc_info=True)
+            logger.error(f"Error writing shortcut file: {settings.shortcut}", exc_info=True)
             return ""
-        return f"Civitai Internet Shortcut saved to: {setting.shortcut}"
+        return f"Civitai Internet Shortcut saved to: {settings.shortcut}"
 
     def add_shortcut(
         self, shortcuts: dict, model_id: str, register_information_only: bool = False, progress=None
@@ -86,15 +86,15 @@ class ShortcutCollectionManager:
             try:
                 backup = None
                 try:
-                    with open(setting.shortcut_civitai_internet_shortcut_url, 'r') as f:
+                    with open(settings.shortcut_civitai_internet_shortcut_url, 'r') as f:
                         backup = json.load(f)
                 except Exception:
                     backup = {}
                 backup[f"url={Url_Page()}{entry['id']}"] = entry['name']
-                with open(setting.shortcut_civitai_internet_shortcut_url, 'w') as f:
+                with open(settings.shortcut_civitai_internet_shortcut_url, 'w') as f:
                     json.dump(backup, f, indent=4)
             except Exception:
-                err_file = setting.shortcut_civitai_internet_shortcut_url
+                err_file = settings.shortcut_civitai_internet_shortcut_url
                 logger.error(
                     f"Error backing up URL mapping: {err_file}",
                     exc_info=True,

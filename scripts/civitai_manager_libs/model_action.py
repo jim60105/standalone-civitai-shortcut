@@ -12,7 +12,7 @@ import datetime
 
 from . import util
 from . import model
-from . import setting
+from . import settings
 from .error_handler import with_error_handling
 from .exceptions import (
     NetworkError,
@@ -170,7 +170,7 @@ def on_download_imagefolder_click(modelid):
 )
 def on_saved_infofolder_click(modelid):
     if modelid:
-        model_path = os.path.join(setting.shortcut_info_folder, modelid)
+        model_path = os.path.join(settings.shortcut_info_folder, modelid)
         if model_path:
             if os.path.exists(model_path):
                 util.open_folder(model_path)

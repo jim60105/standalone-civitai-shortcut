@@ -54,9 +54,9 @@ def on_ui(refresh_sc_browser, recipe_input):
             with gr.TabItem("Images", id="Model_Images"):
                 saved_gallery = gr.Gallery(
                     show_label=False,
-                    columns=setting.gallery_column,
-                    height=setting.information_gallery_height,
-                    object_fit=setting.gallery_thumbnail_image_style,
+                    columns=settings.gallery_column,
+                    height=settings.information_gallery_height,
+                    object_fit=settings.gallery_thumbnail_image_style,
                 )
                 with gr.Row():
                     download_images = gr.Button(value="Download Images")
@@ -786,7 +786,7 @@ def on_download_model_click(
 #     msg = None
 #     if version_id and model_id:
 #         # 프리뷰이미지와 파일 모두를 다운 받는다.
-#         if cs_foldername == setting.CREATE_MODEL_FOLDER:
+#         if cs_foldername == settings.CREATE_MODEL_FOLDER:
 #             msg = downloader.download_file_thread(file_name, version_id, True, vs_folder, vs_foldername, None, ms_foldername)
 #         else:
 #             msg = downloader.download_file_thread(file_name, version_id, False, False, None , cs_foldername, ms_foldername)
@@ -941,7 +941,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
             #     return
 
             # savefile_base = downloader.get_save_base_name(version_info)
-            # preview_img_filepath = os.path.join(path, f"{util.replace_filename(savefile_base)}{setting.preview_image_suffix}{setting.preview_image_ext}")
+            # preview_img_filepath = os.path.join(path, f"{util.replace_filename(savefile_base)}{settings.preview_image_suffix}{settings.preview_image_ext}")
 
             # shutil.copy(selected_image_filepath, preview_img_filepath)
             # =========================================================
@@ -955,9 +955,9 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
     # Get local file path if URL
     local_path = selected
     if isinstance(selected, str) and selected.startswith("http"):
-        from . import setting
+        from . import settings
 
-        local_path = setting.get_image_url_to_gallery_file(selected)
+        local_path = settings.get_image_url_to_gallery_file(selected)
         logger.debug(
             f"[ishortcut_action] on_gallery_select: converted URL to local_path={local_path}"
         )
@@ -1166,7 +1166,7 @@ def on_file_gallery_loading(image_url):
     chk_image_url = image_url
     if image_url:
         chk_image_url = [
-            img if os.path.isfile(img) else setting.no_card_preview_image for img in image_url
+            img if os.path.isfile(img) else settings.no_card_preview_image for img in image_url
         ]
         return chk_image_url, chk_image_url
     return None, None
@@ -1226,7 +1226,7 @@ def load_saved_model(modelid=None, ver_index=None):
                         download_classification = None
                         version_parent_path = os.path.dirname(version_path)
                         model_base_folder = os.path.abspath(
-                            setting.generate_type_basefolder(model_type)
+                            settings.generate_type_basefolder(model_type)
                         )
                         download_foldername = os.path.basename(version_path)
                         download_parent_foldername = os.path.basename(version_parent_path)
@@ -1307,7 +1307,7 @@ def load_saved_model(modelid=None, ver_index=None):
 
             note = ishortcut.shortcutcollectionmanager.get_shortcut_note(modelid)
             title_name = f"# {model_info['name']} : {version_name}"
-            vs_foldername = setting.generate_version_foldername(
+            vs_foldername = settings.generate_version_foldername(
                 model_info['name'], version_name, versionid
             )
             model_url = civitai.Url_Page() + str(modelid)
@@ -1376,7 +1376,7 @@ def load_saved_model(modelid=None, ver_index=None):
         gr.update(value=None),
         gr.update(value=None),
         gr.update(value=None),
-        gr.update(choices=[setting.NORESULT], value=setting.NORESULT),
+        gr.update(choices=[settings.NORESULT], value=settings.NORESULT),
         gr.update(value=None),
         gr.update(value=None),
         gr.update(value=None),
@@ -1392,8 +1392,8 @@ def load_saved_model(modelid=None, ver_index=None):
         gr.update(value=False, visible=True),
         gr.update(value="", visible=False),
         gr.update(
-            choices=[setting.CREATE_MODEL_FOLDER] + classification.get_list(),
-            value=setting.CREATE_MODEL_FOLDER,
+            choices=[settings.CREATE_MODEL_FOLDER] + classification.get_list(),
+            value=settings.CREATE_MODEL_FOLDER,
         ),
         gr.update(value=None),
         gr.update(visible=False),

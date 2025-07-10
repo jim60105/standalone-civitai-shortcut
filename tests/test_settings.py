@@ -39,7 +39,7 @@ class TestSettingCategories:
         assert len(categories) > 0
 
     def test_get_setting_type(self):
-        """Test that get_setting_type returns the correct type for a setting."""
+        """Test that get_setting_type returns the correct type for a settings."""
         setting_type = SettingCategories.get_setting_type('shortcut_column')
         assert setting_type == 'integer'
 
@@ -51,14 +51,14 @@ class TestSettingValidator:
         self.validator = SettingValidator()
 
     def test_validate_range_setting(self):
-        """Test the validation of a range setting."""
+        """Test the validation of a range settings."""
         is_valid, _ = self.validator.validate_range_setting(5, 1, 10)
         assert is_valid
         is_valid, _ = self.validator.validate_range_setting(15, 1, 10)
         assert not is_valid
 
     def test_validate_path_setting(self, tmp_path):
-        """Test the validation of a path setting."""
+        """Test the validation of a path settings."""
         is_valid, _ = self.validator.validate_path_setting(str(tmp_path))
         assert is_valid
         is_valid, _ = self.validator.validate_path_setting("/invalid/path")
@@ -80,7 +80,7 @@ class TestConfigManager:
     """Tests for the ConfigManager class."""
 
     def test_get_and_set_setting(self, config_manager):
-        """Test getting and setting a single setting."""
+        """Test getting and settings a single settings."""
         config_manager.set_setting('shortcut_column', 8)
         value = config_manager.get_setting('shortcut_column')
         assert value == 8
@@ -93,7 +93,7 @@ class TestConfigManager:
         assert loaded_settings['shortcut_column'] == 10
 
     def test_reset_setting(self, config_manager):
-        """Test resetting a setting to its default value."""
+        """Test resetting a settings to its default value."""
         config_manager.set_setting('shortcut_column', 12)
         config_manager.reset_setting('shortcut_column')
         value = config_manager.get_setting('shortcut_column')

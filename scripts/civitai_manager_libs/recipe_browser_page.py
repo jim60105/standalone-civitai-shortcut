@@ -3,7 +3,7 @@ import math
 import os
 import datetime
 
-from . import setting
+from . import settings
 from . import recipe
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 
@@ -33,9 +33,9 @@ def on_ui():
 
     recipe_gallery = gr.Gallery(
         value=thumb_list,
-        columns=setting.prompt_shortcut_column,
+        columns=settings.prompt_shortcut_column,
         height="100%",
-        object_fit=setting.gallery_thumbnail_image_style,
+        object_fit=settings.gallery_thumbnail_image_style,
         preview=False,
         allow_preview=False,
         show_label=False,
@@ -51,8 +51,8 @@ def on_ui():
         )
         recipe_classification_list = gr.Dropdown(
             label="Filter Recipe Classification",
-            choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-            value=setting.PLACEHOLDER,
+            choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
+            value=settings.PLACEHOLDER,
             interactive=True,
             multiselect=False,
         )
@@ -60,9 +60,9 @@ def on_ui():
     with gr.Accordion(label="Filter Reference Shortcut Items", open=False):
         recipe_reference_select_gallery = gr.Gallery(
             label="Filter Reference Models",
-            columns=setting.prompt_shortcut_column,
+            columns=settings.prompt_shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             preview=False,
             allow_preview=False,
         )
@@ -82,9 +82,9 @@ def on_ui():
         recipe_reference_gallery = gr.Gallery(
             value=reference_list,
             show_label=False,
-            columns=setting.prompt_shortcut_column,
+            columns=settings.prompt_shortcut_column,
             height="100%",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             preview=False,
             allow_preview=False,
         )
@@ -310,7 +310,7 @@ def get_recipe_reference_list(page=0):
         # page 즉 페이징이 아닌 전체가 필요할때도 총페이지 수를 구할때도 있으므로..
         # page == 0 은 전체 리스트를 반환한다
         shortcut_count_per_page = (
-            setting.prompt_shortcut_column * setting.prompt_shortcut_rows_per_page
+            settings.prompt_shortcut_column * settings.prompt_shortcut_rows_per_page
         )
 
         if shortcut_count_per_page > 0:
@@ -335,33 +335,33 @@ def get_recipe_reference_list(page=0):
             v = get_shortcut_by_modelid(ISC, str(shortcut))
             if v:
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
+                    if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.NSFW_filtering_enable:
                         result.append(
                             (
-                                setting.nsfw_disable_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.nsfw_disable_image,
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                     else:
                         result.append(
                             (
                                 os.path.join(
-                                    setting.shortcut_thumbnail_folder,
-                                    f"{v['id']}{setting.preview_image_ext}",
+                                    settings.shortcut_thumbnail_folder,
+                                    f"{v['id']}{settings.preview_image_ext}",
                                 ),
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
             else:
                 result.append(
-                    (setting.no_card_preview_image, setting.set_shortcutname("delete", shortcut))
+                    (settings.no_card_preview_image, settings.set_shortcutname("delete", shortcut))
                 )
 
     logger.debug(f"shortlist: {shortlist}")
@@ -390,7 +390,7 @@ def get_recipe_list(search=None, classification=None, shortcut=None, page=0):
     shortlist = None
     result = None
 
-    if classification == setting.PLACEHOLDER:
+    if classification == settings.PLACEHOLDER:
         classification = None
 
     recipe_list = recipe.get_list(search, classification, shortcut)
@@ -406,7 +406,7 @@ def get_recipe_list(search=None, classification=None, shortcut=None, page=0):
         # page 즉 페이징이 아닌 전체가 필요할때도 총페이지 수를 구할때도 있으므로..
         # page == 0 은 전체 리스트를 반환한다
         shortcut_count_per_page = (
-            setting.prompt_shortcut_column * setting.prompt_shortcut_rows_per_page
+            settings.prompt_shortcut_column * settings.prompt_shortcut_rows_per_page
         )
 
         if shortcut_count_per_page > 0:
@@ -430,16 +430,16 @@ def get_recipe_list(search=None, classification=None, shortcut=None, page=0):
             re = get_recipe(RecipeCollection, shortcut)
             if re:
                 if re["image"]:
-                    dpimage = os.path.join(setting.shortcut_recipe_folder, f"{re['image']}")
+                    dpimage = os.path.join(settings.shortcut_recipe_folder, f"{re['image']}")
 
                     if os.path.isfile(dpimage):
                         result.append((dpimage, shortcut))
                     else:
-                        result.append((setting.no_card_preview_image, shortcut))
+                        result.append((settings.no_card_preview_image, shortcut))
                 else:
-                    result.append((setting.no_card_preview_image, shortcut))
+                    result.append((settings.no_card_preview_image, shortcut))
             else:
-                result.append((setting.no_card_preview_image, shortcut))
+                result.append((settings.no_card_preview_image, shortcut))
 
     return result, total, max_page
 
@@ -466,12 +466,12 @@ def on_refresh_recipe_browser_change(search, classification, shortcut, sc_page, 
     )
 
     if not recipe.is_classifications(classification):
-        classification = setting.PLACEHOLDER
+        classification = settings.PLACEHOLDER
 
     reference_list, reference_totals, reference_max_page = get_recipe_reference_list(rs_page)
     return (
         gr.update(
-            choices=[setting.PLACEHOLDER] + recipe.get_classifications(), value=classification
+            choices=[settings.PLACEHOLDER] + recipe.get_classifications(), value=classification
         ),
         gr.update(value=thumb_list),
         gr.update(
@@ -506,7 +506,7 @@ def on_recipe_reference_select_gallery_select(evt: gr.SelectData, shortcuts):
             logger.warning(f"[RECIPE_BROWSER] Unexpected evt.value format: {evt.value}")
             return shortcuts, None, gr.update(visible=False)
 
-        sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+        sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
         current_time = datetime.datetime.now()
 
         if not shortcuts:
@@ -535,30 +535,30 @@ def on_recipe_reference_select_gallery_loading(shortcuts):
                     if bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
                         result_list.append(
                             (
-                                setting.nsfw_disable_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.nsfw_disable_image,
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                     else:
                         result_list.append(
                             (
                                 os.path.join(
-                                    setting.shortcut_thumbnail_folder,
-                                    f"{v['id']}{setting.preview_image_ext}",
+                                    settings.shortcut_thumbnail_folder,
+                                    f"{v['id']}{settings.preview_image_ext}",
                                 ),
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result_list.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
             else:
                 result_list.append(
-                    (setting.no_card_preview_image, setting.set_shortcutname("delete", mid))
+                    (settings.no_card_preview_image, settings.set_shortcutname("delete", mid))
                 )
 
     current_time = datetime.datetime.now()
@@ -582,7 +582,7 @@ def on_recipe_reference_gallery_select(evt: gr.SelectData, shortcuts):
             logger.warning(f"[RECIPE_BROWSER] Unexpected evt.value format: {evt.value}")
             return shortcuts, gr.update(visible=False)
 
-        sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+        sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
 
         if not shortcuts:
             shortcuts = list()

@@ -81,7 +81,7 @@ class TestStandaloneAdapters(unittest.TestCase):
         ):
             config_manager = StandaloneConfigManager()
 
-            # Test setting and getting configuration
+            # Test settings and getting configuration
             config_manager.set_config('test_key', 'test_value')
             self.assertEqual(config_manager.get_config('test_key'), 'test_value')
 

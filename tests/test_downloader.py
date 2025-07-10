@@ -12,9 +12,9 @@ from scripts.civitai_manager_libs.downloader import (
     download_file_gr,
 )
 
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
 
-config_manager = setting.config_manager
+config_manager = settings.config_manager
 
 
 def test_add_number_to_duplicate_files_basic():

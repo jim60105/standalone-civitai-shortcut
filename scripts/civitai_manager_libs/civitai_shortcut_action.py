@@ -21,7 +21,7 @@ from . import ishortcut_action
 from . import model
 from . import model_action
 from . import sc_browser_page
-from . import setting
+from . import settings
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -66,10 +66,10 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
         current_information_tabs = gr.State(0)
         refresh_NSFW = gr.Textbox()
 
-    with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
+    with gr.Column(scale=settings.shortcut_browser_screen_split_ratio):
         logger.debug(
             f"[civitai_shortcut_action] Creating main UI column with scale: "
-            f"{setting.shortcut_browser_screen_split_ratio}"
+            f"{settings.shortcut_browser_screen_split_ratio}"
         )
         with gr.Tabs() as civitai_shortcut_tabs:
             logger.debug(" Creating civitai_shortcut_tabs")
@@ -127,7 +127,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                         shortcut_new_version_type = gr.Dropdown(
                             label="Filter Model type",
                             multiselect=True,
-                            choices=[k for k in setting.ui_typenames],
+                            choices=[k for k in settings.ui_typenames],
                             interactive=True,
                         )
                         scan_new_version_btn = gr.Button(
@@ -137,9 +137,9 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                             label="SC New Version Gallery",
                             elem_id="sc_new_version_gallery",
                             show_label=False,
-                            columns=setting.shortcut_column,
+                            columns=settings.shortcut_column,
                             height="fit",
-                            object_fit=setting.gallery_thumbnail_image_style,
+                            object_fit=settings.gallery_thumbnail_image_style,
                         )
                         gr.Markdown(
                             value=(
@@ -162,8 +162,8 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                             interactive=True,
                         )
                         nsfw_level = gr.Dropdown(
-                            value=setting.NSFW_level_user,
-                            choices=setting.NSFW_levels,
+                            value=settings.NSFW_level_user,
+                            choices=settings.NSFW_levels,
                             label="NSFW Filtering Level",
                             visible=True,
                             interactive=True,
@@ -174,13 +174,13 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
 
     with gr.Column(
         scale=(
-            setting.shortcut_browser_screen_split_ratio_max
-            - setting.shortcut_browser_screen_split_ratio
+            settings.shortcut_browser_screen_split_ratio_max
+            - settings.shortcut_browser_screen_split_ratio
         )
     ):
         scale_val = (
-            setting.shortcut_browser_screen_split_ratio_max
-            - setting.shortcut_browser_screen_split_ratio
+            settings.shortcut_browser_screen_split_ratio_max
+            - settings.shortcut_browser_screen_split_ratio
         )
         logger.debug(
             f"[civitai_shortcut_action] Creating secondary UI column with scale: " f"{scale_val}"
@@ -304,13 +304,13 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
 def on_refresh_NSFW_change():
     logger.debug(
         f"[civitai_shortcut_action] on_refresh_NSFW_change called. "
-        f"NSFW_filtering_enable: {setting.NSFW_filtering_enable}, "
-        f"NSFW_level_user: {setting.NSFW_level_user}"
+        f"NSFW_filtering_enable: {settings.NSFW_filtering_enable}, "
+        f"NSFW_level_user: {settings.NSFW_level_user}"
     )
-    if setting.NSFW_filtering_enable:
-        return gr.update(value="On"), gr.update(visible=True, value=setting.NSFW_level_user)
+    if settings.NSFW_filtering_enable:
+        return gr.update(value="On"), gr.update(visible=True, value=settings.NSFW_level_user)
     else:
-        return gr.update(value="Off"), gr.update(visible=False, value=setting.NSFW_level_user)
+        return gr.update(value="Off"), gr.update(visible=False, value=settings.NSFW_level_user)
 
 
 @with_error_handling(
@@ -323,7 +323,7 @@ def on_nsfw_filter(enable, level):
         f"[civitai_shortcut_action] on_nsfw_filter called with enable: {enable}, " f"level: {level}"
     )
     current_time = datetime.datetime.now()
-    setting.set_NSFW(True if enable == "On" else False, level)
+    settings.set_NSFW(True if enable == "On" else False, level)
     logger.debug(f" NSFW set to: {enable == 'On'}, level: {level}")
     return (
         gr.update(visible=True if enable == "On" else False, value=level),
@@ -340,7 +340,7 @@ def on_nsfw_filter(enable, level):
 )
 def on_nsfw_save_btn_click():
     logger.debug(" on_nsfw_save_btn_click called. Saving NSFW settings.")
-    setting.save_NSFW()
+    settings.save_NSFW()
 
 
 def on_civitai_shortcut_tabs_select(evt: gr.SelectData):
@@ -393,7 +393,7 @@ def on_sc_gallery_select(evt: gr.SelectData):
             logger.debug(f" Unexpected evt.value format: {evt.value}")
             return None
 
-        sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+        sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
         logger.debug(
             f"[civitai_shortcut_action] Gallery select: shortcut={shortcut}, "
             f"sc_model_id={sc_model_id}"
@@ -406,13 +406,13 @@ def on_sc_modelid_change(sc_model_id, current_information_tabs):
         f"[civitai_shortcut_action] on_sc_modelid_change called with sc_model_id: {sc_model_id}, "
         f"current_information_tabs: {current_information_tabs}"
     )
-    if current_information_tabs == setting.civitai_information_tab:
+    if current_information_tabs == settings.civitai_information_tab:
         logger.debug(" Returning for civitai_information_tab")
         return sc_model_id, gr.update(visible=False), gr.update(visible=False)
-    if current_information_tabs == setting.usergal_information_tab:
+    if current_information_tabs == settings.usergal_information_tab:
         logger.debug(" Returning for usergal_information_tab")
         return gr.update(visible=False), sc_model_id, gr.update(visible=False)
-    if current_information_tabs == setting.download_information_tab:
+    if current_information_tabs == settings.download_information_tab:
         logger.debug(" Returning for download_information_tab")
         return gr.update(visible=False), gr.update(visible=False), sc_model_id
     logger.debug(" Returning default (all invisible)")
@@ -640,17 +640,17 @@ def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
                     result.append(
                         (
                             os.path.join(
-                                setting.shortcut_thumbnail_folder,
-                                f"{v['id']}{setting.preview_image_ext}",
+                                settings.shortcut_thumbnail_folder,
+                                f"{v['id']}{settings.preview_image_ext}",
                             ),
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
                 else:
                     result.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
         logger.debug(f" scan_list result: {result}")
@@ -759,7 +759,7 @@ def create_parameter_components(copypaste, gr=gr):
 #     if not modelid:
 #         return
 #     try:
-#         if setting.shortcut_auto_update:
+#         if settings.shortcut_auto_update:
 #             fileprocessor.write_model_information(modelid, False, None)
 #     except:
 #         return

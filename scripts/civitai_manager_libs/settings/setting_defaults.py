@@ -203,5 +203,5 @@ class SettingDefaults:
 
     @classmethod
     def get_default_value(cls, key: str) -> any:
-        """Returns the default value for a specific setting key."""
+        """Returns the default value for a specific settings key."""
         return cls.get_all_defaults().get(key)

@@ -113,7 +113,7 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
     # Prepare download tasks
     image_tasks = []
     for img_url in dn_image_list:
-        gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+        gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
         if not os.path.isfile(gallery_img_file):
             image_tasks.append((img_url, gallery_img_file))
 
@@ -136,7 +136,7 @@ def download_images_batch(
         batch = dn_image_list[i : i + batch_size]
         logger.debug(f"Processing batch {i//batch_size + 1}, {len(batch)} images")
         for img_url in batch:
-            gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+            gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
             if not os.path.isfile(gallery_img_file):
                 client.download_file(img_url, gallery_img_file)
         time.sleep(0.5)
@@ -899,7 +899,7 @@ def on_refresh_gallery_change(images_url, progress=gr.Progress()):
 
 
 def on_pre_loading_change(usergal_page_url, paging_information):
-    if setting.usergallery_preloading:
+    if settings.usergallery_preloading:
         pre_loading(usergal_page_url, paging_information)
 
 
@@ -1023,7 +1023,7 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                 # NSFW filtering ....
                 if settings.NSFW_filtering_enable:
 
-                    # if not setting.NSFW_level[image_info["nsfwLevel"]]:
+                    # if not settings.NSFW_level[image_info["nsfwLevel"]]:
                     if settings.NSFW_levels.index(
                         image_info["nsfwLevel"]
                     ) > settings.NSFW_levels.index(settings.NSFW_level_user):
@@ -1145,7 +1145,7 @@ def get_paging_information_working(modelId, modelVersionId=None, show_nsfw=False
 
     initial_url = get_default_page_url(modelId, modelVersionId, show_nsfw)
     total_page_urls.append(initial_url)
-    # page_items = item_list[::setting.usergallery_images_page_limit]
+    # page_items = item_list[::settings.usergallery_images_page_limit]
     page_items = item_list[::images_per_page]
     totalPages = len(page_items)
 
