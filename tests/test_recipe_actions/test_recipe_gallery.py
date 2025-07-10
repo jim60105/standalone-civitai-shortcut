@@ -16,7 +16,7 @@ def use_tmp_recipe_file(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "shortcut_recipe_folder", str(tmp_folder))
     monkeypatch.setattr(
         config_manager,
-        "_set_setting",
+        "set_setting",
         lambda key, value: config_manager.settings.update({key: value}),
     )
     config_manager.set_setting("prompt_shortcut_column", 4)

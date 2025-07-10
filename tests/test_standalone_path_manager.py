@@ -13,6 +13,7 @@ import unittest
 from civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import (
     StandalonePathManager,
 )
+from civitai_manager_libs.settings import config_manager
 
 
 class TestStandalonePathManager(unittest.TestCase):

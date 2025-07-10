@@ -131,7 +131,7 @@ class TestIntegration(unittest.TestCase):
         mock_compat.path_manager = mock_path_manager
         with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
             settings.extension_base = ""
-            settings._initialize_extension_base()
+            settings.init()
             self.assertEqual(settings.extension_base, '/test/extension/path')
 
 

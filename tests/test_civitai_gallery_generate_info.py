@@ -7,6 +7,7 @@ import tempfile
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
 from civitai_manager_libs import civitai_gallery_action
+from civitai_manager_libs.settings import config_manager
 
 
 class TestCivitaiGalleryGenerateInfo:

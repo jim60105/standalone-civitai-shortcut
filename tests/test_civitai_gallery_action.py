@@ -6,6 +6,7 @@ import pytest
 
 from scripts.civitai_manager_libs import civitai_gallery_action as cga
 from scripts.civitai_manager_libs import settings
+from scripts.civitai_manager_libs.settings import config_manager
 
 
 class DummyClient:
@@ -64,7 +65,7 @@ def test_gallery_loading(tmp_path, monkeypatch):
     urls = ["u1", "u2"]
     # configure gallery folder
     monkeypatch.setattr(settings, "shortcut_gallery_folder", str(tmp_path))
-    monkeypatch.setattr(settings, "no_card_preview_image", "no.png")
+    monkeypatch.setattr(settings, "get_no_card_preview_image", lambda: "no.png")
     monkeypatch.setattr(
         settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )

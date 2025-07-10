@@ -1027,7 +1027,7 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                     if settings.NSFW_levels.index(
                         image_info["nsfwLevel"]
                     ) > settings.NSFW_levels.index(settings.NSFW_level_user):
-                        gallery_img_file = settings.nsfw_disable_image
+                        gallery_img_file = settings.get_nsfw_disable_image()
 
                 if os.path.isfile(gallery_img_file):
                     img_url = gallery_img_file
@@ -1196,9 +1196,9 @@ def gallery_loading(images_url, progress):
                 description_img = img_url
             elif result == "url":
                 if not _download_single_image(img_url, description_img):
-                    description_img = settings.no_card_preview_image
+                    description_img = settings.get_no_card_preview_image()
             else:
-                description_img = settings.no_card_preview_image
+                description_img = settings.get_no_card_preview_image()
 
             dn_image_list.append(description_img)
             image_list.append(description_img)
@@ -1236,7 +1236,7 @@ def download_user_gallery_images(model_id, image_urls):
         for img_url in image_urls:
             result = util.is_url_or_filepath(img_url)
             if result == "filepath":
-                if os.path.basename(img_url) != settings.no_card_preview_image:
+                if os.path.basename(img_url) != os.path.basename(settings.get_no_card_preview_image()):
                     dest = os.path.join(save_folder, os.path.basename(img_url))
                     shutil.copyfile(img_url, dest)
             elif result == "url":

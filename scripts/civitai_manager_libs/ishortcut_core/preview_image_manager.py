@@ -88,7 +88,7 @@ class PreviewImageManager:
         downloaded = self.download_preview_image(model_info)
         if downloaded:
             return downloaded
-        return settings.no_card_preview_image
+        return settings.get_no_card_preview_image()
 
     def cleanup_unused_previews(self) -> int:
         """Remove preview images for models no longer in shortcuts."""

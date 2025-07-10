@@ -50,8 +50,8 @@ class TestImageDownloadIntegration:
         with open(result, 'rb') as f:
             assert f.read() == test_image_data
 
-    @patch('civitai_manager_libs.http_client.requests.Session.get')
-    def test_gallery_image_batch_download(self, mock_session_get):
+    @patch('civitai_manager_libs.http_client.get_http_client')
+    def test_gallery_image_batch_download(self, mock_get_http_client):
         """Test batch download of gallery images."""
         # Arrange
         test_urls = [

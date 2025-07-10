@@ -3,6 +3,7 @@ from PIL import Image
 
 import scripts.civitai_manager_libs.ishortcut_core.image_processor as ip_mod
 from scripts.civitai_manager_libs.ishortcut_core.image_processor import ImageProcessor
+from scripts.civitai_manager_libs.settings import config_manager
 
 
 @pytest.fixture(autouse=True)
@@ -10,7 +11,7 @@ def tmp_thumbnail_folder(monkeypatch, tmp_path):
     # Redirect thumbnail folder to temporary path
     monkeypatch.setattr(
         config_manager,
-        "_set_setting",
+        "set_setting",
         lambda key, value: config_manager.settings.update({key: value}),
     )
     config_manager.set_setting('shortcut_thumbnail_folder', str(tmp_path))

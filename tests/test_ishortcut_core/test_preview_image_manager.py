@@ -12,7 +12,7 @@ def isolate_preview_dir(tmp_path, monkeypatch):
     # isolate preview directory and fallback image
     pd = tmp_path / 'previews'
     monkeypatch.setattr(settings, 'shortcut_thumbnail_folder', str(pd))
-    monkeypatch.setattr(settings, 'no_card_preview_image', 'fallback.jpg')
+    monkeypatch.setattr(settings, 'get_no_card_preview_image', lambda: 'fallback.jpg')
     return tmp_path
 
 

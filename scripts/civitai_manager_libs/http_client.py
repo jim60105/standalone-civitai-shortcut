@@ -25,6 +25,8 @@ from .error_handler import with_error_handling
 from .ui.notification_service import get_notification_service
 
 from . import settings
+from .settings.setting_defaults import DEFAULT_HEADERS
+from .settings import config_manager
 
 
 logger = get_logger(__name__)
@@ -67,7 +69,7 @@ class CivitaiHttpClient:
         # Prepare HTTP session
         self.session = requests.Session()
         # Default headers including user-agent and optional authorization
-        self.session.headers.update(settings.headers or {})
+        self.session.headers.update(DEFAULT_HEADERS or {})
         if self.api_key:
             self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
 

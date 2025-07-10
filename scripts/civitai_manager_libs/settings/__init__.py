@@ -77,7 +77,11 @@ def __getattr__(name):
     if name == 'Extensions_Version':
         return config_manager.get_setting('Extensions_Version', '1.0.0')
 
-    # If nothing found, raise AttributeError
+    # If nothing found, try to get from config_manager
+    value = config_manager.get_setting(name)
+    if value is not None:
+        return value
+
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 

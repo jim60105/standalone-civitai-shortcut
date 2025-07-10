@@ -24,9 +24,10 @@ class DummyResponse:
 
 
 class DummyClient:
-    def __init__(self, response):
+    def __init__(self, response, timeout=None):
         self.session = self
         self._response = response
+        self.timeout = timeout
 
     def get(self, url, timeout=None):
         return self._response

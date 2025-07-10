@@ -1,4 +1,5 @@
 import pytest
+from scripts.civitai_manager_libs.settings import config_manager
 
 from scripts.civitai_manager_libs.ishortcut_core.shortcut_search_filter import (
     ShortcutSearchFilter,

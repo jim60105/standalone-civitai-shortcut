@@ -17,7 +17,7 @@ def use_tmp_recipe_file(tmp_path, monkeypatch):
     # Set required constants for UI
     monkeypatch.setattr(
         config_manager,
-        "_set_setting",
+        "set_setting",
         lambda key, value: config_manager.settings.update({key: value}),
     )
     config_manager.set_setting("shortcut_browser_screen_split_ratio", 4)
