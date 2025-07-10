@@ -46,7 +46,14 @@ class ConfigManager:
 
     def get_setting(self, key: str, default=None) -> any:
         """Gets a single settings value by key."""
-        return self.settings.get(key, default if default is not None else self.defaults.get(key))
+        value = self.settings.get(key, default if default is not None else self.defaults.get(key))
+        if key == 'config_path' and value is None:
+            try:
+                from scripts.civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import StandalonePathManager
+                value = StandalonePathManager().get_config_path()
+            except Exception:
+                value = None
+        return value
 
     def set_setting(self, key: str, value: any) -> bool:
         """Sets a single settings value after validation."""

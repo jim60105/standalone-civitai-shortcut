@@ -943,12 +943,13 @@ def pre_loading(usergal_page_url, paging_information):
     return
 
 
-def download_images(dn_image_list: list):
+def download_images(dn_image_list: list, client=None):
     """Download images for gallery with improved error handling."""
     if not dn_image_list:
         return
 
-    client = get_http_client()
+    if client is None:
+        client = get_http_client()
     logger.debug(f" Starting download of {len(dn_image_list)} images")
 
     success_count = 0
