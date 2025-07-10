@@ -643,7 +643,7 @@ def on_classification_gallery_loading(shortcuts, page=0):
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
+                    if 'nsfw' in v.keys() and bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
                         result_list.append(
                             (
                                 setting.nsfw_disable_image,

@@ -4,6 +4,9 @@ from scripts.civitai_manager_libs.civitai_gallery_action import (
 )
 from scripts.civitai_manager_libs.recipe_actions.recipe_browser import RecipeBrowser
 from scripts.civitai_manager_libs.recipe_actions.recipe_utilities import RecipeUtilities
+from scripts.civitai_manager_libs import setting
+
+config_manager = setting.config_manager
 
 # Create instances for testing
 _recipe_browser = RecipeBrowser()

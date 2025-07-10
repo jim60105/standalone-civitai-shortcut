@@ -11,6 +11,10 @@ from scripts.civitai_manager_libs.exceptions import (
     CivitaiShortcutError,
 )
 
+from scripts.civitai_manager_libs import setting
+
+config_manager = setting.config_manager
+
 
 class DummyError(BaseException):
     """Dummy gradio Error replacement to capture messages."""

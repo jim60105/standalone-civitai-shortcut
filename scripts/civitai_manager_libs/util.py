@@ -641,7 +641,7 @@ def download_with_cache_and_retry(
     if os.path.exists(cache_path):
         printD("[cache] Using stale cached image due to download failure")
         return cache_path
-    return setting.no_card_preview_image
+    return config_manager.get_setting('no_card_preview_image')
 
 
 def optimize_downloaded_image(

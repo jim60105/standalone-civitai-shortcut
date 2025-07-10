@@ -9,6 +9,10 @@ from civitai_manager_libs.compat.standalone_adapters.standalone_parameter_proces
     StandaloneParameterProcessor,
 )
 
+from civitai_manager_libs import setting
+
+config_manager = setting.config_manager
+
 
 @pytest.fixture()
 def spp():

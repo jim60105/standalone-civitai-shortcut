@@ -157,7 +157,7 @@ class TestCivitaiGalleryGenerateInfo:
             }
         ]
 
-        with patch('civitai_manager_libs.civitai_gallery_action.get_image_page') as mock_get_page:
+        with patch('civitai_manager_libs.civitai_gallery_action.get_image_page') as mock_get_page,             patch.object(config_manager, 'get_setting', return_value=True):
             mock_get_page.return_value = mock_image_data
 
             # Call get_user_gallery

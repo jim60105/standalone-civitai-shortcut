@@ -124,7 +124,7 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
 
 
 def download_images_batch(
-    dn_image_list: list, batch_size: int = setting.gallery_download_batch_size
+    dn_image_list: list, batch_size: int = setting.get_setting('gallery_download_batch_size')
 ):
     """Download images in batches to avoid overwhelming the server."""
     if not dn_image_list:

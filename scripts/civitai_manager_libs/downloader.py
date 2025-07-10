@@ -317,7 +317,7 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
         return client.download_file_with_resume(
             img_url,
             filepath,
-            headers={"Authorization": f"Bearer {setting.civitai_api_key}"},
+            headers={"Authorization": f"Bearer {config_manager.get_setting('civitai_api_key')}"},
         )
     except Exception as e:
         logger.error(f"[downloader] Failed to download preview image: {e}")

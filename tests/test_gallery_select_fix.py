@@ -65,7 +65,7 @@ class TestGallerySelectFix:
         assert result is None
 
         # Test with dict
-        result = setting.get_modelid_from_shortcutname({"key": "value"})
+        result = config_manager.get_setting('get_modelid_from_shortcutname')({"key": "value"})
         assert result is None
 
     @patch('scripts.civitai_manager_libs.recipe_actions.recipe_reference.logger')

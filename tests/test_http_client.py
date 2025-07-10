@@ -6,6 +6,9 @@ import requests
 
 from scripts.civitai_manager_libs.http_client import CivitaiHttpClient, _STATUS_CODE_MESSAGES
 from scripts.civitai_manager_libs.exceptions import AuthenticationError
+from scripts.civitai_manager_libs import setting
+
+config_manager = setting.config_manager
 
 
 class DummyResponse:

@@ -49,7 +49,7 @@ def test_get_shortcuts_list(search_filter):
 def test_type_filter(search_filter, monkeypatch):
     import scripts.civitai_manager_libs.setting as setting
 
-    monkeypatch.setitem(setting.ui_typenames, 'X', 'typeA')
+    monkeypatch.setitem(config_manager.get_setting('ui_typenames'), 'X', 'typeA')
     names = search_filter.get_shortcuts_list(['X'])
     assert names == ['Alpha:1', 'Gamma:3']
 

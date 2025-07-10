@@ -5,7 +5,9 @@ This module tests the parsing logic in prompt.py to ensure that
 both Civitai format and standard PNG info format are correctly parsed.
 """
 
-from scripts.civitai_manager_libs import prompt
+from scripts.civitai_manager_libs import prompt, setting
+
+config_manager = setting.config_manager
 
 
 class TestSendToRecipePromptExtraction:

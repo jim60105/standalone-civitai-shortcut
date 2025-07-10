@@ -998,7 +998,7 @@ def _update_client_configuration(client: CivitaiHttpClient) -> None:
     for needs_update, config_name in config_updates:
         if needs_update:
             if config_name == 'api_key':
-                client.update_api_key(setting.civitai_api_key)
+                client.update_api_key(config_manager.get_setting('civitai_api_key'))
             else:
                 setattr(client, config_name, getattr(setting, f'http_{config_name}'))
 

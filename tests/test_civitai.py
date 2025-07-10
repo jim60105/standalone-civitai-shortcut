@@ -2,6 +2,7 @@ import pytest
 
 from scripts.civitai_manager_libs import civitai
 
+config_manager = civitai.config_manager
 
 class DummyClient:
     def __init__(self, data=None):
@@ -91,9 +92,10 @@ def test_get_version_info_by_version_id_fail(monkeypatch):
 def test_get_http_client_initialization(monkeypatch):
     # Reset client and configure settings
     civitai._http_client = None
-    monkeypatch.setattr(civitai.setting, 'civitai_api_key', 'key1')
-    monkeypatch.setattr(civitai.setting, 'http_timeout', 10)
-    monkeypatch.setattr(civitai.setting, 'http_max_retries', 2)
+    monkeypatch.setattr(config_manager, "_set_setting", lambda key, value: config_manager.settings.update({key: value}))
+    config_manager.set_setting('civitai_api_key', 'key1')
+    config_manager.set_setting('http_timeout', 10)
+    config_manager.set_setting('http_max_retries', 2)
     client = civitai.get_http_client()
     assert client.api_key == 'key1'
     assert client.timeout == 10
@@ -103,10 +105,11 @@ def test_get_http_client_initialization(monkeypatch):
 def test_get_http_client_api_key_update(monkeypatch):
     # Existing client updates api_key when setting changes
     civitai._http_client = None
-    monkeypatch.setattr(civitai.setting, 'civitai_api_key', 'initial')
+    monkeypatch.setattr(config_manager, "_set_setting", lambda key, value: config_manager.settings.update({key: value}))
+    config_manager.set_setting('civitai_api_key', 'initial')
     client = civitai.get_http_client()
     # Change setting and retrieve again
-    monkeypatch.setattr(civitai.setting, 'civitai_api_key', 'updated')
+    config_manager.set_setting('civitai_api_key', 'updated')
     client2 = civitai.get_http_client()
     assert client2 is client
     assert client.api_key == 'updated'

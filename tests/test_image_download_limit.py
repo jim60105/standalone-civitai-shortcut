@@ -53,7 +53,7 @@ def test_collect_images_with_limit():
     only up to the limit are collected per version.
     """
     version_list = [[(1, "url1"), (2, "url2"), (3, "url3")]]
-    setting.shortcut_max_download_image_per_version = 2
+    config_manager.set_setting('shortcut_max_download_image_per_version', 2)
 
     # Use ImageProcessor instead of the moved private function
     image_processor = ImageProcessor()

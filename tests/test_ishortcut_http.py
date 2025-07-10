@@ -71,4 +71,4 @@ def test_get_preview_image_by_model_info_fallback(monkeypatch):
     monkeypatch.setattr(preview_manager, 'download_preview_image', lambda m: None)
     from scripts.civitai_manager_libs.setting import no_card_preview_image
 
-    assert get_preview_image_by_model_info(info) == no_card_preview_image
+    assert get_preview_image_by_model_info(info) == config_manager.get_setting('no_card_preview_image')

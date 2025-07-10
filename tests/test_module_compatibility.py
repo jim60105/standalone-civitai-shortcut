@@ -178,10 +178,10 @@ class TestSettingModuleCompatibility(unittest.TestCase):
             mock_get_layer.return_value = mock_compat
             with patch.object(setting, 'load', return_value={}):
                 setting.load_data()
-            self.assertEqual(setting.model_folders['TextualInversion'], '/test/models/embeddings')
-            self.assertEqual(setting.model_folders['Hypernetwork'], '/test/models/hypernetworks')
-            self.assertEqual(setting.model_folders['Checkpoint'], '/test/models/Stable-diffusion')
-            self.assertEqual(setting.model_folders['LORA'], '/test/models/Lora')
+            self.assertEqual(config_manager.model_folders['TextualInversion'], '/test/models/embeddings')
+            self.assertEqual(config_manager.model_folders['Hypernetwork'], '/test/models/hypernetworks')
+            self.assertEqual(config_manager.model_folders['Checkpoint'], '/test/models/Stable-diffusion')
+            self.assertEqual(config_manager.model_folders['LORA'], '/test/models/Lora')
 
 
 class TestUtilModuleCompatibility(unittest.TestCase):
