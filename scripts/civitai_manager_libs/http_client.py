@@ -25,7 +25,7 @@ from .error_handler import with_error_handling
 from .ui.notification_service import get_notification_service
 
 from . import settings
-from .settings.setting_defaults import DEFAULT_HEADERS
+from .settings.constants import DEFAULT_HEADERS
 from .settings import config_manager
 
 

@@ -82,3 +82,18 @@ UI_TYPENAMES = {
     "Wildcards": 'Wildcards',
     "Other": 'Other',
 }
+
+# Default headers for HTTP requests
+DEFAULT_HEADERS = {
+    'user-agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 '
+        'Safari/537.36 Edg/112.0.1722.68'
+    ),
+    "Authorization": "",
+}
+
+# Default tab indices
+DEFAULT_CIVITAI_INFORMATION_TAB = 0
+DEFAULT_USERGAL_INFORMATION_TAB = 1
+DEFAULT_DOWNLOAD_INFORMATION_TAB = 2
