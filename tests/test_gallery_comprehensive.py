@@ -332,9 +332,10 @@ class TestGalleryEventHandlers:
         """Test download click handler with no URL."""
         mock_should_show.return_value = True
         result = self.event_handlers.handle_download_click('', [])
-        # Check that it returns a gradio update object
-        assert hasattr(result, 'value')
-        assert result.value['visible'] is False
+        # Check that it returns a gradio update dict
+        assert isinstance(result, dict)
+        assert result.get('__type__') == 'update'
+        assert result.get('visible') is False
 
     def test_handle_page_slider_release(self):
         """Test page slider release handler."""

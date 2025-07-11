@@ -327,6 +327,7 @@ class GalleryEventHandlers:
         title_name = None
         version_name = None
         paging_information = None
+        total_page = 0
 
         if modelid:
             if evt.index > 0:
@@ -376,8 +377,10 @@ class GalleryEventHandlers:
         """Handle page URL change."""
         return self.data_processor.load_page_data(usergal_page_url, paging_information)
 
-    def handle_refresh_gallery_change(self, images_url: list, progress=gr.Progress()) -> Tuple:
+    def handle_refresh_gallery_change(self, images_url: list, progress=None) -> Tuple:
         """Handle refresh gallery action."""
+        if progress is None:
+            progress = gr.Progress()
         return self.download_manager.load_gallery_images(images_url, progress)
 
     def handle_pre_loading_change(self, usergal_page_url: str, paging_information: dict) -> None:

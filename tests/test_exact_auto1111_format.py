@@ -68,7 +68,7 @@ class TestExactAuto1111Format:
             }
         }
 
-        # Set global metadata
+        # Set global metadata directly on the module level
         import scripts.civitai_manager_libs.gallery.data_processor as data_processor_module
         data_processor_module._current_page_metadata = mock_metadata
 

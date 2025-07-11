@@ -7,6 +7,9 @@ Extracted from civitai_gallery_action.py to follow SRP principles.
 
 import re
 from ..logging_config import get_logger
+from .. import civitai
+from .. import settings
+from .. import util
 
 logger = get_logger(__name__)
 
@@ -35,9 +38,6 @@ class GalleryUtilities:
     @staticmethod
     def build_default_page_url(modelId, modelVersionId=None, show_nsfw=False, limit=0):
         """Build default page URL with parameters."""
-        from .. import civitai
-        from .. import settings
-
         if limit <= 0:
             limit = settings.usergallery_images_rows_per_page * settings.usergallery_images_column
 
@@ -60,8 +60,6 @@ class GalleryUtilities:
     @staticmethod
     def fix_page_url_cursor(page_url, use=True):
         """Fix page URL cursor for API compatibility."""
-        from .. import util
-
         if not use:
             return page_url
 

@@ -334,8 +334,10 @@ class GalleryDataProcessor:
 
     def get_stored_metadata(self, image_uuid: str) -> Optional[Dict]:
         """Get stored metadata for image UUID."""
+        global _current_page_metadata
         return _current_page_metadata.get(image_uuid)
 
     def get_all_stored_metadata(self) -> Dict:
         """Get all stored metadata."""
+        global _current_page_metadata
         return _current_page_metadata.copy()

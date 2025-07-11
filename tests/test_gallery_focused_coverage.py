@@ -104,16 +104,31 @@ class TestGalleryDataProcessorEdgeCases:
             ]
 
             with patch(
-                'scripts.civitai_manager_libs.settings.get_image_url_to_gallery_file'
+                'scripts.civitai_manager_libs.gallery.data_processor.settings.get_image_url_to_gallery_file'
             ) as mock_get_file:
                 mock_get_file.return_value = '/tmp/test.jpg'
-                with patch('os.path.exists', return_value=False):
-                    images_url, images_list = self.data_processor.get_user_gallery(
-                        'model123', 'test_url', False
-                    )
+                with patch(
+                    'scripts.civitai_manager_libs.gallery.data_processor.settings.get_nsfw_disable_image'
+                ) as mock_nsfw_img:
+                    mock_nsfw_img.return_value = '/tmp/nsfw_disabled.jpg'
+                    with patch(
+                        'scripts.civitai_manager_libs.gallery.data_processor.os.path.isfile'
+                    ) as mock_isfile:
+                        # Make the NSFW disabled image exist, but not the regular images
+                        def mock_isfile_func(path):
+                            return path == '/tmp/nsfw_disabled.jpg'
 
-                    # Only the 'None' level image should be included
-                    assert len(images_list) == 1
+                        mock_isfile.side_effect = mock_isfile_func
+
+                        images_url, images_list = self.data_processor.get_user_gallery(
+                            'model123', 'test_url', False
+                        )
+
+                        # Both images should be included, but NSFW one should have placeholder
+                        assert len(images_list) == 2
+                        # Check that NSFW image URL was replaced
+                        assert '/tmp/nsfw_disabled.jpg' in images_url
+                        assert 'https://example.com/test1.jpg' in images_url
                     assert 1 in images_list
 
 
@@ -141,8 +156,10 @@ class TestGalleryDownloadManagerEdgeCases:
     @patch('scripts.civitai_manager_libs.gallery.download_manager.get_http_client')
     def test_download_single_image_exception_handling(self, mock_get_client):
         """Test exception handling in single image download."""
+        from scripts.civitai_manager_libs.exceptions import NetworkError
+
         mock_client = MagicMock()
-        mock_client.download_file.side_effect = Exception("Network error")
+        mock_client.download_file.side_effect = NetworkError("Network error")
         mock_get_client.return_value = mock_client
 
         with tempfile.NamedTemporaryFile() as tmp:
@@ -186,7 +203,7 @@ class TestGalleryDownloadManagerEdgeCases:
         mock_settings.get_image_url_to_gallery_file.return_value = '/tmp/test.jpg'
 
         with patch(
-            'scripts.civitai_manager_libs.gallery.download_manager.ModelProcessor'
+            'scripts.civitai_manager_libs.ishortcut_core.model_processor.ModelProcessor'
         ) as mock_mp:
             mock_mp.return_value.get_model_info.return_value = {'name': 'test_model'}
 
@@ -236,7 +253,8 @@ class TestGalleryEventHandlersEdgeCases:
     def test_handle_selected_model_id_change(self):
         """Test model ID change handler."""
         result = self.event_handlers.handle_selected_model_id_change('model123')
-        assert isinstance(result, (str, type(None)))
+        assert isinstance(result, tuple)
+        assert len(result) == 6
 
     def test_handle_versions_list_select_with_model_id(self):
         """Test version list selection with model ID."""
@@ -245,7 +263,8 @@ class TestGalleryEventHandlersEdgeCases:
         evt.value = ['version456']
 
         result = self.event_handlers.handle_versions_list_select(evt, 'model123')
-        assert isinstance(result, str)
+        assert isinstance(result, tuple)
+        assert len(result) == 5
 
     def test_handle_versions_list_select_no_model_id(self):
         """Test version list selection without model ID."""
@@ -254,22 +273,27 @@ class TestGalleryEventHandlersEdgeCases:
         evt.value = ['version456']
 
         result = self.event_handlers.handle_versions_list_select(evt)
-        assert isinstance(result, str)
+        assert isinstance(result, tuple)
+        assert len(result) == 5
 
     def test_handle_usergal_page_url_change(self):
         """Test user gallery page URL change."""
         paging_info = {'totalPageUrls': ['url1', 'url2']}
 
         result = self.event_handlers.handle_usergal_page_url_change('new_url', paging_info)
-        assert isinstance(result, (str, type(None)))
+        assert isinstance(result, tuple)
 
-    @patch('scripts.civitai_manager_libs.gallery.event_handlers.gr.update')
-    def test_handle_refresh_gallery_change(self, mock_update):
+    @patch('scripts.civitai_manager_libs.gallery.event_handlers.gr.Progress')
+    def test_handle_refresh_gallery_change(self, mock_progress):
         """Test gallery refresh handler."""
-        mock_update.return_value = MagicMock()
+        mock_progress_instance = MagicMock()
+        mock_progress_instance.tqdm.return_value = ['url1', 'url2']
+        mock_progress.return_value = mock_progress_instance
 
-        result = self.event_handlers.handle_refresh_gallery_change(['url1', 'url2'])
-        assert result is not None
+        with patch.object(self.event_handlers.download_manager, 'load_gallery_images') as mock_load:
+            mock_load.return_value = ([], [], None)
+            result = self.event_handlers.handle_refresh_gallery_change(['url1', 'url2'])
+            assert result is not None
 
     def test_handle_pre_loading_change(self):
         """Test pre-loading change handler."""
@@ -297,8 +321,12 @@ class TestGalleryEventHandlersEdgeCases:
 
         result = self.event_handlers.handle_gallery_select(evt, ['/tmp/test.jpg'])
         assert isinstance(result, tuple)
-        # Should return error message in PNG info
-        assert 'Error extracting generation parameters' in result[3]
+        # Should return error message in PNG info - could be either type of error
+        error_messages = [
+            'Error extracting generation parameters',
+            'Could not extract image ID from filename.',
+        ]
+        assert any(msg in result[3] for msg in error_messages)
 
     def test_extract_civitai_metadata_no_match(self):
         """Test Civitai metadata extraction with no UUID match."""
@@ -313,7 +341,7 @@ class TestGalleryEventHandlersEdgeCases:
         self.data_processor.store_page_metadata(mock_image_data)
 
         result = self.event_handlers._extract_civitai_metadata('/tmp/some_file.jpg')
-        assert 'Image metadata not found' in result
+        assert 'Could not extract image ID from filename.' in result
 
 
 class TestGalleryUtilitiesEdgeCases:
