@@ -71,8 +71,22 @@ def load():
 
 def __getattr__(name):
     """Provide dynamic access to configuration settings for backward compatibility."""
+    # Special handling for civitai/usergal/download_information_tab
+    if name == 'civitai_information_tab':
+        from .constants import DEFAULT_CIVITAI_INFORMATION_TAB
+
+        return DEFAULT_CIVITAI_INFORMATION_TAB
+    if name == 'usergal_information_tab':
+        from .constants import DEFAULT_USERGAL_INFORMATION_TAB
+
+        return DEFAULT_USERGAL_INFORMATION_TAB
+    if name == 'download_information_tab':
+        from .constants import DEFAULT_DOWNLOAD_INFORMATION_TAB
+
+        return DEFAULT_DOWNLOAD_INFORMATION_TAB
+
     # First try to get using config_manager.get_setting which handles nested lookups
-    value = config_manager.get_setting(name)
+    value = config_manager.get_setting(name)  # type: ignore
     if value is not None:
         return value
 
@@ -83,7 +97,7 @@ def __getattr__(name):
 
     # Special handling for some commonly accessed attributes
     if name == 'Extensions_Version':
-        return config_manager.get_setting('Extensions_Version', '1.0.0')
+        return config_manager.get_setting('Extensions_Version', '1.0.0')  # type: ignore
 
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
