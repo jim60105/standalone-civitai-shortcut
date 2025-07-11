@@ -50,7 +50,7 @@ pytest tests/test_compat_layer.py -v
 pytest tests/test_adapters.py -v
 pytest tests/test_integration.py -v
 # Run test coverage analysis
-pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
+pytest --cov
 # Run specific type of tests
 pytest tests/test_integration.py::TestIntegration::test_full_webui_compatibility -v
 pytest tests/test_integration.py::TestIntegration::test_full_standalone_functionality -v

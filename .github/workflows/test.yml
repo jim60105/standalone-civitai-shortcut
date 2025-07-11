@@ -27,8 +27,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest tests/ --cov=civitai_manager_libs.compat \
-            --cov-report=xml --cov-fail-under=70
+          pytest --cov --cov-fail-under=70
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
