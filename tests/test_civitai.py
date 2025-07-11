@@ -2,6 +2,7 @@ import pytest
 
 from scripts.civitai_manager_libs import civitai
 from scripts.civitai_manager_libs.settings import config_manager
+from scripts.civitai_manager_libs.http_client import _global_http_client
 
 
 class DummyClient:
@@ -91,11 +92,17 @@ def test_get_version_info_by_version_id_fail(monkeypatch):
 
 def test_get_http_client_initialization(monkeypatch):
     # Reset client and configure settings
-    civitai._http_client = None
+    global _global_http_client
+    _global_http_client = None
     monkeypatch.setattr(
         config_manager,
         "set_setting",
         lambda key, value: config_manager.settings.update({key: value}),
+    )
+    monkeypatch.setattr(
+        config_manager,
+        "get_setting",
+        lambda key, default=None: config_manager.settings.get(key, default),
     )
     config_manager.set_setting('civitai_api_key', 'key1')
     config_manager.set_setting('http_timeout', 10)
@@ -108,11 +115,17 @@ def test_get_http_client_initialization(monkeypatch):
 
 def test_get_http_client_api_key_update(monkeypatch):
     # Existing client updates api_key when settings changes
-    civitai._http_client = None
+    global _global_http_client
+    _global_http_client = None
     monkeypatch.setattr(
         config_manager,
         "set_setting",
         lambda key, value: config_manager.settings.update({key: value}),
+    )
+    monkeypatch.setattr(
+        config_manager,
+        "get_setting",
+        lambda key, default=None: config_manager.settings.get(key, default),
     )
     config_manager.set_setting('civitai_api_key', 'initial')
     client = civitai.get_http_client()
