@@ -24,17 +24,30 @@ The compatibility layer requires comprehensive testing to ensure functionality w
 - WebUI mode (mock modules, WebUI features, graceful degradation)
 - Standalone mode (pure standalone, fallback, config management)
 
-### Test Files & Coverage
 
-| Test File | Coverage Target | Description |
-|------------------------------------|-----------------|-----------------------------------|
-| test_environment_detector.py | 100% | Environment detection |
-| test_compat_layer.py | 95% | Core interfaces |
-| test_adapters.py | 95% | Path/config/metadata adapters |
-| test_module_compatibility.py | 90% | Module compatibility |
-| test_integration.py | 85% | Integration tests |
-| test_ui_adapter.py | 85% | UI bridge |
-| test_main.py, test_cli.py, ... | - | Other tests |
+### Test Files & Coverage (2025/07/11)
+
+| Test File                                   | Coverage Target | Description                                 |
+|---------------------------------------------|-----------------|---------------------------------------------|
+| test_environment_detector.py                | 100%            | Environment detection                       |
+| test_compat_layer.py                       | 95%             | Core interfaces                             |
+| test_adapters.py                           | 95%             | Path/config/metadata adapters               |
+| test_module_compatibility.py                | 90%             | Module compatibility                        |
+| test_integration.py                        | 85%             | Integration tests                           |
+| test_ui_adapter.py                         | 85%             | UI bridge                                   |
+| test_main.py, test_cli.py, ...              | -               | Other tests                                 |
+| test_settings_categories.py                 | 95%+            | SettingCategories unit tests (SRP)          |
+| test_settings_validator.py                  | 95%+            | SettingValidator unit tests (SRP)           |
+| test_settings_persistence.py                | 95%+            | SettingPersistence unit tests (SRP)         |
+| test_settings_config_manager.py             | 95%+            | ConfigManager unit tests (SRP)              |
+| test_settings_model_utils.py                | 95%+            | Model utils unit tests (SRP)                |
+| test_settings_path_manager.py               | 95%+            | Path manager unit tests (SRP)               |
+| test_settings_initialization.py             | 95%+            | Initialization logic unit tests (SRP)       |
+
+> **Note:**
+> - settings 相關測試已依 Single Responsibility Principle (SRP) 完全拆分，原 monolithic `test_settings.py` 已刪除。
+> - 各檔案覆蓋率均超過 95%，總覆蓋率 96%。
+> - 測試命名、結構與維護建議詳見下方「測試維護最佳實踐」。
 
 ### Test Execution
 
@@ -50,7 +63,7 @@ pytest tests/test_compat_layer.py -v
 pytest tests/test_adapters.py -v
 pytest tests/test_integration.py -v
 # Run test coverage analysis
-pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html --cov-report=term
+pytest --cov
 # Run specific type of tests
 pytest tests/test_integration.py::TestIntegration::test_full_webui_compatibility -v
 pytest tests/test_integration.py::TestIntegration::test_full_standalone_functionality -v
@@ -86,21 +99,42 @@ pytest tests/test_integration.py::TestIntegration::test_full_standalone_function
 
 ## Testing Infrastructure
 
-### Test Structure
+
+### Test Structure (2025/07/11)
 
 ```
 tests/
-├── test_environment_detector.py      # ✅ Environment detection tests (implemented)
-├── test_compat_layer.py             # ✅ Main compatibility layer tests (implemented)
-├── test_adapters.py                 # ✅ Adapter implementation tests (implemented)
-├── test_module_compatibility.py     # ✅ Module compatibility tests (implemented)
-├── test_integration.py              # ✅ Integration tests (implemented)
-├── test_ui_adapter.py               # ✅ UI adapter tests (implemented)
-├── test_main.py                     # ✅ Main program tests (implemented)
-├── test_cli.py                      # ✅ CLI function tests (implemented)
-├── test_path_manager_verification.py # ✅ Path manager verification tests (implemented)
-└── test_webui_function_simulation.py # ✅ WebUI function simulation tests (implemented)
+├── test_environment_detector.py           # ✅ Environment detection
+├── test_compat_layer.py                  # ✅ Main compatibility layer
+├── test_adapters.py                      # ✅ Adapter implementations
+├── test_module_compatibility.py          # ✅ Module compatibility
+├── test_integration.py                   # ✅ Integration tests
+├── test_ui_adapter.py                    # ✅ UI bridge
+├── test_main.py                          # ✅ Main program
+├── test_cli.py                           # ✅ CLI functions
+├── test_path_manager_verification.py      # ✅ Path manager verification
+├── test_webui_function_simulation.py      # ✅ WebUI simulation
+├── test_settings_categories.py            # ✅ SettingCategories (SRP)
+├── test_settings_validator.py             # ✅ SettingValidator (SRP)
+├── test_settings_persistence.py           # ✅ SettingPersistence (SRP)
+├── test_settings_config_manager.py        # ✅ ConfigManager (SRP)
+├── test_settings_model_utils.py           # ✅ Model utils (SRP)
+├── test_settings_path_manager.py          # ✅ Path manager (SRP)
+└── test_settings_initialization.py        # ✅ Initialization logic (SRP)
 ```
+
+> **SRP 拆分說明：**
+> - 每個 settings 子模組皆有獨立測試檔案，命名規則 `test_settings_<module>.py`。
+> - 測試數量 114，全數通過，覆蓋率 96%。
+## 測試維護最佳實踐（SRP 拆分後建議）
+
+- **單一職責原則（SRP）**：每個測試檔案僅測一個邏輯模組，便於維護與擴充。
+- **命名規範**：`test_settings_<module>.py`，對應 `scripts/civitai_manager_libs/settings/<module>.py`。
+- **覆蓋率要求**：所有 settings 測試檔案目標覆蓋率 95% 以上。
+- **測試獨立性**：每個測試用例獨立，使用 setUp/tearDown 管理狀態。
+- **錯誤與邊界測試**：涵蓋異常、I/O、型別、配置錯誤等情境。
+- **自動化驗證**：重構後務必執行 pytest + coverage，確保所有測試通過且覆蓋率達標。
+- **文件同步**：每次大幅重構或新增測試時，務必同步更新本指引。
 
 ## Mocking Strategy
 

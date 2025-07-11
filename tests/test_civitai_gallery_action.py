@@ -5,7 +5,8 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.civitai_manager_libs import civitai_gallery_action as cga
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
+from scripts.civitai_manager_libs.settings import config_manager
 
 
 class DummyClient:
@@ -48,7 +49,7 @@ def test_download_images(tmp_path, monkeypatch):
     urls = ["a", "b", "c"]
     # map urls to files under tmp_path
     monkeypatch.setattr(
-        setting, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
+        settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
     # fail url 'b'
     monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient(fail_urls=["b"]))
@@ -63,10 +64,10 @@ def test_download_images(tmp_path, monkeypatch):
 def test_gallery_loading(tmp_path, monkeypatch):
     urls = ["u1", "u2"]
     # configure gallery folder
-    monkeypatch.setattr(setting, "shortcut_gallery_folder", str(tmp_path))
-    monkeypatch.setattr(setting, "no_card_preview_image", "no.png")
+    monkeypatch.setattr(settings, "shortcut_gallery_folder", str(tmp_path))
+    monkeypatch.setattr(settings, "get_no_card_preview_image", lambda: "no.png")
     monkeypatch.setattr(
-        setting, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
+        settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
     monkeypatch.setattr(cga.util, "is_url_or_filepath", lambda u: "url")
     monkeypatch.setattr(cga, "_download_single_image", lambda u, p: False)
@@ -85,7 +86,11 @@ def test_download_user_gallery_images(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ModelProcessor, "get_model_info", lambda self, mid: {"name": "modelname"})
     monkeypatch.setattr(cga.util, "make_download_image_folder", lambda name: str(tmp_path / name))
-    monkeypatch.setattr(setting, "no_card_preview_image", "no.png")
+    monkeypatch.setattr(
+        config_manager,
+        "get_setting",
+        lambda key: "no.png" if key == 'no_card_preview_image' else None,
+    )
     monkeypatch.setattr(cga.util, "is_url_or_filepath", lambda u: "url")
     monkeypatch.setattr(cga, "_download_single_image", lambda u, p: True)
     result = cga.download_user_gallery_images(model_id, urls)
@@ -118,7 +123,7 @@ def test_gallery_download_manager(tmp_path, monkeypatch):
 def test_download_images_with_progress(tmp_path, monkeypatch):
     urls = ["x", "y"]
     monkeypatch.setattr(
-        setting, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
+        settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
     monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
     calls = []
@@ -141,7 +146,7 @@ def test_download_images_with_progress(tmp_path, monkeypatch):
 def test_download_images_batch(tmp_path, monkeypatch):
     urls = [str(i) for i in range(7)]
     monkeypatch.setattr(
-        setting, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
+        settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
     monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
     monkeypatch.setattr(cga.util, "printD", lambda *args, **kwargs: None)

@@ -3,7 +3,7 @@ import os
 import pytest
 from unittest.mock import patch, mock_open
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.recipe_actions.recipe_utilities import RecipeUtilities
 from scripts.civitai_manager_libs.exceptions import ValidationError, FileOperationError
 
@@ -13,9 +13,9 @@ def use_tmp_recipe_file(tmp_path, monkeypatch):
     """Redirect recipe storage to a temporary file for tests."""
     tmp_file = tmp_path / "recipes.json"
     tmp_folder = tmp_path / "sc_recipes"
-    monkeypatch.setattr(setting, "shortcut_recipe", str(tmp_file))
-    monkeypatch.setattr(setting, "shortcut_recipe_folder", str(tmp_folder))
-    monkeypatch.setattr(setting, "PLACEHOLDER", "Select Classification")
+    monkeypatch.setattr(settings, "shortcut_recipe", str(tmp_file))
+    monkeypatch.setattr(settings, "shortcut_recipe_folder", str(tmp_folder))
+    monkeypatch.setattr(settings, "PLACEHOLDER", "Select Classification")
     os.makedirs(tmp_folder, exist_ok=True)
     tmp_file.write_text("{}")
     yield
@@ -142,8 +142,8 @@ def test_import_recipe_create_failure():
 def test_backup_and_restore_recipe(tmp_path, monkeypatch):
     utils = RecipeUtilities()
     # override settings for file paths
-    monkeypatch.setattr(setting, "shortcut_recipe_folder", str(tmp_path))
-    monkeypatch.setattr(setting, "shortcut_recipe", str(tmp_path / "recipes.json"))
+    monkeypatch.setattr(settings, "shortcut_recipe_folder", str(tmp_path))
+    monkeypatch.setattr(settings, "shortcut_recipe", str(tmp_path / "recipes.json"))
     test_id = "bptest"
     # simulate original recipe file
     origin_file = tmp_path / f"{test_id}.json"
@@ -302,7 +302,7 @@ def test_get_recipe_information_empty_classification(mock_get_recipe):
     result = RecipeUtilities.get_recipe_information("test_recipe")
     classification = result[5]
 
-    assert classification == setting.PLACEHOLDER
+    assert classification == settings.PLACEHOLDER
 
 
 @patch('scripts.civitai_manager_libs.recipe.get_recipe')

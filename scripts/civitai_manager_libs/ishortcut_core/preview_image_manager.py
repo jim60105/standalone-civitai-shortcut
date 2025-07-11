@@ -9,7 +9,7 @@ import os
 from typing import Dict, Any, Optional
 
 from ..logging_config import get_logger
-from .. import setting
+from .. import settings
 from ..util import download_image_safe
 from ..http_client import get_http_client
 from .shortcut_collection_manager import ShortcutCollectionManager
@@ -52,7 +52,7 @@ class PreviewImageManager:
         if not model_id:
             return None
         try:
-            preview_dir = setting.shortcut_thumbnail_folder
+            preview_dir = settings.shortcut_thumbnail_folder
             os.makedirs(preview_dir, exist_ok=True)
             filename = f"model_{model_id}_preview.jpg"
             return os.path.join(preview_dir, filename)
@@ -88,7 +88,7 @@ class PreviewImageManager:
         downloaded = self.download_preview_image(model_info)
         if downloaded:
             return downloaded
-        return setting.no_card_preview_image
+        return settings.get_no_card_preview_image()
 
     def cleanup_unused_previews(self) -> int:
         """Remove preview images for models no longer in shortcuts."""
@@ -96,7 +96,7 @@ class PreviewImageManager:
         try:
             shortcuts = self._collection_manager.load_shortcuts()
             valid_ids = {str(mid) for mid in shortcuts.keys()}
-            preview_dir = setting.shortcut_thumbnail_folder
+            preview_dir = settings.shortcut_thumbnail_folder
             for fname in os.listdir(preview_dir):
                 if fname.startswith("model_") and fname.endswith("_preview.jpg"):
                     mid = fname[len("model_") : -len("_preview.jpg")]

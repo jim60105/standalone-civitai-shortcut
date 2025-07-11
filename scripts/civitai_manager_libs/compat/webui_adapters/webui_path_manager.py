@@ -467,7 +467,9 @@ class WebUIPathManager(IPathManager):
         """
         self._log("Getting config file path")
 
-        config_path = os.path.join(self.get_user_data_path(), "setting.json")
+        config_path = os.path.join(
+            self.get_user_data_path(), "data_sc", "CivitaiShortCutSetting.json"
+        )
         self._log(f"Config path resolved: {config_path}")
         return config_path
 

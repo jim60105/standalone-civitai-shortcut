@@ -7,7 +7,7 @@ import os
 import gradio as gr
 from PIL import Image
 
-from .. import setting
+from .. import settings
 from .. import recipe
 from ..logging_config import get_logger
 from ..compat.compat_layer import CompatibilityLayer
@@ -28,9 +28,9 @@ class RecipeGallery:
         return gr.Gallery(
             value=images,
             show_label=False,
-            columns=setting.prompt_shortcut_column,
+            columns=settings.prompt_shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             preview=False,
             allow_preview=False,
         )
@@ -42,7 +42,7 @@ class RecipeGallery:
         rc = recipe.get_recipe(recipe_id)
         img = rc.get('image') if isinstance(rc, dict) else None
         if img:
-            img_path = os.path.join(setting.shortcut_recipe_folder, img)
+            img_path = os.path.join(settings.shortcut_recipe_folder, img)
             if os.path.isfile(img_path):
                 return [img_path]
         return []
@@ -61,14 +61,14 @@ class RecipeGallery:
     def generate_image_thumbnail(self, image_path: str) -> str:
         """Generate and return the thumbnail path for an image."""
         try:
-            thumb_dir = getattr(setting, 'shortcut_thumbnail_folder', 'thumbnails')
+            thumb_dir = getattr(settings, 'shortcut_thumbnail_folder', 'thumbnails')
             os.makedirs(thumb_dir, exist_ok=True)
             base = os.path.basename(image_path)
             thumb_path = os.path.join(thumb_dir, base)
             with Image.open(image_path) as img:
                 # Use default thumbnail size if not available in settings
-                thumb_width = getattr(setting, 'thumbnail_width', 256)
-                thumb_height = getattr(setting, 'thumbnail_height', 256)
+                thumb_width = getattr(settings, 'thumbnail_width', 256)
+                thumb_height = getattr(settings, 'thumbnail_height', 256)
                 img.thumbnail((thumb_width, thumb_height))
                 img.save(thumb_path)
             return thumb_path
@@ -261,7 +261,7 @@ class RecipeGallery:
             gr.update(value=options),
             gr.update(value=gen_string),
             gr.update(
-                choices=[setting.PLACEHOLDER] + recipe.get_classifications(), value=classification
+                choices=[settings.PLACEHOLDER] + recipe.get_classifications(), value=classification
             ),
             gr.update(label=select_name),
             imagefile,

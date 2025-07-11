@@ -126,7 +126,7 @@ class RecipeManager:
         """Handle new recipe button click event."""
         import gradio as gr
         import datetime
-        from .. import setting
+        from .. import settings
 
         current_time = datetime.datetime.now()
         return (
@@ -138,10 +138,10 @@ class RecipeManager:
             gr.update(value=""),  # recipe_option
             gr.update(value=""),  # recipe_output
             gr.update(
-                choices=[setting.PLACEHOLDER] + get_classifications(),
-                value=setting.PLACEHOLDER,
+                choices=[settings.PLACEHOLDER] + get_classifications(),
+                value=settings.PLACEHOLDER,
             ),  # recipe_classification
-            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+            gr.update(label=settings.NEWRECIPE),  # recipe_title_name
             None,  # recipe_image
             None,  # recipe_drop_image
             gr.update(visible=True),  # recipe_create_btn
@@ -168,7 +168,7 @@ class RecipeManager:
         import datetime
         import os
         import uuid
-        from .. import recipe, setting, prompt
+        from .. import recipe, settings, prompt
         from ..error_handler import with_error_handling
         from ..exceptions import FileOperationError, ValidationError
 
@@ -185,14 +185,14 @@ class RecipeManager:
         )
         def _update_recipe_with_error_handling():
             nonlocal recipe_classification
-            chg_name = setting.NEWRECIPE
-            s_classification = setting.PLACEHOLDER
+            chg_name = settings.NEWRECIPE
+            s_classification = settings.PLACEHOLDER
 
             if (
                 select_name
-                and select_name != setting.NEWRECIPE
+                and select_name != settings.NEWRECIPE
                 and recipe_name
-                and recipe_name != setting.NEWRECIPE
+                and recipe_name != settings.NEWRECIPE
             ):
                 pmt = dict()
                 pmt['prompt'] = recipe_prompt
@@ -203,7 +203,7 @@ class RecipeManager:
                     pmt['options'] = options
 
                 if recipe_classification:
-                    if recipe_classification == setting.PLACEHOLDER:
+                    if recipe_classification == settings.PLACEHOLDER:
                         recipe_classification = ""
                         recipe_classification = recipe_classification.strip()
                     else:
@@ -215,11 +215,11 @@ class RecipeManager:
                 ):
                     chg_name = recipe_name
                     if recipe_image:
-                        if not os.path.exists(setting.shortcut_recipe_folder):
-                            os.makedirs(setting.shortcut_recipe_folder)
-                        unique_filename = f"{str(uuid.uuid4())}{setting.preview_image_ext}"
+                        if not os.path.exists(settings.shortcut_recipe_folder):
+                            os.makedirs(settings.shortcut_recipe_folder)
+                        unique_filename = f"{str(uuid.uuid4())}{settings.PREVIEW_IMAGE_EXT}"
                         recipe_imgfile = os.path.join(
-                            setting.shortcut_recipe_folder, unique_filename
+                            settings.shortcut_recipe_folder, unique_filename
                         )
                         recipe_image.save(recipe_imgfile)
                         recipe.update_recipe_image(recipe_name, unique_filename)
@@ -233,7 +233,7 @@ class RecipeManager:
             return (
                 gr.update(value=chg_name),
                 gr.update(
-                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                    choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
                     value=s_classification,
                 ),
                 gr.update(label=chg_name),
@@ -246,7 +246,7 @@ class RecipeManager:
         """Handle recipe delete button click event with complete processing."""
         import gradio as gr
         import datetime
-        from .. import recipe, setting
+        from .. import recipe, settings
         from ..error_handler import with_error_handling
         from ..exceptions import FileOperationError
 
@@ -255,7 +255,7 @@ class RecipeManager:
                 gr.update(value=""),
                 gr.update(choices=[]),
                 datetime.datetime.now(),
-                gr.update(label=setting.NEWRECIPE),
+                gr.update(label=settings.NEWRECIPE),
                 gr.update(visible=True),
                 gr.update(visible=False),
             ),
@@ -271,10 +271,10 @@ class RecipeManager:
             return (
                 gr.update(value=""),
                 gr.update(
-                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                    value=setting.PLACEHOLDER,
+                    choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
+                    value=settings.PLACEHOLDER,
                 ),
-                gr.update(label=setting.NEWRECIPE),
+                gr.update(label=settings.NEWRECIPE),
                 gr.update(visible=True),
                 gr.update(visible=False),
                 current_time,
@@ -298,7 +298,7 @@ class RecipeManager:
         import datetime
         import os
         import uuid
-        from .. import recipe, setting, prompt
+        from .. import recipe, settings, prompt
         from ..error_handler import with_error_handling
         from ..exceptions import FileOperationError, ValidationError
 
@@ -307,7 +307,7 @@ class RecipeManager:
                 gr.update(value=""),
                 gr.update(choices=[]),
                 datetime.datetime.now(),
-                gr.update(label=setting.NEWRECIPE),
+                gr.update(label=settings.NEWRECIPE),
                 gr.update(visible=True),
                 gr.update(visible=False),
             ),
@@ -318,24 +318,24 @@ class RecipeManager:
         def _create_recipe_with_error_handling():
             nonlocal recipe_classification
             current_time = datetime.datetime.now()
-            s_classification = setting.PLACEHOLDER
+            s_classification = settings.PLACEHOLDER
 
             # Validate recipe name before creating
-            if not recipe_name or not recipe_name.strip() or recipe_name == setting.NEWRECIPE:
+            if not recipe_name or not recipe_name.strip() or recipe_name == settings.NEWRECIPE:
                 gr.Warning("Please enter a recipe name before creating.")
                 return (
                     gr.update(value=""),
                     gr.update(
-                        choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                        choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
                         value=s_classification,
                     ),
-                    gr.update(label=setting.NEWRECIPE),
+                    gr.update(label=settings.NEWRECIPE),
                     gr.update(visible=True),
                     gr.update(visible=False),
                     gr.update(visible=False),
                 )
 
-            if recipe_name and len(recipe_name.strip()) > 0 and recipe_name != setting.NEWRECIPE:
+            if recipe_name and len(recipe_name.strip()) > 0 and recipe_name != settings.NEWRECIPE:
                 pmt = dict()
                 pmt['prompt'] = recipe_prompt
                 pmt['negativePrompt'] = recipe_negative
@@ -345,7 +345,7 @@ class RecipeManager:
                     pmt['options'] = options
 
                 if recipe_classification:
-                    if recipe_classification == setting.PLACEHOLDER:
+                    if recipe_classification == settings.PLACEHOLDER:
                         recipe_classification = ""
                         recipe_classification = recipe_classification.strip()
                     else:
@@ -354,11 +354,11 @@ class RecipeManager:
 
                 if recipe.create_recipe(recipe_name, recipe_desc, pmt, recipe_classification):
                     if recipe_image:
-                        if not os.path.exists(setting.shortcut_recipe_folder):
-                            os.makedirs(setting.shortcut_recipe_folder)
-                        unique_filename = f"{str(uuid.uuid4())}{setting.preview_image_ext}"
+                        if not os.path.exists(settings.shortcut_recipe_folder):
+                            os.makedirs(settings.shortcut_recipe_folder)
+                        unique_filename = f"{str(uuid.uuid4())}{settings.PREVIEW_IMAGE_EXT}"
                         recipe_imgfile = os.path.join(
-                            setting.shortcut_recipe_folder, unique_filename
+                            settings.shortcut_recipe_folder, unique_filename
                         )
                         recipe_image.save(recipe_imgfile)
                         recipe.update_recipe_image(recipe_name, unique_filename)
@@ -368,7 +368,7 @@ class RecipeManager:
                     return (
                         gr.update(value=recipe_name),
                         gr.update(
-                            choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                            choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
                             value=s_classification,
                         ),
                         gr.update(label=recipe_name),
@@ -380,10 +380,10 @@ class RecipeManager:
             return (
                 gr.update(value=""),
                 gr.update(
-                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
+                    choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
                     value=s_classification,
                 ),
-                gr.update(label=setting.NEWRECIPE),
+                gr.update(label=settings.NEWRECIPE),
                 gr.update(visible=True),
                 gr.update(visible=False),
                 gr.update(visible=False),

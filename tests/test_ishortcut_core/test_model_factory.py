@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from scripts.civitai_manager_libs.settings.constants import PREVIEW_IMAGE_EXT
 
 from scripts.civitai_manager_libs.ishortcut_core.model_factory import ModelFactory
 
@@ -47,12 +48,12 @@ class MockNormalProgress:
 def tmp_dirs(monkeypatch, tmp_path):
     # Redirect thumbnail folder for ImageProcessor operations
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.setting.shortcut_thumbnail_folder", str(tmp_path)
+        "scripts.civitai_manager_libs.settings.shortcut_thumbnail_folder", str(tmp_path)
     )
     # Redirect info folder
-    monkeypatch.setattr("scripts.civitai_manager_libs.setting.shortcut_info_folder", str(tmp_path))
-    # Set image extension
-    monkeypatch.setattr("scripts.civitai_manager_libs.setting.preview_image_ext", ".jpg")
+    monkeypatch.setattr("scripts.civitai_manager_libs.settings.shortcut_info_folder", str(tmp_path))
+    # Use PREVIEW_IMAGE_EXT from constants
+    monkeypatch.setattr("scripts.civitai_manager_libs.settings.PREVIEW_IMAGE_EXT", PREVIEW_IMAGE_EXT)
     yield
 
 

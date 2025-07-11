@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from scripts.civitai_manager_libs import civitai
+from scripts.civitai_manager_libs import civitai, settings
 from scripts.civitai_manager_libs.exceptions import (
     ModelNotAccessibleError,
     ModelNotFoundError,
@@ -9,6 +9,8 @@ from scripts.civitai_manager_libs.exceptions import (
     APIError,
     NetworkError,
 )
+
+config_manager = settings.config_manager
 
 
 class DummyResponse:
@@ -22,9 +24,10 @@ class DummyResponse:
 
 
 class DummyClient:
-    def __init__(self, response):
+    def __init__(self, response, timeout=None):
         self.session = self
         self._response = response
+        self.timeout = timeout
 
     def get(self, url, timeout=None):
         return self._response
@@ -144,7 +147,7 @@ def test_get_model_info_exception_context():
     dummy_resp = DummyResponse(404, {})
 
     with patch.object(civitai, 'get_http_client') as mock_get_client:
-        mock_get_client.return_value = DummyClient(dummy_resp)
+        mock_get_client.return_value = DummyClient(dummy_resp, timeout=10)
 
         with pytest.raises(ModelNotAccessibleError) as exc_info:
             civitai.get_model_info('123')

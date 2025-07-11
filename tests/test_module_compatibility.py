@@ -20,7 +20,12 @@ if import_path_root not in sys.path:
 if import_path_scripts not in sys.path:
     sys.path.insert(0, import_path_scripts)
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
+from scripts.civitai_manager_libs.settings.path_manager import (
+    set_extension_base,
+    initialize_extension_base,
+    get_extension_base,
+)
 from scripts.civitai_manager_libs.conditional_imports import ConditionalImportManager
 from scripts.civitai_manager_libs.module_compatibility import initialize_compatibility_layer
 
@@ -136,7 +141,7 @@ class TestModuleCompatibility(unittest.TestCase):
 
 
 class TestSettingModuleCompatibility(unittest.TestCase):
-    """Test setting module compatibility modifications."""
+    """Test settings module compatibility modifications."""
 
     def setUp(self):
         """Set up test environment."""
@@ -161,9 +166,9 @@ class TestSettingModuleCompatibility(unittest.TestCase):
             mock_compat.path_manager.get_base_path.return_value = '/test/path'
             mock_compat.path_manager.get_extension_path.return_value = '/test/path'
             mock_get_layer.return_value = mock_compat
-            setting.extension_base = ""
-            setting._initialize_extension_base()
-            self.assertEqual(setting.extension_base, '/test/path')
+            set_extension_base("")
+            initialize_extension_base()
+            self.assertEqual(get_extension_base(), '/test/path')
 
     def test_setting_load_data_with_compatibility(self):
         """Test load_data function with compatibility layer."""
@@ -176,12 +181,18 @@ class TestSettingModuleCompatibility(unittest.TestCase):
             mock_compat = Mock()
             mock_compat.path_manager.get_model_path.side_effect = lambda x: f'/test/models/{x}'
             mock_get_layer.return_value = mock_compat
-            with patch.object(setting, 'load', return_value={}):
-                setting.load_data()
-            self.assertEqual(setting.model_folders['TextualInversion'], '/test/models/embeddings')
-            self.assertEqual(setting.model_folders['Hypernetwork'], '/test/models/hypernetworks')
-            self.assertEqual(setting.model_folders['Checkpoint'], '/test/models/Stable-diffusion')
-            self.assertEqual(setting.model_folders['LORA'], '/test/models/Lora')
+            with patch.object(settings, 'load', return_value={}):
+                from scripts.civitai_manager_libs.settings.path_manager import (
+                    load_model_folder_data,
+                    model_folders,
+                )
+                from scripts.civitai_manager_libs.settings import config_manager
+
+                load_model_folder_data(config_manager)
+            self.assertEqual(model_folders['TextualInversion'], '/test/models/embeddings')
+            self.assertEqual(model_folders['Hypernetwork'], '/test/models/hypernetworks')
+            self.assertEqual(model_folders['Checkpoint'], '/test/models/Stable-diffusion')
+            self.assertEqual(model_folders['LORA'], '/test/models/Lora')
 
 
 class TestUtilModuleCompatibility(unittest.TestCase):
@@ -189,7 +200,7 @@ class TestUtilModuleCompatibility(unittest.TestCase):
 
     def test_util_printD_calls_logger_debug(self):
         """Test that printD delegates to logger.debug()."""
-        import civitai_manager_libs.util as util
+        import scripts.civitai_manager_libs.util as util
 
         with patch.object(util.logger, 'debug') as mock_debug:
             util.printD("test message")

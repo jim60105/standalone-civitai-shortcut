@@ -24,11 +24,13 @@ class TestErrorHandlingIntegration:
     def test_524_error_handling(self, mock_session_get):
         """Test specific handling of 524 Cloudflare error."""
         import pytest
+
         # Arrange - Simulate 524 error
         mock_response = self.helper.mock_http_response(status_code=524)
         mock_session_get.return_value = mock_response
 
         from civitai_manager_libs import civitai
+
         with pytest.raises(self.FakeGradioError) as excinfo:
             civitai.request_models("test_url")
         assert "Cloudflare Timeout" in str(excinfo.value) or "524" in str(excinfo.value)
@@ -38,10 +40,12 @@ class TestErrorHandlingIntegration:
     def test_timeout_error_handling(self, mock_session_get):
         """Test timeout error handling."""
         import pytest
+
         # Arrange
         mock_session_get.side_effect = self.helper.simulate_network_error("timeout")
 
         from civitai_manager_libs import civitai
+
         with pytest.raises(self.FakeGradioError) as excinfo:
             civitai.get_model_info("12345")
         assert "Timeout" in str(excinfo.value)

@@ -14,7 +14,7 @@ from packaging import version
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
-from . import setting
+from . import settings
 from . import util
 from .compat.compat_layer import CompatibilityLayer  # noqa: F401
 from .error_handler import with_error_handling
@@ -60,7 +60,7 @@ def on_setting_ui():
             with gr.Accordion("Option", open=False):
                 with gr.Row():
                     civitai_api_key = gr.Textbox(
-                        value=setting.civitai_api_key,
+                        value=settings.civitai_api_key,
                         label="Civitai Api Key",
                         info=(
                             "To access the models that require you to be logged in. "
@@ -70,7 +70,7 @@ def on_setting_ui():
                     )
                 with gr.Row():
                     shortcut_update_when_start = gr.Checkbox(
-                        value=setting.shortcut_update_when_start,
+                        value=settings.shortcut_update_when_start,
                         label=(
                             "Startup : The program performs 'Update the model information for the "
                             "shortcut' when it starts."
@@ -86,12 +86,12 @@ def on_setting_ui():
                     shortcut_max_download_image_per_version = gr.Slider(
                         minimum=0,
                         maximum=30,
-                        value=setting.shortcut_max_download_image_per_version,
+                        value=settings.shortcut_max_download_image_per_version,
                         step=1,
                         info=(
                             "When registering a shortcut of a model, you can specify the maximum "
                             "number of images to download. This is the maximum per version, and "
-                            "setting it to 0 means unlimited downloads."
+                            "settings it to 0 means unlimited downloads."
                         ),
                         label='Maximum number of download images per version',
                         interactive=True,
@@ -101,8 +101,8 @@ def on_setting_ui():
                 with gr.Row():
                     scbrowser_screen_split_ratio = gr.Slider(
                         minimum=0,
-                        maximum=setting.shortcut_browser_screen_split_ratio_max,
-                        value=setting.shortcut_browser_screen_split_ratio,
+                        maximum=settings.shortcut_browser_screen_split_ratio_max,
+                        value=settings.shortcut_browser_screen_split_ratio,
                         step=1,
                         info=(
                             "You can specify the size ratio between the shortcut browser and the "
@@ -114,7 +114,7 @@ def on_setting_ui():
                 with gr.Row():
                     info_gallery_height = gr.Dropdown(
                         choices=["auto"],
-                        value=setting.information_gallery_height,
+                        value=settings.information_gallery_height,
                         allow_custom_value=True,
                         interactive=True,
                         info="You can also specify a specific size other than 'auto'",
@@ -122,14 +122,14 @@ def on_setting_ui():
                     )
                     gallery_thumbnail_image_style = gr.Dropdown(
                         choices=["scale-down", "cover", "contain", "fill", "none"],
-                        value=setting.gallery_thumbnail_image_style,
+                        value=settings.gallery_thumbnail_image_style,
                         interactive=True,
                         info="This specifies the shape of the displayed thumbnail.",
                         label="Gallery Thumbnail Image Style",
                     )
                     shortcut_browser_search_up = gr.Dropdown(
                         choices=["Up", "Down"],
-                        value="Up" if setting.shortcut_browser_search_up else "Down",
+                        value="Up" if settings.shortcut_browser_search_up else "Down",
                         interactive=True,
                         label="Set the position of the search bar in the shortcut browser.",
                         info=(
@@ -145,7 +145,7 @@ def on_setting_ui():
                         shortcut_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.shortcut_column,
+                            value=settings.shortcut_column,
                             step=1,
                             label='Model Browser Thumbnail Counts per Row',
                             interactive=True,
@@ -153,10 +153,10 @@ def on_setting_ui():
                         shortcut_rows_per_page = gr.Slider(
                             minimum=0,
                             maximum=14,
-                            value=setting.shortcut_rows_per_page,
+                            value=settings.shortcut_rows_per_page,
                             step=1,
                             label=(
-                                'Model Browser Thumbnails Rows per Page : setting it to 0 means '
+                                'Model Browser Thumbnails Rows per Page : settings it to 0 means '
                                 'displaying the entire list without a page.'
                             ),
                             interactive=True,
@@ -165,7 +165,7 @@ def on_setting_ui():
                         gallery_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.gallery_column,
+                            value=settings.gallery_column,
                             step=1,
                             label='Model Information Image Counts per Row',
                             interactive=True,
@@ -175,7 +175,7 @@ def on_setting_ui():
                         usergallery_images_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.usergallery_images_column,
+                            value=settings.usergallery_images_column,
                             step=1,
                             label='Civitai User Gallery Image Counts per Row',
                             interactive=True,
@@ -183,7 +183,7 @@ def on_setting_ui():
                         usergallery_images_rows_per_page = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.usergallery_images_rows_per_page,
+                            value=settings.usergallery_images_rows_per_page,
                             step=1,
                             label='Civitai User Gallery Image Rows Per Page',
                             interactive=True,
@@ -206,7 +206,7 @@ def on_setting_ui():
                         prompt_shortcut_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.prompt_shortcut_column,
+                            value=settings.prompt_shortcut_column,
                             step=1,
                             label='Prompt Recipe Browser Thumbnail Counts per Row',
                             interactive=True,
@@ -214,7 +214,7 @@ def on_setting_ui():
                         prompt_shortcut_rows_per_page = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.prompt_shortcut_rows_per_page,
+                            value=settings.prompt_shortcut_rows_per_page,
                             step=1,
                             label='Prompt Recipe Browser Thumbnails Rows per Page',
                             interactive=True,
@@ -224,7 +224,7 @@ def on_setting_ui():
                         prompt_reference_shortcut_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.prompt_reference_shortcut_column,
+                            value=settings.prompt_reference_shortcut_column,
                             step=1,
                             label='Reference\'s Models Browser Thumbnail Counts per Row',
                             interactive=True,
@@ -232,7 +232,7 @@ def on_setting_ui():
                         prompt_reference_shortcut_rows_per_page = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.prompt_reference_shortcut_rows_per_page,
+                            value=settings.prompt_reference_shortcut_rows_per_page,
                             step=1,
                             label=' Reference\'s Models Browser Thumbnails Rows per Page',
                             interactive=True,
@@ -245,7 +245,7 @@ def on_setting_ui():
                         classification_shortcut_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.classification_shortcut_column,
+                            value=settings.classification_shortcut_column,
                             step=1,
                             label='Classification\'s Model Browser Thumbnail Counts per Row',
                             interactive=True,
@@ -253,11 +253,11 @@ def on_setting_ui():
                         classification_shortcut_rows_per_page = gr.Slider(
                             minimum=0,
                             maximum=14,
-                            value=setting.classification_shortcut_rows_per_page,
+                            value=settings.classification_shortcut_rows_per_page,
                             step=1,
                             label=(
                                 'Classification\'s Model Browser Thumbnails Rows per Page : '
-                                'setting it to 0 means displaying the entire list without a page.'
+                                'settings it to 0 means displaying the entire list without a page.'
                             ),
                             interactive=True,
                         )
@@ -265,7 +265,7 @@ def on_setting_ui():
                         classification_gallery_column = gr.Slider(
                             minimum=1,
                             maximum=14,
-                            value=setting.classification_gallery_column,
+                            value=settings.classification_gallery_column,
                             step=1,
                             label='Classification Model Counts per Row',
                             interactive=True,
@@ -273,10 +273,10 @@ def on_setting_ui():
                         classification_gallery_rows_per_page = gr.Slider(
                             minimum=0,
                             maximum=14,
-                            value=setting.classification_gallery_rows_per_page,
+                            value=settings.classification_gallery_rows_per_page,
                             step=1,
                             label=(
-                                'Classification Model Rows per Page : setting it to 0 means '
+                                'Classification Model Rows per Page : settings it to 0 means '
                                 'displaying the entire list without a page.'
                             ),
                             interactive=True,
@@ -286,31 +286,31 @@ def on_setting_ui():
             with gr.Accordion("Download Folder for Extensions", open=False):
                 with gr.Column():
                     extension_locon_folder = gr.Textbox(
-                        value=setting.model_folders['LoCon'], label="LyCORIS", interactive=True
+                        value=settings.model_folders['LoCon'], label="LyCORIS", interactive=True
                     )
                     extension_wildcards_folder = gr.Textbox(
-                        value=setting.model_folders['Wildcards'],
+                        value=settings.model_folders['Wildcards'],
                         label="Wildcards",
                         interactive=True,
                     )
                     extension_controlnet_folder = gr.Textbox(
-                        value=setting.model_folders['Controlnet'],
+                        value=settings.model_folders['Controlnet'],
                         label="Controlnet",
                         interactive=True,
                     )
                     extension_aestheticgradient_folder = gr.Textbox(
-                        value=setting.model_folders['AestheticGradient'],
+                        value=settings.model_folders['AestheticGradient'],
                         label="Aesthetic Gradient",
                         interactive=True,
                     )
                     extension_poses_folder = gr.Textbox(
-                        value=setting.model_folders['Poses'], label="Poses", interactive=True
+                        value=settings.model_folders['Poses'], label="Poses", interactive=True
                     )
                     extension_other_folder = gr.Textbox(
-                        value=setting.model_folders['Other'], label="Other", interactive=True
+                        value=settings.model_folders['Other'], label="Other", interactive=True
                     )
                     download_images_folder = gr.Textbox(
-                        value=setting.download_images_folder,
+                        value=settings.download_images_folder,
                         label="Download Images Folder",
                         interactive=True,
                     )
@@ -456,7 +456,14 @@ def on_save_btn_click(
     other,
     download_images_folder,
 ):
-
+    logger.debug(
+        "[on_save_btn_click] Called with params: "
+        "civitai_api_key=%s, shortcut_update_when_start=%s, "
+        "scbrowser_screen_split_ratio=%s, ... (truncated)",
+        civitai_api_key,
+        shortcut_update_when_start,
+        scbrowser_screen_split_ratio,
+    )
     save_setting(
         civitai_api_key,
         shortcut_update_when_start,
@@ -517,11 +524,17 @@ def save_setting(
     other,
     download_images_folder,
 ):
-
-    environment = setting.load()
+    logger.debug(
+        "[save_setting] Called with params: "
+        "civitai_api_key=%s, shortcut_update_when_start=%s, "
+        "scbrowser_screen_split_ratio=%s, ... (truncated)",
+        civitai_api_key,
+        shortcut_update_when_start,
+        scbrowser_screen_split_ratio,
+    )
+    environment = settings.load()
     if not environment:
         environment = dict()
-    # preserve a copy to detect reload-dependent changes
     old_env = copy.deepcopy(environment)
 
     application_allow = dict()
@@ -588,8 +601,12 @@ def save_setting(
 
     environment['temporary'] = temporary
 
-    setting.save_setting(environment)
-    setting.load_data()
+    logger.debug("[save_setting] environment to be saved: %s", environment)
+    settings.save_setting(environment)
+    from .settings.path_manager import load_model_folder_data
+    from .settings import config_manager
+
+    load_model_folder_data(config_manager)
 
     # notify user based on whether layout reload is needed
     ui_reload_needed = _check_ui_reload_required(old_env, environment)
@@ -607,7 +624,7 @@ def save_setting(
                 duration=3,
             )
     except Exception as e:
-        logger.error(f"Failed to show setting save notification: {e}")
+        logger.error(f"Failed to show settings save notification: {e}")
 
     # log for debugging purposes
     if ui_reload_needed:
@@ -622,8 +639,8 @@ def save_setting(
     user_message="Failed to open gallery folder",
 )
 def on_usergallery_openfolder_btn_click():
-    if os.path.exists(setting.shortcut_gallery_folder):
-        util.open_folder(setting.shortcut_gallery_folder)
+    if os.path.exists(settings.shortcut_gallery_folder):
+        util.open_folder(settings.shortcut_gallery_folder)
 
 
 @with_error_handling(
@@ -633,8 +650,8 @@ def on_usergallery_openfolder_btn_click():
     user_message="Failed to clean gallery folder",
 )
 def on_usergallery_cleangallery_btn_click():
-    if os.path.exists(setting.shortcut_gallery_folder):
-        shutil.rmtree(setting.shortcut_gallery_folder)
+    if os.path.exists(settings.shortcut_gallery_folder):
+        shutil.rmtree(settings.shortcut_gallery_folder)
 
 
 @with_error_handling(
@@ -725,31 +742,31 @@ def request_restart():
 
 def on_refresh_setting_change():
     return (
-        setting.civitai_api_key,
-        setting.shortcut_update_when_start,
-        setting.shortcut_browser_screen_split_ratio,
-        setting.information_gallery_height,
-        setting.shortcut_column,
-        setting.shortcut_rows_per_page,
-        setting.gallery_column,
-        setting.classification_shortcut_column,
-        setting.classification_shortcut_rows_per_page,
-        setting.classification_gallery_column,
-        setting.classification_gallery_rows_per_page,
-        setting.usergallery_images_column,
-        setting.usergallery_images_rows_per_page,
-        setting.prompt_shortcut_column,
-        setting.prompt_shortcut_rows_per_page,
-        setting.prompt_reference_shortcut_column,
-        setting.prompt_reference_shortcut_rows_per_page,
-        setting.shortcut_max_download_image_per_version,
-        setting.gallery_thumbnail_image_style,
-        "Up" if setting.shortcut_browser_search_up else "Down",
-        setting.model_folders['LoCon'],
-        setting.model_folders['Wildcards'],
-        setting.model_folders['Controlnet'],
-        setting.model_folders['AestheticGradient'],
-        setting.model_folders['Poses'],
-        setting.model_folders['Other'],
-        setting.download_images_folder,
+        settings.civitai_api_key,
+        settings.shortcut_update_when_start,
+        settings.shortcut_browser_screen_split_ratio,
+        settings.information_gallery_height,
+        settings.shortcut_column,
+        settings.shortcut_rows_per_page,
+        settings.gallery_column,
+        settings.classification_shortcut_column,
+        settings.classification_shortcut_rows_per_page,
+        settings.classification_gallery_column,
+        settings.classification_gallery_rows_per_page,
+        settings.usergallery_images_column,
+        settings.usergallery_images_rows_per_page,
+        settings.prompt_shortcut_column,
+        settings.prompt_shortcut_rows_per_page,
+        settings.prompt_reference_shortcut_column,
+        settings.prompt_reference_shortcut_rows_per_page,
+        settings.shortcut_max_download_image_per_version,
+        settings.gallery_thumbnail_image_style,
+        "Up" if settings.shortcut_browser_search_up else "Down",
+        settings.model_folders['LoCon'],
+        settings.model_folders['Wildcards'],
+        settings.model_folders['Controlnet'],
+        settings.model_folders['AestheticGradient'],
+        settings.model_folders['Poses'],
+        settings.model_folders['Other'],
+        settings.download_images_folder,
     )

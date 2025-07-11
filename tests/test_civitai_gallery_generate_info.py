@@ -7,6 +7,7 @@ import tempfile
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
 from civitai_manager_libs import civitai_gallery_action
+from civitai_manager_libs.settings import config_manager
 
 
 class TestCivitaiGalleryGenerateInfo:
@@ -157,7 +158,19 @@ class TestCivitaiGalleryGenerateInfo:
             }
         ]
 
-        with patch('civitai_manager_libs.civitai_gallery_action.get_image_page') as mock_get_page:
+        with (
+            patch('civitai_manager_libs.civitai_gallery_action.get_image_page') as mock_get_page,
+            patch.object(config_manager, 'get_setting') as mock_get_setting,
+        ):
+            # Configure the mock to return appropriate values for different settings
+            def mock_setting_values(key, default=None):
+                setting_values = {
+                    'nsfw_filter_enable': True,
+                    'nsfw_level': 'None',
+                }
+                return setting_values.get(key, default)
+
+            mock_get_setting.side_effect = mock_setting_values
             mock_get_page.return_value = mock_image_data
 
             # Call get_user_gallery

@@ -1,0 +1,33 @@
+[run]
+branch = True
+source =
+    scripts/civitai_manager_libs/compat
+    scripts/civitai_manager_libs/settings
+    scripts/civitai_manager_libs/ishortcut_core
+    scripts/civitai_manager_libs/recipe_actions
+    scripts/civitai_manager_libs/http_client.py
+    scripts/civitai_manager_libs/downloader.py
+    scripts/civitai_manager_libs/prompt.py
+omit =
+    scripts/civitai_manager_libs/compat/webui_adapters/*
+    scripts/civitai_manager_libs/compat/webui_adapters/**/*.py
+
+[json]
+output = coverage.json
+
+[xml]
+output = coverage.xml
+
+[paths]
+source =
+    scripts/civitai_manager_libs/compat
+    scripts/civitai_manager_libs/settings
+    scripts/civitai_manager_libs/ishortcut_core
+    scripts/civitai_manager_libs/recipe_actions
+    scripts/civitai_manager_libs/http_client.py
+    scripts/civitai_manager_libs/downloader.py
+    scripts/civitai_manager_libs/prompt.py
+
+[tool:pytest]
+addopts = --cov=scripts/civitai_manager_libs/compat --cov=scripts/civitai_manager_libs/settings --cov=scripts/civitai_manager_libs/ishortcut_core --cov=scripts/civitai_manager_libs/recipe_actions --cov=scripts/civitai_manager_libs/http_client.py --cov=scripts/civitai_manager_libs/downloader.py --cov=scripts/civitai_manager_libs/prompt.py --cov-report=term --cov-report=json --cov-report=xml --cov-fail-under=70
+testpaths = tests

@@ -1,4 +1,5 @@
 import pytest
+from scripts.civitai_manager_libs.settings import config_manager
 
 from scripts.civitai_manager_libs.ishortcut_core.shortcut_search_filter import (
     ShortcutSearchFilter,
@@ -47,9 +48,10 @@ def test_get_shortcuts_list(search_filter):
 
 
 def test_type_filter(search_filter, monkeypatch):
-    import scripts.civitai_manager_libs.setting as setting
+    from scripts.civitai_manager_libs import settings
 
-    monkeypatch.setitem(setting.ui_typenames, 'X', 'typeA')
+    # 直接 patch settings.ui_typenames
+    settings.UI_TYPENAMES = {'X': 'typeA'}
     names = search_filter.get_shortcuts_list(['X'])
     assert names == ['Alpha:1', 'Gamma:3']
 

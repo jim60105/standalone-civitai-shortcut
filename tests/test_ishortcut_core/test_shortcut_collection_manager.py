@@ -2,7 +2,7 @@ import os
 import json
 import pytest
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.ishortcut_core.shortcut_collection_manager import (
     ShortcutCollectionManager,
 )
@@ -16,9 +16,9 @@ class DummyProgress:
 @pytest.fixture(autouse=True)
 def isolate_settings(tmp_path, monkeypatch):
     # Isolate file paths to temporary directory
-    monkeypatch.setattr(setting, 'shortcut', str(tmp_path / 'shortcuts.json'))
+    monkeypatch.setattr(settings, 'shortcut', str(tmp_path / 'shortcuts.json'))
     monkeypatch.setattr(
-        setting,
+        settings,
         'shortcut_civitai_internet_shortcut_url',
         str(tmp_path / 'shortcut_urls.json'),
     )
@@ -64,7 +64,7 @@ def test_delete_shortcut_and_backup(monkeypatch, isolate_settings, tmp_path):
     remaining = scm.delete_shortcut(shortcuts.copy(), '9')
     assert '9' not in remaining
     # verify backup file content
-    backup_file = os.path.realpath(setting.shortcut_civitai_internet_shortcut_url)
+    backup_file = os.path.realpath(settings.shortcut_civitai_internet_shortcut_url)
     with open(backup_file, 'r') as f:
         mapping = json.load(f)
     assert any('url=' in k and v == 'Name9' for k, v in mapping.items())

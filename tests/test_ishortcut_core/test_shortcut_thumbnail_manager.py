@@ -1,6 +1,6 @@
 import pytest
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.ishortcut_core.shortcut_thumbnail_manager import (
     ShortcutThumbnailManager,
 )
@@ -36,8 +36,8 @@ def sample_images():
 
 
 def test_select_and_level(monkeypatch, sample_images):
-    orig = setting.NSFW_levels
-    monkeypatch.setattr(setting, 'NSFW_levels', ['low', 'medium', 'high'])
+    orig = settings.NSFW_LEVELS
+    monkeypatch.setattr(settings, 'NSFW_LEVELS', ['low', 'medium', 'high'])
     manager = ShortcutThumbnailManager(DummyImageProcessor(), DummyCollectionManager({}))
     # select optimal based on nsfwLevel
     sel = manager.select_optimal_image(sample_images)
@@ -47,8 +47,8 @@ def test_select_and_level(monkeypatch, sample_images):
     # test calculate level
     assert manager._calculate_nsfw_level({'nsfwLevel': 3}) == 2
     lvl2 = manager._calculate_nsfw_level({'nsfw': 'unknown'})
-    assert lvl2 == len(setting.NSFW_levels)
-    monkeypatch.setattr(setting, 'NSFW_levels', orig)
+    assert lvl2 == len(settings.NSFW_LEVELS)
+    monkeypatch.setattr(settings, 'NSFW_LEVELS', orig)
 
 
 def test_update_and_batch(monkeypatch):

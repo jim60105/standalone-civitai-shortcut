@@ -8,7 +8,7 @@ from scripts.civitai_manager_libs.ishortcut_core.file_processor import FileProce
 @pytest.fixture(autouse=True)
 def tmp_setting_folder(monkeypatch, tmp_path):
     # Redirect shortcut_info_folder to temporary path
-    monkeypatch.setattr(fp_mod.setting, 'shortcut_info_folder', str(tmp_path))
+    monkeypatch.setattr(fp_mod.settings, 'shortcut_info_folder', str(tmp_path))
     yield
 
 
@@ -36,7 +36,7 @@ def test_save_and_backup_and_exists(tmp_path):
     data = {'key': 'value'}
     saved = processor.save_model_information(data, str(model_dir), modelid)
     assert saved is True
-    info_file = model_dir / f"{modelid}{fp_mod.setting.info_suffix}{fp_mod.setting.info_ext}"
+    info_file = model_dir / f"{modelid}{fp_mod.settings.INFO_SUFFIX}{fp_mod.settings.INFO_EXT}"
     assert info_file.exists()
     assert processor.model_info_exists(modelid)
     # Backup

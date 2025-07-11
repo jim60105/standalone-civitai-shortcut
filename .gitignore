@@ -185,6 +185,7 @@ CivitaiShortCutBackupUrl.json
 CivitaiShortCutClassification.json
 CivitaiShortCutRecipeCollection.json
 CivitaiShortCutSetting.json
+CivitaiShortCutSetting.json.backup
 *.log
 
 # Ignore all files in data/models subfolders except .gitkeep
@@ -213,3 +214,4 @@ outputs
 setting.json
 model_folders.json
 logs/
+coverage.json

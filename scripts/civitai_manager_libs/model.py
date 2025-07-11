@@ -5,7 +5,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 from . import util
-from . import setting
+from . import settings
 
 # 이 모듈은 다운로드 받은 정보를 관리한다.
 # civitai 와의 연결은 최소화하고 local의 관리를 목표로 한다.
@@ -106,8 +106,8 @@ def get_infopaths(versionid):
 
 # modelid를 키로 modelid가 같은 version_info의 File Path를 list로 묶어 반환한다.
 def get_model_path() -> dict:
-    root_dirs = list(set(setting.get_model_folders()))
-    file_list = util.search_file(root_dirs, None, [setting.info_ext])
+    root_dirs = list(set(settings.get_model_folders()))
+    file_list = util.search_file(root_dirs, None, [settings.INFO_EXT])
 
     models = dict()
     infopaths = dict()

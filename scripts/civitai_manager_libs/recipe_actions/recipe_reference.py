@@ -12,7 +12,7 @@ try:
 except ImportError:
     ishortcut = None
 
-from .. import setting
+from .. import settings
 from ..logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -132,7 +132,7 @@ class RecipeReferenceManager:
                     title_name = f"# {model_info['name']} : {version_name}"
                     return (
                         gr.update(value=model_type),
-                        gr.update(value=setting.get_ui_typename(model_type)),
+                        gr.update(value=settings.get_ui_typename(model_type)),
                         gr.update(choices=versions_list, value=version_name),
                         gr.update(choices=flist, value=file_name),
                         gr.update(value=triger, visible=triger_visible),
@@ -278,33 +278,33 @@ class RecipeReferenceManager:
                         has_image = False
 
                     if has_image:
-                        if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
+                        if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.nsfw_filter_enable:
                             result_list.append(
                                 (
-                                    setting.nsfw_disable_image,
-                                    setting.set_shortcutname(v['name'], v['id']),
+                                    settings.get_nsfw_disable_image,
+                                    settings.set_shortcutname(v['name'], v['id']),
                                 )
                             )
                         else:
                             result_list.append(
                                 (
                                     os.path.join(
-                                        setting.shortcut_thumbnail_folder,
-                                        f"{v['id']}{setting.preview_image_ext}",
+                                        settings.shortcut_thumbnail_folder,
+                                        f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                                     ),
-                                    setting.set_shortcutname(v['name'], v['id']),
+                                    settings.set_shortcutname(v['name'], v['id']),
                                 )
                             )
                     else:
                         result_list.append(
                             (
-                                setting.no_card_preview_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.no_card_preview_image,
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result_list.append(
-                        (setting.no_card_preview_image, setting.set_shortcutname("delete", mid))
+                        (settings.no_card_preview_image, settings.set_shortcutname("delete", mid))
                     )
 
         return gr.update(value=result_list)
@@ -337,7 +337,7 @@ class RecipeReferenceManager:
                     self._logger.debug("Unexpected evt.value format: %s", evt.value)
                     return shortcuts, current_time
 
-                sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+                sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
 
                 if not shortcuts:
                     shortcuts = list()
@@ -365,7 +365,7 @@ class RecipeReferenceManager:
                 self._logger.debug("Unexpected evt.value format: %s", evt.value)
                 return shortcuts, gr.update(visible=False), gr.update(visible=True), None
 
-            sc_model_id = setting.get_modelid_from_shortcutname(shortcut)
+            sc_model_id = settings.get_modelid_from_shortcutname(shortcut)
             current_time = datetime.datetime.now()
 
             if not shortcuts:

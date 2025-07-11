@@ -1,7 +1,7 @@
 """Integration tests for image download functionality."""
 
 import os
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from tests.utils.test_helpers import HTTPClientTestHelper
 
 
@@ -50,8 +50,8 @@ class TestImageDownloadIntegration:
         with open(result, 'rb') as f:
             assert f.read() == test_image_data
 
-    @patch('civitai_manager_libs.http_client.requests.Session.get')
-    def test_gallery_image_batch_download(self, mock_session_get):
+    @patch('civitai_manager_libs.http_client.get_http_client')
+    def test_gallery_image_batch_download(self, mock_get_http_client):
         """Test batch download of gallery images."""
         # Arrange
         test_urls = [
@@ -65,15 +65,24 @@ class TestImageDownloadIntegration:
             content=b"test_image_data",
             headers={"Content-Type": "image/jpeg"},
         )
-        mock_session_get.return_value = mock_response
+        # 建立 mock client 並設 download_file 行為
+        mock_client = Mock()
+        mock_client.download_file.return_value = True
+        mock_get_http_client.return_value = mock_client
 
         # Act - use isolated gallery folder to ensure downloads occur
-        from civitai_manager_libs import civitai_gallery_action, setting
+        from civitai_manager_libs import civitai_gallery_action, settings
+        import os
 
-        setting.shortcut_gallery_folder = self.helper.temp_dir
+        settings.shortcut_gallery_folder = self.helper.temp_dir
 
-        civitai_gallery_action.download_images(test_urls)
+        # Patch get_image_url_to_gallery_file 讓其回傳有效路徑
+        def fake_get_image_url_to_gallery_file(url):
+            return os.path.join(self.helper.temp_dir, os.path.basename(url))
+
+        settings.get_image_url_to_gallery_file = fake_get_image_url_to_gallery_file
+
+        civitai_gallery_action.download_images(test_urls, client=mock_client)
 
         # Assert
-        mock_session_get.assert_called()
-        assert mock_session_get.call_count == len(test_urls)
+        assert mock_client.download_file.call_count == len(test_urls)

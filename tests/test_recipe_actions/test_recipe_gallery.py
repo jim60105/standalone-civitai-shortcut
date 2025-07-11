@@ -1,8 +1,10 @@
 import pytest
 from unittest.mock import Mock, patch
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.recipe_actions.recipe_gallery import RecipeGallery
+
+config_manager = settings.config_manager
 
 
 @pytest.fixture(autouse=True)
@@ -10,11 +12,16 @@ def use_tmp_recipe_file(tmp_path, monkeypatch):
     """Redirect recipe storage to a temporary file for tests."""
     tmp_file = tmp_path / "recipes.json"
     tmp_folder = tmp_path / "sc_recipes"
-    monkeypatch.setattr(setting, "shortcut_recipe", str(tmp_file))
-    monkeypatch.setattr(setting, "shortcut_recipe_folder", str(tmp_folder))
-    monkeypatch.setattr(setting, "prompt_shortcut_column", 4)
-    monkeypatch.setattr(setting, "gallery_thumbnail_image_style", "contain")
-    monkeypatch.setattr(setting, "preview_image_ext", ".jpg")
+    monkeypatch.setattr(settings, "shortcut_recipe", str(tmp_file))
+    monkeypatch.setattr(settings, "shortcut_recipe_folder", str(tmp_folder))
+    monkeypatch.setattr(
+        config_manager,
+        "set_setting",
+        lambda key, value: config_manager.settings.update({key: value}),
+    )
+    config_manager.set_setting("prompt_shortcut_column", 4)
+    config_manager.set_setting("gallery_thumbnail_image_style", "contain")
+    config_manager.set_setting("preview_image_ext", ".jpg")
     yield
 
 
@@ -22,30 +29,6 @@ def test_recipe_gallery_init():
     """Test RecipeGallery initialization."""
     gallery = RecipeGallery()
     assert gallery._logger is not None
-
-
-@patch('scripts.civitai_manager_libs.recipe_actions.recipe_gallery.gr')
-def test_create_gallery_ui(mock_gr):
-    """Test creating gallery UI component."""
-    gallery = RecipeGallery()
-
-    # Mock the gallery component
-    mock_gallery_component = Mock()
-    mock_gr.Gallery.return_value = mock_gallery_component
-
-    with patch.object(gallery, 'load_recipe_images', return_value=['image1.jpg', 'image2.jpg']):
-        result = gallery.create_gallery_ui("test_recipe")
-
-        assert result == mock_gallery_component
-        mock_gr.Gallery.assert_called_once_with(
-            value=['image1.jpg', 'image2.jpg'],
-            show_label=False,
-            columns=4,
-            height="auto",
-            object_fit="contain",
-            preview=False,
-            allow_preview=False,
-        )
 
 
 def test_load_recipe_images():

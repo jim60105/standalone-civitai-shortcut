@@ -16,6 +16,10 @@ from civitai_manager_libs.compat.standalone_adapters.standalone_metadata_process
     StandaloneMetadataProcessor,
 )
 
+from civitai_manager_libs import settings
+
+config_manager = settings.config_manager
+
 
 class TestStandaloneMetadataProcessor(unittest.TestCase):
     """Test class for TestStandaloneMetadataProcessor."""

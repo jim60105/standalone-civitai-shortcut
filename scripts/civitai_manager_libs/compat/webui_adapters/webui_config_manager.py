@@ -218,7 +218,7 @@ class WebUIConfigManager(IConfigManager):
 
             scripts = importlib.import_module("modules.scripts")
             extension_base = scripts.basedir()
-            return os.path.join(extension_base, "setting.json")
+            return os.path.join(extension_base, "data_sc", "CivitaiShortCutSetting.json")
         except (ImportError, AttributeError, ModuleNotFoundError):
             # Fallback to current directory
-            return os.path.join(os.getcwd(), "setting.json")
+            return os.path.join(os.getcwd(), "data_sc", "CivitaiShortCutSetting.json")

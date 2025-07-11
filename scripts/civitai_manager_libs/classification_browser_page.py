@@ -2,9 +2,10 @@ import gradio as gr
 import math
 import os
 import datetime
+from typing import Optional
 
 from . import util
-from . import setting
+from . import settings
 from . import model
 from . import classification
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
@@ -15,15 +16,15 @@ ALL_DOWNLOADED_MODEL = "All"
 
 
 def on_ui(
-    ex_shortcuts=None,
+    ex_shortcuts: Optional[list] = None,
     search_open=True,
     user_shortcut_browser_search_up=None,
     user_shortcut_column=None,
     user_shortcut_rows_per_page=None,
 ):
-    shortcut_browser_search_up = setting.shortcut_browser_search_up
-    shortcut_column = setting.classification_shortcut_column
-    shortcut_rows_per_page = setting.classification_shortcut_rows_per_page
+    shortcut_browser_search_up = settings.shortcut_browser_search_up
+    shortcut_column = settings.classification_shortcut_column
+    shortcut_rows_per_page = settings.classification_shortcut_rows_per_page
 
     if user_shortcut_browser_search_up:
         if user_shortcut_browser_search_up == "UP":
@@ -54,7 +55,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in setting.ui_typenames],
+                choices=[k for k in settings.UI_TYPENAMES],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -74,7 +75,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in setting.model_basemodels.keys()],
+                choices=[k for k in settings.MODEL_BASEMODELS.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")
@@ -106,7 +107,7 @@ def on_ui(
             value=thumb_list,
             columns=shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             allow_preview=False,
         )
     else:
@@ -137,7 +138,7 @@ def on_ui(
             value=thumb_list,
             columns=shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             allow_preview=False,
         )
 
@@ -145,7 +146,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in setting.ui_typenames],
+                choices=[k for k in settings.UI_TYPENAMES],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -165,7 +166,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in setting.model_basemodels.keys()],
+                choices=[k for k in settings.MODEL_BASEMODELS.keys()],
                 interactive=True,
             )
             # show_downloaded_sc = gr.Dropdown(label='Filter Downloaded', multiselect=False, choices=[ALL_DOWNLOADED_MODEL,DOWNLOADED_MODEL,NOT_DOWNLOADED_MODEL], value=ALL_DOWNLOADED_MODEL, interactive=True)
@@ -178,7 +179,7 @@ def on_ui(
         sc_shortcut_column = gr.State(shortcut_column)
         sc_shortcut_rows_per_page = gr.State(shortcut_rows_per_page)
 
-    refresh_sc_gallery.change(lambda x: x, sc_gallery_result, sc_gallery, show_progress=False)
+    refresh_sc_gallery.change(lambda x: x, sc_gallery_result, sc_gallery, show_progress="minimal")
 
     sc_gallery_page.release(
         fn=on_sc_gallery_page,
@@ -188,14 +189,14 @@ def on_ui(
             shortcut_basemodel,
             sc_classification_list,
             show_downloaded_sc,
-            ex_shortcuts,
+            ex_shortcuts or [],
             show_ex_shortcuts,
             sc_gallery_page,
             sc_shortcut_column,
             sc_shortcut_rows_per_page,
         ],
         outputs=[sc_gallery, sc_gallery_result],
-        show_progress=False,
+        show_progress="minimal",
     )
 
     refresh_sc_browser.change(
@@ -206,14 +207,14 @@ def on_ui(
             shortcut_basemodel,
             sc_classification_list,
             show_downloaded_sc,
-            ex_shortcuts,
+            ex_shortcuts or [],
             show_ex_shortcuts,
             sc_gallery_page,
             sc_shortcut_column,
             sc_shortcut_rows_per_page,
         ],
         outputs=[sc_gallery, sc_classification_list, sc_gallery_page, sc_gallery_result],
-        show_progress=False,
+        show_progress="minimal",
     )
 
     shortcut_type.change(
@@ -324,7 +325,7 @@ def on_ui(
             sc_gallery_page,
             refresh_sc_browser,
         ],
-        show_progress=False,
+        show_progress="minimal",
     )
 
     sc_prevPage_btn.click(
@@ -335,14 +336,14 @@ def on_ui(
             shortcut_basemodel,
             sc_classification_list,
             show_downloaded_sc,
-            ex_shortcuts,
+            ex_shortcuts or [],
             show_ex_shortcuts,
             sc_gallery_page,
             sc_shortcut_column,
             sc_shortcut_rows_per_page,
         ],
         outputs=[sc_gallery, sc_gallery_page, sc_gallery_result],
-        show_progress=False,
+        show_progress="minimal",
     )
 
     sc_nextPage_btn.click(
@@ -353,14 +354,14 @@ def on_ui(
             shortcut_basemodel,
             sc_classification_list,
             show_downloaded_sc,
-            ex_shortcuts,
+            ex_shortcuts or [],
             show_ex_shortcuts,
             sc_gallery_page,
             sc_shortcut_column,
             sc_shortcut_rows_per_page,
         ],
         outputs=[sc_gallery, sc_gallery_page, sc_gallery_result],
-        show_progress=False,
+        show_progress="minimal",
     )
 
     return sc_gallery, refresh_sc_browser, refresh_sc_gallery
@@ -388,19 +389,26 @@ def get_thumbnail_list(
     page=0,
     columns=0,
     rows=0,
-    ex_shortcuts: list = None,
+    ex_shortcuts=None,
 ):
 
     total = 0
     max_page = 1
-    shortcut_list = ishortcut.shortcutsearchfilter.get_filtered_shortcuts(
-        shortcut_types, search, shortcut_basemodels, sc_classifications
+    shortcut_list = (
+        ishortcut.shortcutsearchfilter.get_filtered_shortcuts(
+            shortcut_types, search, shortcut_basemodels, sc_classifications
+        )
+        or []
     )
-    shortlist = None
-    result = None
-
+    # ex_shortcuts 轉 id list
+    if ex_shortcuts is not None and hasattr(ex_shortcuts, 'value'):
+        ex_shortcuts = ex_shortcuts.value or []
+    elif ex_shortcuts is None:
+        ex_shortcuts = []
+    shortlist = []
+    result = []
     if not shortcut_list:
-        return None, total, max_page
+        return [], total, max_page
 
     if downloaded_sc == DOWNLOADED_MODEL:
         if model.Downloaded_Models:
@@ -434,7 +442,7 @@ def get_thumbnail_list(
 
     # ex_shortcuts에 있는 shortcut은 제외한다.
     if ex_shortcuts:
-        ex_shortcut_list = list()
+        ex_shortcut_list = []
         for short in shortcut_list:
             mid = short['id']
             if str(mid) not in ex_shortcuts:
@@ -459,50 +467,48 @@ def get_thumbnail_list(
         shortlist = shortcut_list
 
     if total > 0:
-        # page 즉 페이징이 아닌 전체가 필요할때도 총페이지 수를 구할때도 있으므로..
-        # page == 0 은 전체 리스트를 반환한다
         shortcut_count_per_page = columns * rows
         if shortcut_count_per_page > 0:
             max_page = math.ceil(total / shortcut_count_per_page)
-
         if page > max_page:
             page = max_page
-
         if page > 0 and shortcut_count_per_page > 0:
             item_start = shortcut_count_per_page * (page - 1)
             item_end = shortcut_count_per_page * page
             if total < item_end:
                 item_end = total
-            shortlist = shortcut_list[item_start:item_end]
+            shortlist = shortcut_list[item_start:item_end] if shortcut_list else []
+    else:
+        shortlist = []
 
     if shortlist:
-        result = list()
+        result = []
         # 썸네일이 있는지 판단해서 대체 이미지 작업
         for v in shortlist:
             if v:
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
+                    if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.nsfw_filter_enable:
                         result.append(
                             (
-                                setting.nsfw_disable_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.get_nsfw_disable_image(),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                     else:
                         result.append(
                             (
                                 os.path.join(
-                                    setting.shortcut_thumbnail_folder,
-                                    f"{v['id']}{setting.preview_image_ext}",
+                                    settings.shortcut_thumbnail_folder,
+                                    f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                                 ),
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
 

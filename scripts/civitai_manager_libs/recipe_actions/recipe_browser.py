@@ -6,7 +6,7 @@ import gradio as gr
 import importlib
 
 from .. import recipe
-from .. import setting
+from .. import settings
 from .. import sc_browser_page
 from .. import recipe_browser_page
 from ..logging_config import get_logger
@@ -33,7 +33,7 @@ class RecipeBrowser:
 
     def on_ui(self, recipe_input, shortcut_input, civitai_tabs):
         """Create the complete recipe management UI."""
-        with gr.Column(scale=setting.shortcut_browser_screen_split_ratio):
+        with gr.Column(scale=settings.shortcut_browser_screen_split_ratio):
             with gr.Tabs():
                 with gr.TabItem("Prompt Recipe List"):
                     recipe_new_btn = gr.Button(value="New Recipe", variant="primary")
@@ -43,11 +43,11 @@ class RecipeBrowser:
 
         with gr.Column(
             scale=(
-                setting.shortcut_browser_screen_split_ratio_max
-                - setting.shortcut_browser_screen_split_ratio
+                settings.shortcut_browser_screen_split_ratio_max
+                - settings.shortcut_browser_screen_split_ratio
             )
         ):
-            with gr.Accordion(label=setting.NEWRECIPE, open=True) as recipe_title_name:
+            with gr.Accordion(label=settings.NEWRECIPE, open=True) as recipe_title_name:
                 with gr.Row():
                     with gr.Column(scale=4):
                         with gr.Tabs() as recipe_prompt_tabs:
@@ -112,8 +112,8 @@ class RecipeBrowser:
                                         pass
                                 recipe_classification = gr.Dropdown(
                                     label="Prompt Recipe Classification",
-                                    choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                                    value=setting.PLACEHOLDER,
+                                    choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
+                                    value=settings.PLACEHOLDER,
                                     info=(
                                         "You can choose from a list or enter manually. "
                                         "If you enter a classification that didn't exist before, "
@@ -130,8 +130,8 @@ class RecipeBrowser:
                                 ) = sc_browser_page.on_ui(
                                     False,
                                     "DOWN",
-                                    setting.prompt_reference_shortcut_column,
-                                    setting.prompt_reference_shortcut_rows_per_page,
+                                    settings.prompt_reference_shortcut_column,
+                                    settings.prompt_reference_shortcut_rows_per_page,
                                 )
                         with gr.Row():
                             recipe_create_btn = gr.Button(value="Create", variant="primary")
@@ -205,7 +205,7 @@ class RecipeBrowser:
                                     show_label=False,
                                     columns=3,
                                     height='auto',
-                                    object_fit=setting.gallery_thumbnail_image_style,
+                                    object_fit=settings.gallery_thumbnail_image_style,
                                     preview=False,
                                     allow_preview=False,
                                 )
@@ -348,7 +348,7 @@ class RecipeBrowser:
         import gradio as gr
         import datetime
         from ..logging_config import get_logger
-        from .. import setting, recipe
+        from .. import settings, recipe
         from .recipe_utilities import RecipeUtilities
 
         logger = get_logger(__name__)
@@ -408,7 +408,7 @@ class RecipeBrowser:
                 logger.debug(
                     "[RECIPE] No newline found, using get_imagefn_and_shortcutid_from_recipe_image"
                 )
-                result = setting.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
+                result = settings.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
                 if result:
                     shortcutid, recipe_image = result
                     if shortcutid:
@@ -440,10 +440,10 @@ class RecipeBrowser:
             gr.update(value=""),  # recipe_name
             gr.update(value=""),  # recipe_desc
             gr.update(
-                choices=[setting.PLACEHOLDER] + recipe.get_classifications(),
-                value=setting.PLACEHOLDER,
+                choices=[settings.PLACEHOLDER] + recipe.get_classifications(),
+                value=settings.PLACEHOLDER,
             ),  # recipe_classification
-            gr.update(label=setting.NEWRECIPE),  # recipe_title_name
+            gr.update(label=settings.NEWRECIPE),  # recipe_title_name
             gr.update(visible=True),  # recipe_create_btn
             gr.update(visible=False),  # recipe_update_btn
             shortcuts or [],  # reference_shortcuts
@@ -484,10 +484,10 @@ class RecipeBrowser:
                     return True
 
         # Check if it's a valid image path that can be resolved
-        from .. import setting
+        from .. import settings
 
         try:
-            result = setting.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
+            result = settings.get_imagefn_and_shortcutid_from_recipe_image(recipe_input)
             if result is not None:
                 shortcut_id, image_fn = result
                 # Only consider valid if both shortcut_id and image_fn are provided

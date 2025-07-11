@@ -57,9 +57,9 @@ def test_path_patterns_and_directory_creation(standalone_compat, tmp_path):
         ), f"Model path {model_dir} should be under {models_path}"
         assert os.path.isdir(model_dir)
 
-    # Test config path ends with setting.json
+    # Test config path ends with CivitaiShortCutSetting.json
     config_path = pm.get_config_path()
-    assert os.path.basename(config_path) == "setting.json"
+    assert os.path.basename(config_path) == "CivitaiShortCutSetting.json"
 
     # Test directory creation on arbitrary temp path
     test_dir = tmp_path / "test_dir"

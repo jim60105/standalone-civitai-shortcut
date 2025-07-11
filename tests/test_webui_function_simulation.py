@@ -293,7 +293,7 @@ class TestStandaloneConfigManager(unittest.TestCase):
 
     def test_basic_config_operations(self):
         """Test basic configuration operations."""
-        # Test setting and getting
+        # Test settings and getting
         self.config_manager.set_config("test_key", "test_value")
         result = self.config_manager.get_config("test_key")
         self.assertEqual(result, "test_value")

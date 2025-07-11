@@ -4,6 +4,8 @@ The old entry point to be removed is ${input:entry-point.py:the entry point file
 
 Please follow these steps:
 
+0. Migrate any logic that has not yet been moved into the modular files.
+   Ensure all existing functions, constants, and initialization routines are implemented in their respective new modules (e.g., settings/, util/, bootstrap modules) before removing the entry point.
 1. For each public function in the entry point file:
     - #file_search Find all usages of that function within the project.
     - Replace those function calls with calls to the new underlying implementation.

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-import scripts.civitai_manager_libs.setting as setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.recipe_actions.recipe_management import RecipeManager
 from scripts.civitai_manager_libs.recipe_actions.recipe_browser import RecipeBrowser
 from scripts.civitai_manager_libs.recipe_actions.recipe_reference import RecipeReferenceManager
@@ -14,8 +14,8 @@ def use_tmp_recipe_file(tmp_path, monkeypatch):
     """Redirect recipe storage to a temporary file for tests."""
     tmp_file = tmp_path / "recipes.json"
     tmp_folder = tmp_path / "sc_recipes"
-    monkeypatch.setattr(setting, "shortcut_recipe", str(tmp_file))
-    monkeypatch.setattr(setting, "shortcut_recipe_folder", str(tmp_folder))
+    monkeypatch.setattr(settings, "shortcut_recipe", str(tmp_file))
+    monkeypatch.setattr(settings, "shortcut_recipe_folder", str(tmp_folder))
     yield
 
 

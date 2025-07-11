@@ -6,7 +6,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 from . import util
-from . import setting
+from . import settings
 
 
 def get_list(search=None, classification=None, shortcuts=None):
@@ -227,7 +227,7 @@ def get_recipe(s_name):
     logger.debug(f"[RECIPE] get_recipe: Looking for recipe '{s_name}'")
     RecipeCollection = load()
     logger.debug(f"[RECIPE] get_recipe: RecipeCollection loaded: {RecipeCollection is not None}")
-    
+
     if RecipeCollection and s_name in RecipeCollection:
         logger.debug(f"[RECIPE] get_recipe: Found recipe '{s_name}'")
         return RecipeCollection[s_name]
@@ -272,7 +272,7 @@ def update_image(RecipeCollection: dict, recipe, image):
         if image == pre_image:
             return RecipeCollection
 
-        recipe_imgfile = os.path.join(setting.shortcut_recipe_folder, pre_image)
+        recipe_imgfile = os.path.join(settings.shortcut_recipe_folder, pre_image)
         if os.path.isfile(recipe_imgfile):
             os.remove(recipe_imgfile)
     except Exception:
@@ -329,7 +329,7 @@ def delete(RecipeCollection: dict, recipe) -> dict:
 
     try:
         pre_image = rc['image']
-        recipe_imgfile = os.path.join(setting.shortcut_recipe_folder, pre_image)
+        recipe_imgfile = os.path.join(settings.shortcut_recipe_folder, pre_image)
         if os.path.isfile(recipe_imgfile):
             os.remove(recipe_imgfile)
     except Exception:
@@ -406,25 +406,25 @@ def save(RecipeCollection: dict):
 
     # write to file
     try:
-        with open(setting.shortcut_recipe, 'w') as f:
+        with open(settings.shortcut_recipe, 'w') as f:
             json.dump(RecipeCollection, f, indent=4)
     except Exception:
-        logger.error(f"Error when writing file: {setting.shortcut_recipe}")
+        logger.error(f"Error when writing file: {settings.shortcut_recipe}")
         return output
 
-    output = f"Recipe saved to: {setting.shortcut_recipe}"
+    output = f"Recipe saved to: {settings.shortcut_recipe}"
     logger.info(output)
     return output
 
 
 def load() -> dict:
-    if not os.path.isfile(setting.shortcut_recipe):
+    if not os.path.isfile(settings.shortcut_recipe):
         save({})
         return
 
     json_data = None
     try:
-        with open(setting.shortcut_recipe, 'r') as f:
+        with open(settings.shortcut_recipe, 'r') as f:
             json_data = json.load(f)
     except Exception:
         return None

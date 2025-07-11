@@ -4,7 +4,7 @@ import os
 import datetime
 
 from . import util
-from . import setting
+from . import settings
 from . import model
 from . import classification
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
@@ -20,9 +20,9 @@ def on_ui(
     user_shortcut_column=None,
     user_shortcut_rows_per_page=None,
 ):
-    shortcut_browser_search_up = setting.shortcut_browser_search_up
-    shortcut_column = setting.shortcut_column
-    shortcut_rows_per_page = setting.shortcut_rows_per_page
+    shortcut_browser_search_up = settings.shortcut_browser_search_up
+    shortcut_column = settings.shortcut_column
+    shortcut_rows_per_page = settings.shortcut_rows_per_page
 
     if user_shortcut_browser_search_up:
         if user_shortcut_browser_search_up == "UP":
@@ -57,7 +57,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in setting.ui_typenames],
+                choices=[k for k in settings.UI_TYPENAMES],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -77,7 +77,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in setting.model_basemodels.keys()],
+                choices=[k for k in settings.MODEL_BASEMODELS.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")
@@ -103,7 +103,7 @@ def on_ui(
             show_label=False,
             columns=shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             allow_preview=False,
             value=thumb_list,
         )
@@ -129,7 +129,7 @@ def on_ui(
             show_label=False,
             columns=shortcut_column,
             height="auto",
-            object_fit=setting.gallery_thumbnail_image_style,
+            object_fit=settings.gallery_thumbnail_image_style,
             allow_preview=False,
             value=thumb_list,
         )
@@ -138,7 +138,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in setting.ui_typenames],
+                choices=[k for k in settings.UI_TYPENAMES],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -158,7 +158,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in setting.model_basemodels.keys()],
+                choices=[k for k in settings.MODEL_BASEMODELS.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")
@@ -353,11 +353,10 @@ def get_thumbnail_list(
     shortcut_list = ishortcut.shortcutsearchfilter.get_filtered_shortcuts(
         shortcut_types, search, shortcut_basemodels, sc_classifications
     )
+    if not shortcut_list:
+        shortcut_list = []
     shortlist = None
     result = None
-
-    if not shortcut_list:
-        return None, total, max_page
 
     if downloaded_sc == DOWNLOADED_MODEL:
         if model.Downloaded_Models:
@@ -400,7 +399,13 @@ def get_thumbnail_list(
         # 등록일 기준으로 정렬
         # strptime str을 datetime 형식으로 변환(스트링과 형식일치해야함)
         # strftime datetime 형식을 str로 변환(스트링과 형식이 일치할필요는 없다.)
-        # shortcut_list = sorted(shortcut_list, key=lambda x: datetime.datetime.strptime(x["date"], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d'), reverse=True)
+        # shortcut_list = sorted(
+        #     shortcut_list,
+        #     key=lambda x: datetime.datetime.strptime(
+        #         x["date"], '%Y-%m-%d %H:%M:%S'
+        #     ).strftime('%Y-%m-%d'),
+        #     reverse=True,
+        # )
         # shortcut_list = sorted(shortcut_list, key=lambda x: x["date"], reverse=True)
         # shortcut_list = sorted(shortcut_list, key=lambda x: (x["date"], x['name']) , reverse=True)
 
@@ -421,7 +426,7 @@ def get_thumbnail_list(
             item_end = shortcut_count_per_page * page
             if total < item_end:
                 item_end = total
-            shortlist = shortcut_list[item_start:item_end]
+            shortlist = shortcut_list[item_start:item_end] if shortcut_list else []
 
     if shortlist:
         result = list()
@@ -429,28 +434,32 @@ def get_thumbnail_list(
         for v in shortlist:
             if v:
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and setting.NSFW_filtering_enable:
+                    if (
+                        'nsfw' in v.keys()
+                        and bool(v['nsfw'])
+                        and settings.get_setting('nsfw_filter_enable')
+                    ):
                         result.append(
                             (
-                                setting.nsfw_disable_image,
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.get_nsfw_disable_image(),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                     else:
                         result.append(
                             (
                                 os.path.join(
-                                    setting.shortcut_thumbnail_folder,
-                                    f"{v['id']}{setting.preview_image_ext}",
+                                    settings.shortcut_thumbnail_folder,
+                                    f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                                 ),
-                                setting.set_shortcutname(v['name'], v['id']),
+                                settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
                 else:
                     result.append(
                         (
-                            setting.no_card_preview_image,
-                            setting.set_shortcutname(v['name'], v['id']),
+                            settings.no_card_preview_image,
+                            settings.set_shortcutname(v['name'], v['id']),
                         )
                     )
 

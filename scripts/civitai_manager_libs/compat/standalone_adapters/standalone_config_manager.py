@@ -242,13 +242,13 @@ class StandaloneConfigManager(IConfigManager):
         Set configuration value.
 
         Args:
-            key: Configuration key (supports dot notation for nested setting)
+            key: Configuration key (supports dot notation for nested settings)
             value: Value to set.
         """
         # Apply validation if needed
         value = self._validate_config_value(key, value)
 
-        # Support dot notation for nested setting
+        # Support dot notation for nested settings
         if "." in key:
             keys = key.split(".")
             current = self.data
@@ -457,7 +457,7 @@ class StandaloneConfigManager(IConfigManager):
 
     def cast_value(self, key: str, value: Any) -> Any:
         """
-        Cast value to the same type as the setting's default value (exact AUTOMATIC1111 pattern).
+        Cast value to the same type as the settings's default value (exact AUTOMATIC1111 pattern).
 
         Args:
             key: Setting key
@@ -644,7 +644,7 @@ class StandaloneConfigManager(IConfigManager):
             if info is not None and not self.same_type(info.default, v):
                 expected_type = type(info.default).__name__
                 logger.warning(
-                    f"Bad setting value: {k}: {v} "
+                    f"Bad settings value: {k}: {v} "
                     f"({type(v).__name__}; expected {expected_type})"
                 )
                 bad_settings += 1
@@ -892,7 +892,7 @@ class StandaloneConfigManager(IConfigManager):
         for _ in range(4):  # Go up 4 levels to reach civitai-shortcut root
             base_path = os.path.dirname(base_path)
 
-        return os.path.join(base_path, "setting.json")
+        return os.path.join(base_path, "data_sc", "CivitaiShortCutSetting.json")
 
     def _get_default_model_folders(self) -> Dict[str, str]:
         """Get default model folder configuration."""

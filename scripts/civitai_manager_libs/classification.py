@@ -5,7 +5,7 @@ from .logging_config import get_logger
 
 logger = get_logger(__name__)
 
-from . import setting
+from . import settings
 
 
 # ============================================================
@@ -300,25 +300,25 @@ def save(CISC: dict):
 
     # write to file
     try:
-        with open(setting.shortcut_classification, 'w') as f:
+        with open(settings.shortcut_classification, 'w') as f:
             json.dump(CISC, f, indent=4)
     except Exception:
-        logger.error(f"Error when writing file: {setting.shortcut_classification}")
+        logger.error(f"Error when writing file: {settings.shortcut_classification}")
         return output
 
-    output = f"Civitai Internet Shortcut Classification saved to: {setting.shortcut_classification}"
+    output = f"Civitai Internet Shortcut Classification saved to: {settings.shortcut_classification}"
     logger.info(output)
     return output
 
 
 def load() -> dict:
-    if not os.path.isfile(setting.shortcut_classification):
+    if not os.path.isfile(settings.shortcut_classification):
         save({})
         return
 
     json_data = None
     try:
-        with open(setting.shortcut_classification, 'r') as f:
+        with open(settings.shortcut_classification, 'r') as f:
             json_data = json.load(f)
     except Exception:
         return None

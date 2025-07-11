@@ -12,7 +12,7 @@ except ImportError:
     script_callbacks = None
 
 from scripts.civitai_manager_libs import model
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs import classification_action
 from scripts.civitai_manager_libs import civitai_shortcut_action
 from scripts.civitai_manager_libs import setting_action
@@ -97,7 +97,7 @@ def on_civitai_tabs_select(evt: gr.SelectData):
 
 
 # def readmarkdown():
-#     path = os.path.join(setting.extension_base,"README.md")
+#     path = os.path.join(settings.extension_base,"README.md")
 #     markdown_text = None
 #     try:
 #         with open(path, 'r',encoding='UTF-8') as f:
@@ -197,12 +197,12 @@ def update_all_shortcut_informations_thread():
 
 
 def init_civitai_shortcut():
-    setting.init()
+    settings.init()
     model.update_downloaded_model()
 
-    logger.info(setting.Extensions_Version)
+    logger.info(settings.Extensions_Version)
 
-    if setting.shortcut_update_when_start:
+    if settings.shortcut_update_when_start:
         update_all_shortcut_informations_thread()
 
 

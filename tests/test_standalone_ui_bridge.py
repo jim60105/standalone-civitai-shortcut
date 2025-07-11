@@ -10,6 +10,10 @@ from civitai_manager_libs.compat.standalone_adapters.standalone_ui_bridge import
     StandaloneUIBridge,
 )
 
+from civitai_manager_libs import settings
+
+config_manager = settings.config_manager
+
 
 @pytest.fixture()
 def bridge():

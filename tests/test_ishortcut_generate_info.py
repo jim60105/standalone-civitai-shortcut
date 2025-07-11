@@ -111,7 +111,7 @@ class TestIshortcutGenerateInfo:
             test_url = "http://example.com/test.png"
 
             with mock.patch(
-                'scripts.civitai_manager_libs.setting.get_image_url_to_gallery_file',
+                'scripts.civitai_manager_libs.settings.get_image_url_to_gallery_file',
                 return_value=temp_path,
             ):
                 # Create mock SelectData

@@ -6,6 +6,9 @@ import requests
 
 from scripts.civitai_manager_libs.http_client import CivitaiHttpClient, _STATUS_CODE_MESSAGES
 from scripts.civitai_manager_libs.exceptions import AuthenticationError
+from scripts.civitai_manager_libs import settings
+
+config_manager = settings.config_manager
 
 
 class DummyResponse:
@@ -34,6 +37,7 @@ def disable_gr_error(monkeypatch):
     class FakeGradioError(BaseException):
         def __init__(self, *args, **kwargs):
             super().__init__(*args)
+
     try:
         monkeypatch.setattr(
             "scripts.civitai_manager_libs.http_client.gr.Error",
@@ -264,6 +268,7 @@ def test_handle_authentication_error_307_login_redirect():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._handle_authentication_error(mock_response, "HTTP 307 login redirect")
     assert "authentication" in str(excinfo.value).lower()
@@ -279,6 +284,7 @@ def test_handle_authentication_error_416_range_error():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._handle_authentication_error(mock_response, "HTTP 416")
     assert "authentication" in str(excinfo.value).lower()
@@ -312,13 +318,16 @@ def test_authentication_error_login_case_insensitive():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     for location in test_cases:
         mock_response = DummyResponse(status_code=307, headers={'Location': location})
         mock_response.url = 'https://civitai.com/api/download/models/test'
 
         with pytest.raises(AuthenticationError) as excinfo:
             client._is_stream_response_valid(mock_response)
-        assert "authentication" in str(excinfo.value).lower(), f"Should detect login redirect for {location}"
+        assert (
+            "authentication" in str(excinfo.value).lower()
+        ), f"Should detect login redirect for {location}"
 
 
 def test_is_stream_response_valid_login_redirect():
@@ -332,6 +341,7 @@ def test_is_stream_response_valid_login_redirect():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._is_stream_response_valid(mock_response)
     assert "authentication" in str(excinfo.value).lower()
@@ -346,6 +356,7 @@ def test_is_stream_response_valid_range_error():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._is_stream_response_valid(mock_response)
     assert "authentication" in str(excinfo.value).lower()
@@ -427,6 +438,7 @@ def test_error_handling_priority_416_before_307():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._is_stream_response_valid(mock_response_416)
     assert "authentication" in str(excinfo.value).lower()
@@ -444,6 +456,7 @@ def test_error_handling_no_api_key_scenarios():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
     assert "authentication" in str(excinfo.value).lower()
@@ -469,6 +482,7 @@ def test_error_handling_with_api_key_scenarios():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     with pytest.raises(AuthenticationError) as excinfo:
         client._handle_authentication_error(mock_307, "HTTP 307 login redirect")
     assert "authentication" in str(excinfo.value).lower()
@@ -580,6 +594,7 @@ def test_unified_authentication_error_handling():
 
     import pytest
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     # Test without API key - both should raise AuthenticationError
     with pytest.raises(AuthenticationError) as excinfo:
         client_no_key._is_stream_response_valid(mock_307)

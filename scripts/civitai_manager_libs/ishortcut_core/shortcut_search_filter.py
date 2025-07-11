@@ -13,7 +13,7 @@ from ..logging_config import get_logger
 from .model_processor import ModelProcessor
 from .shortcut_collection_manager import ShortcutCollectionManager
 
-from .. import setting
+from .. import settings
 from .. import util
 from .. import classification
 
@@ -39,7 +39,7 @@ class ShortcutSearchFilter:
 
         shortcuts = list(ISC.values())
         filtered = self._apply_type_filter(shortcuts, shortcut_types)
-        return [setting.set_shortcutname(v['name'], v['id']) for v in filtered]
+        return [settings.set_shortcutname(v['name'], v['id']) for v in filtered]
 
     def get_filtered_shortcuts(
         self,
@@ -120,7 +120,7 @@ class ShortcutSearchFilter:
         tmp_types = []
         for sc_type in types:
             try:
-                tmp_types.append(setting.ui_typenames[sc_type])
+                tmp_types.append(settings.UI_TYPENAMES[sc_type])
             except Exception:
                 continue
 

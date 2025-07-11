@@ -13,6 +13,10 @@ from civitai_manager_libs.compat.standalone_adapters.standalone_sampler_provider
     StandaloneSamplerProvider,
 )
 
+from civitai_manager_libs import settings
+
+config_manager = settings.config_manager
+
 
 class TestStandaloneSamplerProvider(unittest.TestCase):
     """Test class for TestStandaloneSamplerProvider."""

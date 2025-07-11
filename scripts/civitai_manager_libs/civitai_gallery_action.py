@@ -27,7 +27,7 @@ except ImportError:
 
 from . import util
 from . import civitai
-from . import setting
+from . import settings
 from scripts.civitai_manager_libs.ishortcut_core.model_processor import ModelProcessor
 
 modelprocessor = ModelProcessor()
@@ -113,7 +113,7 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
     # Prepare download tasks
     image_tasks = []
     for img_url in dn_image_list:
-        gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+        gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
         if not os.path.isfile(gallery_img_file):
             image_tasks.append((img_url, gallery_img_file))
 
@@ -124,7 +124,7 @@ def download_images_with_progress(dn_image_list: list, progress_callback=None):
 
 
 def download_images_batch(
-    dn_image_list: list, batch_size: int = setting.gallery_download_batch_size
+    dn_image_list: list, batch_size: int = settings.get_setting('gallery_download_batch_size')
 ):
     """Download images in batches to avoid overwhelming the server."""
     if not dn_image_list:
@@ -136,7 +136,7 @@ def download_images_batch(
         batch = dn_image_list[i : i + batch_size]
         logger.debug(f"Processing batch {i//batch_size + 1}, {len(batch)} images")
         for img_url in batch:
-            gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+            gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
             if not os.path.isfile(gallery_img_file):
                 client.download_file(img_url, gallery_img_file)
         time.sleep(0.5)
@@ -154,15 +154,15 @@ def on_ui(recipe_input):
         with gr.Accordion("#", open=True) as model_title_name:
             versions_list = gr.Dropdown(
                 label="Model Version",
-                choices=[setting.PLACEHOLDER],
+                choices=[settings.PLACEHOLDER],
                 interactive=True,
-                value=setting.PLACEHOLDER,
+                value=settings.PLACEHOLDER,
             )
         usergal_gallery = gr.Gallery(
             show_label=False,
-            columns=setting.usergallery_images_column,
-            height=setting.information_gallery_height,
-            object_fit=setting.gallery_thumbnail_image_style,
+            columns=settings.usergallery_images_column,
+            height=settings.information_gallery_height,
+            object_fit=settings.gallery_thumbnail_image_style,
         )
         with gr.Row():
             with gr.Column(scale=1):
@@ -381,7 +381,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
     try:
         # recipe_input의 넘어가는 데이터 형식을 [ shortcut_id:파일네임 ] 으로 하면
         # reference shortcut id를 넣어줄수 있다.
-        recipe_image = setting.set_imagefn_and_shortcutid_for_recipe_image(
+        recipe_image = settings.set_imagefn_and_shortcutid_for_recipe_image(
             model_id, civitai_images[int(img_index)]
         )
         logger.debug(f"  recipe_image: {repr(recipe_image)}")
@@ -666,9 +666,9 @@ def on_gallery_select(evt: gr.SelectData, civitai_images):
     # Get local file path if URL
     local_path = selected
     if isinstance(selected, str) and selected.startswith("http"):
-        from . import setting
+        from . import settings
 
-        local_path = setting.get_image_url_to_gallery_file(selected)
+        local_path = settings.get_image_url_to_gallery_file(selected)
         logger.debug(f"on_gallery_select: converted URL to local_path={local_path}")
 
     # Extract generation parameters - try PNG info first, then Civitai metadata
@@ -801,8 +801,8 @@ def on_selected_model_id_change(modelid):
         gr.update(label=title_name),
         page_url,
         gr.update(
-            choices=[setting.PLACEHOLDER] + versions_list if versions_list else None,
-            value=version_name if version_name else setting.PLACEHOLDER,
+            choices=[settings.PLACEHOLDER] + versions_list if versions_list else None,
+            value=version_name if version_name else settings.PLACEHOLDER,
         ),
         gr.update(
             minimum=1, maximum=total_page, value=1, step=1, label=f"Total {total_page} Pages"
@@ -848,8 +848,8 @@ def on_versions_list_select(evt: gr.SelectData, modelid=None):
         gr.update(label=title_name),
         page_url,
         gr.update(
-            choices=[setting.PLACEHOLDER] + versions_list if versions_list else None,
-            value=version_name if version_name else setting.PLACEHOLDER,
+            choices=[settings.PLACEHOLDER] + versions_list if versions_list else None,
+            value=version_name if version_name else settings.PLACEHOLDER,
         ),
         gr.update(
             minimum=1, maximum=total_page, value=1, step=1, label=f"Total {total_page} Pages"
@@ -899,7 +899,7 @@ def on_refresh_gallery_change(images_url, progress=gr.Progress()):
 
 
 def on_pre_loading_change(usergal_page_url, paging_information):
-    if setting.usergallery_preloading:
+    if settings.usergallery_preloading:
         pre_loading(usergal_page_url, paging_information)
 
 
@@ -929,7 +929,7 @@ def pre_loading(usergal_page_url, paging_information):
             for image_info in image_data:
                 if "url" in image_info:
                     img_url = image_info['url']
-                    gallery_img_file = setting.get_image_url_to_gallery_file(image_info['url'])
+                    gallery_img_file = settings.get_image_url_to_gallery_file(image_info['url'])
                     if not os.path.isfile(gallery_img_file):
                         dn_image_list.append(img_url)
 
@@ -943,19 +943,20 @@ def pre_loading(usergal_page_url, paging_information):
     return
 
 
-def download_images(dn_image_list: list):
+def download_images(dn_image_list: list, client=None):
     """Download images for gallery with improved error handling."""
     if not dn_image_list:
         return
 
-    client = get_http_client()
+    if client is None:
+        client = get_http_client()
     logger.debug(f" Starting download of {len(dn_image_list)} images")
 
     success_count = 0
     failed_count = 0
 
     for img_url in dn_image_list:
-        gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+        gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
 
         if os.path.isfile(gallery_img_file):
             logger.debug(f" Image already exists: {gallery_img_file}")
@@ -1018,16 +1019,16 @@ def get_user_gallery(modelid, page_url, show_nsfw):
         for image_info in image_data:
             if "url" in image_info:
                 img_url = image_info['url']
-                gallery_img_file = setting.get_image_url_to_gallery_file(img_url)
+                gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
 
                 # NSFW filtering ....
-                if setting.NSFW_filtering_enable:
+                if settings.nsfw_filter_enable:
 
-                    # if not setting.NSFW_level[image_info["nsfwLevel"]]:
-                    if setting.NSFW_levels.index(
+                    # if not settings.NSFW_level[image_info["nsfwLevel"]]:
+                    if settings.NSFW_LEVELS.index(
                         image_info["nsfwLevel"]
-                    ) > setting.NSFW_levels.index(setting.NSFW_level_user):
-                        gallery_img_file = setting.nsfw_disable_image
+                    ) > settings.NSFW_LEVELS.index(settings.nsfw_level):
+                        gallery_img_file = settings.get_nsfw_disable_image()
 
                 if os.path.isfile(gallery_img_file):
                     img_url = gallery_img_file
@@ -1141,11 +1142,11 @@ def get_paging_information_working(modelId, modelVersionId=None, show_nsfw=False
         except KeyError:
             page_url = None
 
-    images_per_page = setting.usergallery_images_column * setting.usergallery_images_rows_per_page
+    images_per_page = settings.usergallery_images_column * settings.usergallery_images_rows_per_page
 
     initial_url = get_default_page_url(modelId, modelVersionId, show_nsfw)
     total_page_urls.append(initial_url)
-    # page_items = item_list[::setting.usergallery_images_page_limit]
+    # page_items = item_list[::settings.usergallery_images_page_limit]
     page_items = item_list[::images_per_page]
     totalPages = len(page_items)
 
@@ -1186,19 +1187,19 @@ def gallery_loading(images_url, progress):
         dn_image_list = []
         image_list = []
 
-        if not os.path.exists(setting.shortcut_gallery_folder):
-            os.makedirs(setting.shortcut_gallery_folder)
+        if not os.path.exists(settings.shortcut_gallery_folder):
+            os.makedirs(settings.shortcut_gallery_folder)
 
         for i, img_url in enumerate(progress.tqdm(images_url, desc="Civitai Images Loading")):
             result = util.is_url_or_filepath(img_url)
-            description_img = setting.get_image_url_to_gallery_file(img_url)
+            description_img = settings.get_image_url_to_gallery_file(img_url)
             if result == "filepath":
                 description_img = img_url
             elif result == "url":
                 if not _download_single_image(img_url, description_img):
-                    description_img = setting.no_card_preview_image
+                    description_img = settings.get_no_card_preview_image()
             else:
-                description_img = setting.no_card_preview_image
+                description_img = settings.get_no_card_preview_image()
 
             dn_image_list.append(description_img)
             image_list.append(description_img)
@@ -1236,14 +1237,14 @@ def download_user_gallery_images(model_id, image_urls):
         for img_url in image_urls:
             result = util.is_url_or_filepath(img_url)
             if result == "filepath":
-                if os.path.basename(img_url) != setting.no_card_preview_image:
+                if os.path.basename(img_url) != os.path.basename(settings.get_no_card_preview_image()):
                     dest = os.path.join(save_folder, os.path.basename(img_url))
                     shutil.copyfile(img_url, dest)
             elif result == "url":
                 image_id, _ = os.path.splitext(os.path.basename(img_url))
                 dest = os.path.join(
                     save_folder,
-                    f"{image_id}{setting.preview_image_suffix}{setting.preview_image_ext}",
+                    f"{image_id}{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
                 )
                 image_tasks.append((img_url, dest))
         # execute parallel download for remote images
@@ -1284,7 +1285,7 @@ def extract_url_cursor(url):
 def get_default_page_url(modelId, modelVersionId=None, show_nsfw=False, limit=0):
 
     if limit <= 0:
-        limit = setting.usergallery_images_rows_per_page * setting.usergallery_images_column
+        limit = settings.usergallery_images_rows_per_page * settings.usergallery_images_column
 
     # 200이 최대값이다
     if limit > 200:

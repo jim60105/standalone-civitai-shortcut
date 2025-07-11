@@ -8,7 +8,7 @@ import uuid
 import shutil
 import datetime
 
-from .. import setting
+from .. import settings
 from ..logging_config import get_logger
 from ..exceptions import ValidationError, FileOperationError
 from ..recipe import get_recipe as _raw_get, create_recipe as _raw_create
@@ -35,7 +35,7 @@ class RecipeUtilities:
         if fmt != "json":
             logger.error("export_recipe: unsupported format %s", format)
             raise ValidationError(f"Unsupported export format: {format}")
-        export_dir = os.path.dirname(setting.shortcut_recipe)
+        export_dir = os.path.dirname(settings.shortcut_recipe)
         os.makedirs(export_dir, exist_ok=True)
         export_path = os.path.join(export_dir, f"{recipe_id}.json")
         try:
@@ -92,12 +92,12 @@ class RecipeUtilities:
     def backup_recipe_data(recipe_id: str) -> str:
         """Backup the recipe JSON file to a timestamped backup file and return its path."""
         timestamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        backup_dir = os.path.join(setting.shortcut_recipe_folder, "backups")
+        backup_dir = os.path.join(settings.shortcut_recipe_folder, "backups")
         os.makedirs(backup_dir, exist_ok=True)
         backup_path = os.path.join(backup_dir, f"{recipe_id}_{timestamp}.json")
         try:
             # Backup the individual recipe JSON file (e.g., recipe_id.json) from recipe folder
-            export_path = os.path.join(setting.shortcut_recipe_folder, f"{recipe_id}.json")
+            export_path = os.path.join(settings.shortcut_recipe_folder, f"{recipe_id}.json")
             shutil.copy2(export_path, backup_path)
             logger.info("backup_recipe_data: backed up %s to %s", recipe_id, backup_path)
             return backup_path
@@ -114,7 +114,7 @@ class RecipeUtilities:
         # Restore the backup to the original recipe JSON file (recipe_id.json)
         backup_name = os.path.basename(backup_path)
         recipe_id = backup_name.split('_')[0]
-        dest = os.path.join(setting.shortcut_recipe_folder, f"{recipe_id}.json")
+        dest = os.path.join(settings.shortcut_recipe_folder, f"{recipe_id}.json")
         try:
             shutil.copy2(backup_path, dest)
             logger.info("restore_recipe_data: restored backup %s to %s", backup_path, dest)
@@ -209,7 +209,7 @@ class RecipeUtilities:
     def get_recipe_information(select_name: str):
         """Retrieve recipe data fields for given recipe name with complete processing."""
         import os
-        from .. import recipe, setting
+        from .. import recipe, settings
 
         generate = None
         options = None
@@ -225,7 +225,7 @@ class RecipeUtilities:
 
             if rc and "generate" in rc:
                 generate = rc['generate']
-                
+
                 if "options" in generate:
                     options = [f"{k}:{v}" for k, v in generate['options'].items()]
                     if options:
@@ -241,7 +241,7 @@ class RecipeUtilities:
 
             if rc and "image" in rc:
                 if rc['image']:
-                    imagefile = os.path.join(setting.shortcut_recipe_folder, rc['image'])
+                    imagefile = os.path.join(settings.shortcut_recipe_folder, rc['image'])
 
             if rc and "description" in rc:
                 description = rc['description']
@@ -249,7 +249,7 @@ class RecipeUtilities:
             if rc and "classification" in rc:
                 classification = rc['classification']
                 if not classification or len(classification.strip()) == 0:
-                    classification = setting.PLACEHOLDER
+                    classification = settings.PLACEHOLDER
 
         result = description, Prompt, negativePrompt, options, gen_string, classification, imagefile
         return result

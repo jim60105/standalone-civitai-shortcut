@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock, patch
 
-from scripts.civitai_manager_libs import setting
+from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.recipe_actions.recipe_reference import RecipeReferenceManager
 from scripts.civitai_manager_libs.classification_action import (
     on_sc_gallery_select,
@@ -23,49 +23,49 @@ class TestGallerySelectFix:
     def test_get_modelid_from_shortcutname_with_string(self):
         """Test get_modelid_from_shortcutname with string input."""
         # Test normal case
-        result = setting.get_modelid_from_shortcutname("model_name:12345")
+        result = settings.get_modelid_from_shortcutname("model_name:12345")
         assert result == "12345"
 
         # Test with empty string
-        result = setting.get_modelid_from_shortcutname("")
+        result = settings.get_modelid_from_shortcutname("")
         assert result is None
 
         # Test with None
-        result = setting.get_modelid_from_shortcutname(None)
+        result = settings.get_modelid_from_shortcutname(None)
         assert result is None
 
         # Test with no colon
-        result = setting.get_modelid_from_shortcutname("model_name")
+        result = settings.get_modelid_from_shortcutname("model_name")
         assert result is None
 
     def test_get_modelid_from_shortcutname_with_list(self):
         """Test get_modelid_from_shortcutname with list input (Gradio SelectData format)."""
         # Test normal case with list [image_url, shortcut_name]
-        result = setting.get_modelid_from_shortcutname(
+        result = settings.get_modelid_from_shortcutname(
             ["http://example.com/image.jpg", "model_name:12345"]
         )
         assert result == "12345"
 
         # Test with single element list
-        result = setting.get_modelid_from_shortcutname(["model_name:12345"])
+        result = settings.get_modelid_from_shortcutname(["model_name:12345"])
         assert result == "12345"
 
         # Test with empty list
-        result = setting.get_modelid_from_shortcutname([])
+        result = settings.get_modelid_from_shortcutname([])
         assert result is None
 
         # Test with list containing non-string
-        result = setting.get_modelid_from_shortcutname([123, 456])
+        result = settings.get_modelid_from_shortcutname([123, 456])
         assert result is None
 
     def test_get_modelid_from_shortcutname_with_invalid_types(self):
         """Test get_modelid_from_shortcutname with invalid input types."""
         # Test with number
-        result = setting.get_modelid_from_shortcutname(12345)
+        result = settings.get_modelid_from_shortcutname(12345)
         assert result is None
 
         # Test with dict
-        result = setting.get_modelid_from_shortcutname({"key": "value"})
+        result = settings.get_modelid_from_shortcutname({"key": "value"})
         assert result is None
 
     @patch('scripts.civitai_manager_libs.recipe_actions.recipe_reference.logger')

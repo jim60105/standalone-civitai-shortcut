@@ -61,4 +61,4 @@ def test_get_config_file_path_fallback(tmp_path, monkeypatch):
     monkeypatch.delitem(sys.modules, 'modules.scripts', raising=False)
     manager = WebUIConfigManager()
     path = manager._get_config_file_path()
-    assert os.path.basename(path) == 'setting.json'
+    assert os.path.basename(path) == 'CivitaiShortCutSetting.json'
