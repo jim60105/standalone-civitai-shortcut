@@ -15,17 +15,17 @@ root_path = os.getcwd()
 extension_base = ""
 model_folders = DEFAULT_MODEL_FOLDERS.copy()
 
-# File paths for various application data
-shortcut = os.path.join(SC_DATA_ROOT, "CivitaiShortCut.json")
-shortcut_setting = os.path.join(SC_DATA_ROOT, "CivitaiShortCutSetting.json")
-shortcut_classification = os.path.join(SC_DATA_ROOT, "CivitaiShortCutClassification.json")
-shortcut_civitai_internet_shortcut_url = os.path.join(SC_DATA_ROOT, "CivitaiShortCutBackupUrl.json")
-shortcut_recipe = os.path.join(SC_DATA_ROOT, "CivitaiShortCutRecipeCollection.json")
+# File paths for various application data - these will be updated after extension_base is set
+shortcut = ""
+shortcut_setting = ""
+shortcut_classification = ""
+shortcut_civitai_internet_shortcut_url = ""
+shortcut_recipe = ""
 
-shortcut_thumbnail_folder = os.path.join(SC_DATA_ROOT, "sc_thumb_images")
-shortcut_recipe_folder = os.path.join(SC_DATA_ROOT, "sc_recipes")
-shortcut_info_folder = os.path.join(SC_DATA_ROOT, "sc_infos")
-shortcut_gallery_folder = os.path.join(SC_DATA_ROOT, "sc_gallery")
+shortcut_thumbnail_folder = ""
+shortcut_recipe_folder = ""
+shortcut_info_folder = ""
+shortcut_gallery_folder = ""
 
 
 def get_extension_base():
@@ -34,13 +34,45 @@ def get_extension_base():
 
 
 def set_extension_base(path):
-    """Set the extension base path."""
+    """Set the extension base path and update all related paths."""
     global extension_base
     extension_base = path
+    _update_data_paths()
+
+
+def _update_data_paths():
+    """Update all data file paths based on current extension_base."""
+    global shortcut, shortcut_setting, shortcut_classification
+    global shortcut_civitai_internet_shortcut_url, shortcut_recipe
+    global shortcut_thumbnail_folder, shortcut_recipe_folder
+    global shortcut_info_folder, shortcut_gallery_folder
+
+    if not extension_base:
+        logger.warning("Extension base not set, using relative paths")
+        data_root = SC_DATA_ROOT
+    else:
+        data_root = os.path.join(extension_base, SC_DATA_ROOT)
+
+    # Update all data file paths
+    shortcut = os.path.join(data_root, "CivitaiShortCut.json")
+    shortcut_setting = os.path.join(data_root, "CivitaiShortCutSetting.json")
+    shortcut_classification = os.path.join(data_root, "CivitaiShortCutClassification.json")
+    shortcut_civitai_internet_shortcut_url = os.path.join(
+        data_root, "CivitaiShortCutBackupUrl.json"
+    )
+    shortcut_recipe = os.path.join(data_root, "CivitaiShortCutRecipeCollection.json")
+
+    shortcut_thumbnail_folder = os.path.join(data_root, "sc_thumb_images")
+    shortcut_recipe_folder = os.path.join(data_root, "sc_recipes")
+    shortcut_info_folder = os.path.join(data_root, "sc_infos")
+    shortcut_gallery_folder = os.path.join(data_root, "sc_gallery")
+
+    logger.debug(f"Updated data paths with extension_base: {extension_base}")
+    logger.debug(f"Shortcut file path: {shortcut}")
 
 
 def initialize_extension_base():
-    """Initialize extension base path."""
+    """Initialize extension base path and update data paths."""
     global extension_base
     logger.debug("Initializing extension base path.")
     compat = CompatibilityLayer.get_compatibility_layer()
@@ -56,6 +88,9 @@ def initialize_extension_base():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         extension_base = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
         logger.debug(f"Fallback extension_base: {extension_base}")
+
+    # Update all data paths after setting extension_base
+    _update_data_paths()
 
 
 def get_no_card_preview_image():
@@ -73,11 +108,16 @@ def init_paths(config_manager):
     from .constants import SD_DATA_ROOT
 
     download_images_folder = config_manager.get_setting('download_images_folder')
+
+    # Use extension_base for data directories if available
+    data_root = os.path.join(extension_base, SC_DATA_ROOT) if extension_base else SC_DATA_ROOT
+    sd_data_root = os.path.join(extension_base, SD_DATA_ROOT) if extension_base else SD_DATA_ROOT
+
     dirs = [
-        SC_DATA_ROOT,
-        SD_DATA_ROOT,
-        os.path.join(SD_DATA_ROOT, "models"),
-        os.path.join(SD_DATA_ROOT, "output"),
+        data_root,
+        sd_data_root,
+        os.path.join(sd_data_root, "models"),
+        os.path.join(sd_data_root, "output"),
         download_images_folder,
         shortcut_thumbnail_folder,
         shortcut_recipe_folder,
@@ -88,41 +128,55 @@ def init_paths(config_manager):
         if d:  # Only create if directory is not None/empty
             try:
                 os.makedirs(d, exist_ok=True)
+                logger.debug(f"Created/verified directory: {d}")
             except Exception as e:
                 logger.warning(f"Failed to create directory {d}: {e}")
 
 
 def migrate_existing_files():
     """Migrate existing files and folders in root to new data_sc structure."""
+    # Use extension_base for migration paths if available
+    base_path = extension_base if extension_base else "."
+
     mapping = {
-        "CivitaiShortCut.json": shortcut,
-        "CivitaiShortCutSetting.json": shortcut_setting,
-        "CivitaiShortCutClassification.json": shortcut_classification,
-        "CivitaiShortCutRecipeCollection.json": shortcut_recipe,
-        "CivitaiShortCutBackupUrl.json": shortcut_civitai_internet_shortcut_url,
-        "sc_gallery": shortcut_gallery_folder,
-        "sc_thumb_images": shortcut_thumbnail_folder,
-        "sc_infos": shortcut_info_folder,
-        "sc_recipes": shortcut_recipe_folder,
+        os.path.join(base_path, "CivitaiShortCut.json"): shortcut,
+        os.path.join(base_path, "CivitaiShortCutSetting.json"): shortcut_setting,
+        os.path.join(base_path, "CivitaiShortCutClassification.json"): shortcut_classification,
+        os.path.join(base_path, "CivitaiShortCutRecipeCollection.json"): shortcut_recipe,
+        os.path.join(base_path, "CivitaiShortCutBackupUrl.json"): (
+            shortcut_civitai_internet_shortcut_url
+        ),
+        os.path.join(base_path, "sc_gallery"): shortcut_gallery_folder,
+        os.path.join(base_path, "sc_thumb_images"): shortcut_thumbnail_folder,
+        os.path.join(base_path, "sc_infos"): shortcut_info_folder,
+        os.path.join(base_path, "sc_recipes"): shortcut_recipe_folder,
     }
     for old, new in mapping.items():
         if os.path.exists(old) and not os.path.exists(new):
             try:
+                # Ensure target directory exists
+                os.makedirs(os.path.dirname(new), exist_ok=True)
                 shutil.move(old, new)
                 logger.info(f"Moved {old} to {new}")
             except Exception as e:
                 logger.warning(f"Failed to move {old} to {new}: {e}")
 
-    for entry in os.listdir('.'):
-        if entry.startswith('sc_'):
-            old = entry
-            new = os.path.join(SC_DATA_ROOT, entry)
-            if os.path.exists(old) and not os.path.exists(new):
-                try:
-                    shutil.move(old, new)
-                    logger.info(f"Moved {old} to {new}")
-                except Exception as e:
-                    logger.warning(f"Failed to move {old} to {new}: {e}")
+    # Also check for sc_ prefixed files in the base directory
+    if os.path.exists(base_path):
+        for entry in os.listdir(base_path):
+            if entry.startswith('sc_'):
+                old = os.path.join(base_path, entry)
+                data_root = (
+                    os.path.join(extension_base, SC_DATA_ROOT) if extension_base else SC_DATA_ROOT
+                )
+                new = os.path.join(data_root, entry)
+                if os.path.exists(old) and not os.path.exists(new):
+                    try:
+                        os.makedirs(os.path.dirname(new), exist_ok=True)
+                        shutil.move(old, new)
+                        logger.info(f"Moved {old} to {new}")
+                    except Exception as e:
+                        logger.warning(f"Failed to move {old} to {new}: {e}")
 
 
 def load_model_folder_data(config_manager):

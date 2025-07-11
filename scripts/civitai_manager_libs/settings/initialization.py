@@ -34,10 +34,15 @@ def init():
     from .path_manager import get_extension_base
 
     logger.info(f"Initializing with extension_base={get_extension_base()}")
+
+    # Ensure data root exists before migration
+    ext_base = get_extension_base()
+    data_root = os.path.join(ext_base, SC_DATA_ROOT) if ext_base else SC_DATA_ROOT
     try:
-        os.makedirs(SC_DATA_ROOT, exist_ok=True)
+        os.makedirs(data_root, exist_ok=True)
     except Exception as e:
-        logger.warning(f"Failed to create SC_DATA_ROOT for migration: {e}")
+        logger.warning(f"Failed to create data_root for migration: {e}")
+
     migrate_existing_files()
     init_paths(config_manager_instance)
     config_manager_instance.load_settings()

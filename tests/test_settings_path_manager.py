@@ -28,9 +28,8 @@ class TestPathManager:
         """Test initializing extension base with compatibility layer."""
         mock_compat = MagicMock()
         mock_compat.path_manager.get_extension_path.return_value = "/compat/path"
-        
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer',
-                          return_value=mock_compat):
+
+        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
             path_manager.initialize_extension_base()
             assert path_manager.extension_base == "/compat/path"
 
@@ -40,16 +39,14 @@ class TestPathManager:
         mock_path = MagicMock()
         mock_path.__class__.__name__ = 'MagicMock'
         mock_compat.path_manager.get_extension_path.return_value = mock_path
-        
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer',
-                          return_value=mock_compat):
+
+        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
             path_manager.initialize_extension_base()
             assert path_manager.extension_base == '/test/extension/path'
 
     def test_initialize_extension_base_fallback(self):
         """Test fallback initialization when no compatibility layer."""
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer',
-                          return_value=None):
+        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=None):
             path_manager.initialize_extension_base()
             assert isinstance(path_manager.extension_base, str)
 
@@ -69,7 +66,7 @@ class TestPathManager:
         """Test successful path initialization."""
         mock_config = MagicMock()
         mock_config.get_setting.return_value = str(tmp_path / "downloads")
-        
+
         with patch('os.makedirs') as mock_makedirs:
             path_manager.init_paths(mock_config)
             mock_makedirs.assert_called()
@@ -78,7 +75,7 @@ class TestPathManager:
         """Test path initialization with exception."""
         mock_config = MagicMock()
         mock_config.get_setting.return_value = str(tmp_path / "downloads")
-        
+
         with patch('os.makedirs', side_effect=OSError("Permission denied")):
             # Should not raise exception, just log warning
             path_manager.init_paths(mock_config)
@@ -88,28 +85,32 @@ class TestPathManager:
         # Create test files in tmp_path
         old_file = tmp_path / "CivitaiShortCut.json"
         old_file.write_text('{"test": "data"}')
-        
-        with patch('os.path.exists') as mock_exists, \
-             patch('shutil.move') as mock_move, \
-             patch('os.getcwd', return_value=str(tmp_path)):
-            
+
+        with (
+            patch('os.path.exists') as mock_exists,
+            patch('shutil.move') as mock_move,
+            patch('os.getcwd', return_value=str(tmp_path)),
+        ):
+
             # Mock exists to simulate files that need migration
             def exists_side_effect(path):
                 # Return True for source files that exist
                 return "CivitaiShortCut.json" in path and "data_sc" not in path
-            
+
             mock_exists.side_effect = exists_side_effect
-            
+
             path_manager.migrate_existing_files()
             # The function should attempt to move files
             assert mock_move.call_count >= 0  # Just check it was called or not
 
     def test_migrate_existing_files_with_exception(self, tmp_path):
         """Test file migration with exception."""
-        with patch('os.path.exists', return_value=True), \
-             patch('shutil.move', side_effect=OSError("Permission denied")), \
-             patch('os.getcwd', return_value=str(tmp_path)):
-            
+        with (
+            patch('os.path.exists', return_value=True),
+            patch('shutil.move', side_effect=OSError("Permission denied")),
+            patch('os.getcwd', return_value=str(tmp_path)),
+        ):
+
             # Should not raise exception, just log warning
             path_manager.migrate_existing_files()
 
@@ -117,20 +118,31 @@ class TestPathManager:
         """Test migration of files with sc_ prefix."""
         sc_folder = tmp_path / "sc_test"
         sc_folder.mkdir()
-        
-        with patch('os.listdir', return_value=['sc_test']), \
-             patch('os.path.exists') as mock_exists, \
-             patch('shutil.move') as mock_move, \
-             patch('os.getcwd', return_value=str(tmp_path)):
-            
+
+        with (
+            patch('os.listdir', return_value=['sc_test']),
+            patch('os.path.exists') as mock_exists,
+            patch('shutil.move') as mock_move,
+            patch.object(path_manager, 'extension_base', str(tmp_path)),
+            patch('os.makedirs'),
+        ):
+
             # Mock exists to return True for old, False for new
             def exists_side_effect(path):
-                if 'sc_test' in path and 'data_sc' not in path:
+                path_str = str(path)
+                # Return True for the base path (extension_base)
+                if path_str == str(tmp_path):
                     return True
+                # Return True for source sc_test folder (old path)
+                if 'sc_test' in path_str and 'data_sc' not in path_str:
+                    return True
+                # Return False for destination path in data_sc
+                if 'data_sc' in path_str:
+                    return False
                 return False
-            
+
             mock_exists.side_effect = exists_side_effect
-            
+
             path_manager.migrate_existing_files()
             mock_move.assert_called()
 
@@ -140,9 +152,8 @@ class TestPathManager:
         mock_compat.path_manager.get_model_path.return_value = "/test/path"
         mock_config = MagicMock()
         mock_config.load_settings.return_value = {}
-        
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer',
-                          return_value=mock_compat):
+
+        with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=mock_compat):
             path_manager.load_model_folder_data(mock_config)
             assert path_manager.model_folders['TextualInversion'] == "/test/path"
 
@@ -150,17 +161,20 @@ class TestPathManager:
         """Test loading model folder data with fallback method."""
         mock_config = MagicMock()
         mock_config.load_settings.return_value = {}
-        
+
         mock_shared = MagicMock()
         mock_cmd_opts = MagicMock()
         mock_cmd_opts.embeddings_dir = "/fallback/embeddings"
         mock_shared.cmd_opts = mock_cmd_opts
-        
-        with patch.object(CompatibilityLayer, 'get_compatibility_layer',
-                          return_value=None), \
-             patch('scripts.civitai_manager_libs.conditional_imports'
-                   '.import_manager.get_webui_module',
-                   return_value=mock_shared):
+
+        with (
+            patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=None),
+            patch(
+                'scripts.civitai_manager_libs.conditional_imports'
+                '.import_manager.get_webui_module',
+                return_value=mock_shared,
+            ),
+        ):
             path_manager.load_model_folder_data(mock_config)
             assert path_manager.model_folders['TextualInversion'] == "/fallback/embeddings"
 
@@ -168,12 +182,9 @@ class TestPathManager:
         """Test loading model folder data with user-defined folders."""
         mock_config = MagicMock()
         mock_config.load_settings.return_value = {
-            'model_folders': {
-                'LoCon': '/user/locon',
-                'Wildcards': '/user/wildcards'
-            }
+            'model_folders': {'LoCon': '/user/locon', 'Wildcards': '/user/wildcards'}
         }
-        
+
         with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=None):
             path_manager.load_model_folder_data(mock_config)
             assert path_manager.model_folders['LoCon'] == '/user/locon'
@@ -183,7 +194,7 @@ class TestPathManager:
         """Test loading model folder data when no environment is loaded."""
         mock_config = MagicMock()
         mock_config.load_settings.return_value = None
-        
+
         with patch.object(CompatibilityLayer, 'get_compatibility_layer', return_value=None):
             # Should not raise exception
             path_manager.load_model_folder_data(mock_config)
@@ -204,9 +215,7 @@ class TestPathManager:
             "123", "456", "http://example.com/image123.jpg"
         )
         expected_path = os.path.join(
-            path_manager.shortcut_info_folder,
-            "123",
-            "456-image123.png"  # Uses .png, not .webp
+            path_manager.shortcut_info_folder, "123", "456-image123.png"  # Uses .png, not .webp
         )
         assert result == expected_path
 
