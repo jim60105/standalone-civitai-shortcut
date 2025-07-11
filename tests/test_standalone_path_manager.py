@@ -87,7 +87,11 @@ class TestStandalonePathManager(unittest.TestCase):
     def test_get_config_path(self):
         """Test get config path."""
         config_path = self.manager.get_config_path()
-        self.assertTrue(config_manager.get_setting('config_path').endswith('settings.json'))
+        self.assertIsNotNone(config_path)
+        self.assertTrue(config_path.endswith('CivitaiShortCutSetting.json'))
+        self.assertTrue(
+            config_manager.get_setting('config_path').endswith('CivitaiShortCutSetting.json')
+        )
 
 
 if __name__ == '__main__':

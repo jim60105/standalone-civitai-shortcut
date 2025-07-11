@@ -86,7 +86,11 @@ def test_download_user_gallery_images(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ModelProcessor, "get_model_info", lambda self, mid: {"name": "modelname"})
     monkeypatch.setattr(cga.util, "make_download_image_folder", lambda name: str(tmp_path / name))
-    monkeypatch.setattr(config_manager, "get_setting", lambda key: "no.png" if key == 'no_card_preview_image' else None)
+    monkeypatch.setattr(
+        config_manager,
+        "get_setting",
+        lambda key: "no.png" if key == 'no_card_preview_image' else None,
+    )
     monkeypatch.setattr(cga.util, "is_url_or_filepath", lambda u: "url")
     monkeypatch.setattr(cga, "_download_single_image", lambda u, p: True)
     result = cga.download_user_gallery_images(model_id, urls)

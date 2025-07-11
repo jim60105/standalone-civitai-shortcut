@@ -1,3 +1,5 @@
+from typing import Optional
+
 """Configuration manager for the application."""
 
 from ..error_handler import with_error_handling
@@ -14,8 +16,13 @@ logger = get_logger(__name__)
 class ConfigManager:
     """Manages application settings by coordinating different settings modules."""
 
-    def __init__(self, config_file: str = "CivitaiShortCutSetting.json"):
+    def __init__(self, config_file: Optional[str] = None):
         """Initializes the ConfigManager."""
+        # Use the proper path from path_manager if no config_file is provided
+        if config_file is None:
+            from .path_manager import shortcut_setting
+
+            config_file = shortcut_setting
         self.persistence = SettingPersistence(config_file)
         self.validator = SettingValidator()
         self.defaults = SettingDefaults.get_all_defaults()
@@ -38,7 +45,7 @@ class ConfigManager:
         exception_types=(FileOperationError,),
         user_message="Failed to save settings.",
     )
-    def save_settings(self, settings: dict = None) -> bool:
+    def save_settings(self, settings: Optional[dict] = None) -> bool:
         """Saves the given settings to the persistence layer."""
         logger.debug(
             "[ConfigManager.save_settings] Called with settings: %s",
@@ -52,7 +59,7 @@ class ConfigManager:
             settings = self.settings
         return self.persistence.save_to_file(settings)
 
-    def get_setting(self, key: str, default=None) -> any:
+    def get_setting(self, key: str, default=None):
         """Gets a single settings value by key."""
         value = self.settings.get(key, default if default is not None else self.defaults.get(key))
         if key == 'config_path' and value is None:
@@ -66,7 +73,7 @@ class ConfigManager:
                 value = None
         return value
 
-    def set_setting(self, key: str, value: any) -> bool:
+    def set_setting(self, key: str, value) -> bool:
         """Sets a single settings value after validation."""
         is_valid, message = self.validator.validate_setting(key, value)
         if not is_valid:

@@ -73,10 +73,13 @@ class TestImageDownloadIntegration:
         # Act - use isolated gallery folder to ensure downloads occur
         from civitai_manager_libs import civitai_gallery_action, settings
         import os
+
         settings.shortcut_gallery_folder = self.helper.temp_dir
+
         # Patch get_image_url_to_gallery_file 讓其回傳有效路徑
         def fake_get_image_url_to_gallery_file(url):
             return os.path.join(self.helper.temp_dir, os.path.basename(url))
+
         settings.get_image_url_to_gallery_file = fake_get_image_url_to_gallery_file
 
         civitai_gallery_action.download_images(test_urls, client=mock_client)

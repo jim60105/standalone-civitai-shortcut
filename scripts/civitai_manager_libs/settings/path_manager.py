@@ -128,7 +128,7 @@ def migrate_existing_files():
 def load_model_folder_data(config_manager):
     """Load configuration data and update model folders."""
     logger.info("Loading model folder configuration data.")
-    global model_folders
+    global model_folders  # noqa: F824
 
     compat = CompatibilityLayer.get_compatibility_layer()
     if compat and hasattr(compat, 'path_manager'):

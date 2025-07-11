@@ -2,7 +2,7 @@
 
 from .config_manager import ConfigManager
 from .constants import *  # noqa: F403,F401
-from .initialization import init as real_init, set_compatibility_layer, set_NSFW, save_NSFW
+from .initialization import set_compatibility_layer, set_NSFW, save_NSFW
 from .model_utils import (
     generate_type_basefolder,
     generate_version_foldername,
@@ -44,6 +44,7 @@ config_manager = ConfigManager()
 ui_typenames = getattr(config_manager, 'ui_typenames', None)
 if ui_typenames is None:
     from .setting_defaults import DEFAULT_UI_TYPENAMES
+
     ui_typenames = DEFAULT_UI_TYPENAMES.copy()
     config_manager.settings['ui_typenames'] = ui_typenames
 
@@ -95,6 +96,7 @@ def __getattr__(name):
 def init(*args, **kwargs):
     from .path_manager import extension_base as pm_extension_base
     from .initialization import init as real_init
+
     real_init(*args, **kwargs)
     global extension_base
     extension_base = pm_extension_base

@@ -49,6 +49,7 @@ class StandalonePathManager(IPathManager):
         # Sync config_path to global config_manager for test compatibility
         try:
             from scripts.civitai_manager_libs.settings import config_manager
+
             config_path_value = self.get_config_path()
             if config_path_value:
                 config_manager.settings['config_path'] = config_path_value
@@ -139,11 +140,12 @@ class StandalonePathManager(IPathManager):
         if self._config_path:
             result = self._config_path
         else:
-            result = os.path.join(self._base_path, "settings.json")
+            result = os.path.join(self._base_path, "data_sc", "CivitaiShortCutSetting.json")
         logger.debug(f"get_config_path: {result}")
         # Always sync config_path to global config_manager
         try:
             from scripts.civitai_manager_libs.settings import config_manager
+
             config_manager.load_settings()  # Ensure settings dict is initialized
             if result:
                 config_manager.settings['config_path'] = result

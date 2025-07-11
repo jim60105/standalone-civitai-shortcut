@@ -3,6 +3,7 @@
 import json
 import os
 import shutil
+from typing import Optional
 
 from ..exceptions import FileOperationError
 from ..logging_config import get_logger
@@ -13,8 +14,12 @@ logger = get_logger(__name__)
 class SettingPersistence:
     """Handles loading and saving settings to a file."""
 
-    def __init__(self, config_file: str = "CivitaiShortCutSetting.json"):
+    def __init__(self, config_file: Optional[str] = None):
         """Initializes the SettingPersistence with the given config file."""
+        if config_file is None:
+            from .path_manager import shortcut_setting
+
+            config_file = shortcut_setting
         self.config_file = config_file
         self.backup_file = f"{config_file}.backup"
 

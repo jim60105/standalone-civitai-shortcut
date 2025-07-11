@@ -21,6 +21,7 @@ def tmp_thumbnail_folder(monkeypatch, tmp_path):
 
 def test_create_thumbnail_invalid_params(tmp_path):
     from scripts.civitai_manager_libs import settings
+
     settings.preview_image_ext = '.jpg'
     processor = ImageProcessor(thumbnail_folder=str(tmp_path))
     assert not processor.create_thumbnail('', '')
@@ -29,6 +30,7 @@ def test_create_thumbnail_invalid_params(tmp_path):
 
 def test_create_thumbnail_success(tmp_path, monkeypatch):
     from scripts.civitai_manager_libs import settings
+
     settings.preview_image_ext = '.jpg'
     processor = ImageProcessor(thumbnail_folder=str(tmp_path))
     # Create a sample image
@@ -45,6 +47,7 @@ def test_create_thumbnail_success(tmp_path, monkeypatch):
 
 def test_is_sc_image_and_delete(tmp_path, monkeypatch):
     from scripts.civitai_manager_libs import settings
+
     settings.preview_image_ext = '.jpg'
     processor = ImageProcessor(thumbnail_folder=str(tmp_path))
     # Empty model_id
@@ -60,6 +63,7 @@ def test_is_sc_image_and_delete(tmp_path, monkeypatch):
 
 def test_get_preview_image_url_and_path_and_extract(tmp_path):
     from scripts.civitai_manager_libs import settings
+
     settings.preview_image_ext = '.jpg'
     processor = ImageProcessor(thumbnail_folder=str(tmp_path))
     # Preview URL from modelVersions

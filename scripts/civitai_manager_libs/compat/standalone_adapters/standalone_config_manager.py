@@ -892,7 +892,7 @@ class StandaloneConfigManager(IConfigManager):
         for _ in range(4):  # Go up 4 levels to reach civitai-shortcut root
             base_path = os.path.dirname(base_path)
 
-        return os.path.join(base_path, "settings.json")
+        return os.path.join(base_path, "data_sc", "CivitaiShortCutSetting.json")
 
     def _get_default_model_folders(self) -> Dict[str, str]:
         """Get default model folder configuration."""

@@ -1,4 +1,5 @@
 """Unit tests for the settings modules."""
+
 import os
 import pytest
 from scripts.civitai_manager_libs.settings import (
@@ -9,11 +10,13 @@ from scripts.civitai_manager_libs.settings import (
     SettingValidator,
 )
 
+
 @pytest.fixture
 def config_manager(tmp_path):
     """Fixture for creating a ConfigManager with a temporary config file."""
     config_file = tmp_path / "test_settings.json"
     return ConfigManager(config_file=str(config_file))
+
 
 class TestSettingDefaults:
     """Tests for the SettingDefaults class."""
@@ -29,6 +32,7 @@ class TestSettingDefaults:
         default_value = SettingDefaults.get_default_value('shortcut_column')
         assert default_value == 5
 
+
 class TestSettingCategories:
     """Tests for the SettingCategories class."""
 
@@ -42,6 +46,7 @@ class TestSettingCategories:
         """Test that get_setting_type returns the correct type for a settings."""
         setting_type = SettingCategories.get_setting_type('shortcut_column')
         assert setting_type == 'integer'
+
 
 class TestSettingValidator:
     """Tests for the SettingValidator class."""
@@ -64,6 +69,7 @@ class TestSettingValidator:
         is_valid, _ = self.validator.validate_path_setting("/invalid/path")
         assert not is_valid
 
+
 class TestSettingPersistence:
     """Tests for the SettingPersistence class."""
 
@@ -75,6 +81,7 @@ class TestSettingPersistence:
         persistence.save_to_file(settings_to_save)
         loaded_settings = persistence.load_from_file()
         assert loaded_settings == settings_to_save
+
 
 class TestConfigManager:
     """Tests for the ConfigManager class."""
