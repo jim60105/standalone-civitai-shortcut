@@ -36,8 +36,8 @@ def sample_images():
 
 
 def test_select_and_level(monkeypatch, sample_images):
-    orig = settings.NSFW_levels
-    monkeypatch.setattr(settings, 'NSFW_levels', ['low', 'medium', 'high'])
+    orig = settings.NSFW_LEVELS
+    monkeypatch.setattr(settings, 'NSFW_LEVELS', ['low', 'medium', 'high'])
     manager = ShortcutThumbnailManager(DummyImageProcessor(), DummyCollectionManager({}))
     # select optimal based on nsfwLevel
     sel = manager.select_optimal_image(sample_images)
@@ -47,8 +47,8 @@ def test_select_and_level(monkeypatch, sample_images):
     # test calculate level
     assert manager._calculate_nsfw_level({'nsfwLevel': 3}) == 2
     lvl2 = manager._calculate_nsfw_level({'nsfw': 'unknown'})
-    assert lvl2 == len(settings.NSFW_levels)
-    monkeypatch.setattr(settings, 'NSFW_levels', orig)
+    assert lvl2 == len(settings.NSFW_LEVELS)
+    monkeypatch.setattr(settings, 'NSFW_LEVELS', orig)
 
 
 def test_update_and_batch(monkeypatch):

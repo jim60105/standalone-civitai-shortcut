@@ -41,12 +41,12 @@ from .setting_validation import SettingValidator
 config_manager = ConfigManager()
 
 # Provide default ui_typenames for compatibility with legacy code/tests
-ui_typenames = getattr(config_manager, 'ui_typenames', None)
-if ui_typenames is None:
+UI_TYPENAMES = getattr(config_manager, 'ui_typenames', None)
+if UI_TYPENAMES is None:
     from .setting_defaults import DEFAULT_UI_TYPENAMES
 
-    ui_typenames = DEFAULT_UI_TYPENAMES.copy()
-    config_manager.settings['ui_typenames'] = ui_typenames
+    UI_TYPENAMES = DEFAULT_UI_TYPENAMES.copy()
+    config_manager.settings['ui_typenames'] = UI_TYPENAMES
 
 
 # Proxy functions for backward compatibility

@@ -51,7 +51,7 @@ def test_type_filter(search_filter, monkeypatch):
     from scripts.civitai_manager_libs import settings
 
     # 直接 patch settings.ui_typenames
-    settings.ui_typenames = {'X': 'typeA'}
+    settings.UI_TYPENAMES = {'X': 'typeA'}
     names = search_filter.get_shortcuts_list(['X'])
     assert names == ['Alpha:1', 'Gamma:3']
 

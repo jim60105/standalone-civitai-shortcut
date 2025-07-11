@@ -57,7 +57,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in settings.ui_typenames],
+                choices=[k for k in settings.UI_TYPENAMES],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -77,7 +77,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in settings.model_basemodels.keys()],
+                choices=[k for k in settings.MODEL_BASEMODELS.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")
@@ -138,7 +138,7 @@ def on_ui(
             shortcut_type = gr.Dropdown(
                 label='Filter Model Type',
                 multiselect=True,
-                choices=[k for k in settings.ui_typenames],
+                choices=[k for k in settings.UI_TYPENAMES],
                 interactive=True,
             )
             sc_search = gr.Textbox(
@@ -158,7 +158,7 @@ def on_ui(
             shortcut_basemodel = gr.Dropdown(
                 label='Filter Model BaseModel',
                 multiselect=True,
-                choices=[k for k in settings.model_basemodels.keys()],
+                choices=[k for k in settings.MODEL_BASEMODELS.keys()],
                 interactive=True,
             )
             reset_filter_btn = gr.Button(value="Reset Filter", variant="primary")
@@ -450,7 +450,7 @@ def get_thumbnail_list(
                             (
                                 os.path.join(
                                     settings.shortcut_thumbnail_folder,
-                                    f"{v['id']}{settings.preview_image_ext}",
+                                    f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                                 ),
                                 settings.set_shortcutname(v['name'], v['id']),
                             )

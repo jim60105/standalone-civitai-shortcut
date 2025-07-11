@@ -217,7 +217,7 @@ class RecipeManager:
                     if recipe_image:
                         if not os.path.exists(settings.shortcut_recipe_folder):
                             os.makedirs(settings.shortcut_recipe_folder)
-                        unique_filename = f"{str(uuid.uuid4())}{settings.preview_image_ext}"
+                        unique_filename = f"{str(uuid.uuid4())}{settings.PREVIEW_IMAGE_EXT}"
                         recipe_imgfile = os.path.join(
                             settings.shortcut_recipe_folder, unique_filename
                         )
@@ -356,7 +356,7 @@ class RecipeManager:
                     if recipe_image:
                         if not os.path.exists(settings.shortcut_recipe_folder):
                             os.makedirs(settings.shortcut_recipe_folder)
-                        unique_filename = f"{str(uuid.uuid4())}{settings.preview_image_ext}"
+                        unique_filename = f"{str(uuid.uuid4())}{settings.PREVIEW_IMAGE_EXT}"
                         recipe_imgfile = os.path.join(
                             settings.shortcut_recipe_folder, unique_filename
                         )

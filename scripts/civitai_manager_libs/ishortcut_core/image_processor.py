@@ -262,7 +262,7 @@ class ImageProcessor:
         os.makedirs(self.thumbnail_folder, exist_ok=True)
 
         thumbnail_path = os.path.join(
-            self.thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
+            self.thumbnail_folder, f"{model_id}{settings.PREVIEW_IMAGE_EXT}"
         )
 
         try:
@@ -299,7 +299,7 @@ class ImageProcessor:
             return False
 
         thumbnail_path = os.path.join(
-            self.thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
+            self.thumbnail_folder, f"{model_id}{settings.PREVIEW_IMAGE_EXT}"
         )
 
         try:
@@ -361,7 +361,7 @@ class ImageProcessor:
             return True
 
         thumbnail_path = os.path.join(
-            self.thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
+            self.thumbnail_folder, f"{model_id}{settings.PREVIEW_IMAGE_EXT}"
         )
 
         try:
@@ -386,7 +386,7 @@ class ImageProcessor:
             return False
 
         thumbnail_path = os.path.join(
-            self.thumbnail_folder, f"{model_id}{settings.preview_image_ext}"
+            self.thumbnail_folder, f"{model_id}{settings.PREVIEW_IMAGE_EXT}"
         )
 
         exists = os.path.isfile(thumbnail_path)

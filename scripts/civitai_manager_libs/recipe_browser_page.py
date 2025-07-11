@@ -347,7 +347,7 @@ def get_recipe_reference_list(page=0):
                             (
                                 os.path.join(
                                     settings.shortcut_thumbnail_folder,
-                                    f"{v['id']}{settings.preview_image_ext}",
+                                    f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                                 ),
                                 settings.set_shortcutname(v['name'], v['id']),
                             )
@@ -544,7 +544,7 @@ def on_recipe_reference_select_gallery_loading(shortcuts):
                             (
                                 os.path.join(
                                     settings.shortcut_thumbnail_folder,
-                                    f"{v['id']}{settings.preview_image_ext}",
+                                    f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                                 ),
                                 settings.set_shortcutname(v['name'], v['id']),
                             )

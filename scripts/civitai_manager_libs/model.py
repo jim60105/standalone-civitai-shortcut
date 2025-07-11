@@ -107,7 +107,7 @@ def get_infopaths(versionid):
 # modelid를 키로 modelid가 같은 version_info의 File Path를 list로 묶어 반환한다.
 def get_model_path() -> dict:
     root_dirs = list(set(settings.get_model_folders()))
-    file_list = util.search_file(root_dirs, None, [settings.info_ext])
+    file_list = util.search_file(root_dirs, None, [settings.INFO_EXT])
 
     models = dict()
     infopaths = dict()

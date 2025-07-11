@@ -15,19 +15,19 @@ NEWCLASSIFICATION = "[New Classification]"
 CREATE_MODEL_FOLDER = "Create a model folder to download the model"
 
 # File extensions
-model_exts = (".bin", ".pt", ".safetensors", ".ckpt")
-info_ext = ".info"
-info_suffix = ".civitai"
-triger_ext = ".txt"
-triger_suffix = ".triger"
-preview_image_ext = ".png"
-preview_image_suffix = ".preview"
+MODEL_EXTS = (".bin", ".pt", ".safetensors", ".ckpt")
+INFO_EXT = ".info"
+INFO_SUFFIX = ".civitai"
+TRIGER_EXT = ".txt"
+TRIGER_SUFFIX = ".triger"
+PREVIEW_IMAGE_EXT = ".png"
+PREVIEW_IMAGE_SUFFIX = ".preview"
 
 # NSFW levels
-NSFW_levels = ("None", "Soft", "Mature", "X", "XX")
+NSFW_LEVELS = ("None", "Soft", "Mature", "X", "XX")
 
 # Model base models mapping
-model_basemodels = {
+MODEL_BASEMODELS = {
     "SD 1.4": "SD1",
     "SD 1.5": "SD1",
     "SD 2.0": "SD2",
@@ -51,7 +51,7 @@ model_basemodels = {
 }
 
 # Default model folders mapping
-default_model_folders = {
+DEFAULT_MODEL_FOLDERS = {
     'Checkpoint': os.path.join("models", "Stable-diffusion"),
     'LORA': os.path.join("models", "Lora"),
     'LoCon': os.path.join("models", "LyCORIS"),
@@ -70,7 +70,7 @@ default_model_folders = {
 }
 
 # UI type names mapping
-ui_typenames = {
+UI_TYPENAMES = {
     "Checkpoint": 'Checkpoint',
     "LoRA": 'LORA',
     "LyCORIS": 'LoCon',

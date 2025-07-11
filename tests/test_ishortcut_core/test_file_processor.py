@@ -36,7 +36,7 @@ def test_save_and_backup_and_exists(tmp_path):
     data = {'key': 'value'}
     saved = processor.save_model_information(data, str(model_dir), modelid)
     assert saved is True
-    info_file = model_dir / f"{modelid}{fp_mod.settings.info_suffix}{fp_mod.settings.info_ext}"
+    info_file = model_dir / f"{modelid}{fp_mod.settings.INFO_SUFFIX}{fp_mod.settings.INFO_EXT}"
     assert info_file.exists()
     assert processor.model_info_exists(modelid)
     # Backup

@@ -328,7 +328,7 @@ def write_json(contents, path):
 def scan_folder_for_info(folder):
     from . import settings
 
-    info_list = search_file([folder], None, [settings.info_ext])
+    info_list = search_file([folder], None, [settings.INFO_EXT])
 
     if not info_list:
         return None

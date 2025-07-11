@@ -4,7 +4,7 @@ import os
 
 from .. import util
 from ..logging_config import get_logger
-from .constants import ui_typenames
+from .constants import UI_TYPENAMES
 from .path_manager import model_folders
 
 logger = get_logger(__name__)
@@ -28,7 +28,7 @@ def generate_version_foldername(model_name, ver_name, ver_id):
 
 def get_ui_typename(model_type):
     """Gets the UI type name for a given model type."""
-    for k, v in ui_typenames.items():
+    for k, v in UI_TYPENAMES.items():
         if v == model_type:
             return k
     return model_type

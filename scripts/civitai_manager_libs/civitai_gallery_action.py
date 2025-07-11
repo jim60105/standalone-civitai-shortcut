@@ -1025,9 +1025,9 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                 if settings.NSFW_filtering_enable:
 
                     # if not settings.NSFW_level[image_info["nsfwLevel"]]:
-                    if settings.NSFW_levels.index(
+                    if settings.NSFW_LEVELS.index(
                         image_info["nsfwLevel"]
-                    ) > settings.NSFW_levels.index(settings.NSFW_level_user):
+                    ) > settings.NSFW_LEVELS.index(settings.NSFW_level_user):
                         gallery_img_file = settings.get_nsfw_disable_image()
 
                 if os.path.isfile(gallery_img_file):
@@ -1244,7 +1244,7 @@ def download_user_gallery_images(model_id, image_urls):
                 image_id, _ = os.path.splitext(os.path.basename(img_url))
                 dest = os.path.join(
                     save_folder,
-                    f"{image_id}{settings.preview_image_suffix}{settings.preview_image_ext}",
+                    f"{image_id}{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
                 )
                 image_tasks.append((img_url, dest))
         # execute parallel download for remote images

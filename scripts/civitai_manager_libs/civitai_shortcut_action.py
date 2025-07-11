@@ -127,7 +127,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                         shortcut_new_version_type = gr.Dropdown(
                             label="Filter Model type",
                             multiselect=True,
-                            choices=[k for k in settings.ui_typenames],
+                            choices=[k for k in settings.UI_TYPENAMES],
                             interactive=True,
                         )
                         scan_new_version_btn = gr.Button(
@@ -163,7 +163,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                         )
                         nsfw_level = gr.Dropdown(
                             value=settings.NSFW_level_user,
-                            choices=settings.NSFW_levels,
+                            choices=settings.NSFW_LEVELS,
                             label="NSFW Filtering Level",
                             visible=True,
                             interactive=True,
@@ -641,7 +641,7 @@ def on_scan_new_version_btn(sc_types, progress=gr.Progress()):
                         (
                             os.path.join(
                                 settings.shortcut_thumbnail_folder,
-                                f"{v['id']}{settings.preview_image_ext}",
+                                f"{v['id']}{settings.PREVIEW_IMAGE_EXT}",
                             ),
                             settings.set_shortcutname(v['name'], v['id']),
                         )

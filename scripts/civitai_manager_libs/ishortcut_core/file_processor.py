@@ -144,9 +144,9 @@ class FileProcessor:
 
         try:
             # Generate file paths
-            tmp_info_file = os.path.join(model_path, f"tmp{settings.info_suffix}{settings.info_ext}")
+            tmp_info_file = os.path.join(model_path, f"tmp{settings.INFO_SUFFIX}{settings.INFO_EXT}")
             model_info_file = os.path.join(
-                model_path, f"{modelid}{settings.info_suffix}{settings.info_ext}"
+                model_path, f"{modelid}{settings.INFO_SUFFIX}{settings.INFO_EXT}"
             )
 
             logger.debug(f"[FileProcessor] Temp file: {tmp_info_file}")
@@ -220,7 +220,7 @@ class FileProcessor:
         model_info_file = os.path.join(
             settings.shortcut_info_folder,
             modelid,
-            f"{modelid}{settings.info_suffix}{settings.info_ext}",
+            f"{modelid}{settings.INFO_SUFFIX}{settings.INFO_EXT}",
         )
 
         exists = os.path.isfile(model_info_file)
@@ -240,7 +240,7 @@ class FileProcessor:
         return os.path.join(
             settings.shortcut_info_folder,
             modelid,
-            f"{modelid}{settings.info_suffix}{settings.info_ext}",
+            f"{modelid}{settings.INFO_SUFFIX}{settings.INFO_EXT}",
         )
 
     def backup_model_information(self, modelid: str, backup_suffix: str = ".backup") -> bool:
@@ -349,7 +349,7 @@ class FileProcessor:
         try:
             for filename in os.listdir(model_path):
                 if filename.startswith('tmp') and (
-                    filename.endswith(settings.info_ext) or filename.endswith('.tmp')
+                    filename.endswith(settings.INFO_EXT) or filename.endswith('.tmp')
                 ):
                     temp_file = os.path.join(model_path, filename)
                     try:

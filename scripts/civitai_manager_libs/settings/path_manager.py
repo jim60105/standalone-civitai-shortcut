@@ -6,14 +6,14 @@ import shutil
 from ..compat.compat_layer import CompatibilityLayer
 from ..conditional_imports import import_manager
 from ..logging_config import get_logger
-from .constants import SC_DATA_ROOT, default_model_folders, preview_image_ext
+from .constants import SC_DATA_ROOT, DEFAULT_MODEL_FOLDERS, PREVIEW_IMAGE_EXT
 
 logger = get_logger(__name__)
 
 # Global variables
 root_path = os.getcwd()
 extension_base = ""
-model_folders = default_model_folders.copy()
+model_folders = DEFAULT_MODEL_FOLDERS.copy()
 
 # File paths for various application data
 shortcut = os.path.join(SC_DATA_ROOT, "CivitaiShortCut.json")
@@ -182,7 +182,7 @@ def get_image_url_to_shortcut_file(modelid, versionid, image_url):
         version_image_prefix = f"{versionid}-"
         model_path = os.path.join(shortcut_info_folder, str(modelid))
         image_id, _ = os.path.splitext(os.path.basename(image_url))
-        return os.path.join(model_path, f"{version_image_prefix}{image_id}{preview_image_ext}")
+        return os.path.join(model_path, f"{version_image_prefix}{image_id}{PREVIEW_IMAGE_EXT}")
     return None
 
 
@@ -190,7 +190,7 @@ def get_image_url_to_gallery_file(image_url):
     """Generates the local file path for a gallery image from a URL."""
     if image_url:
         image_id, _ = os.path.splitext(os.path.basename(image_url))
-        return os.path.join(shortcut_gallery_folder, f"{image_id}{preview_image_ext}")
+        return os.path.join(shortcut_gallery_folder, f"{image_id}{PREVIEW_IMAGE_EXT}")
     return None
 
 

@@ -910,13 +910,13 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
                 )
                 return
 
-            if not f"{settings.info_suffix}{settings.info_ext}" in infofile:
+            if not f"{settings.INFO_SUFFIX}{settings.INFO_EXT}" in infofile:
                 logger.debug(
                     "The selected version of the model has not been downloaded. The model must be downloaded first."
                 )
                 return
 
-            savefile_base = infofile[: infofile.rfind(f"{settings.info_suffix}{settings.info_ext}")]
+            savefile_base = infofile[: infofile.rfind(f"{settings.INFO_SUFFIX}{settings.INFO_EXT}")]
 
             if not savefile_base:
                 logger.debug(
@@ -926,7 +926,7 @@ def on_change_preview_image_click(mid, vid, img_idx: int, civitai_images):
 
             preview_img_filepath = os.path.join(
                 path,
-                f"{util.replace_filename(savefile_base)}{settings.preview_image_suffix}{settings.preview_image_ext}",
+                f"{util.replace_filename(savefile_base)}{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
             )
 
             shutil.copy(selected_image_filepath, preview_img_filepath)

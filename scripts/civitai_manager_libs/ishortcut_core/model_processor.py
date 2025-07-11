@@ -285,7 +285,7 @@ class ModelProcessor:
             # Apply NSFW filtering
             if settings.NSFW_filtering_enable:
                 img_nsfw_level = self._get_image_nsfw_level(img_dict)
-                user_nsfw_level = settings.NSFW_levels.index(settings.NSFW_level_user)
+                user_nsfw_level = settings.NSFW_LEVELS.index(settings.NSFW_level_user)
 
                 if img_nsfw_level > user_nsfw_level:
                     description_img = settings.get_nsfw_disable_image
@@ -308,8 +308,8 @@ class ModelProcessor:
             if img_nsfw_level < 0:
                 img_nsfw_level = 0
         # Fallback to old format
-        elif "nsfw" in img_dict and img_dict["nsfw"] in settings.NSFW_levels:
-            img_nsfw_level = settings.NSFW_levels.index(img_dict["nsfw"])
+        elif "nsfw" in img_dict and img_dict["nsfw"] in settings.NSFW_LEVELS:
+            img_nsfw_level = settings.NSFW_LEVELS.index(img_dict["nsfw"])
 
         return img_nsfw_level
 
@@ -329,7 +329,7 @@ class ModelProcessor:
         model_path = os.path.join(
             settings.shortcut_info_folder,
             modelid,
-            f"{modelid}{settings.info_suffix}{settings.info_ext}",
+            f"{modelid}{settings.INFO_SUFFIX}{settings.INFO_EXT}",
         )
 
         try:

@@ -376,14 +376,14 @@ def download_file_thread(
     if savefile_base:
         info_path = os.path.join(
             folder,
-            f"{util.replace_filename(savefile_base)}{settings.info_suffix}{settings.info_ext}",
+            f"{util.replace_filename(savefile_base)}{settings.INFO_SUFFIX}{settings.INFO_EXT}",
         )
         if civitai.write_version_info(info_path, vi):
             logger.info(f"[downloader] Wrote version info: {info_path}")
         preview_path = os.path.join(
             folder,
             f"{util.replace_filename(savefile_base)}"
-            f"{settings.preview_image_suffix}{settings.preview_image_ext}",
+            f"{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
         )
         if download_preview_image(preview_path, vi):
             logger.info(f"[downloader] Wrote preview image: {preview_path}")
