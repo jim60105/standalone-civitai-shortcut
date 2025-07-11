@@ -1,11 +1,9 @@
 """Unit tests for the settings modules."""
 
-import os
 import pytest
 from scripts.civitai_manager_libs.settings import (
     ConfigManager,
     SettingCategories,
-    SettingDefaults,
     SettingPersistence,
     SettingValidator,
 )
@@ -16,21 +14,6 @@ def config_manager(tmp_path):
     """Fixture for creating a ConfigManager with a temporary config file."""
     config_file = tmp_path / "test_settings.json"
     return ConfigManager(config_file=str(config_file))
-
-
-class TestSettingDefaults:
-    """Tests for the SettingDefaults class."""
-
-    def test_get_all_defaults(self):
-        """Test that get_all_defaults returns a non-empty dictionary."""
-        defaults = SettingDefaults.get_all_defaults()
-        assert isinstance(defaults, dict)
-        assert len(defaults) > 0
-
-    def test_get_default_value(self):
-        """Test that get_default_value returns the correct default value."""
-        default_value = SettingDefaults.get_default_value('shortcut_column')
-        assert default_value == 5
 
 
 class TestSettingCategories:
@@ -46,6 +29,17 @@ class TestSettingCategories:
         """Test that get_setting_type returns the correct type for a settings."""
         setting_type = SettingCategories.get_setting_type('shortcut_column')
         assert setting_type == 'integer'
+
+    def test_get_all_defaults(self):
+        """Test that get_all_defaults returns a non-empty dictionary."""
+        defaults = SettingCategories.get_all_defaults()
+        assert isinstance(defaults, dict)
+        assert len(defaults) > 0
+
+    def test_get_default_value(self):
+        """Test that get_default_value returns the correct default value."""
+        default_value = SettingCategories.get_default_value('shortcut_column')
+        assert default_value == 5
 
 
 class TestSettingValidator:
@@ -104,4 +98,4 @@ class TestConfigManager:
         config_manager.set_setting('shortcut_column', 12)
         config_manager.reset_setting('shortcut_column')
         value = config_manager.get_setting('shortcut_column')
-        assert value == SettingDefaults.get_default_value('shortcut_column')
+        assert value == SettingCategories.get_default_value('shortcut_column')

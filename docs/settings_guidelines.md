@@ -9,7 +9,7 @@ The settings system follows a modular design with clear separation of concerns:
 ```
 SettingCategories (SRP) → ConfigManager (Coordinator) → SettingPersistence (Storage)
        ↑                         ↓
-SettingValidator (Validation) ← SettingDefaults (Compatibility)
+SettingValidator (Validation)
 ```
 
 ## Core Components
@@ -22,6 +22,7 @@ SettingValidator (Validation) ← SettingDefaults (Compatibility)
 - **Default Values**: Centralized in `_CATEGORY_DEFAULTS`
 - **Config Mapping**: Maps logical categories to config file structure
 - **Validation Ranges**: Defines min/max values for numeric settings
+- **Backward Compatibility**: Provides all methods previously available through SettingDefaults
 
 ### ConfigManager (`config_manager.py`)
 **Single Responsibility**: Coordinates between all settings components.
@@ -46,12 +47,6 @@ SettingValidator (Validation) ← SettingDefaults (Compatibility)
 - Path validation for directory settings
 - Range validation for numeric settings
 - Type validation
-
-### SettingDefaults (`setting_defaults.py`)
-**Single Responsibility**: Provides backward compatibility.
-
-- Delegates to SettingCategories
-- Maintains API compatibility with existing code
 
 ## Usage Guidelines
 
@@ -115,6 +110,12 @@ ui_settings = SettingCategories.get_category_settings('ui')
 # Get defaults for a category
 ui_defaults = SettingCategories.get_category_defaults('ui')
 
+# Get all default values
+all_defaults = SettingCategories.get_all_defaults()
+
+# Get a specific default value
+default_value = SettingCategories.get_default_value('shortcut_column')
+
 # Find which category a setting belongs to
 category = SettingCategories.find_setting_category('shortcut_column')  # Returns 'ui'
 ```
@@ -136,7 +137,6 @@ category = SettingCategories.find_setting_category('shortcut_column')  # Returns
 - `ConfigManager`: Coordinates operations
 - `SettingPersistence`: Handles file I/O
 - `SettingValidator`: Validates values
-- `SettingDefaults`: Provides compatibility
 
 ## Configuration File Structure
 

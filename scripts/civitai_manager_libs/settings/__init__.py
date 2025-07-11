@@ -33,7 +33,6 @@ from .path_manager import (
     model_folders,
 )
 from .setting_categories import SettingCategories
-from .setting_defaults import SettingDefaults
 from .setting_persistence import SettingPersistence
 from .setting_validation import SettingValidator
 
@@ -78,7 +77,7 @@ def __getattr__(name):
         return value
 
     # Try to get from defaults
-    default_value = SettingDefaults.get_default_value(name)
+    default_value = SettingCategories.get_default_value(name)
     if default_value is not None:
         return default_value
 
@@ -102,7 +101,6 @@ __all__ = [
     "ConfigManager",
     "SettingCategories",
     "SettingValidator",
-    "SettingDefaults",
     "SettingPersistence",
     "config_manager",
     "get_setting",
