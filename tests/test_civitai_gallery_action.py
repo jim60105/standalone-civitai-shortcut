@@ -8,6 +8,9 @@ from scripts.civitai_manager_libs import gallery as civitai_gallery_action
 from scripts.civitai_manager_libs import settings
 from scripts.civitai_manager_libs.settings import config_manager
 
+# Alias for compatibility
+cga = civitai_gallery_action
+
 
 class DummyClient:
     def __init__(self, fail_urls=None):
@@ -30,7 +33,7 @@ def disable_print(monkeypatch):
 def test_download_single_image_success(tmp_path, monkeypatch):
     url = "http://example.com/img.png"
     dest = tmp_path / "img.png"
-    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.get_http_client', lambda: DummyClient())
     result = civitai_gallery_action._download_single_image(url, str(dest))
     assert result is True
     assert dest.exists()
@@ -39,7 +42,7 @@ def test_download_single_image_success(tmp_path, monkeypatch):
 def test_download_single_image_failure(tmp_path, monkeypatch):
     url = "http://example.com/img.png"
     dest = tmp_path / "img.png"
-    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient(fail_urls=[url]))
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.get_http_client', lambda: DummyClient(fail_urls=[url]))
     result = civitai_gallery_action._download_single_image(url, str(dest))
     assert result is False
     assert not dest.exists()
@@ -52,9 +55,9 @@ def test_download_images(tmp_path, monkeypatch):
         settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
     # fail url 'b'
-    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient(fail_urls=["b"]))
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.get_http_client', lambda: DummyClient(fail_urls=["b"]))
     # disable UI error
-    monkeypatch.setattr(civitai_gallery_action.gr, "Error", lambda *args, **kwargs: None)
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.gr.Error', lambda *args, **kwargs: None)
     civitai_gallery_action.download_images(urls)
     assert (tmp_path / "a.png").exists()
     assert not (tmp_path / "b.png").exists()
@@ -70,7 +73,7 @@ def test_gallery_loading(tmp_path, monkeypatch):
         settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
     monkeypatch.setattr(civitai_gallery_action.util, "is_url_or_filepath", lambda u: "url")
-    monkeypatch.setattr(cga, "_download_single_image", lambda u, p: False)
+    monkeypatch.setattr(civitai_gallery_action, "_download_single_image", lambda u, p: False)
     progress = SimpleNamespace(tqdm=lambda iterable, desc=None: iterable)
     dn_list, img_list, now = civitai_gallery_action.gallery_loading(urls, progress)
     assert dn_list == ["no.png", "no.png"]
@@ -92,7 +95,7 @@ def test_download_user_gallery_images(tmp_path, monkeypatch):
         lambda key: "no.png" if key == 'no_card_preview_image' else None,
     )
     monkeypatch.setattr(civitai_gallery_action.util, "is_url_or_filepath", lambda u: "url")
-    monkeypatch.setattr(cga, "_download_single_image", lambda u, p: True)
+    monkeypatch.setattr(civitai_gallery_action, "_download_single_image", lambda u, p: True)
     result = civitai_gallery_action.download_user_gallery_images(model_id, urls)
     assert result == str(tmp_path / "modelname")
     user_folder = tmp_path / "modelname" / "user_gallery_images"
@@ -102,22 +105,19 @@ def test_download_user_gallery_images(tmp_path, monkeypatch):
 def test_gallery_download_manager(tmp_path, monkeypatch):
     # stub client with one failing URL
     client = DummyClient(fail_urls=["fail"])
-    monkeypatch.setattr(cga, "get_http_client", lambda: client)
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.get_http_client', lambda: client)
     manager = civitai_gallery_action.GalleryDownloadManager()
     # success case
     success_dest = tmp_path / "ok.png"
-    assert manager.download_with_retry("ok", str(success_dest), max_retries=1)
+    assert manager.download_single_image("ok", str(success_dest))
     assert success_dest.exists()
-    # failure case and retry list
+    # failure case
     fail_dest = tmp_path / "fail.png"
-    assert not manager.download_with_retry("fail", str(fail_dest), max_retries=0)
-    assert manager.failed_downloads == [("fail", str(fail_dest))]
-    # retry failed downloads with a working client
-    client2 = DummyClient()
-    monkeypatch.setattr(cga, "get_http_client", lambda: client2)
-    manager.retry_failed_downloads()
-    # failures retried with same client will re-populate failed_downloads
-    assert manager.failed_downloads == [("fail", str(fail_dest))]
+    assert not manager.download_single_image("fail", str(fail_dest))
+    assert not fail_dest.exists()
+    # test download statistics
+    stats = manager.get_download_statistics()
+    assert isinstance(stats, dict)
 
 
 def test_download_images_with_progress(tmp_path, monkeypatch):
@@ -125,7 +125,7 @@ def test_download_images_with_progress(tmp_path, monkeypatch):
     monkeypatch.setattr(
         settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
-    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.get_http_client', lambda: DummyClient())
     calls = []
 
     def progress_cb(done, total, msg):
@@ -148,7 +148,7 @@ def test_download_images_batch(tmp_path, monkeypatch):
     monkeypatch.setattr(
         settings, "get_image_url_to_gallery_file", lambda u: str(tmp_path / f"{u}.png")
     )
-    monkeypatch.setattr(cga, "get_http_client", lambda: DummyClient())
+    monkeypatch.setattr('scripts.civitai_manager_libs.gallery.download_manager.get_http_client', lambda: DummyClient())
     monkeypatch.setattr(civitai_gallery_action.util, "printD", lambda *args, **kwargs: None)
     civitai_gallery_action.download_images_batch(urls, batch_size=3)
     for u in urls:

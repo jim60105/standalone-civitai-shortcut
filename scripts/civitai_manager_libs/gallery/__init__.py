@@ -11,6 +11,9 @@ from .data_processor import GalleryDataProcessor
 from .download_manager import GalleryDownloadManager
 from .gallery_utilities import GalleryUtilities, CompatibilityManager
 
+# Import util for backward compatibility
+from .. import util  # noqa: F401
+
 # Global instances for backward compatibility
 _ui_components = None
 _event_handlers = None

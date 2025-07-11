@@ -160,7 +160,7 @@ class TestCivitaiGalleryGenerateInfo:
         ]
 
         with (
-            patch('civitai_manager_libs.civitai_gallery_action.get_image_page') as mock_get_page,
+            patch('civitai_manager_libs.gallery.data_processor.GalleryDataProcessor.get_image_page_data') as mock_get_page,
             patch.object(config_manager, 'get_setting') as mock_get_setting,
         ):
             # Configure the mock to return appropriate values for different settings
