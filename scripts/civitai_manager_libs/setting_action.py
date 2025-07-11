@@ -456,7 +456,14 @@ def on_save_btn_click(
     other,
     download_images_folder,
 ):
-
+    logger.debug(
+        "[on_save_btn_click] Called with params: "
+        "civitai_api_key=%s, shortcut_update_when_start=%s, "
+        "scbrowser_screen_split_ratio=%s, ... (truncated)",
+        civitai_api_key,
+        shortcut_update_when_start,
+        scbrowser_screen_split_ratio,
+    )
     save_setting(
         civitai_api_key,
         shortcut_update_when_start,
@@ -517,11 +524,17 @@ def save_setting(
     other,
     download_images_folder,
 ):
-
+    logger.debug(
+        "[save_setting] Called with params: "
+        "civitai_api_key=%s, shortcut_update_when_start=%s, "
+        "scbrowser_screen_split_ratio=%s, ... (truncated)",
+        civitai_api_key,
+        shortcut_update_when_start,
+        scbrowser_screen_split_ratio,
+    )
     environment = settings.load()
     if not environment:
         environment = dict()
-    # preserve a copy to detect reload-dependent changes
     old_env = copy.deepcopy(environment)
 
     application_allow = dict()
@@ -588,9 +601,11 @@ def save_setting(
 
     environment['temporary'] = temporary
 
+    logger.debug("[save_setting] environment to be saved: %s", environment)
     settings.save_setting(environment)
     from .settings.path_manager import load_model_folder_data
     from .settings import config_manager
+
     load_model_folder_data(config_manager)
 
     # notify user based on whether layout reload is needed

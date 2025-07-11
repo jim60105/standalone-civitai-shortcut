@@ -338,7 +338,7 @@ def get_recipe_reference_list(page=0):
                     if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.NSFW_filtering_enable:
                         result.append(
                             (
-                                settings.nsfw_disable_image,
+                                settings.get_nsfw_disable_image(),
                                 settings.set_shortcutname(v['name'], v['id']),
                             )
                         )
@@ -535,7 +535,7 @@ def on_recipe_reference_select_gallery_loading(shortcuts):
                     if bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
                         result_list.append(
                             (
-                                settings.nsfw_disable_image,
+                                settings.get_nsfw_disable_image(),
                                 settings.set_shortcutname(v['name'], v['id']),
                             )
                         )

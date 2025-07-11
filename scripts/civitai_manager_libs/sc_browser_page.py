@@ -353,11 +353,10 @@ def get_thumbnail_list(
     shortcut_list = ishortcut.shortcutsearchfilter.get_filtered_shortcuts(
         shortcut_types, search, shortcut_basemodels, sc_classifications
     )
+    if not shortcut_list:
+        shortcut_list = []
     shortlist = None
     result = None
-
-    if not shortcut_list:
-        return None, total, max_page
 
     if downloaded_sc == DOWNLOADED_MODEL:
         if model.Downloaded_Models:
@@ -400,7 +399,13 @@ def get_thumbnail_list(
         # 등록일 기준으로 정렬
         # strptime str을 datetime 형식으로 변환(스트링과 형식일치해야함)
         # strftime datetime 형식을 str로 변환(스트링과 형식이 일치할필요는 없다.)
-        # shortcut_list = sorted(shortcut_list, key=lambda x: datetime.datetime.strptime(x["date"], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d'), reverse=True)
+        # shortcut_list = sorted(
+        #     shortcut_list,
+        #     key=lambda x: datetime.datetime.strptime(
+        #         x["date"], '%Y-%m-%d %H:%M:%S'
+        #     ).strftime('%Y-%m-%d'),
+        #     reverse=True,
+        # )
         # shortcut_list = sorted(shortcut_list, key=lambda x: x["date"], reverse=True)
         # shortcut_list = sorted(shortcut_list, key=lambda x: (x["date"], x['name']) , reverse=True)
 
@@ -421,7 +426,7 @@ def get_thumbnail_list(
             item_end = shortcut_count_per_page * page
             if total < item_end:
                 item_end = total
-            shortlist = shortcut_list[item_start:item_end]
+            shortlist = shortcut_list[item_start:item_end] if shortcut_list else []
 
     if shortlist:
         result = list()
@@ -429,10 +434,14 @@ def get_thumbnail_list(
         for v in shortlist:
             if v:
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
+                    if (
+                        'nsfw' in v.keys()
+                        and bool(v['nsfw'])
+                        and settings.get_setting('NSFW_filtering_enable')
+                    ):
                         result.append(
                             (
-                                settings.nsfw_disable_image,
+                                settings.get_nsfw_disable_image(),
                                 settings.set_shortcutname(v['name'], v['id']),
                             )
                         )

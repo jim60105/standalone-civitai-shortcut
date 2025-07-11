@@ -288,7 +288,7 @@ class ModelProcessor:
                 user_nsfw_level = settings.NSFW_levels.index(settings.NSFW_level_user)
 
                 if img_nsfw_level > user_nsfw_level:
-                    description_img = settings.nsfw_disable_image
+                    description_img = settings.get_nsfw_disable_image
 
             # Check if file exists locally
             if os.path.isfile(description_img):

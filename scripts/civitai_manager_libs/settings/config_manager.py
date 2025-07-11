@@ -40,6 +40,14 @@ class ConfigManager:
     )
     def save_settings(self, settings: dict = None) -> bool:
         """Saves the given settings to the persistence layer."""
+        logger.debug(
+            "[ConfigManager.save_settings] Called with settings: %s",
+            settings,
+        )
+        logger.debug(
+            "[ConfigManager.save_settings] persistence.config_file: %s",
+            self.persistence.config_file,
+        )
         if settings is None:
             settings = self.settings
         return self.persistence.save_to_file(settings)
@@ -49,8 +57,11 @@ class ConfigManager:
         value = self.settings.get(key, default if default is not None else self.defaults.get(key))
         if key == 'config_path' and value is None:
             try:
-                from scripts.civitai_manager_libs.compat.standalone_adapters.standalone_path_manager import StandalonePathManager
-                value = StandalonePathManager().get_config_path()
+                from scripts.civitai_manager_libs.compat.standalone_adapters import (
+                    standalone_path_manager,
+                )
+
+                value = standalone_path_manager.StandalonePathManager().get_config_path()
             except Exception:
                 value = None
         return value

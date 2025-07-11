@@ -281,7 +281,7 @@ class RecipeReferenceManager:
                         if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.NSFW_filtering_enable:
                             result_list.append(
                                 (
-                                    settings.nsfw_disable_image,
+                                    settings.get_nsfw_disable_image,
                                     settings.set_shortcutname(v['name'], v['id']),
                                 )
                             )

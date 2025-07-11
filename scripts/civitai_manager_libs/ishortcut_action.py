@@ -29,6 +29,7 @@ import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import classification
 from . import downloader
 from .compat.compat_layer import CompatibilityLayer
+from . import settings
 
 # Compatibility layer variables
 _compat_layer = None
@@ -118,8 +119,8 @@ def on_ui(refresh_sc_browser, recipe_input):
                     cs_foldername = gr.Dropdown(
                         label='Can select a classification defined by the user or create a new one as the folder to download the model.',
                         multiselect=False,
-                                            choices=[config_manager.get_setting('CREATE_MODEL_FOLDER')] + classification.get_list(),
-                    value=config_manager.get_setting('CREATE_MODEL_FOLDER'),
+                                            choices=[settings.config_manager.get_setting('CREATE_MODEL_FOLDER')] + classification.get_list(),
+                    value=settings.config_manager.get_setting('CREATE_MODEL_FOLDER'),
                         interactive=True,
                     )
                     with gr.Row():

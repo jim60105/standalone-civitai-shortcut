@@ -34,6 +34,11 @@ class SettingPersistence:
 
     def save_to_file(self, settings: dict) -> bool:
         """Saves the given settings to the configuration file."""
+        logger.debug(
+            "[SettingPersistence.save_to_file] Called with config_file: %s, settings: %s",
+            self.config_file,
+            settings,
+        )
         try:
             if os.path.isfile(self.config_file):
                 shutil.copy2(self.config_file, self.backup_file)
@@ -45,7 +50,11 @@ class SettingPersistence:
             logger.info(f"Settings successfully saved to {self.config_file}")
             return True
         except IOError as e:
-            logger.error(f"Failed to save settings to {self.config_file}: {e}")
+            logger.error(
+                "[SettingPersistence.save_to_file] Failed to save settings to %s: %s",
+                self.config_file,
+                e,
+            )
             raise FileOperationError(f"Could not save settings to {self.config_file}") from e
 
     def backup_settings(self) -> bool:
