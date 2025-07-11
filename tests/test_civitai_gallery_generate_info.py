@@ -6,8 +6,9 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
-from civitai_manager_libs import civitai_gallery_action
+from civitai_manager_libs import gallery as civitai_gallery_action
 from civitai_manager_libs.settings import config_manager
+import civitai_manager_libs.gallery.data_processor as data_processor_module
 
 
 class TestCivitaiGalleryGenerateInfo:
@@ -36,7 +37,7 @@ class TestCivitaiGalleryGenerateInfo:
     def test_on_gallery_select_with_metadata(self):
         """Test gallery select with valid Civitai metadata."""
         # Set global metadata
-        civitai_gallery_action._current_page_metadata = self.mock_metadata
+        data_processor_module._current_page_metadata = self.mock_metadata
 
         # Create mock event
         mock_evt = Mock()
@@ -77,7 +78,7 @@ class TestCivitaiGalleryGenerateInfo:
     def test_on_gallery_select_no_metadata(self):
         """Test gallery select with no metadata available."""
         # Clear global metadata
-        civitai_gallery_action._current_page_metadata = {}
+        data_processor_module._current_page_metadata = {}
 
         # Create mock event
         mock_evt = Mock()
@@ -111,7 +112,7 @@ class TestCivitaiGalleryGenerateInfo:
     def test_on_gallery_select_invalid_filename(self):
         """Test gallery select with invalid filename format."""
         # Clear global metadata
-        civitai_gallery_action._current_page_metadata = {}
+        data_processor_module._current_page_metadata = {}
 
         # Create mock event
         mock_evt = Mock()
@@ -181,9 +182,9 @@ class TestCivitaiGalleryGenerateInfo:
             # Verify metadata was stored
             assert (
                 'c065d13f-38b3-4cad-90e3-dbd0b8a4a23d'
-                in civitai_gallery_action._current_page_metadata
+                in data_processor_module._current_page_metadata
             )
-            stored_meta = civitai_gallery_action._current_page_metadata[
+            stored_meta = data_processor_module._current_page_metadata[
                 'c065d13f-38b3-4cad-90e3-dbd0b8a4a23d'
             ]
             assert stored_meta['meta']['prompt'] == 'test prompt'

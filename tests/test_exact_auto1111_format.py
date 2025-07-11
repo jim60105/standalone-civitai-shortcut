@@ -6,7 +6,7 @@ import tempfile
 from unittest.mock import Mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
-from civitai_manager_libs import civitai_gallery_action
+from civitai_manager_libs import gallery as civitai_gallery_action
 
 
 class TestExactAuto1111Format:
@@ -69,7 +69,8 @@ class TestExactAuto1111Format:
         }
 
         # Set global metadata
-        civitai_gallery_action._current_page_metadata = mock_metadata
+        import scripts.civitai_manager_libs.gallery.data_processor as data_processor_module
+        data_processor_module._current_page_metadata = mock_metadata
 
         # Create mock event
         mock_evt = Mock()

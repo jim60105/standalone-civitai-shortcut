@@ -71,7 +71,7 @@ class TestImageDownloadIntegration:
         mock_get_http_client.return_value = mock_client
 
         # Act - use isolated gallery folder to ensure downloads occur
-        from civitai_manager_libs import civitai_gallery_action, settings
+        from civitai_manager_libs import gallery as civitai_gallery_action, settings
         import os
 
         settings.shortcut_gallery_folder = self.helper.temp_dir

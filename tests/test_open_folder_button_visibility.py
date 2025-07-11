@@ -1,4 +1,4 @@
-from scripts.civitai_manager_libs.civitai_gallery_action import on_download_images_click
+from scripts.civitai_manager_libs.gallery import on_download_images_click
 from scripts.civitai_manager_libs import settings
 
 config_manager = settings.config_manager
@@ -12,7 +12,7 @@ class TestGalleryOpenFolderVisibility:
         )
         # Simulate successful download by returning a non-empty path
         monkeypatch.setattr(
-            'scripts.civitai_manager_libs.civitai_gallery_action.download_user_gallery_images',
+            'scripts.civitai_manager_libs.gallery.download_user_gallery_images',
             lambda modelid, images_url: '/tmp',
         )
         update = on_download_images_click('dummy_url', 'dummy_images_url')
@@ -26,7 +26,7 @@ class TestGalleryOpenFolderVisibility:
             'scripts.civitai_manager_libs.util.is_linux_container', lambda: {'is_container': False}
         )
         monkeypatch.setattr(
-            'scripts.civitai_manager_libs.civitai_gallery_action.download_user_gallery_images',
+            'scripts.civitai_manager_libs.gallery.download_user_gallery_images',
             lambda modelid, images_url: '/tmp',
         )
         update = on_download_images_click('dummy_url', 'dummy_images_url')
