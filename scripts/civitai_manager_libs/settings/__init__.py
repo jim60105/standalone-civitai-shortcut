@@ -72,9 +72,10 @@ def load():
 
 def __getattr__(name):
     """Provide dynamic access to configuration settings for backward compatibility."""
-    # First try to get from config_manager settings
-    if hasattr(config_manager, 'settings') and name in config_manager.settings:
-        return config_manager.settings[name]
+    # First try to get using config_manager.get_setting which handles nested lookups
+    value = config_manager.get_setting(name)
+    if value is not None:
+        return value
 
     # Try to get from defaults
     default_value = SettingDefaults.get_default_value(name)
@@ -84,11 +85,6 @@ def __getattr__(name):
     # Special handling for some commonly accessed attributes
     if name == 'Extensions_Version':
         return config_manager.get_setting('Extensions_Version', '1.0.0')
-
-    # If nothing found, try to get from config_manager
-    value = config_manager.get_setting(name)
-    if value is not None:
-        return value
 
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

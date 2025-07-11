@@ -6,7 +6,6 @@ from ..error_handler import with_error_handling
 from ..exceptions import FileOperationError
 from ..logging_config import get_logger
 from .setting_categories import SettingCategories
-from .setting_defaults import SettingDefaults
 from .setting_persistence import SettingPersistence
 from .setting_validation import SettingValidator
 
@@ -25,7 +24,7 @@ class ConfigManager:
             config_file = shortcut_setting
         self.persistence = SettingPersistence(config_file)
         self.validator = SettingValidator()
-        self.defaults = SettingDefaults.get_all_defaults()
+        self.defaults = SettingCategories.get_all_defaults()
         self.categories = SettingCategories.get_all_categories()
         self.settings = {}
 
@@ -61,7 +60,18 @@ class ConfigManager:
 
     def get_setting(self, key: str, default=None):
         """Gets a single settings value by key."""
-        value = self.settings.get(key, default if default is not None else self.defaults.get(key))
+        # Always check nested categories first (this is the correct structure)
+        value = self._search_nested_setting(key)
+
+        # If not found in nested categories, check flat values as fallback
+        # (for backwards compatibility or non-categorized settings)
+        if value is None:
+            value = self.settings.get(key)
+
+        # If still not found, use provided default or system default
+        if value is None:
+            value = default if default is not None else self.defaults.get(key)
+
         if key == 'config_path' and value is None:
             try:
                 from scripts.civitai_manager_libs.compat.standalone_adapters import (
@@ -72,6 +82,46 @@ class ConfigManager:
             except Exception:
                 value = None
         return value
+
+    def _search_nested_setting(self, key: str):
+        """Search for a setting key in nested category structures."""
+        # Use SettingCategories for mapping logic
+        category_mapping = SettingCategories.get_config_category_mapping()
+        special_mappings = SettingCategories.get_special_key_mappings()
+
+        # Check special mappings first
+        if key in special_mappings:
+            category, nested_key = special_mappings[key]
+            category_data = self.settings.get(category)
+            if isinstance(category_data, dict) and nested_key in category_data:
+                return category_data[nested_key]
+
+        # Use SettingCategories to find which logical category this key belongs to
+        logical_category = SettingCategories.find_setting_category(key)
+        if logical_category:
+            # Map logical category to actual config file category
+            config_category = category_mapping.get(logical_category)
+            if config_category:
+                category_data = self.settings.get(config_category)
+                if isinstance(category_data, dict) and key in category_data:
+                    return category_data[key]
+
+        # Fallback: search all known categories directly
+        categories_to_search = [
+            'application_allow',
+            'screen_style',
+            'image_style',
+            'NSFW_filter',
+            'download_folders',
+            'model_folders',
+        ]
+
+        for category in categories_to_search:
+            category_data = self.settings.get(category)
+            if isinstance(category_data, dict) and key in category_data:
+                return category_data[key]
+
+        return None
 
     def set_setting(self, key: str, value) -> bool:
         """Sets a single settings value after validation."""

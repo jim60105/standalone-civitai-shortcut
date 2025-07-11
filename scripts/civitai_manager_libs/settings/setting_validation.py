@@ -59,13 +59,18 @@ class SettingValidator:
 
     def _setup_validation_rules(self) -> None:
         """Sets up the validation rules for different settings."""
+        # Import here to avoid circular import
+        from .setting_categories import SettingCategories
+
         self.validation_rules = {
-            'shortcut_column': lambda v: self.validate_range_setting(v, 1, 12),
-            'shortcut_rows_per_page': lambda v: self.validate_range_setting(v, 1, 10),
-            'gallery_column': lambda v: self.validate_range_setting(v, 1, 12),
             'download_images_folder': self.validate_path_setting,
             'civitai_api_key': lambda v: (isinstance(v, str), "API key must be a string"),
-            'http_timeout': lambda v: self.validate_range_setting(v, 10, 300),
-            'http_max_retries': lambda v: self.validate_range_setting(v, 0, 10),
-            'preview_image_quality': lambda v: self.validate_range_setting(v, 1, 100),
         }
+
+        # Add range validation for numeric settings based on SettingCategories
+        for setting_key in SettingCategories.get_all_defaults().keys():
+            min_val, max_val = SettingCategories.get_validation_range(setting_key)
+            if min_val is not None and max_val is not None:
+                self.validation_rules[setting_key] = lambda v, min_v=min_val, max_v=max_val: (
+                    self.validate_range_setting(v, min_v, max_v)
+                )

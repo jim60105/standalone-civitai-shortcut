@@ -25,7 +25,10 @@ def set_compatibility_layer(compat_layer):
 
 def init():
     """Initialize application with notification service setup."""
-    from . import config_manager
+    # Import the global config_manager instance from the settings module
+    from .. import settings
+
+    config_manager_instance = settings.config_manager
 
     set_notification_service(GradioNotificationService())
     from .path_manager import get_extension_base
@@ -36,9 +39,9 @@ def init():
     except Exception as e:
         logger.warning(f"Failed to create SC_DATA_ROOT for migration: {e}")
     migrate_existing_files()
-    init_paths(config_manager)
-    config_manager.load_settings()
-    load_model_folder_data(config_manager)
+    init_paths(config_manager_instance)
+    config_manager_instance.load_settings()
+    load_model_folder_data(config_manager_instance)
 
 
 def set_NSFW(enable, level="None"):
