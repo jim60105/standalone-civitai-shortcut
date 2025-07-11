@@ -15,7 +15,7 @@ from .exceptions import (
 )
 
 from . import civitai
-from . import civitai_gallery_action
+from . import gallery as civitai_gallery_action
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import ishortcut_action
 from . import model
