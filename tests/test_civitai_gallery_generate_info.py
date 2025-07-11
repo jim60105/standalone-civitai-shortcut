@@ -165,8 +165,8 @@ class TestCivitaiGalleryGenerateInfo:
             # Configure the mock to return appropriate values for different settings
             def mock_setting_values(key, default=None):
                 setting_values = {
-                    'NSFW_filtering_enable': True,
-                    'NSFW_level_user': 'None',
+                    'nsfw_filter_enable': True,
+                    'nsfw_level': 'None',
                 }
                 return setting_values.get(key, default)
 

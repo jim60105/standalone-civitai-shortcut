@@ -87,14 +87,6 @@ class ConfigManager:
         """Search for a setting key in nested category structures."""
         # Use SettingCategories for mapping logic
         category_mapping = SettingCategories.get_config_category_mapping()
-        special_mappings = SettingCategories.get_special_key_mappings()
-
-        # Check special mappings first
-        if key in special_mappings:
-            category, nested_key = special_mappings[key]
-            category_data = self.settings.get(category)
-            if isinstance(category_data, dict) and nested_key in category_data:
-                return category_data[nested_key]
 
         # Use SettingCategories to find which logical category this key belongs to
         logical_category = SettingCategories.find_setting_category(key)
@@ -130,7 +122,27 @@ class ConfigManager:
             logger.warning(f"Invalid settings for {key}: {message}")
             return False
 
-        self.settings[key] = value
+        # Find which category this key belongs to
+        category_mapping = SettingCategories.get_config_category_mapping()
+        logical_category = SettingCategories.find_setting_category(key)
+
+        if logical_category:
+            # Map logical category to actual config file category
+            config_category = category_mapping.get(logical_category)
+            if config_category:
+                # Ensure the category exists in settings
+                if config_category not in self.settings:
+                    self.settings[config_category] = {}
+
+                # Set the value in the proper nested structure
+                self.settings[config_category][key] = value
+            else:
+                # Fallback to flat structure
+                self.settings[key] = value
+        else:
+            # Fallback to flat structure
+            self.settings[key] = value
+
         return self.save_settings()
 
     def update_settings(self, settings_dict: dict) -> dict:

@@ -162,7 +162,7 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
                             interactive=True,
                         )
                         nsfw_level = gr.Dropdown(
-                            value=settings.NSFW_level_user,
+                            value=settings.nsfw_level,
                             choices=settings.NSFW_LEVELS,
                             label="NSFW Filtering Level",
                             visible=True,
@@ -304,13 +304,13 @@ def on_ui(recipe_input, shortcut_input, civitai_tabs):
 def on_refresh_NSFW_change():
     logger.debug(
         f"[civitai_shortcut_action] on_refresh_NSFW_change called. "
-        f"NSFW_filtering_enable: {settings.NSFW_filtering_enable}, "
-        f"NSFW_level_user: {settings.NSFW_level_user}"
+        f"nsfw_filter_enable: {settings.nsfw_filter_enable}, "
+        f"nsfw_level: {settings.nsfw_level}"
     )
-    if settings.NSFW_filtering_enable:
-        return gr.update(value="On"), gr.update(visible=True, value=settings.NSFW_level_user)
+    if settings.nsfw_filter_enable:
+        return gr.update(value="On"), gr.update(visible=True, value=settings.nsfw_level)
     else:
-        return gr.update(value="Off"), gr.update(visible=False, value=settings.NSFW_level_user)
+        return gr.update(value="Off"), gr.update(visible=False, value=settings.nsfw_level)
 
 
 @with_error_handling(

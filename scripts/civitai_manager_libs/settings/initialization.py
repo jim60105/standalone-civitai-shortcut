@@ -48,8 +48,8 @@ def set_NSFW(enable, level="None"):
     """Sets NSFW filtering options."""
     from . import config_manager
 
-    config_manager.set_setting('NSFW_filtering_enable', enable)
-    config_manager.set_setting('NSFW_level_user', level)
+    config_manager.set_setting('nsfw_filter_enable', enable)
+    config_manager.set_setting('nsfw_level', level)
 
 
 def save_NSFW():

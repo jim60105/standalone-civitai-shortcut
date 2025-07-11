@@ -1022,12 +1022,12 @@ def get_user_gallery(modelid, page_url, show_nsfw):
                 gallery_img_file = settings.get_image_url_to_gallery_file(img_url)
 
                 # NSFW filtering ....
-                if settings.NSFW_filtering_enable:
+                if settings.nsfw_filter_enable:
 
                     # if not settings.NSFW_level[image_info["nsfwLevel"]]:
                     if settings.NSFW_LEVELS.index(
                         image_info["nsfwLevel"]
-                    ) > settings.NSFW_LEVELS.index(settings.NSFW_level_user):
+                    ) > settings.NSFW_LEVELS.index(settings.nsfw_level):
                         gallery_img_file = settings.get_nsfw_disable_image()
 
                 if os.path.isfile(gallery_img_file):

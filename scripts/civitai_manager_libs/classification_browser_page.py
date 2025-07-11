@@ -487,7 +487,7 @@ def get_thumbnail_list(
         for v in shortlist:
             if v:
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.NSFW_filtering_enable:
+                    if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.nsfw_filter_enable:
                         result.append(
                             (
                                 settings.get_nsfw_disable_image(),

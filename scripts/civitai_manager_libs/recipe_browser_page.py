@@ -335,7 +335,7 @@ def get_recipe_reference_list(page=0):
             v = get_shortcut_by_modelid(ISC, str(shortcut))
             if v:
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.NSFW_filtering_enable:
+                    if 'nsfw' in v.keys() and bool(v['nsfw']) and settings.nsfw_filter_enable:
                         result.append(
                             (
                                 settings.get_nsfw_disable_image(),
@@ -532,7 +532,7 @@ def on_recipe_reference_select_gallery_loading(shortcuts):
             if str(mid) in ISC.keys():
                 v = ISC[str(mid)]
                 if ishortcut.imageprocessor.is_sc_image(v['id']):
-                    if bool(v['nsfw']) and config_manager.get_setting('NSFW_filtering_enable'):
+                    if bool(v['nsfw']) and settings.get_setting('nsfw_filter_enable'):
                         result_list.append(
                             (
                                 settings.get_nsfw_disable_image(),

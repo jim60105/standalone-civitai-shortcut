@@ -283,9 +283,9 @@ class ModelProcessor:
             description_img = settings.get_image_url_to_shortcut_file(modelid, versionid, img_url)
 
             # Apply NSFW filtering
-            if settings.NSFW_filtering_enable:
+            if settings.nsfw_filter_enable:
                 img_nsfw_level = self._get_image_nsfw_level(img_dict)
-                user_nsfw_level = settings.NSFW_LEVELS.index(settings.NSFW_level_user)
+                user_nsfw_level = settings.NSFW_LEVELS.index(settings.nsfw_level)
 
                 if img_nsfw_level > user_nsfw_level:
                     description_img = settings.get_nsfw_disable_image

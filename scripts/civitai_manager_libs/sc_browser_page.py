@@ -437,7 +437,7 @@ def get_thumbnail_list(
                     if (
                         'nsfw' in v.keys()
                         and bool(v['nsfw'])
-                        and settings.get_setting('NSFW_filtering_enable')
+                        and settings.get_setting('nsfw_filter_enable')
                     ):
                         result.append(
                             (

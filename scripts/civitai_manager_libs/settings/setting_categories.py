@@ -7,7 +7,7 @@ from .constants import SD_DATA_ROOT
 class SettingCategories:
     """Defines and manages settings categories."""
 
-    # UI related settings
+    # UI related settings (stored in image_style)
     UI_SETTINGS = {
         'shortcut_column': 'integer',
         'shortcut_rows_per_page': 'integer',
@@ -22,6 +22,10 @@ class SettingCategories:
         'classification_shortcut_rows_per_page': 'integer',
         'classification_gallery_column': 'integer',
         'classification_gallery_rows_per_page': 'integer',
+    }
+
+    # Screen style settings (stored in screen_style)
+    SCREEN_STYLE_SETTINGS = {
         'information_gallery_height': 'string',
         'shortcut_browser_screen_split_ratio': 'integer',
         'shortcut_browser_screen_split_ratio_max': 'integer',
@@ -77,8 +81,12 @@ class SettingCategories:
     APPLICATION_SETTINGS = {
         'shortcut_update_when_start': 'boolean',
         'usergallery_preloading': 'boolean',
-        'NSFW_filtering_enable': 'boolean',
-        'NSFW_level_user': 'string',
+    }
+
+    # NSFW filter settings
+    NSFW_FILTER_SETTINGS = {
+        'nsfw_filter_enable': 'boolean',
+        'nsfw_level': 'string',
     }
 
     # Default values for each category
@@ -97,6 +105,8 @@ class SettingCategories:
             'classification_shortcut_rows_per_page': 4,
             'classification_gallery_column': 8,
             'classification_gallery_rows_per_page': 4,
+        },
+        'screen_style': {
             'information_gallery_height': "auto",
             'shortcut_browser_screen_split_ratio': 3,
             'shortcut_browser_screen_split_ratio_max': 10,
@@ -144,31 +154,22 @@ class SettingCategories:
         'application': {
             'shortcut_update_when_start': True,
             'usergallery_preloading': False,
-            'NSFW_filtering_enable': True,
-            'NSFW_level_user': "None",
+        },
+        'nsfw_filter': {
+            'nsfw_filter_enable': False,
+            'nsfw_level': "None",
         },
     }
 
     # Mapping of logical categories to actual config file categories
     _CONFIG_CATEGORY_MAPPING = {
         'ui': 'image_style',  # UI settings are stored in image_style
+        'screen_style': 'screen_style',  # Screen style settings are stored in screen_style
         'download': 'application_allow',  # Download settings in application_allow
         'api': 'application_allow',  # API settings in application_allow
         'scanning': 'application_allow',  # Scanning settings in application_allow
         'application': 'application_allow',  # Application settings in application_allow
-    }
-
-    # Special key mappings for different nested key names
-    _SPECIAL_KEY_MAPPINGS = {
-        'NSFW_level_user': ('NSFW_filter', 'nsfw_level'),
-        'NSFW_filtering_enable': ('NSFW_filter', 'nsfw_filter_enable'),
-        'gallery_thumbnail_image_style': ('screen_style', 'gallery_thumbnail_image_style'),
-        'shortcut_browser_screen_split_ratio': (
-            'screen_style',
-            'shortcut_browser_screen_split_ratio',
-        ),
-        'information_gallery_height': ('screen_style', 'information_gallery_height'),
-        'shortcut_browser_search_up': ('screen_style', 'shortcut_browser_search_up'),
+        'nsfw_filter': 'NSFW_filter',  # NSFW filter settings in NSFW_filter
     }
 
     @classmethod
@@ -176,10 +177,12 @@ class SettingCategories:
         """Returns all settings categories."""
         return {
             'ui': cls.UI_SETTINGS,
+            'screen_style': cls.SCREEN_STYLE_SETTINGS,
             'download': cls.DOWNLOAD_SETTINGS,
             'api': cls.API_SETTINGS,
             'scanning': cls.SCANNING_SETTINGS,
             'application': cls.APPLICATION_SETTINGS,
+            'nsfw_filter': cls.NSFW_FILTER_SETTINGS,
         }
 
     @classmethod
@@ -217,11 +220,6 @@ class SettingCategories:
     def get_config_category_mapping(cls) -> dict:
         """Returns the mapping of logical categories to config file categories."""
         return cls._CONFIG_CATEGORY_MAPPING.copy()
-
-    @classmethod
-    def get_special_key_mappings(cls) -> dict:
-        """Returns special key mappings for nested settings."""
-        return cls._SPECIAL_KEY_MAPPINGS.copy()
 
     @classmethod
     def find_setting_category(cls, key: str) -> str | None:
