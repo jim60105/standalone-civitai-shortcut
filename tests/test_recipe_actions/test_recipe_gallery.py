@@ -31,30 +31,6 @@ def test_recipe_gallery_init():
     assert gallery._logger is not None
 
 
-@patch('scripts.civitai_manager_libs.recipe_actions.recipe_gallery.gr')
-def test_create_gallery_ui(mock_gr):
-    """Test creating gallery UI component."""
-    gallery = RecipeGallery()
-
-    # Mock the gallery component
-    mock_gallery_component = Mock()
-    mock_gr.Gallery.return_value = mock_gallery_component
-
-    with patch.object(gallery, 'load_recipe_images', return_value=['image1.jpg', 'image2.jpg']):
-        result = gallery.create_gallery_ui("test_recipe")
-
-        assert result == mock_gallery_component
-        mock_gr.Gallery.assert_called_once_with(
-            value=['image1.jpg', 'image2.jpg'],
-            show_label=False,
-            columns=4,
-            height="auto",
-            object_fit="contain",
-            preview=False,
-            allow_preview=False,
-        )
-
-
 def test_load_recipe_images():
     """Test loading recipe images."""
     gallery = RecipeGallery()

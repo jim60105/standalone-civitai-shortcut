@@ -5,7 +5,6 @@ Enhanced with flexible configuration and cross-platform support.
 """
 
 import os
-import json
 from typing import Dict, Optional
 from .. import paths
 from ..interfaces.ipath_manager import IPathManager
@@ -41,7 +40,8 @@ class StandalonePathManager(IPathManager):
         # Initialize SC and SD data root directories
         self._sc_data_root = os.path.join(self._base_path, "data_sc")
         self._sd_data_root = os.path.join(self._base_path, "data")
-        self._model_folders = self._load_model_folders_config()
+        # Simple in-memory tracking of custom model folders (no JSON persistence)
+        self._custom_model_folders = {}
 
         # Ensure essential directories exist
         self._ensure_essential_directories()
@@ -92,34 +92,32 @@ class StandalonePathManager(IPathManager):
         return result
 
     def get_model_folder_path(self, model_type: str) -> str:
+        """Get specific model folder path.
+
+        Uses the same logic as WebUI - models_path + model_type.
+        Includes basic model type mapping for compatibility.
         """
-        Get specific model folder path with enhanced type handling.
+        logger.debug(f"Getting model folder path for type: {model_type}")
 
-        Args:
-            model_type: Type of model (case-insensitive)
+        # Basic model type mapping for backward compatibility
+        model_type_mapping = {
+            "Checkpoint": "Stable-diffusion",
+            "LORA": "Lora",
+            "LoCon": "LyCORIS",
+            "TextualInversion": "embeddings",
+            "Hypernetwork": "hypernetworks",
+        }
 
-        Returns:
-            Absolute path to the model folder.
-        """
-        # Normalize model type for lookup
-        normalized_type = self._normalize_model_type(model_type)
+        # Use mapping if available, otherwise use the original model_type
+        actual_model_type = model_type_mapping.get(model_type, model_type)
 
-        if normalized_type in self._model_folders:
-            folder_path = self._model_folders[normalized_type]
-
-            # Handle absolute vs relative paths
-            if os.path.isabs(folder_path):
-                full_path = folder_path
-            else:
-                full_path = os.path.join(self._base_path, folder_path)
-        else:
-            # Default fallback - create a folder under models
-            full_path = os.path.join(self.get_models_path(), model_type)
+        models_path = self.get_models_path()
+        model_folder_path = os.path.join(models_path, actual_model_type)
 
         # Ensure the directory exists
-        self.ensure_directory_exists(full_path)
-        logger.debug(f"get_model_folder_path({model_type}): {full_path}")
-        return full_path
+        self.ensure_directory_exists(model_folder_path)
+        logger.debug(f"Model folder path resolved: {model_folder_path}")
+        return model_folder_path
 
     def get_model_path(self, model_type: str) -> str:
         """
@@ -263,16 +261,30 @@ class StandalonePathManager(IPathManager):
 
     def get_all_model_paths(self) -> Dict[str, str]:
         """
-        Get all configured model paths.
+        Get all model paths for compatibility with WebUI.
 
         Returns:
             Dictionary mapping model types to their paths.
         """
-        result = {}
-        for model_type in self._model_folders:
-            result[model_type] = self.get_model_folder_path(model_type)
+        # Base model types compatible with WebUI
+        base_model_paths = {
+            "Checkpoint": self.get_model_folder_path("Stable-diffusion"),
+            "Lora": self.get_model_folder_path("Lora"),
+            "LORA": self.get_model_folder_path("Lora"),
+            "LoCon": self.get_model_folder_path("LyCORIS"),
+            "TextualInversion": self.get_model_folder_path("embeddings"),
+            "Hypernetwork": self.get_model_folder_path("hypernetworks"),
+            "Other": self.get_model_folder_path("Other"),
+        }
 
-        return result
+        # Add any custom model folders that were added via add_model_folder
+        for model_type, folder_path in self._custom_model_folders.items():
+            if os.path.isabs(folder_path):
+                base_model_paths[model_type] = folder_path
+            else:
+                base_model_paths[model_type] = os.path.join(self._base_path, folder_path)
+
+        return base_model_paths
 
     def add_model_folder(self, model_type: str, folder_path: str, save_config: bool = True) -> bool:
         """
@@ -281,21 +293,22 @@ class StandalonePathManager(IPathManager):
         Args:
             model_type: Type of model
             folder_path: Path to the folder (can be relative or absolute)
-            save_config: Whether to save the configuration to file
+            save_config: Whether to save the configuration to file (ignored in simplified version)
 
         Returns:
             True if successfully added.
         """
         try:
-            self._model_folders[model_type] = folder_path
+            # Store the custom model folder for tracking
+            self._custom_model_folders[model_type] = folder_path
 
             # Ensure the directory exists
-            full_path = self.get_model_folder_path(model_type)
+            if os.path.isabs(folder_path):
+                full_path = folder_path
+            else:
+                full_path = os.path.join(self._base_path, folder_path)
+
             success = self.ensure_directory_exists(full_path)
-
-            if success and save_config:
-                self._save_model_folders_config()
-
             return success
         except Exception as e:
             self._log_debug(f"Error adding model folder {model_type}: {e}")
@@ -366,108 +379,6 @@ class StandalonePathManager(IPathManager):
 
         # Final fallback to current working directory
         return os.getcwd()
-
-    def _load_model_folders_config(self) -> Dict[str, str]:
-        """Load model folder configuration from file or use defaults."""
-        config_file = os.path.join(self._base_path, "model_folders.json")
-
-        if os.path.exists(config_file):
-            try:
-                with open(config_file, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-                    self._log_debug(f"Loaded model folders config from {config_file}")
-                    return config
-            except Exception as e:
-                self._log_debug(f"Error loading model folders config: {e}")
-
-        return self._get_default_model_folders()
-
-    def _save_model_folders_config(self) -> bool:
-        """Save model folder configuration to file."""
-        config_file = os.path.join(self._base_path, "model_folders.json")
-
-        try:
-            os.makedirs(os.path.dirname(config_file), exist_ok=True)
-            with open(config_file, "w", encoding="utf-8") as f:
-                json.dump(self._model_folders, f, indent=2, ensure_ascii=False)
-
-            self._log_debug(f"Saved model folders config to {config_file}")
-            return True
-        except Exception as e:
-            self._log_debug(f"Error saving model folders config: {e}")
-            return False
-
-    def _get_default_model_folders(self) -> Dict[str, str]:
-        """Get default model folder configuration with comprehensive types."""
-        # Use data_path for models to align with WebUI paths
-        models_base = "data/models"
-
-        return {
-            # Direct WebUI directory mappings (primary)
-            "Stable-diffusion": os.path.join(models_base, "Stable-diffusion"),
-            "Lora": os.path.join(models_base, "Lora"),
-            "VAE": os.path.join(models_base, "VAE"),
-            "embeddings": os.path.join(models_base, "embeddings"),
-            "hypernetworks": os.path.join(models_base, "hypernetworks"),
-            "ControlNet": os.path.join(models_base, "ControlNet"),
-            # Standard model types (aliases)
-            "Checkpoint": os.path.join(models_base, "Stable-diffusion"),
-            "LORA": os.path.join(models_base, "Lora"),
-            "LoCon": os.path.join(models_base, "LyCORIS"),
-            "TextualInversion": os.path.join(models_base, "embeddings"),
-            "Hypernetwork": os.path.join(models_base, "hypernetworks"),
-            # Advanced model types
-            "AestheticGradient": os.path.join(models_base, "aesthetic_embeddings"),
-            "Poses": os.path.join(models_base, "Poses"),
-            "Wildcards": os.path.join(models_base, "wildcards"),
-            "Other": os.path.join(models_base, "Other"),
-            "Unknown": os.path.join(models_base, "Unknown"),
-            # Additional Networks
-            "ANLORA": os.path.join(models_base, "additional_networks", "lora"),
-            "LoCon_Additional": os.path.join(models_base, "additional_networks", "locon"),
-            # Upscaling models
-            "ESRGAN": os.path.join(models_base, "ESRGAN"),
-            "RealESRGAN": os.path.join(models_base, "RealESRGAN"),
-            "SwinIR": os.path.join(models_base, "SwinIR"),
-            # CLIP models
-            "CLIP": os.path.join(models_base, "CLIP"),
-            "CLIP_vision": os.path.join(models_base, "CLIP_vision"),
-            # Other specialized types
-            "Deepbooru": os.path.join(models_base, "deepbooru"),
-            "BLIP": os.path.join(models_base, "BLIP"),
-        }
-
-    def _normalize_model_type(self, model_type: str) -> str:
-        """
-        Normalize model type string for consistent lookup.
-
-        Args:
-            model_type: Raw model type string
-
-        Returns:
-            Normalized model type.
-        """
-        # Basic normalization
-        normalized = model_type.strip()
-
-        # Handle common aliases
-        aliases = {
-            "checkpoints": "Stable-diffusion",
-            "checkpoint": "Stable-diffusion",
-            "lora": "Lora",
-            "locon": "LoCon",
-            "embedding": "embeddings",
-            "textual_inversion": "embeddings",
-            "ti": "embeddings",
-            "hypernetworks": "hypernetworks",
-            "hypernet": "hypernetworks",
-            "vae": "VAE",
-            "controlnet": "ControlNet",
-            "cn": "ControlNet",
-        }
-
-        normalized_lower = normalized.lower()
-        return aliases.get(normalized_lower, normalized)
 
     def _ensure_essential_directories(self):
         """Ensure essential directories exist."""
