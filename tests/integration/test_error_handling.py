@@ -58,7 +58,7 @@ class TestErrorHandlingIntegration:
         mock_client.get_json.return_value = None
 
         # Act
-        from civitai_manager_libs.civitai_gallery_action import get_paging_information_working
+        from civitai_manager_libs.gallery import get_paging_information_working
 
         result = get_paging_information_working("12345")
 

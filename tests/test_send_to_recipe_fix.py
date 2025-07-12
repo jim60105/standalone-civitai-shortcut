@@ -1,5 +1,5 @@
 from scripts.civitai_manager_libs.ishortcut_action import on_send_to_recipe_click as send_shortcut
-from scripts.civitai_manager_libs.civitai_gallery_action import (
+from scripts.civitai_manager_libs.gallery import (
     on_send_to_recipe_click as send_gallery,
 )
 from scripts.civitai_manager_libs.recipe_actions.recipe_browser import RecipeBrowser

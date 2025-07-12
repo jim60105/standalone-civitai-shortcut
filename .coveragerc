@@ -2,12 +2,13 @@
 branch = True
 source =
     scripts/civitai_manager_libs/compat
+    scripts/civitai_manager_libs/gallery
     scripts/civitai_manager_libs/settings
     scripts/civitai_manager_libs/ishortcut_core
     scripts/civitai_manager_libs/recipe_actions
-    scripts/civitai_manager_libs/http_client.py
-    scripts/civitai_manager_libs/downloader.py
-    scripts/civitai_manager_libs/prompt.py
+    scripts.civitai_manager_libs.http_client
+    scripts.civitai_manager_libs.downloader
+    scripts.civitai_manager_libs.prompt
 omit =
     scripts/civitai_manager_libs/compat/webui_adapters/*
     scripts/civitai_manager_libs/compat/webui_adapters/**/*.py
@@ -21,13 +22,14 @@ output = coverage.xml
 [paths]
 source =
     scripts/civitai_manager_libs/compat
+    scripts/civitai_manager_libs/gallery
     scripts/civitai_manager_libs/settings
     scripts/civitai_manager_libs/ishortcut_core
     scripts/civitai_manager_libs/recipe_actions
-    scripts/civitai_manager_libs/http_client.py
-    scripts/civitai_manager_libs/downloader.py
-    scripts/civitai_manager_libs/prompt.py
+    scripts.civitai_manager_libs.http_client
+    scripts.civitai_manager_libs.downloader
+    scripts.civitai_manager_libs.prompt
 
 [tool:pytest]
-addopts = --cov=scripts/civitai_manager_libs/compat --cov=scripts/civitai_manager_libs/settings --cov=scripts/civitai_manager_libs/ishortcut_core --cov=scripts/civitai_manager_libs/recipe_actions --cov=scripts/civitai_manager_libs/http_client.py --cov=scripts/civitai_manager_libs/downloader.py --cov=scripts/civitai_manager_libs/prompt.py --cov-report=term --cov-report=json --cov-report=xml --cov-fail-under=70
+addopts = --cov=scripts/civitai_manager_libs/compat --cov=scripts/civitai_manager_libs/gallery --cov=scripts/civitai_manager_libs/settings --cov=scripts/civitai_manager_libs/ishortcut_core --cov=scripts/civitai_manager_libs/recipe_actions --cov=scripts/civitai_manager_libs/http_client.py --cov=scripts/civitai_manager_libs/downloader.py --cov=scripts/civitai_manager_libs/prompt.py --cov-report=term --cov-report=json --cov-report=xml --cov-fail-under=70
 testpaths = tests

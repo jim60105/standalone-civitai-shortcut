@@ -1060,7 +1060,7 @@ def on_gallery_select(evt: gr.SelectData, civitai_images, model_id):
                                 meta = item['meta']
                                 # Format generation parameters using Auto1111 format
                                 # Import the formatting function from gallery action
-                                from .civitai_gallery_action import (
+                                from .gallery import (
                                     format_civitai_metadata_to_auto1111,
                                 )
 

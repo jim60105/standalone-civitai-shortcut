@@ -27,7 +27,7 @@ def initialize_compatibility_layer(compat_layer):
         'scripts.civitai_manager_libs.settings',
         'scripts.civitai_manager_libs.setting_action',
         'scripts.civitai_manager_libs.civitai_shortcut_action',
-        'scripts.civitai_manager_libs.civitai_gallery_action',
+        'scripts.civitai_manager_libs.gallery',
         'scripts.civitai_manager_libs.model_action',
         'scripts.civitai_manager_libs.ishortcut_action',
         'scripts.civitai_manager_libs.prompt_ui',
