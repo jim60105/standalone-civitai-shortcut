@@ -207,7 +207,7 @@ class GalleryDownloadManager:
     def load_gallery_images(
         self, images_url: List[str], progress
     ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[str]]:
-        """Load gallery images with progress tracking."""
+        """Load gallery images with parallel processing and progress tracking."""
         if images_url:
             dn_image_list = []
             image_list = []
@@ -215,13 +215,56 @@ class GalleryDownloadManager:
             if not os.path.exists(settings.shortcut_gallery_folder):
                 os.makedirs(settings.shortcut_gallery_folder)
 
-            for i, img_url in enumerate(progress.tqdm(images_url, desc="Civitai Images Loading")):
+            # Collect URLs that need downloading
+            urls_to_download = []
+            for img_url in images_url:
+                result = util.is_url_or_filepath(img_url)
+                if result == "url":
+                    description_img = settings.get_image_url_to_gallery_file(img_url)
+                    if not os.path.isfile(description_img):
+                        urls_to_download.append(img_url)
+
+            # Perform parallel download if there are URLs to download
+            if urls_to_download:
+                # Create progress wrapper to bridge with Gradio progress
+                try:
+                    # Try to create progress bar with full parameters
+                    progress_bar = progress.tqdm(
+                        total=len(urls_to_download), desc="Civitai Images Loading"
+                    )
+                except TypeError:
+                    # Fallback for simpler progress implementations that don't support total/desc
+                    progress_bar = progress.tqdm(urls_to_download, desc="Civitai Images Loading")
+
+                def progress_wrapper(done, total, desc):
+                    """Wrapper to bridge parallel download progress with Gradio progress."""
+                    try:
+                        # Update progress bar to current completion count
+                        if hasattr(progress_bar, 'n') and hasattr(progress_bar, 'update'):
+                            if done > progress_bar.n:
+                                progress_bar.update(done - progress_bar.n)
+                    except Exception as e:
+                        logger.debug(f"Progress update failed: {e}")
+
+                # Execute parallel download
+                success_count = self.download_images_parallel(urls_to_download, progress_wrapper)
+
+                # For Gradio Progress, we don't need to manually close the progress bar
+                # as it's handled automatically when the function completes
+                # The close() method requires a _tqdm parameter which is not available here
+
+                logger.debug(
+                    f"Gallery parallel download: {success_count}/{len(urls_to_download)} successful"
+                )
+
+            # Build final image lists with fallback for failed downloads
+            for img_url in images_url:
                 result = util.is_url_or_filepath(img_url)
                 description_img = settings.get_image_url_to_gallery_file(img_url)
                 if result == "filepath":
                     description_img = img_url
                 elif result == "url":
-                    if not self.download_single_image(img_url, description_img):
+                    if not os.path.isfile(description_img):
                         description_img = settings.get_no_card_preview_image()
                 else:
                     description_img = settings.get_no_card_preview_image()
