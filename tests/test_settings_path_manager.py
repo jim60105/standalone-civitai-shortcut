@@ -58,6 +58,13 @@ class TestPathManager:
 
     def test_get_nsfw_disable_image(self):
         """Test getting NSFW disable image path."""
+
+    def test_no_card_preview_image_property(self):
+        """Test that settings.no_card_preview_image property access works and matches the function result."""
+        from scripts.civitai_manager_libs import settings
+        prop_val = settings.no_card_preview_image
+        func_val = settings.get_no_card_preview_image()
+        assert prop_val == func_val, "Property and function access should return the same value"
         result = path_manager.get_nsfw_disable_image()
         expected = os.path.join(path_manager.extension_base, "img", "nsfw-no-preview.png")
         assert result == expected

@@ -99,6 +99,10 @@ def __getattr__(name):
     if name == 'Extensions_Version':
         return config_manager.get_setting('Extensions_Version', '1.0.0')  # type: ignore
 
+    # Special handling for path-related properties
+    if name == 'no_card_preview_image':
+        return get_no_card_preview_image()
+
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
