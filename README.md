@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="img/banner.svg" alt="Civitai Shortcut Banner" width="100%" />
+</div>
+
 # 🚀 Civitai Shortcut
 
 **The ultimate dual-mode AI model management solution for Stable Diffusion**
