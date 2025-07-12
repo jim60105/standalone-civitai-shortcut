@@ -51,36 +51,25 @@ def on_ui(recipe_input):
 
 def on_gallery_select(evt, civitai_images):
     """Gallery selection handler - backward compatibility."""
-    logger.debug(
-        f"[GALLERY] on_gallery_select called with evt type={type(evt)}, "
-        f"civitai_images type={type(civitai_images)}, "
-        f"civitai_images length={len(civitai_images) if civitai_images else 'None'}"
-    )
-
-    # Debug SelectData event attributes
-    if hasattr(evt, 'index'):
-        logger.debug(f"[GALLERY] evt.index={evt.index} (type: {type(evt.index)})")
-    if hasattr(evt, 'value'):
-        logger.debug(f"[GALLERY] evt.value={evt.value}")
-    if hasattr(evt, 'selected'):
-        logger.debug(f"[GALLERY] evt.selected={evt.selected}")
-
-    # Check if evt is actually SelectData
-    if isinstance(evt, gr.SelectData):
-        logger.debug("[GALLERY] evt is properly a SelectData object")
-    else:
-        logger.error(f"[GALLERY] evt is NOT SelectData! It's {type(evt)}: {evt}")
-        # Try to handle gracefully - maybe evt is the civitai_images
-        if isinstance(evt, list) and civitai_images is None:
-            logger.warning("[GALLERY] Detected parameter mixup - attempting to fix")
+    # Legacy Gradio v3/v4 event handler: auto-fix parameter mixup for select event
+    # 1. evt 應為 SelectData，civitai_images 應為 list
+    # 2. 若 evt 不是 SelectData、但 civitai_images 是 SelectData，則自動交換
+    # 3. 若 evt 是 list、civitai_images 是 None，則自動 fallback
+    import gradio as gr
+    if not isinstance(evt, gr.SelectData):
+        if isinstance(civitai_images, gr.SelectData):
+            logger.warning("[GALLERY] Detected parameter mixup - auto-swapping evt/civitai_images (legacy v3/v4 fix)")
+            evt, civitai_images = civitai_images, evt
+        elif isinstance(evt, list) and civitai_images is None:
+            logger.debug("[GALLERY] Detected Gradio v3/v4 default parameter mode: evt is images list, civitai_images is None")
             civitai_images = evt
-            # Create a fake SelectData for index 0
             evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
-
+        else:
+            logger.error(f"[GALLERY] evt is NOT SelectData! It's {type(evt)}: {evt}")
+            return None, None, gr.update(), "Error: Invalid event type (not SelectData)"
     if civitai_images is None:
         logger.error("[GALLERY] civitai_images is None! This indicates incorrect event binding.")
         return None, None, gr.update(), "Error: No images data available"
-
     _, event_handlers, _, _, _ = get_gallery_components()
     return event_handlers.handle_gallery_select(evt, civitai_images)
 
