@@ -106,11 +106,16 @@ class TestWebUIConfigManagerExtensive:
 
     def test_config_file_operations(self, tmp_path):
         """Test config file save/load operations."""
+        # Create a temporary config file for testing
+        temp_config_file = str(tmp_path / "test_config.json")
+        
         manager = WebUIConfigManager()
+        # Mock the config file path to use temporary file
+        manager._config_file_path = temp_config_file
 
-        # Set some config values
-        manager.set_config("key1", "value1")
-        manager.set_config("key2", {"nested": "value"})
+        # Set some valid config values according to setting_categories.py
+        manager.set_config("http_timeout", 30)
+        manager.set_config("shortcut_column", 5)
 
         # Save should work
         assert manager.save_config() is True

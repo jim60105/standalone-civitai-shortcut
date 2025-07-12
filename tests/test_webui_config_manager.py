@@ -30,6 +30,10 @@ def patch_working_dirs(monkeypatch, tmp_path):
 def test_webui_config_manager_crud_and_paths(tmp_path):
     """Test webui config manager crud and paths."""
     manager = WebUIConfigManager()
+    # Mock the config file path to use temporary file
+    temp_config_file = str(tmp_path / "test_config.json")
+    manager._config_file_path = temp_config_file
+    
     # Initially empty
     assert manager.get_config('k') is None
     manager.set_config('k', 'v')

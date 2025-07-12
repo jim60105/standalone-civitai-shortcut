@@ -49,38 +49,38 @@ class TestStandaloneConfigManager:
         config_file = tmp_path / "crud_config.json"
         manager = StandaloneConfigManager(str(config_file))
 
-        # Create/Set
-        manager.set_config("key1", "value1")
-        manager.set_config("key2", {"nested": "value"})
+        # Create/Set - using valid settings according to setting_categories.py
+        manager.set_config("http_timeout", 30)
+        manager.set_config("shortcut_column", 5)
 
         # Read
-        assert manager.get_config("key1") == "value1"
-        assert manager.get_config("key2") == {"nested": "value"}
+        assert manager.get_config("http_timeout") == 30
+        assert manager.get_config("shortcut_column") == 5
         assert manager.get_config("nonexistent", "default") == "default"
 
         # Update
-        manager.set_config("key1", "updated_value")
-        assert manager.get_config("key1") == "updated_value"
+        manager.set_config("http_timeout", 60)
+        assert manager.get_config("http_timeout") == 60
 
         # Save and reload
         assert manager.save_config() is True
         assert config_file.exists()
 
         manager2 = StandaloneConfigManager(str(config_file))
-        assert manager2.get_config("key1") == "updated_value"
-        assert manager2.get_config("key2") == {"nested": "value"}
+        assert manager2.get_config("http_timeout") == 60
+        assert manager2.get_config("shortcut_column") == 5
 
     def test_get_all_configs(self, tmp_path):
         """Test getting all configurations."""
         config_file = tmp_path / "all_config.json"
         manager = StandaloneConfigManager(str(config_file))
 
-        manager.set_config("key1", "value1")
-        manager.set_config("key2", "value2")
+        manager.set_config("http_timeout", 30)
+        manager.set_config("shortcut_column", 5)
 
         all_configs = manager.get_all_configs()
-        assert all_configs["key1"] == "value1"
-        assert all_configs["key2"] == "value2"
+        assert all_configs["http_timeout"] == 30
+        assert all_configs["shortcut_column"] == 5
 
     def test_has_config(self, tmp_path):
         """Test checking if config exists."""
