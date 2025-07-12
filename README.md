@@ -50,25 +50,25 @@
 - **Linux/macOS:**
     ```bash
     # Clone the repository
-git clone https://github.com/jim60105/standalone-civitai-shortcut.git
-cd standalone-civitai-shortcut
+    git clone https://github.com/jim60105/standalone-civitai-shortcut.git
+    cd standalone-civitai-shortcut
 
-# Start the application (auto-handles dependencies)
-./start.sh
+    # Start the application (auto-handles dependencies)
+    ./start.sh
     ```
 - **Windows:**
     ```bat
     REM Clone the repository
-git clone https://github.com/jim60105/standalone-civitai-shortcut.git
-cd standalone-civitai-shortcut
+    git clone https://github.com/jim60105/standalone-civitai-shortcut.git
+    cd standalone-civitai-shortcut
 
-REM Start the application (auto-handles dependencies)
-start.bat
+    REM Start the application (auto-handles dependencies)
+    start.bat
     ```
 
 #### Option 3: Docker
 ```bash
-docker run -p 7860:7860 -v $(pwd)/data_sc:/app/data_sc ghcr.io/jim60105/standalone-civitai-shortcut:latest
+docker run -p 8080:8080 -v "./data:/app/data" -v "./data_sc:/app/data_sc" ghcr.io/jim60105/standalone-civitai-shortcut:latest
 ```
 
 ### ⚡ First Steps
@@ -139,12 +139,12 @@ docker run -p 7860:7860 -v $(pwd)/data_sc:/app/data_sc ghcr.io/jim60105/standalo
 #### Method 1: Drag & Drop URLs
 Simply drag a Civitai model URL from your browser directly to the upload area:
 
-![URL Drop Demo](https://github.com/user-attachments/assets/8affcc6e-3fd3-42c1-9449-4abbaa445b3c)
+![URL Drop Demo](https://github.com/user-attachments/assets/ce626a00-2f86-4255-a7e1-5534f66f8293)
 
 #### Method 2: Internet Shortcuts
 Drag and drop saved `.url` shortcut files for batch import:
 
-![Shortcut Drop Demo](https://github.com/user-attachments/assets/45471f2c-0352-4afd-bf81-c6dde13fcbe9)
+![Shortcut Drop Demo](https://github.com/user-attachments/assets/2b512529-447a-4cfb-a215-b6801006c611)
 
 #### Method 3: Bulk Import
 Select multiple shortcuts and import them all at once for efficient collection building.
