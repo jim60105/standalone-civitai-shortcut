@@ -56,17 +56,22 @@ def on_gallery_select(evt, civitai_images):
     # 2. 若 evt 不是 SelectData、但 civitai_images 是 SelectData，則自動交換
     # 3. 若 evt 是 list、civitai_images 是 None，則自動 fallback
     import gradio as gr
-    if not isinstance(evt, gr.SelectData):
-        if isinstance(civitai_images, gr.SelectData):
-            logger.warning("[GALLERY] Detected parameter mixup - auto-swapping evt/civitai_images (legacy v3/v4 fix)")
+    # Accept any object with .index attribute as a valid event (duck typing for test mocks)
+    # If either evt or civitai_images is a list and the other is None, treat the list as civitai_images and create a fake event
+    if (isinstance(evt, list) and civitai_images is None):
+        logger.debug("[GALLERY] Detected Gradio v3/v4 default parameter mode: evt is images list, civitai_images is None")
+        civitai_images = evt
+        evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
+    elif (isinstance(civitai_images, list) and evt is None):
+        logger.debug("[GALLERY] Detected Gradio v3/v4 default parameter mode: civitai_images is images list, evt is None")
+        evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
+    elif not hasattr(evt, 'index'):
+        if hasattr(civitai_images, 'index'):
+            logger.warning("[GALLERY] Detected parameter mixup - auto-swapping evt/civitai_images (v3/v4 fix)")
             evt, civitai_images = civitai_images, evt
-        elif isinstance(evt, list) and civitai_images is None:
-            logger.debug("[GALLERY] Detected Gradio v3/v4 default parameter mode: evt is images list, civitai_images is None")
-            civitai_images = evt
-            evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
         else:
-            logger.error(f"[GALLERY] evt is NOT SelectData! It's {type(evt)}: {evt}")
-            return None, None, gr.update(), "Error: Invalid event type (not SelectData)"
+            logger.error(f"[GALLERY] evt is not a SelectData or compatible object! It's {type(evt)}: {evt}")
+            return None, None, gr.update(), "Error: Invalid event type (no .index attribute)"
     if civitai_images is None:
         logger.error("[GALLERY] civitai_images is None! This indicates incorrect event binding.")
         return None, None, gr.update(), "Error: No images data available"
