@@ -1,39 +1,39 @@
-# Architecture Overview
+# Civitai Shortcut - Architecture Overview
 
-This document provides a comprehensive overview of the Civitai Shortcut compatibility layer architecture.
+This document provides a comprehensive overview of the Civitai Shortcut architecture, designed for dual-mode execution supporting both AUTOMATIC1111 WebUI integration and standalone operation.
 
 ## System Overview
 
-The compatibility layer enables the Civitai Shortcut extension to operate in two distinct modes:
+Civitai Shortcut is a sophisticated application that enables users to browse, download, and manage AI models from the Civitai platform. The system operates in two distinct modes:
 
-1. **WebUI Mode**: Integrated with AUTOMATIC1111 Stable Diffusion WebUI
-2. **Standalone Mode**: Independent execution without WebUI dependencies
+1. **WebUI Mode**: Seamlessly integrated with AUTOMATIC1111 Stable Diffusion WebUI as an extension
+2. **Standalone Mode**: Independent execution with a dedicated Gradio interface
 
-## Architecture Principles
+## Core Architecture Principles
 
-### Bridge Pattern Implementation
-The system uses the Bridge Pattern to separate the abstraction (interfaces) from implementation (adapters):
+### 1. Modular Design with Clear Separation of Concerns
+The architecture follows SOLID principles with clearly separated modules:
 
+- **Core Business Logic**: Independent of UI and environment concerns
+- **Compatibility Layer**: Abstracts environment-specific implementations
+- **Service Layer**: Provides centralized services (HTTP, notifications, logging)
+- **UI Components**: Modular, reusable interface elements
+- **Data Management**: Structured persistence and configuration
+
+### 2. Dual-Mode Compatibility Pattern
+The system employs multiple design patterns for seamless dual-mode operation:
+
+**Bridge Pattern**: Separates abstraction from implementation
 ```
-Client Code
-    ↓
-CompatibilityLayer (Abstraction)
-    ↓
-IInterface (Abstraction Interface)
-    ↓
-WebUIAdapter | StandaloneAdapter (Concrete Implementation)
-```
-
-### Strategy Pattern for Environment-Specific Logic
-Different strategies are employed based on the detected execution environment:
-
-```
-EnvironmentDetector → CompatibilityLayer → Appropriate Adapter
+Client Code → CompatibilityLayer → Interface → Adapter Implementation
 ```
 
-### Factory Pattern for Object Creation
-The compatibility layer acts as a factory, creating appropriate implementations based on environment:
+**Strategy Pattern**: Environment-specific behavior selection
+```
+EnvironmentDetector → CompatibilityLayer → WebUI/Standalone Strategy
+```
 
+**Factory Pattern**: Mode-appropriate component creation
 ```python
 def _create_path_manager(self) -> IPathManager:
     if self.mode == 'webui':
@@ -42,311 +42,579 @@ def _create_path_manager(self) -> IPathManager:
         return StandalonePathManager()
 ```
 
-## HTTP Client Architecture
+### 3. Progressive Enhancement Architecture
+- **Standalone First**: Core functionality works independently
+- **WebUI Enhancement**: Additional features when WebUI is available
+- **Graceful Degradation**: Fallback mechanisms for missing dependencies
 
-### Overview
+## System Architecture Components
 
-The project uses a centralized HTTP client to handle all communications with the Civitai API. This design provides:
+### Application Entry Points
 
-- Unified error handling mechanism
-- Intelligent retry and timeout control
-- Connection pool optimization
-- Caching capabilities
-- Chunked and parallel download support
+#### 1. WebUI Mode Entry (`scripts/civitai_shortcut.py`)
+- **Purpose**: Main extension entry for WebUI integration
+- **Features**:
+  - Automatic environment detection and compatibility layer initialization
+  - WebUI script callbacks integration
+  - Tab-based UI organization
+  - Graceful fallback to standalone behavior
 
-### Core Components
+#### 2. Standalone Mode Entry (`main.py`)
+- **Purpose**: Independent application launcher
+- **Features**:
+  - Command-line interface with configurable options
+  - Dedicated Gradio server setup
+  - Standalone configuration management
+  - Signal handling for graceful shutdown
 
-#### CivitaiHttpClient
+#### 3. UI Adapter (`ui_adapter.py`)
+- **Purpose**: UI abstraction layer for standalone mode
+- **Features**:
+  - Adapts existing UI components for standalone execution
+  - Compatibility layer injection
+  - Unified UI creation patterns
 
-```python
-class CivitaiHttpClient:
-    """Centralized HTTP client handling all Civitai API requests."""
-```
+### Core Infrastructure Layer
 
-**Features**:
-- Bearer token authentication
-- Automatic retry strategy (exponential backoff)
-- Configurable timeouts
-- Streaming download support
-- Error handling and user feedback
+#### 1. Compatibility Layer (`compat/`)
+The compatibility layer provides unified access to functionality across execution modes:
 
-#### ChunkedDownloader
+**Environment Detection** (`environment_detector.py`):
+- Automatic detection of execution environment (WebUI vs Standalone)
+- Caching mechanism for performance optimization
+- Force mode capability for testing
+- Detection logic includes module availability, file structure analysis, and environment variables
 
-```python
-class ChunkedDownloader:
-    """Downloader supporting chunked and parallel file downloads."""
-```
-
-**Features**:
-- Chunked downloads with configurable concurrency
-- Progress callback integration
-- Fallback to sequential download
-
-### Error Handling Strategy
-
-#### HTTP Error Categories
-- **4xx Client Errors**: Request issues (invalid parameters, authentication)
-- **5xx Server Errors**: Server-side failures
-- **Network Errors**: Connection and timeout issues
-- **Application Errors**: File system and permission issues
-
-#### Handling Flow
-
-```
-HTTP Request → Error Detection → Retry Decision → User Feedback → Graceful Degradation
-```
-
-## Core Components
-
-### 1. Environment Detection (`environment_detector.py`)
-
-**Responsibility**: Automatically detect execution environment
-
-**Detection Logic**:
-1. Attempt to import WebUI modules (`modules.scripts`, `modules.shared`)
-2. Verify WebUI functionality with `modules.scripts.basedir()`
-3. Check for WebUI-specific files (`webui.py`, `launch.py`)
-4. Look for WebUI directory structure (`extensions/`)
-5. Check environment variables (`WEBUI_MODE`)
-
-**Caching**: Results are cached to avoid repeated detection overhead
-**Methods**: `detect_environment()`, `is_webui_mode()`, `is_standalone_mode()`, `force_environment()`, `reset_cache()`
-
-### 2. Compatibility Layer (`compat_layer.py`)
-
-**Responsibility**: Central coordination and unified interface
-
-**Key Features**:
-- Singleton pattern for global access (`get_compatibility_layer()`)
+**Core Compatibility Layer** (`compat_layer.py`):
+- Singleton pattern for global access
 - Lazy initialization of adapters
-- Unified API surface across all interfaces
-- Environment-aware component creation
-- Reset functionality (`reset_compatibility_layer()`)
+- Factory methods for component creation
+- Thread-safe operations
 
-**Architecture Pattern**: Factory + Bridge + Singleton
+**Abstract Interfaces** (`interfaces/`):
+- `IPathManager`: File and directory management
+- `IConfigManager`: Configuration persistence and access
+- `IMetadataProcessor`: Image metadata and parameter processing
+- `IUIBridge`: User interface integration
+- `ISamplerProvider`: Sampler and upscaler information
+- `IParameterProcessor`: Generation parameter handling
 
-### 3. Abstract Interfaces (`interfaces/`)
+**Adapter Implementations**:
+- **WebUI Adapters** (`webui_adapters/`): Direct WebUI module integration
+- **Standalone Adapters** (`standalone_adapters/`): Pure Python implementations
 
-**Responsibility**: Define contracts for all functionality
+#### 2. Service Layer
 
-**Implemented Interfaces**:
-- `IPathManager`: File and directory path management (`get_script_path()`, `get_models_path()`, etc.)
-- `IConfigManager`: Configuration persistence and access (`get_config()`, `set_config()`, `save_config()`)
-- `IMetadataProcessor`: Image metadata and parameter processing (`extract_png_info()`, `parse_generation_parameters()`)
-- `IUIBridge`: User interface integration (`register_ui_tabs()`, `create_send_to_buttons()`, `launch_standalone()`)
-- `ISamplerProvider`: Sampler and upscaler information (`get_samplers()`, `get_upscale_modes()`)
-- `IParameterProcessor`: Generation parameter processing (`parse_parameters()`, `format_parameters()`)
+**HTTP Client Architecture** (`http_client.py`):
+- Centralized HTTP client for all Civitai API interactions
+- Features:
+  - Bearer token authentication
+  - Intelligent retry with exponential backoff
+  - Connection pooling optimization
+  - Streaming download support
+  - Chunked and parallel downloads
+  - Comprehensive error handling
 
-### 4. WebUI Adapters (`webui_adapters/`)
+**Error Handling Framework** (`error_handler.py`, `exceptions.py`):
+- Hierarchical custom exception types
+- Unified error handling decorator (`@with_error_handling`)
+- Automatic retry mechanisms
+- User-friendly error messages through notification service
+- Progressive degradation strategies
 
-**Responsibility**: Implement interfaces using WebUI modules
+**Notification Service** (`ui/notification_service.py`):
+- Abstract notification interface
+- Thread-safe Gradio notification implementation
+- Queue-based message handling
+- Support for error, warning, and info messages
 
-**Implementation Strategy**:
-- Direct integration with WebUI modules when available
-- Use `modules.scripts.basedir()`, `modules.shared.cmd_opts`, `modules.extras.run_pnginfo()`
-- Graceful fallback to standalone behavior when modules fail
-- Maintain full compatibility with existing WebUI functionality
+**Logging System** (`logging_config.py`):
+- Centralized logging configuration
+- Rich console output for standalone mode
+- File-based logging with rotation
+- Module-specific loggers with standardized formatting
 
-**Adapters**:
-- `WebUIPathManager`: Uses WebUI paths and configuration
-- `WebUIConfigManager`: Integrates with WebUI settings
-- `WebUIMetadataProcessor`: Uses `modules.extras.run_pnginfo()`
-- `WebUIUIBridge`: WebUI tab registration and send-to functionality
-- `WebUISamplerProvider`: Reads from `modules.sd_samplers`
-- `WebUIParameterProcessor`: Uses WebUI parameter parsing
+### Business Logic Layer
 
-### 5. Standalone Adapters (`standalone_adapters/`)
+#### 1. Modular Core Components
 
-**Responsibility**: Implement interfaces without WebUI dependencies
+**Settings Management** (`settings/`):
+- **ConfigManager**: Centralized configuration management
+- **SettingCategories**: Structured setting organization
+- **SettingPersistence**: File-based configuration storage
+- **SettingValidator**: Configuration validation logic
+- **PathManager**: Path resolution and management utilities
+- **ModelUtils**: Model-specific utility functions
 
-**Implementation Strategy**:
-- Use standard Python libraries (os, json, PIL, gradio)
-- Provide equivalent functionality where possible
-- File-based configuration and data storage
-- Clear documentation of feature differences
+**Gallery System** (`gallery/`):
+- **GalleryUIComponents**: UI component creation and management
+- **GalleryEventHandlers**: Event processing and business logic
+- **GalleryDataProcessor**: Data transformation and formatting
+- **GalleryDownloadManager**: Download coordination and progress tracking
+- **GalleryUtilities**: Common utility functions
+- **EventNormalizer**: Event data normalization
 
-**Adapters**:
-- `StandalonePathManager`: File-based path detection
-- `StandaloneConfigManager`: JSON-based configuration
-- `StandaloneMetadataProcessor`: PIL-based PNG metadata extraction
-- `StandaloneUIBridge`: Gradio standalone launcher
-- `StandaloneSamplerProvider`: Static sampler lists
-- `StandaloneParameterProcessor`: Custom parameter parsing
+**iShortcut Core** (`ishortcut_core/`):
+- **ModelProcessor**: Model information handling and API interactions
+- **FileProcessor**: File operations and directory management
+- **ImageProcessor**: Image downloading and thumbnail generation
+- **MetadataProcessor**: Data validation and metadata handling
+- **DataValidator**: Input validation and consistency checks
+- **ModelFactory**: Model creation and shortcut generation
+- **ShortcutCollectionManager**: Shortcut lifecycle management
+- **PreviewImageManager**: Preview image handling and caching
 
-## Data Flow
+**Recipe Actions** (`recipe_actions/`):
+- **RecipeManager**: Recipe CRUD operations and business logic
+- **RecipeBrowser**: Recipe browsing and selection interface
+- **RecipeGallery**: Recipe-associated image management
+- **RecipeUtilities**: Common recipe operations
+- **RecipeReferenceManager**: Recipe relationship handling
+- **RecipeEventWiring**: Event binding and coordination
 
-### Initialization Flow
+#### 2. Integration Components
+
+**Model Management** (`model.py`, `model_action.py`):
+- Model metadata handling
+- Version management
+- Download coordination
+- Type-specific processing
+
+**Classification System** (`classification.py`, `classification_action.py`):
+- Model categorization
+- Tag management
+- Search filtering
+- Hierarchical organization
+
+**Civitai Integration** (`civitai.py`):
+- API client implementation
+- Rate limiting and error handling
+- Model information retrieval
+- Asset download coordination
+
+### Data Flow Architecture
+
+#### Initialization Flow
 ```
 Application Start
     ↓
-EnvironmentDetector.detect_environment()
+Environment Detection (Auto or Forced)
     ↓
-CompatibilityLayer.__init__(mode)
+Compatibility Layer Creation
     ↓
-Create appropriate adapters
+Service Initialization (HTTP, Logging, Notifications)
     ↓
-Ready for use
+Component Registration
+    ↓
+UI Creation and Event Binding
+    ↓
+Ready for User Interaction
 ```
 
-### Runtime Operation Flow
+#### Request Processing Flow
 ```
-Client Request
+User Action
     ↓
-CompatibilityLayer.property_manager
+UI Event Handler
     ↓
-Appropriate Adapter Method
+Business Logic Layer
     ↓
-Environment-Specific Implementation
+Service Layer (HTTP, File I/O)
     ↓
-Return Result
+Compatibility Layer (Environment-Specific Implementation)
+    ↓
+Response Processing
+    ↓
+UI Update
 ```
 
-## Interface Implementation Details
+#### Error Handling Flow
+```
+Exception Occurs
+    ↓
+Error Handler Decorator
+    ↓
+Exception Type Mapping
+    ↓
+Retry Logic (if applicable)
+    ↓
+Notification Service
+    ↓
+User Feedback + Logging
+    ↓
+Graceful Degradation
+```
+## User Interface Architecture
 
-### Path Management
-- **WebUI Mode**: Uses `modules.scripts.basedir()`, `modules.shared.cmd_opts`, and WebUI model directories
-- **Standalone Mode**: File-based path detection, configurable directories, and project-relative paths
+### UI Organization
 
-### Configuration Management  
-- **WebUI Mode**: Integrates with WebUI configuration system through `modules.shared`
-- **Standalone Mode**: JSON-based configuration files (`CivitaiShortCutSetting.json`)
+#### Tab-Based Interface Structure
+The application organizes functionality into four main tabs:
 
-### Metadata Processing
-- **WebUI Mode**: Uses `modules.extras.run_pnginfo()` for full compatibility
-- **Standalone Mode**: PIL-based PNG metadata extraction with parameter parsing
+1. **🏠 Model Browser (Shortcut)**
+   - Model discovery and browsing
+   - Download management
+   - Preview and metadata viewing
+   - Integration with generation parameters
 
-### UI Integration
-- **WebUI Mode**: Uses `modules.script_callbacks` for tab registration and `modules.infotext_utils` for parameter transfer
-- **Standalone Mode**: Gradio-based standalone launcher with `ui_adapter.py`
+2. **📝 Prompt Recipe**
+   - Recipe creation and management
+   - Prompt template system
+   - Gallery integration
+   - Parameter extraction and reuse
 
-### Sampler Information
-- **WebUI Mode**: Reads from `modules.sd_samplers`, `modules.shared.sd_upscalers`
-- **Standalone Mode**: Static lists of known samplers and upscalers with fallback choices
+3. **🔧 Assistance**
+   - Classification management
+   - Model scanning and updating
+   - Utility functions
 
-### Parameter Processing
-- **WebUI Mode**: Leverages WebUI's parameter parsing and validation
-- **Standalone Mode**: Custom implementation with parameter validation and formatting
+4. **⚙️ Settings**
+   - Application configuration
+   - API key management
+   - Path configuration
+   - Feature toggles
 
-## Error Handling Strategy
+#### UI Component Architecture
 
-### Unified Exception Handling Framework
-The project implements a comprehensive exception handling system with custom exception types, decorators, and recovery mechanisms. For detailed usage instructions, see the [Exception Handling Guide](exception_handling_guide.md).
+**Modular UI Components** (`ui_components.py`, `standalone_ui.py`):
+- Reusable component library
+- Parameter copy-paste functionality
+- Dual-mode compatible components
+- Standardized styling and behavior
 
-**Key Components**:
-- **Custom Exception Types**: Hierarchical exception classification (`NetworkError`, `FileOperationError`, `APIError`, etc.)
-- **Error Handling Decorator**: `@with_error_handling` for unified error management with retry logic
-- **Recovery Manager**: Automatic error recovery strategies for common failure scenarios
-- **User Feedback**: Integrated Gradio error display for user-friendly error messages
+**Gallery System UI** (`gallery/ui_components.py`):
+- Image gallery presentation
+- Selection and interaction handling
+- Progress indicators
+- Download management interface
 
-### Progressive Degradation
-1. **Primary**: Use WebUI functionality when available
-2. **Secondary**: Fall back to standalone implementation
-3. **Tertiary**: Return safe defaults
+**Recipe Browser UI** (`recipe_browser_page.py`):
+- Recipe listing and filtering
+- Template editing interface
+- Preview and testing capabilities
 
-### Exception Management
-- All interfaces handle exceptions internally using the unified framework
-- Return None or empty collections on errors
-- Log errors for debugging without breaking functionality
-- Provide user-friendly error messages through Gradio UI
+### Event Handling Architecture
 
-## Performance Considerations
+#### Event Normalization (`gallery/event_normalizer.py`)
+- Standardizes event data across different UI interactions
+- Handles both string and list-based event values
+- Provides consistent interface for event processing
 
-### Lazy Loading
-- Adapters are created only when first accessed
-- Heavy initialization is deferred until needed
+#### Event Wiring Patterns
+- Centralized event binding in component initialization
+- Separation of UI logic from business logic
+- Async event processing for long-running operations
 
-### Caching
-- Environment detection results are cached
-- Configuration values are cached after first load
-- Expensive operations use memoization where appropriate
+## Configuration and Settings Management
 
-### Memory Management
-- Singleton pattern prevents duplicate instances
-- Interfaces are designed for efficient memory usage
+### Hierarchical Configuration System
 
-## Extensibility
+#### Configuration Categories (`settings/setting_categories.py`)
+- **Core Settings**: Basic application configuration
+- **UI Settings**: Interface preferences and styling
+- **Download Settings**: Download behavior and limits
+- **API Settings**: Civitai API configuration
+- **Path Settings**: Directory and file path management
 
-### Adding New Interfaces
-1. Define abstract interface in `interfaces/`
-2. Implement WebUI adapter in `webui_adapters/`
-3. Implement standalone adapter in `standalone_adapters/`
-4. Add to CompatibilityLayer factory methods
-5. Update documentation
+#### Configuration Persistence (`settings/setting_persistence.py`)
+- JSON-based configuration storage
+- Atomic write operations
+- Backup and recovery mechanisms
+- Migration support for configuration updates
 
-### Adding New Functionality
-- Follow existing patterns for consistency
-- Maintain backward compatibility
-- Document behavior differences between modes
+#### Validation Framework (`settings/setting_validation.py`)
+- Type validation for all configuration values
+- Range and constraint checking
+- Dependency validation between settings
+- Error reporting and recovery suggestions
 
-## Security Considerations
+### Environment-Specific Configuration
 
-### Path Security
-- All path operations validate against directory traversal
-- Absolute paths are resolved and sanitized
-- File operations are restricted to application directories
+**WebUI Mode Configuration**:
+- Integration with WebUI configuration system
+- Access to WebUI command-line arguments
+- Shared settings with other extensions
 
-### Configuration Security
-- Configuration values are validated before use
-- Sensitive data is handled appropriately
-- File permissions are set securely
+**Standalone Mode Configuration**:
+- Independent configuration file management
+- Default value initialization
+- Portable configuration handling
 
-### Input Validation
-- All user inputs are validated and sanitized
-- Parameter parsing includes bounds checking
-- File operations validate file types and sizes
+## Data Management and Persistence
 
-## Testing Strategy
+### File Organization Structure
 
-### Current Test Coverage
-The project includes comprehensive testing with the following test files:
+```
+data_sc/                          # Application data root
+├── CivitaiShortCutSetting.json   # Main configuration
+├── CivitaiShortCut.json          # Shortcut definitions
+├── CivitaiShortCutClassification.json  # Category data
+├── CivitaiShortCutRecipeCollection.json # Recipe storage
+├── sc_gallery/                   # Gallery images
+├── sc_infos/                     # Model metadata
+├── sc_recipes/                   # Recipe data
+└── sc_thumb_images/              # Thumbnail cache
+```
 
-- **`test_environment_detector.py`**: Environment detection functionality
-- **`test_compat_layer.py`**: Core compatibility layer functionality  
-- **`test_adapters.py`**: All adapter implementations (WebUI and Standalone)
-- **`test_module_compatibility.py`**: Module compatibility modifications
-- **`test_integration.py`**: Cross-mode integration testing
-- **`test_ui_adapter.py`**: UI adapter functionality
-- **`test_main.py`**: Main application and launcher testing
-- **`test_cli.py`**: Command-line interface testing
-- **`test_path_manager_verification.py`**: Path management verification
-- **`test_webui_function_simulation.py`**: WebUI function simulation
+### Data Processing Pipeline
 
-### Testing Approach
-- **Unit Testing**: Each adapter is tested independently with comprehensive mocking
-- **Integration Testing**: Cross-mode compatibility is verified with real workflows
-- **Environment Testing**: Both WebUI and standalone modes are tested thoroughly
-- **Mock Strategy**: WebUI modules are mocked to enable testing without WebUI installation
-- **Coverage**: High test coverage maintained for all critical components
+#### Model Information Processing
+1. **API Data Retrieval**: Fetch from Civitai API
+2. **Metadata Validation**: Ensure data integrity
+3. **Local Storage**: Cache for offline access
+4. **UI Presentation**: Format for display
 
-### Test Execution
+#### Image Processing Pipeline
+1. **Download Management**: Queue and progress tracking
+2. **Format Conversion**: Standardize image formats
+3. **Thumbnail Generation**: Create preview images
+4. **Caching Strategy**: Optimize storage and access
+
+## Security and Reliability
+
+### Security Measures
+
+#### Input Validation
+- All user inputs validated and sanitized
+- Path traversal protection
+- File type and size validation
+- Parameter bounds checking
+
+#### API Security
+- Secure API key storage and transmission
+- Rate limiting and throttling
+- Request authentication
+- Error message sanitization
+
+#### File System Security
+- Restricted file operations to application directories
+- Secure file permissions
+- Atomic file operations
+- Backup and recovery mechanisms
+
+### Reliability Features
+
+#### Error Recovery
+- Automatic retry mechanisms with exponential backoff
+- Graceful degradation for network failures
+- Data consistency checks
+- Backup and restore capabilities
+
+#### Resource Management
+- Memory usage optimization
+- File handle management
+- Network connection pooling
+- Cleanup on application exit
+
+#### Performance Optimization
+- Lazy loading of components
+- Caching strategies for expensive operations
+- Background processing for long-running tasks
+- Progress reporting for user feedback
+
+## Testing and Quality Assurance
+
+### Comprehensive Test Suite
+
+#### Test Categories
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: Cross-module compatibility
+- **Compatibility Tests**: Dual-mode operation verification
+- **Performance Tests**: Load and stress testing
+- **Error Handling Tests**: Exception and recovery testing
+
+#### Test Infrastructure
+- Mocking framework for WebUI dependencies
+- Test data management and fixtures
+- Continuous integration validation
+- Coverage reporting and analysis
+
+#### Test Execution
 ```bash
-# Run all tests
-pytest tests/ -v
+# Full test suite
+pytest -v
 
-# Run with coverage
-pytest tests/ --cov=scripts.civitai_manager_libs.compat --cov-report=html
+# With coverage reporting
+# Config file: .coveragerc
+# Generated at: coverage.json
+pytest --cov
+
+# Integration tests only
+python tests/run_integration_tests.py
 ```
 
-## Deployment Considerations
+### Code Quality Standards
 
-### WebUI Integration
-- Extension follows WebUI extension guidelines
-- No modifications to core WebUI files required
-- Graceful handling of WebUI version differences
+#### Code Style and Formatting
+- Black code formatting with 100-character line length
+- Flake8 linting with zero warnings tolerance
+- Type hints for all public interfaces
+- Comprehensive docstring documentation
 
-### Standalone Deployment
-- Minimal external dependencies
-- Clear installation and configuration instructions
-- Self-contained operation capability
+#### Architecture Compliance
+- SOLID principles adherence
+- Design pattern consistency
+- Interface contract compliance
+- Dependency injection where appropriate
 
-## Future Considerations
+## Deployment and Distribution
 
-### Scalability
-- Architecture supports additional execution modes
-- Interface pattern enables feature expansion
-- Modular design facilitates maintenance
+### Packaging and Dependencies
 
-### Compatibility
-- Version compatibility strategy across WebUI releases
-- Migration path for configuration and data
-- Backward compatibility maintenance
+#### Project Metadata (`pyproject.toml`)
+- Modern Python packaging with PEP 518/621 compliance
+- Semantic versioning (current: 0.1.0)
+- Comprehensive dependency specification
+- Multi-Python version support (3.11+)
+
+#### Dependency Management
+- **Core Dependencies**: Gradio, Requests, Pillow, NumPy
+- **Optional Dependencies**: Audio processing for Python 3.13+
+- **Development Dependencies**: Testing, linting, and documentation tools
+- **Version Pinning**: Strategic pinning for stability
+
+#### Distribution Formats
+- **WebUI Extension**: Direct installation in extensions directory
+- **Standalone Package**: Self-contained executable distribution
+- **Docker Container**: Containerized deployment option
+
+### Installation and Setup
+
+#### WebUI Mode Installation
+1. Clone/download to WebUI extensions directory
+2. Automatic dependency resolution
+3. WebUI restart for extension activation
+4. Configuration through WebUI interface
+
+#### Standalone Mode Installation
+1. Python environment setup (3.11+)
+2. Package installation via pip or direct execution
+3. Configuration file initialization
+4. Launch via command line or script
+
+#### Configuration Management
+- Automatic directory structure creation
+- Default configuration initialization
+- Environment-specific path detection
+- Migration support for updates
+
+### Runtime Environments
+
+#### Development Environment
+- Container-based development setup
+- Comprehensive testing framework
+- Code quality tools integration
+- Hot-reload capabilities
+
+#### Production Deployment
+- Optimized dependency loading
+- Resource usage monitoring
+- Error reporting and logging
+- Performance profiling capabilities
+
+## Architecture Evolution and Roadmap
+
+### Recent Architectural Improvements
+
+#### Modularization Initiative
+- **Settings Refactoring**: Moved from monolithic to modular settings management
+- **Gallery System**: Extracted gallery functionality into dedicated module
+- **Recipe Actions**: Separated recipe operations into focused components
+- **Core Services**: Centralized HTTP, logging, and notification services
+
+#### Error Handling Enhancement
+- **Unified Exception Framework**: Comprehensive error handling with custom exception hierarchy
+- **Notification Service**: Decoupled UI notifications from business logic
+- **Progressive Recovery**: Intelligent fallback mechanisms for graceful degradation
+
+#### Testing Infrastructure
+- **Comprehensive Test Suite**: Over 900 test cases covering all major components
+- **Integration Testing**: Real-world scenario validation
+- **Performance Testing**: Load and stress testing capabilities
+- **Mock Framework**: Sophisticated WebUI simulation for testing
+
+### Future Architecture Directions
+
+#### Scalability Enhancements
+- **Plugin Architecture**: Extension point system for third-party additions
+- **Microservice Ready**: Prepare for potential service decomposition
+- **API Gateway**: Centralized API management and routing
+- **Caching Layer**: Advanced caching strategies for performance
+
+#### Enhanced Compatibility
+- **Multi-WebUI Support**: Support for additional WebUI implementations
+- **Cloud Integration**: Support for cloud-based model storage and processing
+- **API Versioning**: Robust API version management for backward compatibility
+
+#### Performance Optimization
+- **Async Processing**: Enhanced asynchronous operation support
+- **Resource Management**: Advanced memory and resource optimization
+- **Progressive Loading**: Improved UI loading and responsiveness
+- **Background Processing**: Enhanced background task management
+
+## Key Design Decisions and Rationale
+
+### Compatibility Layer Design
+**Decision**: Abstract interface pattern with dual adapter implementations
+**Rationale**: 
+- Enables seamless dual-mode operation
+- Maintains clean separation of concerns
+- Facilitates testing and maintenance
+- Supports future extension to additional modes
+
+### Centralized Service Layer
+**Decision**: Unified HTTP client and service infrastructure
+**Rationale**:
+- Consistent error handling across all network operations
+- Centralized authentication and rate limiting
+- Simplified testing and mocking
+- Enhanced observability and debugging
+
+### Modular Business Logic
+**Decision**: Single Responsibility Principle applied to all major components
+**Rationale**:
+- Improved maintainability and testability
+- Clear ownership and responsibility boundaries
+- Enhanced code reusability
+- Simplified debugging and troubleshooting
+
+### Configuration Management Strategy
+**Decision**: Hierarchical configuration with validation framework
+**Rationale**:
+- Type safety and validation for all settings
+- Clear separation of configuration concerns
+- Support for configuration migration and versioning
+- Environment-specific configuration management
+
+### Error Handling Philosophy
+**Decision**: Comprehensive exception handling with graceful degradation
+**Rationale**:
+- Enhanced user experience with meaningful error messages
+- Robust operation in partial failure scenarios
+- Comprehensive logging for debugging
+- Automatic recovery where possible
+
+## Documentation and Knowledge Management
+
+### Documentation Structure
+- **Architecture Documentation**: High-level system design and patterns
+- **Interface Specifications**: Detailed API contracts and specifications
+- **User Guides**: End-user documentation and tutorials
+- **Developer Guides**: Development setup and contribution guidelines
+- **API Documentation**: Comprehensive API reference documentation
+
+### Code Documentation Standards
+- **Docstring Requirements**: Comprehensive docstrings for all public interfaces
+- **Type Hints**: Full type annotation for enhanced IDE support
+- **Comment Standards**: Explanatory comments for complex logic
+- **README Files**: Component-level documentation and examples
+
+### Knowledge Sharing
+- **Architecture Decision Records**: Documentation of major design decisions
+- **Code Review Guidelines**: Standards for code review and quality assurance
+- **Contribution Guidelines**: Clear guidelines for external contributors
+- **Issue Templates**: Structured issue reporting and feature requests
+
+---
+
+This architecture overview represents the current state of the Civitai Shortcut project as of July 2025, reflecting significant evolution from a simple WebUI extension to a sophisticated dual-mode application with comprehensive service architecture, robust error handling, and modular design principles.
