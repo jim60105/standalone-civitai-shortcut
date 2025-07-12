@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [1.6.7] - 2023-09-15
+## [1.6.7] - 2023-09-18
 
 ### Changed
 - Changed the names of each menu to correspond to their functions
 
-## [1.6.6] - 2023-09-15
+## [1.6.6] - 2023-09-07
 
 ### Changed
 - In Prompt Recipe, deselected the option 'Delete from references when selecting a thumbnail'
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Added feature in Prompt Recipe to input directives in the prompt based on the type of the selected reference model
 
-## [1.6.5] - 2023-09-15
+## [1.6.5] - 2023-09-04
 
 ### Changed
 - Updated compatibility with gradio version 3.41.2 or higher
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - Changed the names of some menus
 
-## [1.6.3] - 2023-08-19
+## [1.6.3] - 2023-08-10
 
 ### Changed
 - Modified the interface of the classification
@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Added shortcut browser feature to the classification, improving convenience
 
-## [1.6.2] - 2023-08-19
+## [1.6.2] - 2023-08-03
 
 ### Added
 - Update the registration date of the shortcut (perform Assistance->Update Shortcuts: Update the model information for the shortcut for existing data)
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - Intuitively modified the settings of the gallery
 
-## [1.6.1] - 2023-08-19
+## [1.6.1] - 2023-07-31
 
 ### Changed
 - Modified the interface of the reference shortcut model in the recipe
@@ -63,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The NSFW filter will now operate across all ranges
 - In the classification, display the removed models among the shortcut models
 
-## [1.6.0] - 2023-08-19
+## [1.6.0] - 2023-07-29
 
 ### Added
 - Added NSFW Filter function
@@ -74,12 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Revamped prompt recipe
 - Enhanced the search function for prompt recipes
 
-## [1.5.8] - 2023-08-19
+## [1.5.8] - 2023-07-27
 
 ### Added
 - Added a 'Personal Note' section to the model information, and made it searchable using '@' in the search
 
-## [1.5.7] - 2023-08-19
+## [1.5.7] - 2023-07-18
 
 ### Added
 - Added functionality to filter using the base model provided by Civitai
@@ -89,19 +89,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Selected classification categories will work as an 'AND' operation, meaning they will function as an intersection
 - Improved management of shortcuts that are classified under multiple categories
 
-## [1.5.6] - 2023-08-19
+## [1.5.6] - 2023-07-14
 
 ### Changed
 - Changed the "user gallery paging" method to cursor-based paging as recommended by Civitai
 
-## [1.5.5] - 2023-08-19
+## [1.5.5] - 2023-07-09
 
 ### Changed
 - When downloading a file, if there is no primary file in the download list, it will be modified to not generate version info and preview images. Only the corresponding file will be downloaded
 - The download file list will indicate whether it is a primary file
 - Modified the sorting so that the shortcuts are sorted based on the 'name' field
 
-## [1.5.4] - 2023-08-19
+## [1.5.4] - 2023-06-05
 
 ### Added
 - Added a feature to suggest available names for the model download folder (listed in the order of model name, author, and model tag)
@@ -115,7 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Corrected a typo
 
-## [1.5.3] - 2023-08-19
+## [1.5.3] - 2023-05-31
 
 ### Added
 - Added the ability to change the file name of the model file to be downloaded
@@ -131,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Fixed Shortcut Browser screen ratio error
 
-## [1.5.2] - 2023-08-19
+## [1.5.2] - 2023-05-28
 
 ### Added
 - Added description/modified the wording for folder creation during model download
@@ -140,7 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Changed the position of Prompt Recipe (Assistance -> Top level)
 - Changed the position of Scan and Update Models (Manage -> Assistance)
 
-## [1.5.1] - 2023-08-19
+## [1.5.1] - 2023-05-26
 
 ### Added
 - Added the feature to change the preview image in the model information tab -> images: Change Preview Image button (only appears if the model has been downloaded)
@@ -149,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - For downloaded models, updated the default folder name displayed to be the downloaded folder information (may have inaccuracies if the model is downloaded in more than one location)
 - In the Downloaded Model Information Tab, you can view the downloaded location and files
 
-## [1.5.0] - 2023-08-19
+## [1.5.0] - 2023-05-24
 
 ### Added
 - Added the Assistance tab
@@ -172,7 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Bug: Issue in the prompt recipe where the saved image loses the generated image information (appears to be a problem with the Gradio Image component)
 
-## [1.4.1] - 2023-08-19
+## [1.4.1] - 2023-05-13
 
 ### Added
 - Added "Reload UI" button that reloads the SDUI
@@ -192,7 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Security
 - Note: Please use the "Save Setting" button for saving settings as the "Reload UI" button does not include this feature
 
-## [1.4.0] - 2023-08-19
+## [1.4.0] - 2023-05-11
 
 ### Added
 - Added new tab called "Downloaded Model Information" to the Information tab
@@ -207,7 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - All "Open Folder" functions only work when the folder exists
 - If you set Shortcut Browser Thumbnail Count per Page to 0, the entire list will be displayed as before
 
-## [1.3.5] - 2023-08-19
+## [1.3.5] - 2023-05-07
 
 ### Added
 - Added ability to specify the folder to download to
@@ -223,7 +223,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Downloaded model files can be freely moved to any desired folder
 - The "-" character will be replaced when creating folders
 
-## [1.3.3] - 2023-08-19
+## [1.3.3] - 2023-05-01
 
 ### Added
 - Added "Scan and Update Models" and "Settings" tabs to the Manage tab
@@ -237,7 +237,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Changed the name of the model info file that records information about the model
 - Set the number of columns in the image gallery (Shortcut Browser and Information Images, User Gallery Images)
 
-## [1.3.1] - 2023-08-19
+## [1.3.1] - 2023-04-28
 
 ### Added
 - Added new feature to manage and classify items
@@ -250,7 +250,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Classification items can be selected from dropdown list and work with "filter model type" and "search" features
 - Tags, classification, and search keywords are applied with "and" operation, and each item is applied with "or" operation
 
-## [1.2.1] - 2023-08-19
+## [1.2.1] - 2023-04-18
 
 ### Changed
 - Modified the application method for generating image information to include information from Civitai's 'information' field
@@ -259,7 +259,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Removed
 - Removed the Downloaded Model tab which duplicated the functionality of the Saved Model Information tab
 
-## [1.2.0] - 2023-08-19
+## [1.2.0] - 2023-04-20
 
 ### Added
 - Added Civitai User Gallery tab where users can view the information and images of the models in the gallery
@@ -276,7 +276,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Bug: When viewing the gallery images at full size, the image control and browsing controls overlap
 
-## [1.1.3] - 2023-08-19
+## [1.1.3] - 2023-04-15
 
 ### Added
 - Added #tag search feature to the search function
@@ -287,7 +287,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Search terms are separated by commas and connected with "or" operation within search terms and tags, with "and" operation between search terms and tags
 - Existing shortcuts require "update shortcut model information" for tag searches
 
-## [1.1.0] - 2023-08-19
+## [1.1.0] - 2023-04-14
 
 ### Added
 - Added separate folder for saving model information and images when registering a shortcut
