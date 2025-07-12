@@ -12,6 +12,7 @@ from .event_handlers import GalleryEventHandlers
 from .data_processor import GalleryDataProcessor
 from .download_manager import GalleryDownloadManager
 from .gallery_utilities import GalleryUtilities, CompatibilityManager
+from .event_normalizer import EventNormalizer
 
 # Import util for backward compatibility
 from .. import util  # noqa: F401
@@ -51,30 +52,13 @@ def on_ui(recipe_input):
 
 def on_gallery_select(evt, civitai_images):
     """Gallery selection handler - backward compatibility."""
-    # Legacy Gradio v3/v4 event handler: auto-fix parameter mixup for select event
-    # 1. evt 應為 SelectData，civitai_images 應為 list
-    # 2. 若 evt 不是 SelectData、但 civitai_images 是 SelectData，則自動交換
-    # 3. 若 evt 是 list、civitai_images 是 None，則自動 fallback
-    import gradio as gr
-    # Accept any object with .index attribute as a valid event (duck typing for test mocks)
-    # If either evt or civitai_images is a list and the other is None, treat the list as civitai_images and create a fake event
-    if (isinstance(evt, list) and civitai_images is None):
-        logger.debug("[GALLERY] Detected Gradio v3/v4 default parameter mode: evt is images list, civitai_images is None")
-        civitai_images = evt
-        evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
-    elif (isinstance(civitai_images, list) and evt is None):
-        logger.debug("[GALLERY] Detected Gradio v3/v4 default parameter mode: civitai_images is images list, evt is None")
-        evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
-    elif not hasattr(evt, 'index'):
-        if hasattr(civitai_images, 'index'):
-            logger.warning("[GALLERY] Detected parameter mixup - auto-swapping evt/civitai_images (v3/v4 fix)")
-            evt, civitai_images = civitai_images, evt
-        else:
-            logger.error(f"[GALLERY] evt is not a SelectData or compatible object! It's {type(evt)}: {evt}")
-            return None, None, gr.update(), "Error: Invalid event type (no .index attribute)"
-    if civitai_images is None:
-        logger.error("[GALLERY] civitai_images is None! This indicates incorrect event binding.")
-        return None, None, gr.update(), "Error: No images data available"
+    try:
+        # Use EventNormalizer to handle different parameter combinations
+        evt, civitai_images = EventNormalizer.normalize_gallery_event(evt, civitai_images)
+    except ValueError as e:
+        # Return error state if normalization fails
+        return None, None, gr.update(), f"Error: {e}"
+
     _, event_handlers, _, _, _ = get_gallery_components()
     return event_handlers.handle_gallery_select(evt, civitai_images)
 
