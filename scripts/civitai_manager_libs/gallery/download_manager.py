@@ -249,9 +249,9 @@ class GalleryDownloadManager:
                 # Execute parallel download
                 success_count = self.download_images_parallel(urls_to_download, progress_wrapper)
 
-                # Close progress bar if it has the close method
-                if hasattr(progress_bar, 'close'):
-                    progress_bar.close()
+                # For Gradio Progress, we don't need to manually close the progress bar
+                # as it's handled automatically when the function completes
+                # The close() method requires a _tqdm parameter which is not available here
 
                 logger.debug(
                     f"Gallery parallel download: {success_count}/{len(urls_to_download)} successful"
