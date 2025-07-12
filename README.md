@@ -3,7 +3,7 @@
 **The ultimate dual-mode AI model management solution for Stable Diffusion**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0.html)
 [![AUTOMATIC1111](https://img.shields.io/badge/AUTOMATIC1111-WebUI-orange)](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 [![Standalone](https://img.shields.io/badge/Standalone-Mode-green)](https://github.com/jim60105/standalone-civitai-shortcut)
 
@@ -35,20 +35,6 @@
 - **Recipe Gallery**: Visual recipe browser with instant preview and application
 - **Smart Organization**: Categorize and manage recipes with custom classifications
 
-### 🛡️ **Enterprise-Grade Reliability**
-- **Robust Error Handling**: Comprehensive error recovery with user-friendly feedback
-- **Rate Limiting**: Built-in API throttling to respect Civitai's limits
-- **Offline Capability**: Full functionality with cached data when offline
-- **Progress Tracking**: Real-time progress indicators for all operations
-
-### ⚙️ **Developer-Friendly Design**
-- **Modern Architecture**: Clean, modular codebase following SOLID principles
-- **Comprehensive Testing**: 900+ test cases ensuring reliability and quality
-- **Rich API**: Well-documented interfaces for extension and customization
-- **Docker Ready**: Containerized deployment for consistent environments
-
-## 🎬 Quick Start
-
 ## 🎬 Quick Start
 
 ### 🔧 Installation Options
@@ -61,21 +47,28 @@
 5. Find the **Civitai Shortcut** tab in your interface
 
 #### Option 2: Standalone Application
-```bash
-# Clone the repository
+- **Linux/macOS:**
+    ```bash
+    # Clone the repository
 git clone https://github.com/jim60105/standalone-civitai-shortcut.git
 cd standalone-civitai-shortcut
 
-# Install dependencies (Python 3.11+ required)
-pip install -r requirements.txt
+# Start the application (auto-handles dependencies)
+./start.sh
+    ```
+- **Windows:**
+    ```bat
+    REM Clone the repository
+git clone https://github.com/jim60105/standalone-civitai-shortcut.git
+cd standalone-civitai-shortcut
 
-# Launch standalone mode
-python main.py
-```
+REM Start the application (auto-handles dependencies)
+start.bat
+    ```
 
-#### Option 3: Docker (Coming Soon)
+#### Option 3: Docker
 ```bash
-docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
+docker run -p 7860:7860 -v $(pwd)/data_sc:/app/data_sc ghcr.io/jim60105/standalone-civitai-shortcut:latest
 ```
 
 ### ⚡ First Steps
@@ -97,7 +90,7 @@ docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
 - **Metadata Viewing**: Comprehensive model information including tags, descriptions, and usage statistics
 - **Send to Generation**: Direct integration with txt2img/img2img for seamless workflow
 
-![Model Browser Demo](https://github.com/sunnyark/civitai-shortcut/assets/40237431/fdac59c0-0ced-41fb-8faa-83029b3ffc3f)
+![Model Browser Demo](https://github.com/user-attachments/assets/0336259d-c5ab-4c0f-9122-2ba95736bc2c)
 
 ### 📝 Prompt Recipe System
 > *Save, organize, and reuse your best prompt combinations*
@@ -107,7 +100,7 @@ docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
 - **Visual Gallery**: Browse recipes with preview images and instant application
 - **Smart Organization**: Categorize recipes with custom tags and classifications
 
-![Recipe System](https://github.com/sunnyark/civitai-shortcut/assets/40237431/d3d61c0a-c749-40ee-bc8c-69c35e9c6ba7)
+![Recipe System](https://github.com/user-attachments/assets/6ea57fea-97be-48c7-8889-21d45f2ce283)
 
 ### 🔧 Advanced Tools
 > *Powerful utilities for model management and organization*
@@ -117,7 +110,7 @@ docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
 - Bulk operations for efficient management
 - Hierarchical organization support
 
-![Classification](https://github.com/sunnyark/civitai-shortcut/assets/40237431/9003d94d-5a13-4613-9fa6-722b1e892874)
+![Classification](https://github.com/user-attachments/assets/d3afb1d2-f186-4da1-846b-e7e4cc428776)
 
 #### Scan & Update Tools
 - **Model Scanner**: Automatically register existing models
@@ -125,7 +118,7 @@ docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
 - **Metadata Sync**: Update model information with latest data
 - **Orphan Detection**: Find and handle missing or moved models
 
-![Scan Tools](https://github.com/sunnyark/civitai-shortcut/assets/40237431/7f200d24-a4ca-4e23-834a-71470590ee49)
+![Scan Tools](https://github.com/user-attachments/assets/679f3050-fe3c-4b24-b8b1-45e6e0111e0e)
 
 ### ⚙️ Configuration
 > *Customize your experience with comprehensive settings*
@@ -135,7 +128,7 @@ docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
 - **API Configuration**: Manage Civitai API settings and rate limits
 - **UI Preferences**: Customize interface appearance and behavior
 
-![Settings](https://github.com/sunnyark/civitai-shortcut/assets/40237431/67e2e7c5-0cd6-4917-a4c8-b9ffb45832f9)
+![Settings](https://github.com/user-attachments/assets/1dd87b80-1593-40da-848c-c1ff0cb5e0c6)
 
 ---
 
@@ -146,12 +139,12 @@ docker run -p 7860:7860 -v ./data:/app/data jim60105/civitai-shortcut
 #### Method 1: Drag & Drop URLs
 Simply drag a Civitai model URL from your browser directly to the upload area:
 
-![URL Drop Demo](https://github.com/sunnyark/civitai-shortcut/assets/40237431/c6db4ced-9cec-4488-ac3f-9a17fadb42b8)
+![URL Drop Demo](https://github.com/user-attachments/assets/8affcc6e-3fd3-42c1-9449-4abbaa445b3c)
 
 #### Method 2: Internet Shortcuts
 Drag and drop saved `.url` shortcut files for batch import:
 
-![Shortcut Drop Demo](https://github.com/sunnyark/civitai-shortcut/assets/40237431/a18cc188-0d7a-4860-91fa-b9b2b27f4bdc)
+![Shortcut Drop Demo](https://github.com/user-attachments/assets/45471f2c-0352-4afd-bf81-c6dde13fcbe9)
 
 #### Method 3: Bulk Import
 Select multiple shortcuts and import them all at once for efficient collection building.
@@ -191,12 +184,6 @@ data_sc/
 └── 📁 sc_thumb_images/                     # Generated thumbnails
 ```
 
-### 🔒 Data Privacy & Security
-- All data is stored locally on your machine
-- No telemetry or analytics collection
-- API keys are stored securely with proper encryption
-- Full control over your model collection and recipes
-
 ---
 
 ## 🚀 Advanced Features
@@ -213,97 +200,17 @@ data_sc/
 - **Parallel Downloads**: Concurrent operations for faster processing
 - **Progress Tracking**: Real-time feedback for all operations
 
-### 🔧 Developer Features
-- **Plugin Architecture**: Extensible design for custom additions
-- **Comprehensive Logging**: Detailed logs for debugging and monitoring
-- **Error Recovery**: Automatic retry and fallback mechanisms
-- **Testing Suite**: 900+ tests ensuring reliability
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### 🐛 Bug Reports
-- Use the [Issue Tracker](https://github.com/jim60105/standalone-civitai-shortcut/issues)
-- Include detailed reproduction steps
-- Attach relevant log files from `logs/civitai_shortcut.log`
-
-### 💡 Feature Requests
-- Check existing issues before creating new ones
-- Provide clear use cases and benefits
-- Consider contributing the implementation
-
-### 🔧 Development
-```bash
-# Set up development environment
-git clone https://github.com/jim60105/standalone-civitai-shortcut.git
-cd standalone-civitai-shortcut
-pip install -r requirements.txt
-
-# Run tests
-pytest tests/ -v
-
-# Run with coverage
-pytest --cov=scripts.civitai_manager_libs --cov-report=html
-
-# Code formatting
-black --line-length=100 --skip-string-normalization .
-flake8 .
-```
-
----
-
-## 📋 Requirements
-
-### System Requirements
-- **Python**: 3.11 or higher
-- **Memory**: 2GB RAM minimum, 4GB recommended
-- **Storage**: 1GB free space for application and cache
-- **Network**: Internet connection for API access and downloads
-
-### WebUI Compatibility
-- **AUTOMATIC1111**: Latest version recommended
-- **Forge**: Full compatibility
-- **Other WebUIs**: Standalone mode available
-
-### Dependencies
-All dependencies are automatically managed. Key packages include:
-- `gradio` - Modern web interface
-- `requests` - HTTP client for API communication
-- `Pillow` - Image processing and thumbnails
-- `rich` - Enhanced console output
-
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+<img src="https://github.com/user-attachments/assets/c297caf6-4dda-43fa-bbbb-ca7f6256d90e" alt="agplv3" width="300" />
 
----
+[GNU AFFERO GENERAL PUBLIC LICENSE Version 3](/LICENSE)
 
-## 🙏 Acknowledgments
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-- **Civitai Team** - For providing the excellent model platform and API
-- **AUTOMATIC1111** - For the foundational WebUI framework
-- **Community Contributors** - For feedback, testing, and improvements
-- **Open Source Libraries** - For the robust foundation this project builds upon
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 
----
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-## 📞 Support
-
-- **Documentation**: [Full documentation](docs/)
-- **Issues**: [GitHub Issues](https://github.com/jim60105/standalone-civitai-shortcut/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/jim60105/standalone-civitai-shortcut/discussions)
-
----
-
-<div align="center">
-
-**⭐ If you find this project useful, please consider giving it a star! ⭐**
-
-Made with ❤️ for the Stable Diffusion community
-
-</div>
