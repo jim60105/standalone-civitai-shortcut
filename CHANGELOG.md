@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-07-12
+
+### Added
+- Added standalone execution mode allowing the application to run independently without AUTOMATIC1111 WebUI
+- Added comprehensive command-line interface with host/port/debug options for standalone mode
+- Added cross-platform startup scripts (`start.sh`, `start.bat`) for easy standalone execution
+- Added comprehensive compatibility layer with abstract interfaces for dual-mode operation
+- Added environment detection system for automatic WebUI/standalone mode selection
+- Added restart functionality in standalone mode with process management
+- Added psutil dependency for standalone process restart support
+- Added comprehensive test suite with 80%+ coverage and CI integration
+- Added Docker multi-stage build with Nuitka compilation and optimized runtime
+- Added support for pillow-simd optimization on x86 platforms
+- Added dark mode support with custom "SebastianBravo/simci_css" theme
+- Added comprehensive debug logging throughout all modules for better traceability
+- Added install.py script for automatic dependency installation
+- Added comprehensive documentation including architecture overview, interface specifications, and testing guidelines
+
+### Changed
+- **BREAKING**: Completely restructured project architecture with compatibility layer for dual-mode support
+- **BREAKING**: Refactored all core modules to use abstract interfaces instead of direct WebUI dependencies
+- **BREAKING**: Updated configuration system to support both WebUI options and standalone JSON configuration
+- **BREAKING**: Modified all path management to work in both WebUI and standalone environments
+- Updated PNG metadata processing to precisely match AUTOMATIC1111's implementation
+- Updated parameter processing to use AUTOMATIC1111's exact regex patterns and logic
+- Updated sampler provider to align with AUTOMATIC1111's visible_samplers() function
+- Upgraded project to use pyproject.toml for modern Python packaging
+- Updated all modules to use centralized logging system with structured output
+- Updated build system to use uv for faster dependency management
+- Standardized code formatting with Black (100-char line length, skip string normalization)
+- Enhanced error handling with comprehensive exception management
+- Updated Gradio port default from 7861 to 7860 for consistency
+- Improved UI event handlers with NSFW toggles and enhanced interactions
+
+### Fixed
+- Fixed circular import issues between util.py and setting.py modules
+- Fixed model path API to properly handle different model types and directories
+- Fixed UTF-8 encoding issues in download folder names (vs_foldername parameter)
+- Fixed WebUI base and extension path resolution for proper integration
+- Fixed PNG info extraction to match WebUI's read_info_from_image behavior
+- Fixed numerous flake8 warnings and code quality issues (reduced from ~300 to 124)
+- Fixed environment detection for reliable WebUI/standalone mode identification
+- Fixed parameter validation and processing edge cases
+- Fixed UI component compatibility across different Gradio versions
+
+### Security
+- Enhanced security with proper file handle management in restart functionality
+- Improved input validation and sanitization across all modules
+- Added comprehensive error handling to prevent information leakage
+
+### Deprecated
+- Legacy direct WebUI module imports (replaced with compatibility layer)
+- Old parameter validation methods (replaced with AUTOMATIC1111-compatible processing)
+
 ## [1.6.7] - 2023-09-18
 
 ### Changed
@@ -304,7 +358,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.7...HEAD
+[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.7...v2.0.0
 [1.6.7]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.6...v1.6.7
 [1.6.6]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.5...v1.6.6
 [1.6.5]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.4...v1.6.5
