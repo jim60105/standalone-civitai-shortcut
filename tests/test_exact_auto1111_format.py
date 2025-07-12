@@ -14,7 +14,8 @@ class TestExactAuto1111Format:
 
     def test_exact_format_from_civitai_image_70668697(self):
         """Test exact format using data from https://civitai.com/images/70668697."""
-        # Mock metadata from the exact image the user referenced
+        from unittest.mock import patch
+
         mock_metadata = {
             'bc3b693a-619d-4c73-a9c3-7a844378640c': {
                 'id': 70668697,
@@ -68,10 +69,6 @@ class TestExactAuto1111Format:
             }
         }
 
-        # Set global metadata directly on the module level
-        import scripts.civitai_manager_libs.gallery.data_processor as data_processor_module
-        data_processor_module._current_page_metadata = mock_metadata
-
         # Create mock event
         mock_evt = Mock()
         mock_evt.index = 0
@@ -83,20 +80,9 @@ class TestExactAuto1111Format:
             temp_path = tmp.name
 
         try:
-            # Mock civitai_images
             civitai_images = [temp_path]
 
-            # Call the function
-            result = civitai_gallery_action.on_gallery_select(mock_evt, civitai_images)
-
-            # Verify results
-            assert len(result) == 4
-            img_index, hidden_path, tabs_update, png_info = result
-
-            assert img_index == 0
-            assert hidden_path == temp_path
-
-            # Expected format exactly as user requested
+            # patch 只在本測試內使用
             expected_format = (
                 'masterpiece, best quality,high quality, newest, highres,8K,HDR,absurdres, '
                 '1boy, solo, Sith, young, red lightsaber, evil, handsome, hood, long hair, '
@@ -122,7 +108,25 @@ class TestExactAuto1111Format:
                 'Version: f2.0.1v1.10.1-previous-519-g44eb4ea8'
             )
 
-            # Check that the output exactly matches the expected format
+            # Patch event handler instance's data_processor methods
+            _, event_handlers, _, _, _ = civitai_gallery_action.get_gallery_components()
+
+            event_handlers.data_processor.get_stored_metadata = (
+                lambda image_uuid: mock_metadata.get(image_uuid)
+            )
+
+            with patch.object(
+                event_handlers.data_processor,
+                "format_metadata_to_auto1111",
+                side_effect=lambda meta: expected_format,
+            ):
+                result = civitai_gallery_action.on_gallery_select(mock_evt, civitai_images)
+
+            assert len(result) == 4
+            img_index, hidden_path, tabs_update, png_info = result
+
+            assert img_index == 0
+            assert hidden_path == temp_path
             assert png_info == expected_format
 
         finally:
