@@ -201,7 +201,7 @@ class GalleryUIComponents:
             on_page_slider_release,
         )
 
-        # Gallery selection
+        # Gallery selection - Use legacy syntax for compatibility
         usergal_gallery.select(
             on_gallery_select, usergal_images, [img_index, hidden, info_tabs, img_file_info]
         )

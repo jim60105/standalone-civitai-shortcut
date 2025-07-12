@@ -182,8 +182,27 @@ class GalleryEventHandlers:
         self, evt: gr.SelectData, civitai_images: list
     ) -> Tuple[int, str, gr.update, str]:
         """Extract generation parameters from PNG info first, then Civitai API metadata."""
+        logger.debug(
+            f"[GALLERY_EVENT] handle_gallery_select called with evt.index={evt.index}, "
+            f"civitai_images type={type(civitai_images)}, "
+            f"civitai_images length={len(civitai_images) if civitai_images else 'None'}"
+        )
+
+        if civitai_images is None:
+            logger.error(
+                "[GALLERY_EVENT] civitai_images is None! Cannot proceed with gallery selection."
+            )
+            return 0, "", gr.update(), "Error: No images data available"
+
+        if evt.index >= len(civitai_images):
+            logger.error(
+                f"[GALLERY_EVENT] evt.index {evt.index} is out of range for civitai_images "
+                f"with length {len(civitai_images)}"
+            )
+            return 0, "", gr.update(), "Error: Invalid image selection"
+
         selected = civitai_images[evt.index]
-        logger.debug(f"handle_gallery_select: selected={selected}")
+        logger.debug(f"[GALLERY_EVENT] handle_gallery_select: selected={selected}")
 
         # Get local file path if URL
         local_path = selected

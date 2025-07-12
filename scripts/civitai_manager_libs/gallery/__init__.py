@@ -5,6 +5,8 @@ This module provides a clean, modular approach to gallery management
 following SRP and KISS principles.
 """
 
+import gradio as gr
+
 from .ui_components import GalleryUIComponents
 from .event_handlers import GalleryEventHandlers
 from .data_processor import GalleryDataProcessor
@@ -13,6 +15,9 @@ from .gallery_utilities import GalleryUtilities, CompatibilityManager
 
 # Import util for backward compatibility
 from .. import util  # noqa: F401
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Global instances for backward compatibility
 _ui_components = None
@@ -46,6 +51,36 @@ def on_ui(recipe_input):
 
 def on_gallery_select(evt, civitai_images):
     """Gallery selection handler - backward compatibility."""
+    logger.debug(
+        f"[GALLERY] on_gallery_select called with evt type={type(evt)}, "
+        f"civitai_images type={type(civitai_images)}, "
+        f"civitai_images length={len(civitai_images) if civitai_images else 'None'}"
+    )
+
+    # Debug SelectData event attributes
+    if hasattr(evt, 'index'):
+        logger.debug(f"[GALLERY] evt.index={evt.index} (type: {type(evt.index)})")
+    if hasattr(evt, 'value'):
+        logger.debug(f"[GALLERY] evt.value={evt.value}")
+    if hasattr(evt, 'selected'):
+        logger.debug(f"[GALLERY] evt.selected={evt.selected}")
+
+    # Check if evt is actually SelectData
+    if isinstance(evt, gr.SelectData):
+        logger.debug("[GALLERY] evt is properly a SelectData object")
+    else:
+        logger.error(f"[GALLERY] evt is NOT SelectData! It's {type(evt)}: {evt}")
+        # Try to handle gracefully - maybe evt is the civitai_images
+        if isinstance(evt, list) and civitai_images is None:
+            logger.warning("[GALLERY] Detected parameter mixup - attempting to fix")
+            civitai_images = evt
+            # Create a fake SelectData for index 0
+            evt = type('FakeSelectData', (), {'index': 0, 'value': None, 'selected': True})()
+
+    if civitai_images is None:
+        logger.error("[GALLERY] civitai_images is None! This indicates incorrect event binding.")
+        return None, None, gr.update(), "Error: No images data available"
+
     _, event_handlers, _, _, _ = get_gallery_components()
     return event_handlers.handle_gallery_select(evt, civitai_images)
 
