@@ -20,7 +20,7 @@ class GalleryUtilities:
     @staticmethod
     def extract_model_info(url):
         """Extract model ID and version ID from URL."""
-        model_id_match = re.search(r'modelId=(\d+)', url)
+        model_id_match = re.search(r'modelId=(\d+)', url) or re.search(r'models/(\d+)', url)
         model_version_id_match = re.search(r'modelVersionId=(\d+)', url)
 
         model_id = model_id_match.group(1) if model_id_match else None
