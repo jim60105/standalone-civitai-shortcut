@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from scripts.civitai_manager_libs.http.client import CivitaiHttpClient, _STATUS_CODE_MESSAGES
+from scripts.civitai_manager_libs.http import get_http_client
 from scripts.civitai_manager_libs.exceptions import AuthenticationError
 from scripts.civitai_manager_libs import settings
 
@@ -123,7 +124,7 @@ def test_get_stream_http_error(monkeypatch):
 
 
 def test_download_file_success(monkeypatch, tmp_path):
-    client = CivitaiHttpClient()
+    client = get_http_client()
     # Mock get_stream to return DummyResponse with headers
     dummy = DummyResponse(status_code=200, headers={"content-length": "6"})
     monkeypatch.setattr(client, "get_stream", lambda url: dummy)
@@ -140,7 +141,7 @@ def test_download_file_success(monkeypatch, tmp_path):
 
 
 def test_download_file_stream_fail(monkeypatch, tmp_path):
-    client = CivitaiHttpClient()
+    client = get_http_client()
     monkeypatch.setattr(client, "get_stream", lambda url: None)
     target = tmp_path / "out.bin"
     assert not client.download_file("http://test", str(target))
@@ -157,14 +158,14 @@ def test_status_code_messages_defined():
 # Tests for _validate_download_size method
 def test_validate_download_size_file_not_exists():
     """Test validation when file doesn't exist."""
-    client = CivitaiHttpClient()
+    client = get_http_client()
     result = client._validate_download_size("/non/existent/file.bin", 1000)
     assert result is False
 
 
 def test_validate_download_size_unknown_expected_size(tmp_path):
     """Test validation when expected size is unknown (0 or negative)."""
-    client = CivitaiHttpClient()
+    client = get_http_client()
     test_file = tmp_path / "test.bin"
     test_file.write_bytes(b"hello world")
 
@@ -175,7 +176,7 @@ def test_validate_download_size_unknown_expected_size(tmp_path):
 
 def test_validate_download_size_exact_match(tmp_path):
     """Test validation when file size matches exactly."""
-    client = CivitaiHttpClient()
+    client = get_http_client()
     test_file = tmp_path / "test.bin"
     content = b"hello world"
     test_file.write_bytes(content)
@@ -186,7 +187,7 @@ def test_validate_download_size_exact_match(tmp_path):
 
 def test_validate_download_size_within_tolerance(tmp_path, monkeypatch):
     """Test validation when file size is within tolerance."""
-    client = CivitaiHttpClient()
+    client = get_http_client()
     test_file = tmp_path / "test.bin"
     content = b"hello world" * 100  # 1100 bytes
     test_file.write_bytes(content)
@@ -199,7 +200,7 @@ def test_validate_download_size_within_tolerance(tmp_path, monkeypatch):
 
 def test_validate_download_size_exceeds_tolerance(tmp_path, monkeypatch):
     """Test validation when file size exceeds tolerance."""
-    client = CivitaiHttpClient()
+    client = get_http_client()
     test_file = tmp_path / "test.bin"
     content = b"hello world" * 100  # 1100 bytes
     test_file.write_bytes(content)
@@ -212,7 +213,7 @@ def test_validate_download_size_exceeds_tolerance(tmp_path, monkeypatch):
             warning_called.append((message, duration))
 
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.get_notification_service",
+        "scripts.civitai_manager_libs.http.file_downloader.get_notification_service",
         lambda: DummyService(),
         raising=True,
     )
@@ -226,7 +227,7 @@ def test_validate_download_size_exceeds_tolerance(tmp_path, monkeypatch):
 
 def test_validate_download_size_custom_tolerance(tmp_path, monkeypatch):
     """Test validation with custom tolerance."""
-    client = CivitaiHttpClient()
+    client = get_http_client()
     test_file = tmp_path / "test.bin"
     content = b"hello world" * 100  # 1100 bytes
     test_file.write_bytes(content)
@@ -237,7 +238,7 @@ def test_validate_download_size_custom_tolerance(tmp_path, monkeypatch):
             pass
 
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.get_notification_service",
+        "scripts.civitai_manager_libs.http.file_downloader.get_notification_service",
         lambda: DummyService(),
         raising=True,
     )

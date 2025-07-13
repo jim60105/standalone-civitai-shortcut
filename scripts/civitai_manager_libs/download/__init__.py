@@ -26,6 +26,13 @@ from .task_manager import (
     download_file_gr,
 )
 
+# Import get_http_client for backward compatibility with tests
+from ..http import get_http_client
+
+# Import civitai and util for backward compatibility with tests  
+from .. import civitai
+from .. import util
+
 # Expose the same public API as the original downloader.py
 __all__ = [
     'DownloadNotifier',
@@ -42,4 +49,7 @@ __all__ = [
     'get_save_base_name',
     'download_preview_image',
     'download_file_thread_async',
+    'get_http_client',  # For backward compatibility with tests
+    'civitai',  # For backward compatibility with tests
+    'util',  # For backward compatibility with tests
 ]
