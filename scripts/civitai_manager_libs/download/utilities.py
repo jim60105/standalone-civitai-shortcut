@@ -3,7 +3,6 @@ Download utility functions for file operations, metadata, and thumbnails.
 """
 
 import os
-import threading
 
 from ..logging_config import get_logger
 from ..http.client_manager import get_http_client
@@ -102,6 +101,7 @@ def download_file_thread_async(
 
     # Use DownloadManager for actual asynchronous download
     from .task_manager import DownloadManager
+
     download_manager = DownloadManager()
 
     for fid, fname in dup.items():

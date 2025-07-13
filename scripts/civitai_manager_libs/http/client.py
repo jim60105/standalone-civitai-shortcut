@@ -5,14 +5,13 @@ timeout and retry mechanisms.
 
 import json
 import time
-from typing import Callable, Dict, Optional
+from typing import Dict, Optional
 import urllib.parse
 
 import requests
 
 from ..logging_config import get_logger
 from ..exceptions import (
-    AuthenticationError,
     NetworkError,
     HTTPError,
     ConnectionError,
@@ -23,7 +22,6 @@ from ..ui.notification_service import get_notification_service
 
 from .. import settings
 from ..settings.constants import DEFAULT_HEADERS
-from ..settings import config_manager
 
 
 logger = get_logger(__name__)

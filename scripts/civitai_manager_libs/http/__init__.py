@@ -20,8 +20,9 @@ from ..ui.notification_service import get_notification_service
 # Note: We expose CivitaiHttpClient but get_http_client() returns CompleteCivitaiHttpClient
 __all__ = [
     'CivitaiHttpClient',
-    'ParallelImageDownloader', 
+    'ParallelImageDownloader',
     'get_http_client',
+    'CompleteCivitaiHttpClient',
     'requests',  # For backward compatibility with tests
     'get_notification_service',  # For backward compatibility with tests
 ]
