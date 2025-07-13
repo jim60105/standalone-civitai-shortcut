@@ -119,8 +119,9 @@ def on_ui(refresh_sc_browser, recipe_input):
                     cs_foldername = gr.Dropdown(
                         label='Can select a classification defined by the user or create a new one as the folder to download the model.',
                         multiselect=False,
-                                            choices=[settings.config_manager.get_setting('CREATE_MODEL_FOLDER')] + classification.get_list(),
-                    value=settings.config_manager.get_setting('CREATE_MODEL_FOLDER'),
+                        choices=[settings.config_manager.get_setting('CREATE_MODEL_FOLDER')]
+                        + classification.get_list(),
+                        value=settings.config_manager.get_setting('CREATE_MODEL_FOLDER'),
                         interactive=True,
                     )
                     with gr.Row():
@@ -568,6 +569,7 @@ def on_send_to_recipe_click(model_id, img_file_info, img_index, civitai_images):
 
     try:
         from scripts.civitai_manager_libs import settings
+
         recipe_image = settings.set_imagefn_and_shortcutid_for_recipe_image(
             model_id, civitai_images[int(img_index)]
         )
@@ -762,8 +764,9 @@ def on_download_model_click(
     if not version_id or not model_id:
         return gr.update(visible=True), gr.update(visible=True)
 
+    # Start actual background download instead of synchronous execution
     if cs_foldername == settings.CREATE_MODEL_FOLDER:
-        downloader.download_file_thread(
+        downloader.download_file_thread_async(  # New async function
             file_name,
             version_id,
             True,
@@ -773,7 +776,7 @@ def on_download_model_click(
             ms_foldername,
         )
     else:
-        downloader.download_file_thread(
+        downloader.download_file_thread_async(  # New async function
             file_name, version_id, False, False, None, cs_foldername, ms_foldername
         )
 

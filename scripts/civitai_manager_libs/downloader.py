@@ -254,6 +254,13 @@ class DownloadManager:
             info = self.active.pop(tid, {})
             info.update({"completed": True, "success": ok, "end": time.time()})
             self.history.append(info)
+
+            # Silent completion - do not send completion notification
+            if ok:
+                logger.info(f"[downloader] Background download completed: {path}")
+            else:
+                logger.error(f"[downloader] Background download failed: {url}")
+
         except Exception as e:
             logger.error(f"[downloader] Worker error {tid}: {e}")
             self.active.pop(tid, None)
@@ -327,16 +334,18 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
         return False
 
 
-def download_file_thread(
+def download_file_thread_async(
     file_name, version_id, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
 ):
-    """Threaded download entry for UI with enhanced notifications."""
+    """Download logic executed in a background thread."""
     if not file_name or not version_id:
         return
+
     vi = civitai.get_version_info_by_version_id(version_id)
     if not vi:
         DownloadNotifier.notify_complete(str(file_name), False, "Failed to get version info")
         return
+
     files = civitai.get_files_by_version_info(vi)
     folder = util.make_download_model_folder(
         vi, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
@@ -348,34 +357,30 @@ def download_file_thread(
     savefile_base = None
     dup = add_number_to_duplicate_files(file_name)
     info_files = vi.get("files") or []
-    # Start download tasks with notifications
+
+    # Use DownloadManager for actual asynchronous download
+    download_manager = DownloadManager()
+
     for fid, fname in dup.items():
         file_info = next((f for f in info_files if str(f.get('id')) == str(fid)), None)
         file_size = file_info.get('sizeKB', 0) * 1024 if file_info else None
 
-        # Notify download start
+        # Send start notification (including file size)
         DownloadNotifier.notify_start(fname, file_size)
 
         url = files.get(str(fid), {}).get("downloadUrl")
         path = os.path.join(folder, fname)
 
-        # Execute download directly on main thread
-        task = DownloadTask(fid, fname, url, path, file_size)
-        success = download_file_with_notifications(task)
-
-        if success:
-            DownloadNotifier.notify_complete(task.filename, True)
-        else:
-            DownloadNotifier.notify_complete(
-                task.filename, False, "Download failed after all retry attempts"
-            )
+        # Use DownloadManager for actual background download
+        task_id = download_manager.start(url, path)
+        logger.info(f"[downloader] Started background download: {task_id} for {fname}")
 
         # Record primary file base name
         if file_info and file_info.get('primary'):
             base, _ = os.path.splitext(fname)
             savefile_base = base
 
-    # Write version info and preview image if primary file found
+    # Handle version info and preview image (in background thread)
     if savefile_base:
         info_path = os.path.join(
             folder,
@@ -383,6 +388,7 @@ def download_file_thread(
         )
         if civitai.write_version_info(info_path, vi):
             logger.info(f"[downloader] Wrote version info: {info_path}")
+
         preview_path = os.path.join(
             folder,
             f"{util.replace_filename(savefile_base)}"
@@ -391,8 +397,8 @@ def download_file_thread(
         if download_preview_image(preview_path, vi):
             logger.info(f"[downloader] Wrote preview image: {preview_path}")
 
-        # Generate LoRa/LyCORIS metadata JSON file for LoRa models
-        if vi and _is_lora_model(vi):
+        # Generate metadata for LoRa models
+        if _is_lora_model(vi):
             metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
             if civitai.write_LoRa_metadata(metadata_path, vi):
                 logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
@@ -401,8 +407,6 @@ def download_file_thread(
         model_id = str(vi.get("modelId", ""))
         if model_id:
             _create_shortcut_for_downloaded_model(vi, savefile_base, folder, model_id)
-
-    return
 
 
 def _is_lora_model(version_info: dict) -> bool:
