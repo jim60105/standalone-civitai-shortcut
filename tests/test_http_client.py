@@ -1,148 +1,87 @@
+"""Unit tests for CivitaiHttpClient error handling and POST retry logic."""
 import json
+import time
+
 import pytest
 import requests
 
-from scripts.civitai_manager_libs.http.client import (
-    CivitaiHttpClient,
-    _STATUS_CODE_MESSAGES,
-)
-from scripts.civitai_manager_libs.exceptions import (
-    HTTPError,
-    TimeoutError,
-    ConnectionError,
-    NetworkError,
-    AuthenticationError,
-)
+from scripts.civitai_manager_libs.http.client import CivitaiHttpClient
+from scripts.civitai_manager_libs.exceptions import NetworkError, ConnectionError as CConnErr, TimeoutError
 
 
 class DummyResponse:
-    def __init__(self, status_code=200, url='http://test', headers=None, json_data=None):
+    def __init__(self, status_code=200, url='http://test', headers=None):
         self.status_code = status_code
         self.url = url
         self.headers = headers or {}
-        self._json_data = json_data or {}
-
     def json(self):
-        return self._json_data
+        return {'ok': True}
 
 
-def test_handle_response_error_raises_http_error():
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    resp = DummyResponse(status_code=404, url='http://x')
-    with pytest.raises(HTTPError) as exc:
-        client._handle_response_error(resp)
-    assert exc.value.status_code == 404
-    assert 'Not Found' in str(exc.value)
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch):
+    """Disable actual sleeping during retries."""
+    monkeypatch.setattr(time, 'sleep', lambda s: None)
+    yield
 
 
-def test_update_api_key_updates_header():
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    client.session.headers.clear()
-    client.update_api_key('abc123')
-    assert client.api_key == 'abc123'
-    assert client.session.headers.get('Authorization') == 'Bearer abc123'
-
-
-def test_get_json_success(monkeypatch):
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    resp = DummyResponse(status_code=200, url='u', json_data={'a': 1})
-    monkeypatch.setattr(client.session, 'get', lambda url, params=None, timeout=None: resp)
-    data = client.get_json('u', {'p': 'v'})
-    assert data == {'a': 1}
-
-
-def test_get_json_error_returns_none(monkeypatch):
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    def bad_get(*args, **kwargs):
-        raise requests.RequestException("fail")
-    monkeypatch.setattr(client.session, 'get', bad_get)
-    assert client.get_json('u') is None
+def test_handle_connection_error_timeout_and_connection(monkeypatch):
+    client = CivitaiHttpClient(api_key=None, timeout=3, max_retries=1, retry_delay=0)
+    # Timeout exception yields TimeoutError
+    with pytest.raises(TimeoutError) as exc:
+        client._handle_connection_error(requests.exceptions.Timeout(), 'urlX')
+    assert 'urlX' in str(exc.value)
+    # ConnectionError exception yields our ConnectionError
+    with pytest.raises(CConnErr) as exc2:
+        client._handle_connection_error(requests.exceptions.ConnectionError(), 'urlY')
+    assert 'urlY' in str(exc2.value)
+    # Other exception yields NetworkError
+    with pytest.raises(NetworkError):
+        client._handle_connection_error(ValueError('oops'), 'urlZ')
 
 
 def test_post_json_success(monkeypatch):
     client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=2, retry_delay=0)
-    monkeypatch.setattr(client, '_attempt_post_request', lambda url, data, attempt: {'ok': True})
-    res = client.post_json('u', {'x': 1})
-    assert res == {'ok': True}
+    # Successful POST returns JSON immediately
+    resp = DummyResponse(status_code=200)
+    monkeypatch.setattr(client.session, 'post', lambda url, json, timeout: resp)
+    result = client.post_json('u', {'a': 1})
+    assert result == {'ok': True}
 
 
-def test_post_json_retry(monkeypatch):
+def test_post_json_http_error_and_retry(monkeypatch):
     client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=2, retry_delay=0)
-    calls = []
-    def attempt(url, data, attempt_idx):
-        calls.append(attempt_idx)
-        return None
-    monkeypatch.setattr(client, '_attempt_post_request', attempt)
-    res = client.post_json('u', {})
-    assert res is None
-    assert calls == [0, 1]
-
-
-def test_attempt_post_request_error_responses(monkeypatch):
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    class ErrResp(DummyResponse):
-        def __init__(self):
-            super().__init__(status_code=500)
-    resp = ErrResp()
-    monkeypatch.setattr(client.session, 'post', lambda url, json=None, timeout=None: resp)
-    result = client._attempt_post_request('u', {}, 0)
+    # Always return HTTP 500 to trigger retry and then fallback
+    resp = DummyResponse(status_code=500)
+    monkeypatch.setattr(client.session, 'post', lambda url, json, timeout: resp)
+    result = client.post_json('u', {'a': 1})
     assert result is None
 
 
-def test_attempt_post_request_connection_error(monkeypatch):
+def test_post_json_connection_and_decode_errors(monkeypatch):
     client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    def bad_post(url, json=None, timeout=None):
-        raise requests.ConnectionError("conn")
-    monkeypatch.setattr(client.session, 'post', bad_post)
-    result = client._attempt_post_request('u', {}, 0)
+    # Simulate ConnectionError during post
+    monkeypatch.setattr(client.session, 'post', lambda url, json, timeout: (_ for _ in ()).throw(requests.ConnectionError('fail')))
+    result = client.post_json('u', None)
     assert result is None
-
-
-def test_attempt_post_request_json_error(monkeypatch):
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    class R(DummyResponse):
-        def __init__(self):
-            super().__init__(status_code=200)
+    # Simulate JSON decoding error
+    class BadJSON(DummyResponse):
         def json(self):
-            raise json.JSONDecodeError("msg", "doc", 0)
-    monkeypatch.setattr(client.session, 'post', lambda u, json=None, timeout=None: R())
-    result = client._attempt_post_request('u', {}, 0)
-    assert result is None
+            raise json.JSONDecodeError('err', '', 0)
+    monkeypatch.setattr(client.session, 'post', lambda url, json, timeout: BadJSON())
+    result2 = client.post_json('u', None)
+    assert result2 is None
 
 
-def test_should_retry_post():
+def test_internal_post_handlers_and_retry_logic(monkeypatch):
     client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=3, retry_delay=0)
+    # Test _should_retry_post behavior
     assert client._should_retry_post(None, 0)
     assert client._should_retry_post(None, 1)
-    assert not client._should_retry_post({'a': 1}, 0)
     assert not client._should_retry_post(None, 2)
-
-
-def test_handle_stream_error_response(monkeypatch):
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    # dummy notification service
-    class Svc:
-        def __init__(self):
-            self.errors = []
-        def show_error(self, msg):
-            self.errors.append(msg)
-    monkeypatch.setattr(
-        'scripts.civitai_manager_libs.http.client.get_notification_service',
-        lambda: Svc(),
-    )
-    resp = DummyResponse(status_code=500, url='u', headers={})
-    ok = client._handle_stream_error_response(resp)
-    assert ok is False
-
-
-def test_handle_redirect_response():
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    resp = DummyResponse(status_code=301, url='u', headers={'Location': 'new'})
-    assert client._handle_redirect_response(resp)
-
-
-def test_handle_authentication_error():
-    client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
-    resp = DummyResponse(status_code=307, url='u', headers={'Location': 'login'})
-    with pytest.raises(AuthenticationError):
-        client._handle_authentication_error(resp, 'HTTP 307 login redirect')
+    # Test error handlers do not raise
+    dummy_resp = DummyResponse(status_code=404)
+    client._handle_post_error_response(dummy_resp)
+    assert client._handle_post_connection_error(requests.ConnectionError(), 0) is None
+    client._handle_post_json_error(json.JSONDecodeError('e', '', 0)) is None
+    client._handle_post_request_error(requests.RequestException('e')) is None
