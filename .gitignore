@@ -215,3 +215,5 @@ setting.json
 model_folders.json
 logs/
 coverage.json
+.tmp
+temp_path
