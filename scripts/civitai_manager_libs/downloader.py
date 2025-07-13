@@ -255,7 +255,7 @@ class DownloadManager:
             info.update({"completed": True, "success": ok, "end": time.time()})
             self.history.append(info)
 
-            # 靜默完成 - 不發送完成通知
+            # Silent completion - do not send completion notification
             if ok:
                 logger.info(f"[downloader] Background download completed: {path}")
             else:
@@ -337,7 +337,7 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
 def download_file_thread_async(
     file_name, version_id, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
 ):
-    """在背景執行緒中執行的下載邏輯"""
+    """Download logic executed in a background thread."""
     if not file_name or not version_id:
         return
 
@@ -358,29 +358,29 @@ def download_file_thread_async(
     dup = add_number_to_duplicate_files(file_name)
     info_files = vi.get("files") or []
 
-    # 使用 DownloadManager 進行真正的異步下載
+    # Use DownloadManager for actual asynchronous download
     download_manager = DownloadManager()
 
     for fid, fname in dup.items():
         file_info = next((f for f in info_files if str(f.get('id')) == str(fid)), None)
         file_size = file_info.get('sizeKB', 0) * 1024 if file_info else None
 
-        # 發送開始通知（包含檔案尺寸）
+        # Send start notification (including file size)
         DownloadNotifier.notify_start(fname, file_size)
 
         url = files.get(str(fid), {}).get("downloadUrl")
         path = os.path.join(folder, fname)
 
-        # 使用 DownloadManager 進行真正的背景下載
+        # Use DownloadManager for actual background download
         task_id = download_manager.start(url, path)
         logger.info(f"[downloader] Started background download: {task_id} for {fname}")
 
-        # 記錄 primary file base name
+        # Record primary file base name
         if file_info and file_info.get('primary'):
             base, _ = os.path.splitext(fname)
             savefile_base = base
 
-    # 處理版本信息和預覽圖片（在背景執行緒中）
+    # Handle version info and preview image (in background thread)
     if savefile_base:
         info_path = os.path.join(
             folder,
@@ -397,13 +397,13 @@ def download_file_thread_async(
         if download_preview_image(preview_path, vi):
             logger.info(f"[downloader] Wrote preview image: {preview_path}")
 
-        # 為 LoRa 模型生成元數據
+        # Generate metadata for LoRa models
         if _is_lora_model(vi):
             metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
             if civitai.write_LoRa_metadata(metadata_path, vi):
                 logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
 
-        # 為下載的模型創建快捷方式縮圖
+        # Create shortcut thumbnail for downloaded model
         model_id = str(vi.get("modelId", ""))
         if model_id:
             _create_shortcut_for_downloaded_model(vi, savefile_base, folder, model_id)

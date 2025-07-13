@@ -764,9 +764,9 @@ def on_download_model_click(
     if not version_id or not model_id:
         return gr.update(visible=True), gr.update(visible=True)
 
-    # 啟動真正的背景下載，而不是同步執行
+    # Start actual background download instead of synchronous execution
     if cs_foldername == settings.CREATE_MODEL_FOLDER:
-        downloader.download_file_thread_async(  # 新的異步函數
+        downloader.download_file_thread_async(  # New async function
             file_name,
             version_id,
             True,
@@ -776,7 +776,7 @@ def on_download_model_click(
             ms_foldername,
         )
     else:
-        downloader.download_file_thread_async(  # 新的異步函數
+        downloader.download_file_thread_async(  # New async function
             file_name, version_id, False, False, None, cs_foldername, ms_foldername
         )
 
