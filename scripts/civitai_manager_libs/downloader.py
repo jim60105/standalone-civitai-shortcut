@@ -430,23 +430,33 @@ def _create_shortcut_for_downloaded_model(
 
         image_processor = ImageProcessor()
 
+        # Try to create thumbnail from existing preview first
         if os.path.exists(preview_path):
-            # Create thumbnail from existing preview
-            if image_processor.create_thumbnail(model_id, preview_path):
+            if not image_processor.create_thumbnail(model_id, preview_path):
+                logger.debug(
+                    f"[downloader] Failed to create thumbnail from preview for model {model_id}"
+                )
+            else:
                 logger.info(f"[downloader] Created thumbnail from preview for model {model_id}")
                 return True
 
         # If no preview image exists, try to download thumbnail directly
         images = version_info.get("images", [])
-        if images:
-            preview_url = images[0].get("url")
-            if preview_url:
-                if image_processor.download_thumbnail_image(model_id, preview_url):
-                    logger.info(f"[downloader] Downloaded thumbnail for model {model_id}")
-                    return True
+        if not images:
+            logger.warning(f"[downloader] No images available for model {model_id}")
+            return False
 
-        logger.warning(f"[downloader] Could not create thumbnail for model {model_id}")
-        return False
+        preview_url = images[0].get("url")
+        if not preview_url:
+            logger.warning(f"[downloader] No preview URL available for model {model_id}")
+            return False
+
+        if not image_processor.download_thumbnail_image(model_id, preview_url):
+            logger.warning(f"[downloader] Failed to download thumbnail for model {model_id}")
+            return False
+
+        logger.info(f"[downloader] Downloaded thumbnail for model {model_id}")
+        return True
 
     except Exception as e:
         logger.error(f"[downloader] Error creating shortcut for downloaded model: {e}")
