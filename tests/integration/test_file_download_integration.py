@@ -16,7 +16,7 @@ class TestFileDownloadIntegration:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
-    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    @patch('civitai_manager_libs.http.client.requests.Session.get')
     def test_large_file_download_with_resume(self, mock_session_get):
         """Test large file download with resume capability."""
         # Arrange
@@ -43,13 +43,13 @@ class TestFileDownloadIntegration:
         with open(test_file, 'rb') as f:
             assert f.read() == test_content
 
-    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    @patch('civitai_manager_libs.http.client.requests.Session.get')
     def test_download_with_insufficient_space(self, mock_session_get):
         """Test download failure due to insufficient disk space."""
         # This test would need platform-specific implementation
         pass
 
-    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    @patch('civitai_manager_libs.http.client.requests.Session.get')
     def test_download_with_progress_callback(self, mock_session_get):
         """Test download with progress tracking."""
         # Arrange

@@ -27,7 +27,7 @@ from . import model
 from . import civitai
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import classification
-from . import downloader
+from . import download as downloader
 from .compat.compat_layer import CompatibilityLayer
 from . import settings
 

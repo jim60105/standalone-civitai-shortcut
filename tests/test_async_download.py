@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 # Ensure project root is on path
 sys.path.insert(0, os.getcwd())
 
-from scripts.civitai_manager_libs.downloader import (
+from scripts.civitai_manager_libs.download import (
     download_file_thread_async,
     DownloadManager,
     DownloadNotifier,

@@ -1,4 +1,4 @@
-from scripts.civitai_manager_libs.http_client import ParallelImageDownloader
+from scripts.civitai_manager_libs.http import ParallelImageDownloader
 
 
 class DummyProgress:

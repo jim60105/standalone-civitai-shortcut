@@ -2,7 +2,7 @@ import pytest
 
 from scripts.civitai_manager_libs import civitai
 from scripts.civitai_manager_libs.settings import config_manager
-from scripts.civitai_manager_libs.http_client import _global_http_client
+from scripts.civitai_manager_libs.http.client_manager import _global_http_client
 
 
 class DummyClient:

@@ -553,7 +553,7 @@ def download_image_safe(
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     if client is None:
-        from .http_client import get_http_client
+        from .http import get_http_client
 
         client = get_http_client()
 
@@ -628,7 +628,7 @@ def download_with_cache_and_retry(
             printD(f"[cache] Using cached image: {cache_path}")
             return cache_path
 
-    from .http_client import get_http_client
+    from .http import get_http_client
 
     client = get_http_client()
     success = client.download_file(url, cache_path)

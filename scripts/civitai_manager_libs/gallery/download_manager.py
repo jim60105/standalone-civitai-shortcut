@@ -18,7 +18,7 @@ import gradio as gr
 from ..error_handler import with_error_handling
 from ..exceptions import NetworkError, FileOperationError
 from ..logging_config import get_logger
-from ..http_client import get_http_client, ParallelImageDownloader
+from ..http import get_http_client, ParallelImageDownloader
 from .. import settings
 from .. import util
 

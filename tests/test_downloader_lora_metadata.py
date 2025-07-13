@@ -1,5 +1,5 @@
 import pytest
-from civitai_manager_libs.downloader import _is_lora_model
+from civitai_manager_libs.download.utilities import _is_lora_model
 
 
 @pytest.mark.parametrize("model_type", ["lora", "LoCon", "LYCORIS", "LORA"])
