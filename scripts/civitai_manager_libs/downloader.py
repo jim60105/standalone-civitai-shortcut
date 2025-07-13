@@ -140,6 +140,7 @@ def download_file_with_file_handling(task: DownloadTask):
     client = get_http_client()
     return client.download_file_with_resume(task.url, task.path)
 
+
 @with_error_handling(
     fallback_value=False,
     exception_types=(Exception),  # file-related errors
@@ -155,6 +156,7 @@ def download_file_with_notifications(task: DownloadTask):
         or download_file_with_retry(task)
         or download_file_with_file_handling(task)
     )
+
 
 def download_image_file(model_name: str, image_urls: list, progress_gr=None):
     """Download model-related images with parallel processing."""
@@ -394,6 +396,12 @@ def download_file_thread(
             metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
             if civitai.write_LoRa_metadata(metadata_path, vi):
                 logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
+
+        # Create shortcut thumbnail for downloaded model
+        model_id = str(vi.get("modelId", ""))
+        if model_id:
+            _create_shortcut_for_downloaded_model(vi, savefile_base, folder, model_id)
+
     return
 
 
@@ -404,3 +412,42 @@ def _is_lora_model(version_info: dict) -> bool:
 
     model_type = version_info["model"].get("type", "").upper()
     return model_type in ["LORA", "LOCON", "LYCORIS"]
+
+
+def _create_shortcut_for_downloaded_model(
+    version_info: dict, model_filename: str, model_folder: str, model_id: str
+):
+    """Create shortcut thumbnail for downloaded model."""
+    try:
+        from .ishortcut_core.image_processor import ImageProcessor
+
+        # Try to create thumbnail from existing preview image
+        preview_path = os.path.join(
+            model_folder,
+            f"{util.replace_filename(model_filename)}"
+            f"{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
+        )
+
+        image_processor = ImageProcessor()
+
+        if os.path.exists(preview_path):
+            # Create thumbnail from existing preview
+            if image_processor.create_thumbnail(model_id, preview_path):
+                logger.info(f"[downloader] Created thumbnail from preview for model {model_id}")
+                return True
+
+        # If no preview image exists, try to download thumbnail directly
+        images = version_info.get("images", [])
+        if images:
+            preview_url = images[0].get("url")
+            if preview_url:
+                if image_processor.download_thumbnail_image(model_id, preview_url):
+                    logger.info(f"[downloader] Downloaded thumbnail for model {model_id}")
+                    return True
+
+        logger.warning(f"[downloader] Could not create thumbnail for model {model_id}")
+        return False
+
+    except Exception as e:
+        logger.error(f"[downloader] Error creating shortcut for downloaded model: {e}")
+        return False
