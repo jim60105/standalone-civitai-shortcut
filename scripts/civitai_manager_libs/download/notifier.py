@@ -5,8 +5,15 @@ Download notification system for UI and logging.
 from ..logging_config import get_logger
 from ..error_handler import with_error_handling
 from .. import util
+from ..ui import notification_service as _ui_notification_service
 
 logger = get_logger(__name__)
+
+
+# Proxy to UI notification service to allow dynamic patches in both notifier and UI modules
+def get_notification_service():
+    """Get the current global notification service instance via UI notification module."""
+    return _ui_notification_service.get_notification_service()
 
 
 class DownloadNotifier:
@@ -20,8 +27,6 @@ class DownloadNotifier:
         user_message=None,  # let decorator use exception type name
     )
     def notify_start(filename: str, file_size: int = None):
-        from ..ui.notification_service import get_notification_service
-
         notification_service = get_notification_service()
         if notification_service:
             size_str = f" ({util.format_file_size(file_size)})" if file_size else ""
@@ -51,8 +56,6 @@ class DownloadNotifier:
     @staticmethod
     def notify_complete(filename: str, success: bool, error_msg: str = None):
         """Notify download completion or failure using UI and logs."""
-        from ..ui.notification_service import get_notification_service
-
         notification_service = get_notification_service()
         error_detail = f" - {error_msg}" if error_msg else ""
 
