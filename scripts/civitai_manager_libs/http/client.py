@@ -73,6 +73,8 @@ class CivitaiHttpClient:
         self.api_key = api_key
         if api_key:
             self.session.headers.update({"Authorization": f"Bearer {api_key}"})
+        elif 'Authorization' in self.session.headers:
+            del self.session.headers['Authorization']
 
     @with_error_handling(
         fallback_value=None,
@@ -183,13 +185,6 @@ class CivitaiHttpClient:
         """Determine if POST request should be retried."""
         return result is None and attempt < self.max_retries - 1
 
-    @with_error_handling(
-        fallback_value=None,
-        exception_types=(Exception,),
-        retry_count=0,
-        retry_delay=0,
-        user_message=None,
-    )
     def get_stream(
         self, url: str, headers: Optional[Dict] = None, _origin_host: Optional[str] = None
     ) -> Optional[requests.Response]:

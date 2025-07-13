@@ -96,7 +96,8 @@ def test_get_stream_authentication_error(monkeypatch):
     resp = DummyResponse(status_code=416, url="http://test")
     client.session = DummySession(resp)
     # decorator returns None on exception
-    assert client.get_stream("http://test") is None
+    with pytest.raises(AuthenticationError):
+            client.get_stream("http://test")
 
 
 def test_parallel_image_downloader_empty(monkeypatch):
