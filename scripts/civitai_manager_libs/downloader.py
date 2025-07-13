@@ -15,6 +15,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 from . import util, settings, civitai
+from .settings import config_manager
 
 # Use centralized HTTP client and chunked downloader factories
 from .http_client import get_http_client, get_chunked_downloader, ParallelImageDownloader
