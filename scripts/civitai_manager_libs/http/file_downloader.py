@@ -216,6 +216,7 @@ class FileDownloadMixin:
     def _process_download_error_type(self, error: Exception, url: str) -> bool:
         """Process different types of download errors."""
         import requests
+
         if isinstance(error, requests.exceptions.Timeout):
             return self._handle_timeout_error(url)
         elif isinstance(error, requests.exceptions.ConnectionError):

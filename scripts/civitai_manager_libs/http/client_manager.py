@@ -9,10 +9,13 @@ from .file_downloader import FileDownloadMixin
 from .. import settings
 from ..settings import config_manager
 
+
 # Create a complete client class that includes file download capabilities
 class CompleteCivitaiHttpClient(CivitaiHttpClient, FileDownloadMixin):
     """Complete HTTP client with all download capabilities."""
-    pass
+
+
+#   pass
 
 # Global HTTP client instance
 _global_http_client = None

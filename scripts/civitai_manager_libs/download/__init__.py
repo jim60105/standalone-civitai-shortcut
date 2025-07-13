@@ -29,7 +29,7 @@ from .task_manager import (
 # Import get_http_client for backward compatibility with tests
 from ..http import get_http_client
 
-# Import civitai and util for backward compatibility with tests  
+# Import civitai and util for backward compatibility with tests
 from .. import civitai
 from .. import util
 
@@ -39,7 +39,7 @@ __all__ = [
     'DownloadTask',
     'DownloadManager',
     'download_file_with_auth_handling',
-    'download_file_with_retry', 
+    'download_file_with_retry',
     'download_file_with_file_handling',
     'download_file_with_notifications',
     'download_image_file',

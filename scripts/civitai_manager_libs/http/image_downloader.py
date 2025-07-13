@@ -49,6 +49,7 @@ class ParallelImageDownloader:
 
         if client is None:
             from .client_manager import get_http_client
+
             client = get_http_client()
 
         # Start periodic progress update timer
