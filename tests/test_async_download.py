@@ -16,10 +16,10 @@ from scripts.civitai_manager_libs.download import (
 class TestAsyncDownload:
     """Test the new async download functionality"""
 
-    @patch('scripts.civitai_manager_libs.downloader.civitai')
-    @patch('scripts.civitai_manager_libs.downloader.util')
-    @patch('scripts.civitai_manager_libs.downloader.DownloadNotifier.notify_start')
-    @patch('scripts.civitai_manager_libs.downloader.DownloadManager')
+    @patch('scripts.civitai_manager_libs.download.utilities.civitai')
+    @patch('scripts.civitai_manager_libs.download.utilities.util')
+    @patch('scripts.civitai_manager_libs.download.utilities.DownloadNotifier.notify_start')
+    @patch('scripts.civitai_manager_libs.download.task_manager.DownloadManager')
     def test_download_file_thread_async_starts_background_thread(
         self, mock_download_manager_class, mock_notify_start, mock_util, mock_civitai
     ):
@@ -144,7 +144,7 @@ class TestAsyncDownload:
 
     def test_background_thread_creation(self):
         """Test that async download actually creates a background thread"""
-        with patch('scripts.civitai_manager_libs.downloader.civitai') as mock_civitai:
+        with patch('scripts.civitai_manager_libs.download.utilities.civitai') as mock_civitai:
             # Return None for version info to exit early
             mock_civitai.get_version_info_by_version_id.return_value = None
 
