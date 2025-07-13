@@ -337,82 +337,76 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
 def download_file_thread_async(
     file_name, version_id, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
 ):
-    """真正的非同步下載函數，使用背景執行緒"""
+    """在背景執行緒中執行的下載邏輯"""
+    if not file_name or not version_id:
+        return
 
-    def background_download():
-        """在背景執行緒中執行的下載邏輯"""
-        if not file_name or not version_id:
-            return
+    vi = civitai.get_version_info_by_version_id(version_id)
+    if not vi:
+        DownloadNotifier.notify_complete(str(file_name), False, "Failed to get version info")
+        return
 
-        vi = civitai.get_version_info_by_version_id(version_id)
-        if not vi:
-            return
+    files = civitai.get_files_by_version_info(vi)
+    folder = util.make_download_model_folder(
+        vi, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
+    )
+    if not folder:
+        DownloadNotifier.notify_complete(str(file_name), False, "Failed to create download folder")
+        return
 
-        files = civitai.get_files_by_version_info(vi)
-        folder = util.make_download_model_folder(
-            vi, ms_folder, vs_folder, vs_foldername, cs_foldername, ms_foldername
+    savefile_base = None
+    dup = add_number_to_duplicate_files(file_name)
+    info_files = vi.get("files") or []
+
+    # 使用 DownloadManager 進行真正的異步下載
+    download_manager = DownloadManager()
+
+    for fid, fname in dup.items():
+        file_info = next((f for f in info_files if str(f.get('id')) == str(fid)), None)
+        file_size = file_info.get('sizeKB', 0) * 1024 if file_info else None
+
+        # 發送開始通知（包含檔案尺寸）
+        DownloadNotifier.notify_start(fname, file_size)
+
+        url = files.get(str(fid), {}).get("downloadUrl")
+        path = os.path.join(folder, fname)
+
+        # 使用 DownloadManager 進行真正的背景下載
+        task_id = download_manager.start(url, path)
+        logger.info(f"[downloader] Started background download: {task_id} for {fname}")
+
+        # 記錄 primary file base name
+        if file_info and file_info.get('primary'):
+            base, _ = os.path.splitext(fname)
+            savefile_base = base
+
+    # 處理版本信息和預覽圖片（在背景執行緒中）
+    if savefile_base:
+        info_path = os.path.join(
+            folder,
+            f"{util.replace_filename(savefile_base)}{settings.INFO_SUFFIX}{settings.INFO_EXT}",
         )
-        if not folder:
-            return
+        if civitai.write_version_info(info_path, vi):
+            logger.info(f"[downloader] Wrote version info: {info_path}")
 
-        savefile_base = None
-        dup = add_number_to_duplicate_files(file_name)
-        info_files = vi.get("files") or []
+        preview_path = os.path.join(
+            folder,
+            f"{util.replace_filename(savefile_base)}"
+            f"{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
+        )
+        if download_preview_image(preview_path, vi):
+            logger.info(f"[downloader] Wrote preview image: {preview_path}")
 
-        # 使用 DownloadManager 進行真正的異步下載
-        download_manager = DownloadManager()
+        # 為 LoRa 模型生成元數據
+        if _is_lora_model(vi):
+            metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
+            if civitai.write_LoRa_metadata(metadata_path, vi):
+                logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
 
-        for fid, fname in dup.items():
-            file_info = next((f for f in info_files if str(f.get('id')) == str(fid)), None)
-            file_size = file_info.get('sizeKB', 0) * 1024 if file_info else None
-
-            # 發送開始通知（包含檔案尺寸）
-            DownloadNotifier.notify_start(fname, file_size)
-
-            url = files.get(str(fid), {}).get("downloadUrl")
-            path = os.path.join(folder, fname)
-
-            # 使用 DownloadManager 進行真正的背景下載
-            task_id = download_manager.start(url, path)
-            logger.info(f"[downloader] Started background download: {task_id} for {fname}")
-
-            # 記錄 primary file base name
-            if file_info and file_info.get('primary'):
-                base, _ = os.path.splitext(fname)
-                savefile_base = base
-
-        # 處理版本信息和預覽圖片（在背景執行緒中）
-        if savefile_base:
-            info_path = os.path.join(
-                folder,
-                f"{util.replace_filename(savefile_base)}{settings.INFO_SUFFIX}{settings.INFO_EXT}",
-            )
-            if civitai.write_version_info(info_path, vi):
-                logger.info(f"[downloader] Wrote version info: {info_path}")
-
-            preview_path = os.path.join(
-                folder,
-                f"{util.replace_filename(savefile_base)}"
-                f"{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
-            )
-            if download_preview_image(preview_path, vi):
-                logger.info(f"[downloader] Wrote preview image: {preview_path}")
-
-            # 為 LoRa 模型生成元數據
-            if _is_lora_model(vi):
-                metadata_path = os.path.join(folder, f"{util.replace_filename(savefile_base)}.json")
-                if civitai.write_LoRa_metadata(metadata_path, vi):
-                    logger.info(f"[downloader] Wrote LoRa metadata: {metadata_path}")
-
-            # 為下載的模型創建快捷方式縮圖
-            model_id = str(vi.get("modelId", ""))
-            if model_id:
-                _create_shortcut_for_downloaded_model(vi, savefile_base, folder, model_id)
-
-    # 在背景執行緒中執行下載
-    thread = threading.Thread(target=background_download, daemon=True)
-    thread.start()
-    logger.info(f"[downloader] Background download thread started for {file_name}")
+        # 為下載的模型創建快捷方式縮圖
+        model_id = str(vi.get("modelId", ""))
+        if model_id:
+            _create_shortcut_for_downloaded_model(vi, savefile_base, folder, model_id)
 
 
 def _is_lora_model(version_info: dict) -> bool:
