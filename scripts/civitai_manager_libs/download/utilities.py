@@ -42,9 +42,15 @@ def add_number_to_duplicate_files(files: list) -> dict:
 def get_save_base_name(version_info: dict) -> str:
     primary = civitai.get_primary_file_by_version_info(version_info)
     if primary:
-        return os.path.splitext(primary["name"])[0]
+        # support primary as dict or list of dicts
+        entry = primary[0] if isinstance(primary, (list, tuple)) else primary
+        name = entry.get("name")
+        if name:
+            return os.path.splitext(name)[0]
     return settings.generate_version_foldername(
-        version_info["model"]["name"], version_info["name"], version_info["id"]
+        version_info.get("model", {}).get("name", ""),
+        version_info.get("name", ""),
+        version_info.get("id", None),
     )
 
 

@@ -102,15 +102,14 @@ class CivitaiHttpClient:
     def _handle_connection_error(self, error: Exception, url: str) -> None:
         """Handle connection errors by raising custom exceptions."""
         if isinstance(error, requests.exceptions.Timeout):
+            # TimeoutError does not accept url directly
             raise TimeoutError(
                 message=f"Request timeout for {url}",
-                url=url,
                 timeout_duration=self.timeout,
             )
         elif isinstance(error, requests.exceptions.ConnectionError):
             raise ConnectionError(
                 message=f"Failed to connect to {url}",
-                url=url,
                 retry_after=self.retry_delay,
             )
         else:
