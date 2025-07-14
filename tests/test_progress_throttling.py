@@ -1,4 +1,4 @@
-from scripts.civitai_manager_libs.http_client import ParallelImageDownloader
+from scripts.civitai_manager_libs.http import ParallelImageDownloader
 
 
 class DummyProgress:
@@ -15,7 +15,7 @@ def test_progress_throttling_mechanism(monkeypatch):
     # Simulate time progression for throttling logic
     times = [0.0, 0.05, 0.09, 0.15, 0.16]
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.time.time",
+        "scripts.civitai_manager_libs.http.image_downloader.time.time",
         lambda: times.pop(0),
     )
     downloader = ParallelImageDownloader()
@@ -69,7 +69,7 @@ def test_periodic_update_timer(monkeypatch):
         return DummyTimer()
 
     monkeypatch.setattr(
-        "scripts.civitai_manager_libs.http_client.threading.Timer",
+        "scripts.civitai_manager_libs.http.image_downloader.threading.Timer",
         dummy_timer,
     )
 

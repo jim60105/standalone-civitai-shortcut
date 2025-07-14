@@ -7,7 +7,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 # Module-level HTTP client instance (use centralized factory)
-from .http_client import get_http_client
+from .http import get_http_client
 from .error_handler import with_error_handling
 from .exceptions import (
     NetworkError,

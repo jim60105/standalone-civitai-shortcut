@@ -33,7 +33,7 @@ except ImportError:
 from .. import util
 from .. import settings
 from ..logging_config import get_logger
-from ..http_client import get_http_client, ParallelImageDownloader
+from ..http import get_http_client, ParallelImageDownloader
 from ..error_handler import with_error_handling
 from ..exceptions import NetworkError, FileOperationError, CivitaiShortcutError
 

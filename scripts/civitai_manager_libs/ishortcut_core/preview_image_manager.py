@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 from ..logging_config import get_logger
 from .. import settings
 from ..util import download_image_safe
-from ..http_client import get_http_client
+from ..http import get_http_client
 from .shortcut_collection_manager import ShortcutCollectionManager
 
 logger = get_logger(__name__)

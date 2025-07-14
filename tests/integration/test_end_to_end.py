@@ -16,7 +16,7 @@ class TestEndToEndRegression:
         """Clean up test environment."""
         self.helper.cleanup_temp_environment()
 
-    @patch('civitai_manager_libs.http_client.requests.Session.get')
+    @patch('civitai_manager_libs.http.client.requests.Session.get')
     def test_complete_model_workflow(self, mock_session_get):
         """Test complete model download workflow."""
         # Arrange

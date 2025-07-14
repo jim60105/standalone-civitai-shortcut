@@ -12,7 +12,7 @@ from . import settings
 from . import civitai
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import ishortcut_action
-from .http_client import get_http_client
+from .http import get_http_client
 
 # Error handling imports
 # Error handling imports

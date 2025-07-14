@@ -105,15 +105,60 @@ The compatibility layer provides unified access to functionality across executio
 
 #### 2. Service Layer
 
-**HTTP Client Architecture** (`http_client.py`):
-- Centralized HTTP client for all Civitai API interactions
-- Features:
-  - Bearer token authentication
-  - Intelligent retry with exponential backoff
-  - Connection pooling optimization
-  - Streaming download support
-  - Chunked and parallel downloads
-  - Comprehensive error handling
+**Modular HTTP System** (`http/`):
+The HTTP subsystem has been refactored into focused modules following Single Responsibility Principle:
+
+- **Core HTTP Client** (`client.py`):
+  - Bearer token authentication with session management
+  - GET/POST requests with JSON handling
+  - Streaming support with cross-domain redirect handling
+  - Custom exception mapping for HTTP status codes
+  - Request timeout and retry configuration
+
+- **File Download Mixin** (`file_downloader.py`):
+  - Basic file download with progress tracking
+  - Resume capability for interrupted downloads
+  - File size validation with configurable tolerance
+  - Download speed calculation and reporting
+  - Cleanup handling for failed downloads
+
+- **Parallel Image Downloader** (`image_downloader.py`):
+  - ThreadPoolExecutor-based parallel processing
+  - Progress throttling with configurable update intervals
+  - Thread-safe progress tracking with locks
+  - Authentication error collection and reporting
+  - Periodic progress updates with timer management
+
+- **Client Manager** (`client_manager.py`):
+  - Singleton pattern for global client access
+  - Thread-safe client creation and configuration
+  - Automatic settings synchronization
+  - Complete client class combining all mixins
+
+**Modular Download System** (`download/`):
+The download subsystem provides specialized download management:
+
+- **Task Manager** (`task_manager.py`):
+  - DownloadTask data structure for parameter encapsulation
+  - Layered error handling with specific exception types:
+    - Authentication errors (immediate abort)
+    - Network errors (retryable with exponential backoff)
+    - File operation errors (limited retry with cleanup)
+  - DownloadManager for background task execution
+  - Image download coordination with parallel processing
+
+- **Download Notifier** (`notifier.py`):
+  - Start, progress, and completion notifications
+  - Integration with UI notification service
+  - File size formatting and progress reporting
+  - Error message propagation to user interface
+
+- **Download Utilities** (`utilities.py`):
+  - Duplicate file name resolution with numbering
+  - Model metadata generation for LoRa models
+  - Preview image downloading and thumbnail creation
+  - Shortcut creation for downloaded models
+  - Background thread coordination for async downloads
 
 **Error Handling Framework** (`error_handler.py`, `exceptions.py`):
 - Hierarchical custom exception types
@@ -133,6 +178,36 @@ The compatibility layer provides unified access to functionality across executio
 - Rich console output for standalone mode
 - File-based logging with rotation
 - Module-specific loggers with standardized formatting
+
+#### 3. Refactored Modular Components
+
+The following components have been refactored from monolithic modules into focused submodules following Single Responsibility Principle:
+
+**HTTP Module Structure** (`http/`):
+```
+http/
+├── __init__.py                   # Public API and backward compatibility
+├── client.py                     # Core CivitaiHttpClient class
+├── file_downloader.py           # FileDownloadMixin for download capabilities
+├── image_downloader.py          # ParallelImageDownloader for concurrent downloads
+└── client_manager.py            # Global instance management
+```
+
+**Download Module Structure** (`download/`):
+```
+download/
+├── __init__.py                   # Public API and backward compatibility  
+├── task_manager.py              # DownloadTask and DownloadManager classes
+├── notifier.py                  # DownloadNotifier for user feedback
+└── utilities.py                 # File operations and helper functions
+```
+
+**Key Architectural Benefits**:
+- **Single Responsibility**: Each module has one focused concern
+- **Testability**: Components can be tested in isolation  
+- **Maintainability**: Clear separation of concerns reduces complexity
+- **Backward Compatibility**: All existing imports continue to work
+- **Performance**: Optimized parallel processing and resource management
 
 ### Business Logic Layer
 
@@ -515,6 +590,23 @@ python tests/run_integration_tests.py
 ## Architecture Evolution and Roadmap
 
 ### Recent Architectural Improvements
+
+#### HTTP and Download System Refactoring (2025.07)
+- **Single Responsibility Principle Implementation**: Split monolithic `http_client.py` (1011 lines) and `downloader.py` (468 lines) into focused submodules
+- **Modular HTTP Architecture**: 
+  - `http/client.py` - Core HTTP operations with authentication and error handling
+  - `http/file_downloader.py` - File download capabilities with resume and progress tracking  
+  - `http/image_downloader.py` - Parallel image downloading with thread safety
+  - `http/client_manager.py` - Global client instance management
+- **Modular Download System**:
+  - `download/task_manager.py` - Download task execution and management
+  - `download/notifier.py` - Download notifications and user feedback
+  - `download/utilities.py` - File operations, metadata, and helper functions
+- **Backward Compatibility**: All existing imports continue to work through compatibility layer
+- **Removed ChunkedDownloader**: Eliminated problematic chunked download as Civitai doesn't support partial downloads (returns 400 errors)
+- **Enhanced Error Handling**: Layered error handling strategies for different error types (authentication, network, file operations)
+- **Improved Progress Tracking**: Throttled progress updates and thread-safe progress reporting
+- **Optimized Resource Management**: Better connection pooling and session reuse
 
 #### Modularization Initiative
 - **Settings Refactoring**: Moved from monolithic to modular settings management

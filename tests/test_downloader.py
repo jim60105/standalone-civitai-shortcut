@@ -6,7 +6,7 @@ sys.path.insert(0, os.getcwd())
 
 import pytest
 
-from scripts.civitai_manager_libs.downloader import (
+from scripts.civitai_manager_libs.download import (
     add_number_to_duplicate_files,
     download_file,
     download_file_gr,
@@ -40,16 +40,17 @@ def test_add_number_parametrized(files, expected):
     assert result == expected
 
 
-def test_download_file_uses_chunked_downloader(monkeypatch):
+def test_download_file_uses_http_client(monkeypatch):
     calls = []
 
     class DummyDownloader:
-        def download_large_file(self, url, file_path):
+        def download_file(self, url, file_path):
             calls.append((url, file_path))
             return True
 
     monkeypatch.setattr(
-        'scripts.civitai_manager_libs.downloader.get_chunked_downloader', lambda: DummyDownloader()
+        'scripts.civitai_manager_libs.download.task_manager.get_http_client',
+        lambda: DummyDownloader(),
     )
     assert download_file('http://test', 'path/to/file') is True
     assert calls == [('http://test', 'path/to/file')]
@@ -69,7 +70,7 @@ def test_download_file_gr_uses_http_client(monkeypatch):
 
     # Monkey-patch HTTP client factory for downloader
     monkeypatch.setattr(
-        'scripts.civitai_manager_libs.downloader.get_http_client', lambda: DummyClient()
+        'scripts.civitai_manager_libs.download.task_manager.get_http_client', lambda: DummyClient()
     )
 
     # Use a callback function to capture progress updates
@@ -108,7 +109,9 @@ def test_create_shortcut_for_downloaded_model_with_preview(monkeypatch, tmp_path
     sys.modules['scripts.civitai_manager_libs.ishortcut_core.image_processor'] = mock_module
 
     try:
-        from scripts.civitai_manager_libs.downloader import _create_shortcut_for_downloaded_model
+        from scripts.civitai_manager_libs.download.utilities import (
+            _create_shortcut_for_downloaded_model,
+        )
 
         # Create mock preview file (based on model_filename without extension)
         model_folder = tmp_path / "models"
@@ -161,7 +164,9 @@ def test_create_shortcut_for_downloaded_model_download_thumbnail(monkeypatch, tm
     sys.modules['scripts.civitai_manager_libs.ishortcut_core.image_processor'] = mock_module
 
     try:
-        from scripts.civitai_manager_libs.downloader import _create_shortcut_for_downloaded_model
+        from scripts.civitai_manager_libs.download.utilities import (
+            _create_shortcut_for_downloaded_model,
+        )
 
         # Create model folder without preview
         model_folder = tmp_path / "models"
@@ -211,7 +216,9 @@ def test_create_shortcut_for_downloaded_model_no_images(monkeypatch, tmp_path):
     sys.modules['scripts.civitai_manager_libs.ishortcut_core.image_processor'] = mock_module
 
     try:
-        from scripts.civitai_manager_libs.downloader import _create_shortcut_for_downloaded_model
+        from scripts.civitai_manager_libs.download.utilities import (
+            _create_shortcut_for_downloaded_model,
+        )
 
         # Create model folder without preview
         model_folder = tmp_path / "models"
