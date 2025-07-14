@@ -3,9 +3,14 @@ name = "civitai-shortcut"
 version = "2.1.0"
 description = "Stable Diffusion WebUI Extension for Civitai - Download models and manage shortcuts"
 readme = "README.md"
+license = "AGPL-3.0-or-later"
 requires-python = ">=3.11"
 authors = [
-    {name = "jim60105", email = "jim60105@gmail.com"},
+    {name = "sunnyark", email = "joonsun01@naver.com"},
+    {name = "Jim Chen", email = "Jim@ChenJ.im"},
+]
+maintainers = [
+    {name = "Jim Chen", email = "Jim@ChenJ.im"},
 ]
 keywords = ["stable-diffusion", "civitai", "webui", "extension", "ai", "models"]
 classifiers = [
