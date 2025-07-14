@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+
 ## [Unreleased]
+
+## [2.1.0] - 2025-07-14
+
+### Added
+- Added: Parallel download support in Civitai User Gallery for improved performance.
+
+### Fixed
+- Fixed: Download start and completion notifications now display at correct times.
+- Fixed: Automatic download of Shortcut thumbnails when downloading models.
+
+### Refactored
+- Refactored: Split http_client.py and downloader.py into SRP-focused submodules for better maintainability.
+
+### Test
+- Added: Regression test to ensure settings.no_card_preview_image property access is always valid.
 
 ## [2.0.0] - 2025-07-12
 
@@ -358,7 +374,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.7...v2.0.0
 [1.6.7]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.6...v1.6.7
 [1.6.6]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.5...v1.6.6
