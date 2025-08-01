@@ -8,7 +8,6 @@ Pillow>=9.5.0
 pillow-avif-plugin>=1.4.3
 numpy==1.26.2
 packaging>=20.0
-pydantic==2.8.2
 psutil>=5.9.0
 
 # Additional utilities
