@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.1] - 2025-08-01
+
+### Changed
+- Changed: Removed Pydantic dependency to improve compatibility with AUTOMATIC1111/stable-diffusion-webui.
+- Changed: Updated project metadata with AGPL-3.0-or-later license and maintainers information.
+
 ## [2.1.0] - 2025-07-14
 
 ### Added
@@ -374,7 +380,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.7...v2.0.0
 [1.6.7]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.6...v1.6.7

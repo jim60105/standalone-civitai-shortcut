@@ -1,6 +1,6 @@
 [project]
 name = "civitai-shortcut"
-version = "2.1.0"
+version = "2.1.1"
 description = "Stable Diffusion WebUI Extension for Civitai - Download models and manage shortcuts"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
