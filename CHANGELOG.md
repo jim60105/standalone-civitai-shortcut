@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.2] - 2025-08-09
+
+### Fixed
+
+- Fixed: Exception in ASGI application related to Gradio compatibility issues.
+- Fixed: Gallery handlers to satisfy test expectations under Python 3.13 + Gradio 4.x environment.
+- Fixed: Config manager attribute and method calls in standalone mode with defensive checks.
+- Fixed: Gradio Dropdown value/choices initialization preventing JSON schema errors.
+- Fixed: Python 3.13 compatibility by adding patches for removed audioop and distutils modules.
+
+### Changed
+
+- Changed: Downgraded pydantic to version 2.8.2 and capped fastapi to 0.104.1 for improved Gradio compatibility.
+- Changed: Restricted Gradio version to below 4.40.0 for stability.
+- Changed: Refactored Python 3.13 compatibility patches following Single Responsibility Principle.
+- Changed: Consolidated scattered compatibility logic into dedicated python313_patches.py module.
+
+### Added
+
+- Added: Comprehensive documentation explaining sitecustomize.py and manual patching rationale.
+- Added: MockAudioop and MockStrictVersion classes for Python 3.13+ compatibility.
+- Added: RELEASE build argument to Dockerfile to prevent cache reuse in builds.
+
 ## [2.1.1] - 2025-08-01
 
 ### Changed
@@ -380,7 +403,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v1.6.7...v2.0.0
