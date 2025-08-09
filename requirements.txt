@@ -2,6 +2,7 @@
 
 setuptools==69.5.1
 gradio<=4.40.0
+pydantic<=2.10.6
 audioop-lts<1.0; python_version >= "3.13" #it provides support for 'audioop' module removed in latest python version used by pydub
 requests>=2.25.0
 Pillow>=9.5.0
