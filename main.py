@@ -20,6 +20,14 @@ sys.path.insert(0, os.path.join(project_root, 'scripts'))
 
 os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
 
+# Apply audioop patch for Python 3.13+ compatibility
+try:
+    from patch_audioop import patch_all
+    patch_all()
+except Exception as e:
+    print(f"Warning: Could not apply compatibility patches: {e}")
+    print("This may cause issues with audio-related features")
+
 from scripts.civitai_manager_libs.ui.notification_service import (
     set_notification_service,
     GradioNotificationService,
