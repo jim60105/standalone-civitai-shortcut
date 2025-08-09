@@ -9,6 +9,10 @@ SCRIPTS_DIR = os.path.join(PROJECT_ROOT, 'scripts')
 if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
+# Apply Python 3.13+ compatibility patches early for test collection
+from scripts.civitai_manager_libs.compat.python313_patches import ensure_compatibility
+ensure_compatibility()
+
 # Notification service setup for tests (Phase 5.1)
 import pytest
 from scripts.civitai_manager_libs.ui.notification_service import (
