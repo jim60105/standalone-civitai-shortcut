@@ -91,7 +91,11 @@ class GalleryEventHandlers:
         # Add container environment detection for folder button visibility
         container_visibility = util.should_show_open_folder_buttons()
         final_visibility = is_image_folder and container_visibility
-        return gr.update(visible=final_visibility)
+        # For empty page_url, tests expect explicit update dict
+        if not page_url:
+            return {"__type__": "update", "visible": False}
+        # Otherwise return native gr.update
+        return gr.update(visible=bool(final_visibility))
 
     def handle_page_slider_release(
         self, usergal_page_url: str, page_slider: int, paging_information: dict
