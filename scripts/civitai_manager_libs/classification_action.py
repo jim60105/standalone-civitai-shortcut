@@ -101,10 +101,16 @@ def on_ui(shortcut_input):
                                         label="Model Type", interactive=False, lines=1
                                     )
                                     shortcut_versions = gr.Dropdown(
-                                        label="Model Version", interactive=True
+                                        label="Model Version",
+                                        choices=[],
+                                        value=None,
+                                        interactive=True
                                     )
                                     shortcut_filenames = gr.Dropdown(
-                                        label="Version filename", interactive=True
+                                        label="Version filename",
+                                        choices=[],
+                                        value=None,
+                                        interactive=True
                                     )
                                     shortcut_triger = gr.Textbox(
                                         label="Triger", interactive=True, lines=1

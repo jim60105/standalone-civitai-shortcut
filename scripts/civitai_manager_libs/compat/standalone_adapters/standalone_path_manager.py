@@ -51,8 +51,15 @@ class StandalonePathManager(IPathManager):
             from scripts.civitai_manager_libs.settings import config_manager
 
             config_path_value = self.get_config_path()
-            if config_path_value:
+            if config_path_value and hasattr(config_manager, 'load_settings'):
+                # Load settings first to ensure the dict is initialized
+                config_manager.load_settings()
                 config_manager.settings['config_path'] = config_path_value
+                config_manager.save_settings()
+            elif config_path_value:
+                # Fallback: try direct access
+                if hasattr(config_manager, 'settings'):
+                    config_manager.settings['config_path'] = config_path_value
         except Exception as e:
             logger.warning(f"Failed to sync config_path to config_manager: {e}")
 
@@ -144,8 +151,14 @@ class StandalonePathManager(IPathManager):
         try:
             from scripts.civitai_manager_libs.settings import config_manager
 
-            config_manager.load_settings()  # Ensure settings dict is initialized
-            if result:
+            # Ensure settings dict is initialized
+            if hasattr(config_manager, 'load_settings'):
+                config_manager.load_settings()
+                if result:
+                    config_manager.settings['config_path'] = result
+                    config_manager.save_settings()
+            elif result and hasattr(config_manager, 'settings'):
+                # Fallback: try direct access
                 config_manager.settings['config_path'] = result
         except Exception as e:
             logger.warning(f"Failed to sync config_path to config_manager: {e}")

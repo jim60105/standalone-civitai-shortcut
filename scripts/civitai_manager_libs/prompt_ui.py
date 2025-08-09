@@ -200,11 +200,19 @@ def ui(option):
     with gr.Row():
         # Get samplers through compatibility layer
         sampler_choices = _get_sampler_choices()
-        sampler = gr.Dropdown(label="Sampling method", choices=sampler_choices, interactive=True)
+        # Ensure we have valid choices and default value
+        if not sampler_choices or not isinstance(sampler_choices, list):
+            sampler_choices = ["Euler"]
+        sampler = gr.Dropdown(
+            label="Sampling method",
+            choices=sampler_choices,
+            value=sampler_choices[0] if sampler_choices else "Euler",
+            interactive=True
+        )
         steps = gr.Slider(
             minimum=1, maximum=150, step=1, label="Sampling steps", value=20, interactive=True
         )
-    with gr.Row(Variant="compact"):
+    with gr.Row(variant="compact"):
         restore_faces = gr.Checkbox(label='Restore faces', value=False, interactive=True)
         # tiling = gr.Checkbox(label='Tiling', value=False, interactive=True)
         enable_hr = gr.Checkbox(label='Hires. fix', value=False, interactive=True)
@@ -213,8 +221,14 @@ def ui(option):
             with gr.Row(variant="compact"):
                 # Get upscalers through compatibility layer
                 upscaler_choices = _get_upscaler_choices()
+                # Ensure we have valid choices and default value
+                if not upscaler_choices or not isinstance(upscaler_choices, list):
+                    upscaler_choices = ["None"]
                 hr_upscaler = gr.Dropdown(
-                    label="Upscaler", choices=upscaler_choices, interactive=True
+                    label="Upscaler",
+                    choices=upscaler_choices,
+                    value=upscaler_choices[0] if upscaler_choices else "None",
+                    interactive=True
                 )
                 hr_second_pass_steps = gr.Slider(
                     minimum=0, maximum=150, step=1, label='Hires steps', value=0, interactive=True

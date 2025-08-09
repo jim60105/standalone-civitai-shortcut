@@ -138,7 +138,7 @@ def on_ui(refresh_sc_browser, recipe_input):
                             ms_suggestedname = gr.Dropdown(
                                 label='Suggested names',
                                 multiselect=False,
-                                choices=None,
+                                choices=[],
                                 value=None,
                                 interactive=True,
                             )

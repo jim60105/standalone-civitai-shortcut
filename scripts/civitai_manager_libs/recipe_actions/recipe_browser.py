@@ -170,10 +170,16 @@ class RecipeBrowser:
                                         label="Model Type", interactive=False, lines=1
                                     )
                                     reference_versions = gr.Dropdown(
-                                        label="Model Version", interactive=True
+                                        label="Model Version",
+                                        choices=[],
+                                        value=None,
+                                        interactive=True
                                     )
                                     reference_filenames = gr.Dropdown(
-                                        label="Version filename", interactive=True
+                                        label="Version filename",
+                                        choices=[],
+                                        value=None,
+                                        interactive=True
                                     )
                                     reference_weight_slider = gr.Slider(
                                         minimum=0,
