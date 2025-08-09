@@ -76,6 +76,9 @@ RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/v
 RUN --mount=type=cache,id=uv-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/root/.cache/uv \
     uv pip install nuitka
 
+# Prevent cache reused
+ARG RELEASE
+
 # Compile with nuitka
 RUN --mount=type=cache,id=nuitka-$TARGETARCH$TARGETVARIANT,target=/cache \
     --mount=source=.,target=.,rw,Z \
