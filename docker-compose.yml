@@ -1,0 +1,39 @@
+services:
+  standalone-civitai-shortcut:
+    container_name: standalone-civitai-shortcut
+    # Prefer pulling a prebuilt image; uncomment build section below to build locally.
+    image: ghcr.io/jim60105/standalone-civitai-shortcut:latest
+    user: "1001:0"
+    # build:
+    #   context: .
+    #   target: final
+    #   args:
+    #     - UID=1001
+    #     - VERSION=EDGE
+    #     - RELEASE=0
+    #   # If you maintain a cache image, you can enable build cache hints:
+    #   # cache_from:
+    #   #   - ghcr.io/jim60105/standalone-civitai-shortcut:cache
+    #   # cache_to:
+    #   #   - type=inline
+    # Command is set by the image entrypoint: `dumb-init -- /app/main.bin --host 0.0.0.0 --port 8080`
+    # Add extra flags here only if you need to override defaults, e.g.:
+    # command: ["--port", "8080"]
+
+    ports:
+      - "8080:8080"
+
+    # Use bind mounts to persist application state and settings.
+    # If your host uses SELinux, append :Z to relabel mounts, e.g. ./data:/app/data:Z
+    volumes:
+      - /mnt/data/AI/SD/data/models:/app/data/models:Z
+      - /mnt/ssd/AI/docker-stable-diffusion-webui/data/models/Stable-diffusion/:/data/models/Stable-diffusion:Z
+      - /mnt/ssd/AI/docker-stable-diffusion-webui/data/models/text_encoder:/data/models/text_encoder:Z
+      - /mnt/data/AI/SD/data/output:/app/data/output:Z
+      - /mnt/ssd/AI/docker-stable-diffusion-webui/data/extensions/standalone-civitai-shortcut/data_sc/:/app/data_sc:Z
+
+    # Improves I/O performance for temp files
+    tmpfs:
+      - /tmp
+
+    restart: unless-stopped
