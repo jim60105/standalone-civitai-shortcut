@@ -183,7 +183,18 @@ def update_all_shortcut_informations():
     modelid_list = [k for k in preISC]
     logger.debug("shortcut update start")
     for modelid in modelid_list:
-        ishortcut.fileprocessor.write_model_information(modelid, False, None)
+        try:
+            # Get model information using modelprocessor
+            model_info, _, _, _, _, _, _, _, _, _ = ishortcut.modelprocessor.get_model_information(
+                modelid
+            )
+            if model_info:
+                # Write model information using fileprocessor
+                ishortcut.fileprocessor.write_model_information(model_info, modelid, False)
+            else:
+                logger.warning(f"No model information found for modelid: {modelid}")
+        except Exception as e:
+            logger.error(f"Failed to update model information for {modelid}: {e}")
     logger.debug("shortcut update end")
 
 

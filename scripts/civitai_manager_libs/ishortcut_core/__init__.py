@@ -37,11 +37,12 @@ _collection_manager = None
 _model_processor = None
 _search_filter = None
 _image_processor = None
+_file_processor = None
 
 
 def _initialize_globals():
     """Initialize global instances for backward compatibility."""
-    global _collection_manager, _model_processor, _search_filter, _image_processor
+    global _collection_manager, _model_processor, _search_filter, _image_processor, _file_processor
 
     if _collection_manager is None:
         _collection_manager = ShortcutCollectionManager()
@@ -55,6 +56,9 @@ def _initialize_globals():
     if _image_processor is None:
         _image_processor = ImageProcessor()
 
+    if _file_processor is None:
+        _file_processor = FileProcessor()
+
 
 # Initialize globals on import
 _initialize_globals()
@@ -64,6 +68,7 @@ shortcutsearchfilter = _search_filter
 imageprocessor = _image_processor
 modelprocessor = _model_processor
 shortcutcollectionmanager = _collection_manager
+fileprocessor = _file_processor
 
 __version__ = "1.0.0"
 __all__ = [
@@ -82,4 +87,5 @@ __all__ = [
     "imageprocessor",
     "modelprocessor",
     "shortcutcollectionmanager",
+    "fileprocessor",
 ]
