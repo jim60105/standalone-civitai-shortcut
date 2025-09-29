@@ -1,7 +1,6 @@
 import pytest
 from PIL import Image
 
-import scripts.civitai_manager_libs.ishortcut_core.image_processor as ip_mod
 from scripts.civitai_manager_libs.ishortcut_core.image_processor import ImageProcessor
 from scripts.civitai_manager_libs.settings import config_manager
 
@@ -66,17 +65,17 @@ def test_get_preview_image_url_and_path_and_extract(tmp_path):
 
     settings.PREVIEW_IMAGE_EXT = '.jpg'
     processor = ImageProcessor(thumbnail_folder=str(tmp_path))
-    # Preview URL from modelVersions
-    model_info = {'id': 1, 'modelVersions': [{'id': 1, 'images': [{'url': 'http://img'}]}]}
+    # Preview URL from modelVersions - use proper image URL with extension
+    model_info = {'id': 1, 'modelVersions': [{'id': 1, 'images': [{'url': 'http://img.jpg'}]}]}
     url = processor.get_preview_image_url(model_info)
-    assert url == 'http://img'
+    assert url == 'http://img.jpg'
     # Path generation
     path = processor.get_preview_image_path({'id': 2})
     assert path.endswith('model_2_preview.jpg')
-    # Extract version images
-    images = [{'url': 'http://test', 'width': 100}]
+    # Extract version images - use proper image URL with extension
+    images = [{'url': 'http://test.png', 'width': 100}]
     version_list = processor._process_version_images(images, 'vid')
-    assert version_list == [['vid', 'http://test']]
+    assert version_list == [['vid', 'http://test.png']]
     model_info2 = {'modelVersions': [{'id': 'vid', 'images': images}, {'id': None}, {}]}
     extracted = processor.extract_version_images(model_info2, 'mid')
     assert isinstance(extracted, list)

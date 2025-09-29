@@ -25,6 +25,7 @@ from urllib.parse import urlparse
 from ..logging_config import get_logger
 from ..error_handler import with_error_handling
 from ..exceptions import DataValidationError
+from ..settings.constants import STATIC_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 
@@ -47,7 +48,8 @@ class DataValidator:
             'DoRA',
             'Other',
         ]
-        self.valid_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+        # Use only static image formats - no GIF or other dynamic formats
+        self.valid_image_extensions = STATIC_IMAGE_EXTENSIONS.copy()
         self.valid_model_extensions = ['.safetensors', '.ckpt', '.pt', '.pth', '.bin']
 
     @with_error_handling(
@@ -227,6 +229,46 @@ class DataValidator:
             )
 
         logger.debug(f"[DataValidator] Image file {file_path} is valid")
+        return True
+
+    @with_error_handling(
+        fallback_value=False,
+        exception_types=(DataValidationError,),
+        retry_count=0,
+        user_message="Failed to validate static image file",
+    )
+    def validate_static_image_file(self, file_path: str) -> bool:
+        """
+        Validate image file format and ensure it's a static format only.
+
+        Args:
+            file_path: Path to image file
+
+        Returns:
+            True if valid static image format, False otherwise
+
+        Raises:
+            DataValidationError: If validation fails
+        """
+        if not self.validate_file_path(file_path):
+            return False
+
+        # Check file extension
+        _, ext = os.path.splitext(file_path.lower())
+        if ext not in self.valid_image_extensions:
+            # Provide specific message about static format requirement
+            if ext in ['.gif', '.webm', '.mp4', '.mov']:
+                raise DataValidationError(
+                    f"Dynamic image format {ext} is not supported. "
+                    f"Only static formats are allowed: {self.valid_image_extensions}"
+                )
+            else:
+                raise DataValidationError(
+                    f"Invalid image extension {ext}. "
+                    f"Valid static extensions: {self.valid_image_extensions}"
+                )
+
+        logger.debug(f"[DataValidator] Static image file {file_path} is valid")
         return True
 
     @with_error_handling(
