@@ -36,6 +36,7 @@ from ..logging_config import get_logger
 from ..http import get_http_client, ParallelImageDownloader
 from ..error_handler import with_error_handling
 from ..exceptions import NetworkError, FileOperationError, CivitaiShortcutError
+from ..image_format_filter import ImageFormatFilter
 
 logger = get_logger(__name__)
 
@@ -66,7 +67,9 @@ class ImageProcessor:
             from scripts.civitai_manager_libs.settings import shortcut_thumbnail_folder
 
             self.thumbnail_folder = shortcut_thumbnail_folder
-        assert isinstance(self.thumbnail_folder, str) and self.thumbnail_folder, "thumbnail_folder must be a valid path string"
+        assert (
+            isinstance(self.thumbnail_folder, str) and self.thumbnail_folder
+        ), "thumbnail_folder must be a valid path string"
         logger.debug(f"[ImageProcessor] thumbnail_folder resolved to: {self.thumbnail_folder}")
 
     @with_error_handling(
@@ -140,6 +143,7 @@ class ImageProcessor:
     def _collect_images_to_download(self, version_list: List[List], modelid: str) -> List[Tuple]:
         """
         Collect images that need to be downloaded (don't already exist).
+        Now filters to only include static image formats.
 
         Args:
             version_list: List of image lists for each version
@@ -161,6 +165,11 @@ class ImageProcessor:
             images_for_version = []
 
             for img_idx, (vid, url) in enumerate(image_list):
+                # Filter out dynamic image formats
+                if not ImageFormatFilter.is_static_image(url):
+                    logger.debug(f"[ImageProcessor] Filtering dynamic image: {url}")
+                    continue
+
                 description_img = settings.get_image_url_to_shortcut_file(modelid, vid, url)
 
                 if os.path.exists(description_img):
@@ -170,7 +179,7 @@ class ImageProcessor:
                     continue
 
                 images_for_version.append((vid, url, description_img))
-                logger.info(f"[ImageProcessor] Added image {img_idx+1} for download: {url}")
+                logger.info(f"[ImageProcessor] Added static image {img_idx+1} for download: {url}")
 
             # Apply per-version download limit
             if (
@@ -194,7 +203,9 @@ class ImageProcessor:
 
             all_images_to_download.extend(images_for_version)
 
-        logger.info(f"[ImageProcessor] Total images to download: {len(all_images_to_download)}")
+        logger.info(
+            f"[ImageProcessor] Total static images to download: {len(all_images_to_download)}"
+        )
         return all_images_to_download
 
     @with_error_handling(
@@ -396,12 +407,13 @@ class ImageProcessor:
     def get_preview_image_url(self, model_info: Dict) -> Optional[str]:
         """
         Extract preview image URL from model info.
+        Now filters to only return static image format URLs.
 
         Args:
             model_info: Model information dictionary
 
         Returns:
-            Preview image URL or None if not found
+            Preview image URL or None if not found or not static format
         """
         try:
             # Try to get from model versions
@@ -410,9 +422,9 @@ class ImageProcessor:
                     if 'images' in version and version['images']:
                         for image in version['images']:
                             url = image.get('url')
-                            if url:
+                            if url and ImageFormatFilter.is_static_image(url):
                                 logger.debug(
-                                    f"[ImageProcessor] Found preview URL in version: {url}"
+                                    f"[ImageProcessor] Found static preview URL in version: {url}"
                                 )
                                 return url
 
@@ -420,11 +432,11 @@ class ImageProcessor:
             if 'images' in model_info and model_info['images']:
                 for image in model_info['images']:
                     url = image.get('url')
-                    if url:
-                        logger.debug(f"[ImageProcessor] Found preview URL in model: {url}")
+                    if url and ImageFormatFilter.is_static_image(url):
+                        logger.debug(f"[ImageProcessor] Found static preview URL in model: {url}")
                         return url
 
-            logger.debug("[ImageProcessor] No preview image URL found")
+            logger.debug("[ImageProcessor] No static preview image URL found")
             return None
 
         except Exception as e:
@@ -591,13 +603,14 @@ class ImageProcessor:
     def _process_version_images(self, images: List[Dict], version_id: str) -> List[List]:
         """
         Process images for a specific version.
+        Now filters to only include static image formats.
 
         Args:
             images: List of image data from API
             version_id: Version ID for this set of images
 
         Returns:
-            List of [version_id, img_url] pairs
+            List of [version_id, img_url] pairs for static images only
         """
         image_list = []
         image_count = len(images)
@@ -610,15 +623,30 @@ class ImageProcessor:
 
             img_url = img["url"]
 
+            # Filter out dynamic image formats
+            if not ImageFormatFilter.is_static_image(img_url):
+                logger.debug(
+                    f"[ImageProcessor] Filtering dynamic image {idx+1}/{image_count}: {img_url}"
+                )
+                continue
+
             # Use max width if available
             if "width" in img and img["width"]:
                 original_url = img_url
                 img_url = util.change_width_from_image_url(img_url, img["width"])
                 logger.debug(
-                    f"[ImageProcessor] Adjusted image URL width: {original_url} -> {img_url}"
+                    f"[ImageProcessor] Adjusted static image URL width: {original_url} -> {img_url}"
                 )
 
             image_list.append([version_id, img_url])
-            logger.debug(f"[ImageProcessor] Added image {idx+1}/{image_count}: {img_url}")
+            logger.debug(f"[ImageProcessor] Added static image {idx+1}/{image_count}: {img_url}")
+
+        static_count = len(image_list)
+        filtered_count = image_count - static_count
+        if filtered_count > 0:
+            logger.info(
+                f"[ImageProcessor] Version {version_id}: kept {static_count} static images, "
+                f"filtered {filtered_count} dynamic images"
+            )
 
         return image_list

@@ -93,6 +93,10 @@ DEFAULT_HEADERS = {
     "Authorization": "",
 }
 
+# Image format constants
+STATIC_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.avif']
+DYNAMIC_IMAGE_EXTENSIONS = ['.gif', '.webm', '.mp4', '.mov']
+
 # Default tab indices
 DEFAULT_CIVITAI_INFORMATION_TAB = 0
 DEFAULT_USERGAL_INFORMATION_TAB = 1

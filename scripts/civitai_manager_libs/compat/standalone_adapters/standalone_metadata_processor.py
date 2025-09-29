@@ -11,6 +11,7 @@ from typing import Dict, Tuple, Optional, Any, Union
 from PIL import Image
 from ..interfaces.imetadata_processor import IMetadataProcessor
 from ...logging_config import get_logger
+from ...settings.constants import STATIC_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 
@@ -37,7 +38,8 @@ class StandaloneMetadataProcessor(IMetadataProcessor):
         """Initialize the metadata processor."""
         self._debug_mode = False
         self._logger_name = "StandaloneMetadataProcessor"
-        self._supported_formats = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+        # Use only static image formats - exclude GIF and other dynamic formats
+        self._supported_formats = set(STATIC_IMAGE_EXTENSIONS)
 
     def set_debug_mode(self, enabled: bool):
         """Enable or disable debug mode."""
