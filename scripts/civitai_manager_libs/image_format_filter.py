@@ -38,12 +38,17 @@ class ImageFormatFilter:
                 # Handle URL - extract path from URL
                 parsed = urlparse(url_or_path)
                 path = parsed.path
+                # If path is empty, it might be a malformed URL like http://img.jpg
+                # Try to extract extension from the entire URL after the scheme
+                if not path or path == '/':
+                    # Remove the scheme and try to get extension from the rest
+                    remainder = url_or_path[url_or_path.find('://') + 3 :]
+                    _, ext = os.path.splitext(remainder.lower())
+                else:
+                    _, ext = os.path.splitext(path.lower())
             else:
                 # Handle file path
-                path = url_or_path
-
-            # Get file extension
-            _, ext = os.path.splitext(path.lower())
+                _, ext = os.path.splitext(url_or_path.lower())
 
             # Remove query parameters if present in URL
             if '?' in ext:
@@ -77,12 +82,17 @@ class ImageFormatFilter:
                 # Handle URL - extract path from URL
                 parsed = urlparse(url_or_path)
                 path = parsed.path
+                # If path is empty, it might be a malformed URL like http://img.gif
+                # Try to extract extension from the entire URL after the scheme
+                if not path or path == '/':
+                    # Remove the scheme and try to get extension from the rest
+                    remainder = url_or_path[url_or_path.find('://') + 3 :]
+                    _, ext = os.path.splitext(remainder.lower())
+                else:
+                    _, ext = os.path.splitext(path.lower())
             else:
                 # Handle file path
-                path = url_or_path
-
-            # Get file extension
-            _, ext = os.path.splitext(path.lower())
+                _, ext = os.path.splitext(url_or_path.lower())
 
             # Remove query parameters if present in URL
             if '?' in ext:
