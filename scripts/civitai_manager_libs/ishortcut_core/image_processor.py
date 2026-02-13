@@ -422,7 +422,7 @@ class ImageProcessor:
                     if 'images' in version and version['images']:
                         for image in version['images']:
                             url = image.get('url')
-                            if url and ImageFormatFilter.is_static_image(url):
+                            if url and ImageFormatFilter.is_static_image_dict(image):
                                 logger.debug(
                                     f"[ImageProcessor] Found static preview URL in version: {url}"
                                 )
@@ -432,7 +432,7 @@ class ImageProcessor:
             if 'images' in model_info and model_info['images']:
                 for image in model_info['images']:
                     url = image.get('url')
-                    if url and ImageFormatFilter.is_static_image(url):
+                    if url and ImageFormatFilter.is_static_image_dict(image):
                         logger.debug(f"[ImageProcessor] Found static preview URL in model: {url}")
                         return url
 
@@ -621,14 +621,15 @@ class ImageProcessor:
                 logger.warning(f"[ImageProcessor] Image {idx+1}/{image_count} has no URL, skipping")
                 continue
 
-            img_url = img["url"]
-
-            # Filter out dynamic image formats
-            if not ImageFormatFilter.is_static_image(img_url):
+            # Filter out dynamic image formats using both type field and URL extension
+            if not ImageFormatFilter.is_static_image_dict(img):
                 logger.debug(
-                    f"[ImageProcessor] Filtering dynamic image {idx+1}/{image_count}: {img_url}"
+                    f"[ImageProcessor] Filtering dynamic image {idx+1}/{image_count}: "
+                    f"{img.get('url', '(no url)')}"
                 )
                 continue
+
+            img_url = img["url"]
 
             # Use max width if available
             if "width" in img and img["width"]:

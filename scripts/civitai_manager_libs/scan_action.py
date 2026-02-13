@@ -13,6 +13,7 @@ from . import civitai
 import scripts.civitai_manager_libs.ishortcut_core as ishortcut
 from . import ishortcut_action
 from .http import get_http_client
+from .image_format_filter import ImageFormatFilter
 
 # Error handling imports
 # Error handling imports
@@ -253,16 +254,24 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
 
             # save preview
             if "images" in version_info.keys():
-                img_dict = version_info["images"][0]
-                img_url = img_dict.get("url")
-                if img_url:
-                    if img_dict.get("width"):
-                        img_url = util.change_width_from_image_url(img_url, img_dict["width"])
-                    description_img = os.path.join(
-                        model_folder,
-                        f"{basename}{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
-                    )
-                    download_scan_image(img_url, description_img)
+                # Pick the first static image from version images
+                img_dict = None
+                for candidate in version_info["images"]:
+                    if isinstance(candidate, dict) and ImageFormatFilter.is_static_image_dict(
+                        candidate
+                    ):
+                        img_dict = candidate
+                        break
+                if img_dict:
+                    img_url = img_dict.get("url")
+                    if img_url:
+                        if img_dict.get("width"):
+                            img_url = util.change_width_from_image_url(img_url, img_dict["width"])
+                        description_img = os.path.join(
+                            model_folder,
+                            f"{basename}{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
+                        )
+                        download_scan_image(img_url, description_img)
 
             # 파일 이동
             if mfolder:
@@ -276,7 +285,9 @@ def create_models_information(files, mfolder, vs_folder, register_shortcut, prog
             # 숏컷 추가
             if register_shortcut:
                 if version_info['modelId']:
-                    ishortcut.shortcutcollectionmanager.update_shortcut(version_info['modelId'], progress)
+                    ishortcut.shortcutcollectionmanager.update_shortcut(
+                        version_info['modelId'], progress
+                    )
                     model.update_downloaded_model()
 
     return non_list

@@ -6,7 +6,7 @@ Filters out dynamic formats like GIF, WebM, MP4 to support only static thumbnail
 """
 
 import os
-from typing import List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 from .logging_config import get_logger
@@ -14,9 +14,43 @@ from .settings.constants import STATIC_IMAGE_EXTENSIONS, DYNAMIC_IMAGE_EXTENSION
 
 logger = get_logger(__name__)
 
+# Civitai API image type values that indicate video/animated content
+_DYNAMIC_IMAGE_TYPES = {"video", "animation"}
+
 
 class ImageFormatFilter:
     """Filter and validate image formats to support only static images."""
+
+    @staticmethod
+    def is_static_image_dict(image_dict: Dict) -> bool:
+        """
+        Check if a Civitai API image dict represents a static image.
+
+        Checks both the ``type`` field from the API response and the URL
+        extension.  Returns False when the ``type`` field indicates video /
+        animation content **or** the URL has a known dynamic extension.
+
+        Args:
+            image_dict: Single image object from Civitai API response.
+
+        Returns:
+            True only when the image is considered static.
+        """
+        if not image_dict or not isinstance(image_dict, dict):
+            return False
+
+        # Check the API "type" field first – this is the most reliable signal
+        img_type = str(image_dict.get("type", "")).lower()
+        if img_type in _DYNAMIC_IMAGE_TYPES:
+            logger.debug(
+                f"[ImageFormatFilter] Rejected image with type={img_type}: "
+                f"{image_dict.get('url', '(no url)')}"
+            )
+            return False
+
+        # Fall back to URL-extension check
+        url = image_dict.get("url", "")
+        return ImageFormatFilter.is_static_image(url)
 
     @staticmethod
     def is_static_image(url_or_path: str) -> bool:

@@ -30,6 +30,7 @@ from .file_processor import FileProcessor
 from .image_processor import ImageProcessor
 from .metadata_processor import MetadataProcessor
 from .data_validator import DataValidator
+from ..image_format_filter import ImageFormatFilter
 
 logger = get_logger(__name__)
 
@@ -305,11 +306,15 @@ class ModelFactory:
                         # Get preview image URL from first version
                         version_images = first_version.get('images', [])
                         if version_images and len(version_images) > 0:
-                            first_image = version_images[0]
-                            if isinstance(first_image, dict):
-                                shortcut['imageurl'] = first_image.get('url', '')
-                            else:
-                                shortcut['imageurl'] = ''
+                            # Pick the first static image from version images
+                            static_url = ''
+                            for img_item in version_images:
+                                if isinstance(
+                                    img_item, dict
+                                ) and ImageFormatFilter.is_static_image_dict(img_item):
+                                    static_url = img_item.get('url', '')
+                                    break
+                            shortcut['imageurl'] = static_url
                         else:
                             shortcut['imageurl'] = ''
                     else:

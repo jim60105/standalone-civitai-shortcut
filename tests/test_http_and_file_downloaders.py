@@ -66,10 +66,12 @@ def test_post_json_failure_and_json_error(monkeypatch):
     resp_err = DummyResponse(status_code=500)
     client.session = DummySession(resp_err)
     assert client.post_json("http://post") is None
+
     # json decode error
     class RespBadJson(DummyResponse):
         def json(self):
             raise json.JSONDecodeError("msg", "doc", 0)
+
     client.session = DummySession(RespBadJson(status_code=200))
     assert client.post_json("http://post") is None
 
@@ -93,11 +95,12 @@ def test_get_stream_authentication_error(monkeypatch):
     client = CivitaiHttpClient(api_key=None, timeout=1, max_retries=1, retry_delay=0)
     # stub response with 416 triggers AuthenticationError inside
     from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
     resp = DummyResponse(status_code=416, url="http://test")
     client.session = DummySession(resp)
     # decorator returns None on exception
     with pytest.raises(AuthenticationError):
-            client.get_stream("http://test")
+        client.get_stream("http://test")
 
 
 def test_parallel_image_downloader_empty(monkeypatch):
@@ -108,14 +111,18 @@ def test_parallel_image_downloader_empty(monkeypatch):
 def test_parallel_image_downloader_progress_and_auth(monkeypatch):
     # Prepare two tasks: one succeeds, one auth error
     calls = []
+
     class StubClient:
         def download_file(self, url, path):
             if "bad" in url:
                 from scripts.civitai_manager_libs.exceptions import AuthenticationError
+
                 raise AuthenticationError("auth fail", status_code=401)
             return True
+
     def progress_cb(done, total, desc):
         calls.append((done, total, desc))
+
     tasks = [("good_url", "p1"), ("bad_url", "p2")]
     downloader = ParallelImageDownloader(max_workers=2)
     count = downloader.download_images(tasks, progress_callback=progress_cb, client=StubClient())
@@ -132,6 +139,7 @@ def test_file_download_mixin_success_and_resume(tmp_path, monkeypatch):
             headers_resp = {"Content-Length": "6"}
             data = [b"abc", b"def"]
             return DummyResponse(status_code=200, headers=headers_resp, data_chunks=data)
+
     t = Tester()
     # test download_file
     dest = tmp_path / "out.bin"
@@ -147,9 +155,11 @@ def test_file_download_mixin_success_and_resume(tmp_path, monkeypatch):
     hdrs = t._prepare_download_headers({"A": "B"}, resume_pos=10)
     assert hdrs.get("Range") == "bytes=10-"
 
+
 def test_cleanup_and_validate(tmp_path, monkeypatch):
     class Tester(FileDownloadMixin):
         pass
+
     t = Tester()
     # cleanup zero size
     f = tmp_path / "zero.bin"
@@ -162,14 +172,18 @@ def test_cleanup_and_validate(tmp_path, monkeypatch):
     assert t._validate_download_size(str(f2), expected_size=4)
     # validate size mismatch triggers warning
     warnings = []
+
     class WarnSvc:
-        def show_warning(self, msg): warnings.append(msg)
+        def show_warning(self, msg):
+            warnings.append(msg)
+
     monkeypatch.setattr(
         'scripts.civitai_manager_libs.http.file_downloader.get_notification_service',
-        lambda: WarnSvc()
+        lambda: WarnSvc(),
     )
     assert not t._validate_download_size(str(f2), expected_size=1)
     assert warnings, "Warning not triggered on size mismatch"
+
 
 # Download module tests below
 from scripts.civitai_manager_libs.download.task_manager import (
@@ -194,6 +208,7 @@ from scripts.civitai_manager_libs.download.utilities import (
 class StubClientDM:
     def download_file_with_resume(self, url, path, headers=None, progress_callback=None):
         return True
+
     def download_file(self, url, file_path, progress_callback=None):
         return True
 
@@ -236,13 +251,13 @@ def test_add_number_and_save_base_and_preview(monkeypatch, tmp_path):
     )
     assert get_save_base_name(vi) == 'gen'
     # preview image invalid
-    assert download_preview_image(str(tmp_path/'f'), {}) is False
-    vi2 = {'images': [{'url': 'http://img'}]}
+    assert download_preview_image(str(tmp_path / 'f'), {}) is False
+    vi2 = {'images': [{'url': 'http://example.com/img.jpeg', 'type': 'image'}]}
     monkeypatch.setattr(
         'scripts.civitai_manager_libs.download.utilities.get_http_client',
         lambda: StubClientDM(),
     )
-    assert download_preview_image(str(tmp_path/'f'), vi2) is True
+    assert download_preview_image(str(tmp_path / 'f'), vi2) is True
 
 
 def test_is_lora_model_types():
@@ -254,9 +269,14 @@ def test_is_lora_model_types():
 def test_download_manager_sync(monkeypatch):
     # make threads synchronous
     class DummyThread:
-        def __init__(self, target, args): self._target, self._args = target, args
-        def start(self): self._target(*self._args)
-        def daemon(self, d): pass
+        def __init__(self, target, args):
+            self._target, self._args = target, args
+
+        def start(self):
+            self._target(*self._args)
+
+        def daemon(self, d):
+            pass
 
     monkeypatch.setattr(
         'scripts.civitai_manager_libs.download.task_manager.threading.Thread',
@@ -274,10 +294,16 @@ def test_download_manager_sync(monkeypatch):
 
 def test_notifier_logging(monkeypatch, caplog):
     calls = []
+
     class Svc:
-        def show_info(self, m, duration=None): calls.append(('info', m))
-        def show_error(self, m, duration=None): calls.append(('error', m))
-        def show_warning(self, m, duration=None): calls.append(('warn', m))
+        def show_info(self, m, duration=None):
+            calls.append(('info', m))
+
+        def show_error(self, m, duration=None):
+            calls.append(('error', m))
+
+        def show_warning(self, m, duration=None):
+            calls.append(('warn', m))
 
     monkeypatch.setattr(
         'scripts.civitai_manager_libs.download.notifier.get_notification_service',
@@ -288,7 +314,8 @@ def test_notifier_logging(monkeypatch, caplog):
     caplog.set_level('DEBUG')
     DownloadNotifier.notify_progress('f', 5, 10, '1 B/s')
     assert '[downloader] Progress:' in caplog.text
-    calls.clear(); caplog.clear()
+    calls.clear()
+    caplog.clear()
     DownloadNotifier.notify_complete('f', True)
     assert any('Download completed' in m for _, m in calls)
     DownloadNotifier.notify_complete('f', False, 'err')

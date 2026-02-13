@@ -8,6 +8,7 @@ updates and NSFW level management for shortcut collections.
 from typing import Dict, Any
 
 from ..logging_config import get_logger
+from ..image_format_filter import ImageFormatFilter
 
 from .image_processor import ImageProcessor
 from .shortcut_collection_manager import ShortcutCollectionManager
@@ -52,13 +53,16 @@ class ShortcutThumbnailManager:
         self._collection_manager.save_shortcuts(shortcuts)
 
     def select_optimal_image(self, images: list) -> str:
-        """Select best image based on NSFW level preferences."""
+        """Select best static image based on NSFW level preferences."""
         if not images:
             return ""
 
         cur_nsfw_level = len(settings.NSFW_LEVELS)
         selected_url = ""
         for img in images:
+            if not ImageFormatFilter.is_static_image_dict(img):
+                continue
+
             try:
                 level = self._calculate_nsfw_level(img)
             except Exception:
@@ -70,7 +74,11 @@ class ShortcutThumbnailManager:
                 selected_url = img.get("url", "")
 
         if not selected_url:
-            selected_url = images[0].get("url", "")
+            # Fallback: pick first static image regardless of NSFW level
+            for img in images:
+                if ImageFormatFilter.is_static_image_dict(img):
+                    selected_url = img.get("url", "")
+                    break
 
         return selected_url
 
