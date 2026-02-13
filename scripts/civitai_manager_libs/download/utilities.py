@@ -8,6 +8,7 @@ from ..logging_config import get_logger
 from ..http.client_manager import get_http_client
 from .. import util, settings, civitai
 from ..settings import config_manager
+from ..image_format_filter import ImageFormatFilter
 from .notifier import DownloadNotifier
 
 logger = get_logger(__name__)
@@ -61,7 +62,14 @@ def download_preview_image(filepath: str, version_info: dict) -> bool:
     images = version_info.get("images") or []
     if not images:
         return False
-    img_dict = images[0]
+    # Pick the first static image from the version images
+    img_dict = None
+    for candidate in images:
+        if isinstance(candidate, dict) and ImageFormatFilter.is_static_image_dict(candidate):
+            img_dict = candidate
+            break
+    if not img_dict:
+        return False
     img_url = img_dict.get("url")
     if not img_url:
         return False

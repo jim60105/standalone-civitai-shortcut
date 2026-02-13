@@ -30,8 +30,8 @@ class DummyCollectionManager:
 @pytest.fixture
 def sample_images():
     return [
-        {'url': 'u1', 'nsfwLevel': 1},
-        {'url': 'u2', 'nsfw': 'medium'},
+        {'url': 'https://example.com/u1.jpeg', 'type': 'image', 'nsfwLevel': 1},
+        {'url': 'https://example.com/u2.jpeg', 'type': 'image', 'nsfw': 'medium'},
     ]
 
 
@@ -41,7 +41,7 @@ def test_select_and_level(monkeypatch, sample_images):
     manager = ShortcutThumbnailManager(DummyImageProcessor(), DummyCollectionManager({}))
     # select optimal based on nsfwLevel
     sel = manager.select_optimal_image(sample_images)
-    assert sel == 'u1'
+    assert sel == 'https://example.com/u1.jpeg'
     # unknown nsfw leads to fallback first
     assert manager.select_optimal_image([]) == ''
     # test calculate level
@@ -58,14 +58,14 @@ def test_update_and_batch(monkeypatch):
     monkeypatch.setattr(
         civitai,
         'get_latest_version_info_by_model_id',
-        lambda mid: {'images': [{'url': 'xu'}]},
+        lambda mid: {'images': [{'url': 'https://example.com/xu.jpeg', 'type': 'image'}]},
     )
     imgp = DummyImageProcessor()
     coll = DummyCollectionManager({'a': {'id': 'a'}})
     manager = ShortcutThumbnailManager(imgp, coll)
     # update all invokes download
     manager.update_all_thumbnails(DummyProgress())
-    assert imgp.called == ('a', 'xu')
+    assert imgp.called == ('a', 'https://example.com/xu.jpeg')
     # test batch download
     imgp2 = DummyImageProcessor()
     shortcuts = {'b': {'imageurl': 'ub'}}
