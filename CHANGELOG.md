@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-02-14
+
+### Fixed
+
+- Fixed: WebUI mode `ishortcut.fileprocessor` no longer raises `AttributeError` during file processing.
+- Fixed: Static image filtering now excludes animated media using Civitai API image `type` metadata, not only URL extension checks.
+- Fixed: Thumbnail and preview selection now consistently choose static images across gallery actions, model factory logic, image processing, download utilities, and scan actions.
+- Fixed: Static image filtering integration and regression tests with API-conformant image payloads and stable URL validation behavior.
+
 ## [2.1.2] - 2025-08-09
 
 ### Fixed
@@ -403,7 +412,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.2...HEAD
+[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.3...HEAD
+[2.1.3]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.0.0...v2.1.0
