@@ -207,9 +207,14 @@ def _create_shortcut_for_downloaded_model(
             logger.warning(f"[downloader] No images available for model {model_id}")
             return False
 
-        preview_url = images[0].get("url")
+        preview_url = None
+        for candidate in images:
+            if ImageFormatFilter.is_static_image_dict(candidate):
+                preview_url = candidate.get("url")
+                if preview_url:
+                    break
         if not preview_url:
-            logger.warning(f"[downloader] No preview URL available for model {model_id}")
+            logger.warning(f"[downloader] No static preview URL available for model {model_id}")
             return False
 
         if not image_processor.download_thumbnail_image(model_id, preview_url):
