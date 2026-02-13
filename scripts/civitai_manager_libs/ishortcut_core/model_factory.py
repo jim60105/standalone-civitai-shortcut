@@ -59,6 +59,7 @@ class ModelFactory:
         progress: Optional[Callable] = None,
         download_images: bool = True,
         validate_data: bool = True,
+        preview_only: bool = False,
     ) -> Optional[Dict[str, Any]]:
         """
         Create a complete model shortcut with all components.
@@ -68,6 +69,7 @@ class ModelFactory:
             progress: Progress callback for UI updates
             download_images: Whether to download model images
             validate_data: Whether to perform data validation
+            preview_only: If True, only download one image per version for preview
 
         Returns:
             Model shortcut information or None if failed
@@ -141,7 +143,9 @@ class ModelFactory:
                 if progress is not None:
                     progress(0.5, desc="Downloading images...")
 
-                image_success = self._download_model_images(model_info, actual_model_id, progress)
+                image_success = self._download_model_images(
+                    model_info, actual_model_id, progress, preview_only=preview_only
+                )
                 if not image_success:
                     logger.warning(f"[ModelFactory] Image download failed for {model_id}")
                     # Continue despite image download failure
@@ -186,7 +190,11 @@ class ModelFactory:
             return None
 
     def _download_model_images(
-        self, model_info: Dict, model_id: str, progress: Optional[Callable] = None
+        self,
+        model_info: Dict,
+        model_id: str,
+        progress: Optional[Callable] = None,
+        preview_only: bool = False,
     ) -> bool:
         """
         Download model images with progress tracking.
@@ -195,6 +203,7 @@ class ModelFactory:
             model_info: Model information containing image data
             model_id: Model ID for logging
             progress: Progress callback
+            preview_only: If True, only download one image per version
 
         Returns:
             True if successful, False otherwise
@@ -216,7 +225,7 @@ class ModelFactory:
 
             # Download images
             success = self.image_processor.download_model_images(
-                version_list, model_id, image_progress
+                version_list, model_id, image_progress, preview_only=preview_only
             )
 
             if success:

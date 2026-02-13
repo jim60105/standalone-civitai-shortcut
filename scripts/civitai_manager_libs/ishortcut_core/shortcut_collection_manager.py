@@ -16,6 +16,7 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
+
 from ..logging_config import get_logger
 from .. import settings
 from .model_factory import ModelFactory
@@ -126,7 +127,9 @@ class ShortcutCollectionManager:
             return
         shortcuts = self.load_shortcuts()
         existing = shortcuts.get(str(model_id), {})
-        entry = self._model_factory.create_model_shortcut(str(model_id), progress=progress)
+        entry = self._model_factory.create_model_shortcut(
+            str(model_id), progress=progress, preview_only=True
+        )
         if entry:
             # Preserve note and date
             if 'note' in existing:

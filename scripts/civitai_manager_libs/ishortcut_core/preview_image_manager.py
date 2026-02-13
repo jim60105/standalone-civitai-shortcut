@@ -24,23 +24,25 @@ class PreviewImageManager:
         self._collection_manager = collection_manager
 
     def get_preview_image_url(self, model_info: Dict[str, Any]) -> Optional[str]:
-        """Extract optimal preview image URL from model info."""
+        """Extract optimal preview image URL from model info, static images only."""
         if not model_info:
             return None
         try:
+            from ..image_format_filter import ImageFormatFilter
+
             # Try modelVersions first
             if "modelVersions" in model_info and model_info["modelVersions"]:
                 for version in model_info["modelVersions"]:
                     if "images" in version and version["images"]:
                         for image in version["images"]:
                             url = image.get("url")
-                            if url:
+                            if url and ImageFormatFilter.is_static_image_dict(image):
                                 return url
             # Fallback to direct images in model_info
             if "images" in model_info and model_info["images"]:
                 for image in model_info["images"]:
                     url = image.get("url")
-                    if url:
+                    if url and ImageFormatFilter.is_static_image_dict(image):
                         return url
         except Exception:
             logger.error("Error extracting preview URL", exc_info=True)

@@ -9,7 +9,10 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
 
 from scripts.civitai_manager_libs.image_format_filter import ImageFormatFilter
-from scripts.civitai_manager_libs.settings.constants import STATIC_IMAGE_EXTENSIONS, DYNAMIC_IMAGE_EXTENSIONS
+from scripts.civitai_manager_libs.settings.constants import (
+    STATIC_IMAGE_EXTENSIONS,
+    DYNAMIC_IMAGE_EXTENSIONS,
+)
 
 
 class TestImageFormatFilter(unittest.TestCase):
@@ -47,7 +50,9 @@ class TestImageFormatFilter(unittest.TestCase):
 
         # Test dynamic format URLs (should be False)
         assert ImageFormatFilter.is_static_image('https://example.com/image.gif') is False
-        assert ImageFormatFilter.is_static_image('https://example.com/video.webm?width=512') is False
+        assert (
+            ImageFormatFilter.is_static_image('https://example.com/video.webm?width=512') is False
+        )
 
     def test_is_dynamic_image_file_paths(self):
         """Test dynamic image detection for file paths."""
@@ -81,19 +86,19 @@ class TestImageFormatFilter(unittest.TestCase):
         """Test filtering URLs to include only static formats."""
         mixed_urls = [
             'https://example.com/image1.jpg',
-            'https://example.com/image2.gif',    # Should be filtered
+            'https://example.com/image2.gif',  # Should be filtered
             'https://example.com/image3.png',
-            'https://example.com/video.webm',    # Should be filtered
+            'https://example.com/video.webm',  # Should be filtered
             'https://example.com/image4.webp',
-            'https://example.com/video.mp4',     # Should be filtered
-            'https://example.com/image5.avif'
+            'https://example.com/video.mp4',  # Should be filtered
+            'https://example.com/image5.avif',
         ]
 
         expected_static = [
             'https://example.com/image1.jpg',
             'https://example.com/image3.png',
             'https://example.com/image4.webp',
-            'https://example.com/image5.avif'
+            'https://example.com/image5.avif',
         ]
 
         result = ImageFormatFilter.filter_static_urls(mixed_urls)
@@ -108,7 +113,7 @@ class TestImageFormatFilter(unittest.TestCase):
         dynamic_urls = [
             'https://example.com/image1.gif',
             'https://example.com/video1.webm',
-            'https://example.com/video2.mp4'
+            'https://example.com/video2.mp4',
         ]
 
         result = ImageFormatFilter.filter_static_urls(dynamic_urls)
@@ -119,7 +124,7 @@ class TestImageFormatFilter(unittest.TestCase):
         static_urls = [
             'https://example.com/image1.jpg',
             'https://example.com/image2.png',
-            'https://example.com/image3.webp'
+            'https://example.com/image3.webp',
         ]
 
         result = ImageFormatFilter.filter_static_urls(static_urls)
@@ -130,10 +135,13 @@ class TestImageFormatFilter(unittest.TestCase):
         assert ImageFormatFilter.get_static_extension('https://example.com/image.jpg') == '.jpg'
         assert ImageFormatFilter.get_static_extension('https://example.com/image.png') == '.png'
         assert ImageFormatFilter.get_static_extension('https://example.com/image.webp') == '.webp'
-        
+
         # Test with query parameters
-        assert ImageFormatFilter.get_static_extension('https://example.com/image.jpg?width=512') == '.jpg'
-        
+        assert (
+            ImageFormatFilter.get_static_extension('https://example.com/image.jpg?width=512')
+            == '.jpg'
+        )
+
         # Test dynamic formats (should return None)
         assert ImageFormatFilter.get_static_extension('https://example.com/image.gif') is None
         assert ImageFormatFilter.get_static_extension('https://example.com/video.webm') is None
@@ -185,7 +193,7 @@ class TestDataValidatorStaticImages(unittest.TestCase):
     def test_validate_static_image_file_valid_formats(self):
         """Test validation of valid static image files."""
         from scripts.civitai_manager_libs.ishortcut_core.data_validator import DataValidator
-        
+
         validator = DataValidator()
 
         # Test static formats using temporary files
@@ -194,13 +202,13 @@ class TestDataValidatorStaticImages(unittest.TestCase):
                 test_file = os.path.join(tmp_dir, f"test{ext}")
                 with open(test_file, 'w') as f:
                     f.write("dummy content")
-                
+
                 self.assertTrue(validator.validate_static_image_file(test_file))
 
     def test_validate_static_image_file_dynamic_formats(self):
         """Test validation rejection of dynamic image files."""
         from scripts.civitai_manager_libs.ishortcut_core.data_validator import DataValidator
-        
+
         validator = DataValidator()
 
         # Test dynamic formats (should be rejected)
@@ -209,18 +217,18 @@ class TestDataValidatorStaticImages(unittest.TestCase):
                 test_file = os.path.join(tmp_dir, f"test{ext}")
                 with open(test_file, 'w') as f:
                     f.write("dummy content")
-                
+
                 self.assertFalse(validator.validate_static_image_file(test_file))
 
     def test_data_validator_updated_extensions(self):
         """Test that DataValidator now uses only static extensions."""
         from scripts.civitai_manager_libs.ishortcut_core.data_validator import DataValidator
-        
+
         validator = DataValidator()
-        
+
         # Ensure GIF is no longer in valid extensions
         assert '.gif' not in validator.valid_image_extensions
-        
+
         # Ensure all static formats are included
         for ext in STATIC_IMAGE_EXTENSIONS:
             assert ext in validator.valid_image_extensions
@@ -231,13 +239,15 @@ class TestStandaloneMetadataProcessorStaticSupport(unittest.TestCase):
 
     def test_supported_formats_static_only(self):
         """Test that metadata processor only supports static formats."""
-        from scripts.civitai_manager_libs.compat.standalone_adapters.standalone_metadata_processor import StandaloneMetadataProcessor
-        
+        from scripts.civitai_manager_libs.compat.standalone_adapters.standalone_metadata_processor import (  # noqa: E501
+            StandaloneMetadataProcessor,
+        )
+
         processor = StandaloneMetadataProcessor()
-        
+
         # Ensure GIF is no longer supported
         assert '.gif' not in processor.supported_formats
-        
+
         # Ensure all static formats are supported
         for ext in STATIC_IMAGE_EXTENSIONS:
             assert ext in processor.supported_formats
@@ -245,3 +255,56 @@ class TestStandaloneMetadataProcessorStaticSupport(unittest.TestCase):
         # Ensure no dynamic formats are supported
         for ext in DYNAMIC_IMAGE_EXTENSIONS:
             assert ext not in processor.supported_formats
+
+
+class TestIsValidStaticImageFile(unittest.TestCase):
+    """Tests for ImageFormatFilter.is_valid_static_image_file."""
+
+    def _write_file(self, header: bytes) -> str:
+        f = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        f.write(header)
+        f.close()
+        return f.name
+
+    def test_valid_png(self):
+        path = self._write_file(b'\x89PNG\r\n\x1a\n' + b'\x00' * 8)
+        self.assertTrue(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_valid_jpeg(self):
+        path = self._write_file(b'\xff\xd8\xff\xe0' + b'\x00' * 12)
+        self.assertTrue(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_valid_webp(self):
+        path = self._write_file(b'RIFF\x00\x00\x00\x00WEBP' + b'\x00' * 4)
+        self.assertTrue(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_rejects_mp4(self):
+        path = self._write_file(b'\x00\x00\x00\x1cftypisom' + b'\x00' * 4)
+        self.assertFalse(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_rejects_gif(self):
+        path = self._write_file(b'GIF89a' + b'\x00' * 10)
+        self.assertFalse(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_rejects_webm(self):
+        path = self._write_file(b'\x1a\x45\xdf\xa3' + b'\x00' * 12)
+        self.assertFalse(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_nonexistent_file(self):
+        self.assertFalse(ImageFormatFilter.is_valid_static_image_file("/no/such/file.png"))
+
+    def test_empty_file(self):
+        path = self._write_file(b'')
+        self.assertFalse(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)
+
+    def test_avif_file(self):
+        path = self._write_file(b'\x00\x00\x00\x1cftypavif' + b'\x00' * 4)
+        self.assertTrue(ImageFormatFilter.is_valid_static_image_file(path))
+        os.unlink(path)

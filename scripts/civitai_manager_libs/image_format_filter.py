@@ -205,6 +205,54 @@ class ImageFormatFilter:
             return None
 
     @staticmethod
+    def is_valid_static_image_file(filepath: str) -> bool:
+        """
+        Check if a local file is actually a valid static image by inspecting magic bytes.
+
+        Returns False for files whose content is MP4, GIF, or other non-static formats
+        even if the file extension suggests a static image.
+        """
+        if not filepath or not os.path.isfile(filepath):
+            return False
+
+        try:
+            with open(filepath, 'rb') as fh:
+                header = fh.read(16)
+
+            if len(header) < 4:
+                return False
+
+            # Check for known static image magic bytes first
+            is_png = header[:4] == b'\x89PNG'
+            is_jpeg = header[:3] == b'\xff\xd8\xff'
+            is_webp = header[:4] == b'RIFF' and header[8:12] == b'WEBP'
+            is_avif = header[4:8] == b'ftyp' and header[8:12] in (b'avif', b'avis', b'mif1')
+
+            if is_png or is_jpeg or is_webp or is_avif:
+                return True
+
+            # Reject video/animation formats
+            if header[4:8] == b'ftyp':  # MP4/MOV (non-AVIF ftyp)
+                logger.debug(f"[ImageFormatFilter] File is MP4/MOV: {filepath}")
+                return False
+            if header[:3] == b'GIF':
+                logger.debug(f"[ImageFormatFilter] File is GIF: {filepath}")
+                return False
+            if header[:4] == b'\x1a\x45\xdf\xa3':  # WebM/MKV
+                logger.debug(f"[ImageFormatFilter] File is WebM: {filepath}")
+                return False
+
+            logger.debug(
+                f"[ImageFormatFilter] Unrecognized file format: {filepath} "
+                f"(header: {header[:8].hex()})"
+            )
+            return False
+
+        except Exception as e:
+            logger.warning(f"[ImageFormatFilter] Error checking file {filepath}: {e}")
+            return False
+
+    @staticmethod
     def get_supported_formats() -> List[str]:
         """
         Get list of supported static image formats.

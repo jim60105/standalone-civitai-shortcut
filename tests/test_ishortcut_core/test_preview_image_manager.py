@@ -20,12 +20,24 @@ def test_get_preview_image_url():
     mgr = PreviewImageManager(None)
     # empty input
     assert mgr.get_preview_image_url({}) is None
-    # modelVersions priority
-    model_info = {'modelVersions': [{'images': [{'url': 'u1'}]}]}
-    assert mgr.get_preview_image_url(model_info) == 'u1'
+    # modelVersions priority - must have static image type/extension
+    model_info = {'modelVersions': [{'images': [{'url': 'http://example.com/img.jpeg'}]}]}
+    assert mgr.get_preview_image_url(model_info) == 'http://example.com/img.jpeg'
     # fallback to images
-    model_info2 = {'images': [{'url': 'u2'}]}
-    assert mgr.get_preview_image_url(model_info2) == 'u2'
+    model_info2 = {'images': [{'url': 'http://example.com/img2.png'}]}
+    assert mgr.get_preview_image_url(model_info2) == 'http://example.com/img2.png'
+    # video type should be filtered out
+    model_info3 = {
+        'modelVersions': [
+            {
+                'images': [
+                    {'url': 'http://example.com/vid.mp4', 'type': 'video'},
+                    {'url': 'http://example.com/static.jpeg', 'type': 'image'},
+                ]
+            }
+        ]
+    }
+    assert mgr.get_preview_image_url(model_info3) == 'http://example.com/static.jpeg'
 
 
 def test_get_preview_image_path(isolate_preview_dir):

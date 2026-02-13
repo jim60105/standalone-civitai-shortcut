@@ -80,7 +80,11 @@ class ImageProcessor:
         user_message="Failed to download model images",
     )
     def download_model_images(
-        self, version_list: List[List], modelid: str, progress: Optional[Callable] = None
+        self,
+        version_list: List[List],
+        modelid: str,
+        progress: Optional[Callable] = None,
+        preview_only: bool = False,
     ) -> bool:
         """
         Download images for all model versions.
@@ -89,6 +93,7 @@ class ImageProcessor:
             version_list: List of image lists for each version
             modelid: Model ID for debug logging
             progress: Progress callback for UI updates
+            preview_only: If True, only download one image per version
 
         Returns:
             True if download was successful, False otherwise
@@ -104,10 +109,6 @@ class ImageProcessor:
         from ..settings import config_manager
 
         load_model_folder_data(config_manager)
-        logger.debug(
-            f"[ImageProcessor] Current shortcut_max_download_image_per_version: "
-            f"{settings.shortcut_max_download_image_per_version}"
-        )
 
         # Get HTTP client for downloads
         try:
@@ -118,7 +119,9 @@ class ImageProcessor:
             return False
 
         # Collect all images that need downloading
-        all_images_to_download = self._collect_images_to_download(version_list, modelid)
+        all_images_to_download = self._collect_images_to_download(
+            version_list, modelid, preview_only=preview_only
+        )
 
         if not all_images_to_download:
             logger.info(f"[ImageProcessor] No new images to download for {modelid}")
@@ -140,29 +143,27 @@ class ImageProcessor:
         retry_count=0,
         user_message="Failed to collect images to download",
     )
-    def _collect_images_to_download(self, version_list: List[List], modelid: str) -> List[Tuple]:
+    def _collect_images_to_download(
+        self, version_list: List[List], modelid: str, preview_only: bool = False
+    ) -> List[Tuple]:
         """
         Collect images that need to be downloaded (don't already exist).
-        Now filters to only include static image formats.
+        Filters to only include static image formats and validates existing files.
 
         Args:
             version_list: List of image lists for each version
             modelid: Model ID for debug logging
+            preview_only: If True, only collect one image per version
 
         Returns:
             List of (version_id, url, filepath) tuples to download
         """
         logger.info(f"[ImageProcessor] Collecting images for {modelid}")
-        logger.debug(
-            "[ImageProcessor] "
-            f"shortcut_max_download_image_per_version = "
-            f"{settings.shortcut_max_download_image_per_version}"
-        )
         all_images_to_download = []
 
         for version_idx, image_list in enumerate(version_list):
             logger.debug(f"[ImageProcessor] Processing version {version_idx+1}/{len(version_list)}")
-            images_for_version = []
+            collected_for_version = False
 
             for img_idx, (vid, url) in enumerate(image_list):
                 # Filter out dynamic image formats
@@ -173,35 +174,37 @@ class ImageProcessor:
                 description_img = settings.get_image_url_to_shortcut_file(modelid, vid, url)
 
                 if os.path.exists(description_img):
-                    logger.debug(
-                        f"[ImageProcessor] Image {img_idx+1} already exists: {description_img}"
-                    )
-                    continue
+                    # Validate existing file is actually a static image
+                    if ImageFormatFilter.is_valid_static_image_file(description_img):
+                        logger.debug(
+                            f"[ImageProcessor] Valid image already exists: {description_img}"
+                        )
+                        if preview_only:
+                            collected_for_version = True
+                            break
+                        continue
+                    else:
+                        logger.warning(
+                            f"[ImageProcessor] Removing invalid image file: {description_img}"
+                        )
+                        try:
+                            os.remove(description_img)
+                        except OSError as e:
+                            logger.error(f"[ImageProcessor] Failed to remove invalid file: {e}")
+                            continue
 
-                images_for_version.append((vid, url, description_img))
+                all_images_to_download.append((vid, url, description_img))
                 logger.info(f"[ImageProcessor] Added static image {img_idx+1} for download: {url}")
 
-            # Apply per-version download limit
-            if (
-                settings.shortcut_max_download_image_per_version
-                and len(images_for_version) > settings.shortcut_max_download_image_per_version
-            ):
-                original_count = len(images_for_version)
-                images_for_version = images_for_version[
-                    : settings.shortcut_max_download_image_per_version
-                ]
-                logger.info(
-                    f"[ImageProcessor] Limited images from "
-                    f"{original_count} to {len(images_for_version)} per version limit"
-                )
-            else:
-                logger.debug(
-                    f"[ImageProcessor] No limit applied: "
-                    f"settings={settings.shortcut_max_download_image_per_version}, "
-                    f"count={len(images_for_version)}"
-                )
+                if preview_only:
+                    collected_for_version = True
+                    break
 
-            all_images_to_download.extend(images_for_version)
+            if preview_only and collected_for_version:
+                logger.debug(
+                    f"[ImageProcessor] Version {version_idx+1}: preview-only, "
+                    f"one image collected or exists"
+                )
 
         logger.info(
             f"[ImageProcessor] Total static images to download: {len(all_images_to_download)}"
