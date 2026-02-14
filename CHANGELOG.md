@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-02-14
+
+### Added
+
+- Added: `repair_missing_preview_images()` in `scan_action.py` and integrated it into the shortcut scan flow to automatically repair missing or invalid preview images by downloading a static preview from the version information.
+
+### Fixed
+
+- Fixed: Validate and filter existing preview image files to exclude animated or corrupted files (MP4/GIF/WebM saved with a `.png` extension) so they are re-downloaded as proper static images.
+- Fixed: Add `preview_only` mode for preview collection so update operations download only a single preview per version when appropriate.
+- Fixed: Ensure test settings are isolated to prevent flaky tests by explicitly setting preview-related constants in affected tests.
+
+### Changed
+
+- Changed: Update `uv` lock file (chore).
+
 ## [2.1.3] - 2026-02-14
 
 ### Fixed
@@ -411,8 +427,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed "Download images Only" button from "Civitai Model Information" Tab
 
 ---
-
-[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.3...HEAD
+[Unreleased]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.3...v2.2.0
 [2.1.3]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/jim60105/standalone-civitai-shortcut/compare/v2.1.0...v2.1.1
