@@ -436,7 +436,66 @@ def on_scan_models_btn_click(fix_information_filename, progress=gr.Progress()):
 def on_scan_to_shortcut_click(progress=gr.Progress()):
     model.update_downloaded_model()
     ishortcut_action.scan_downloadedmodel_to_shortcut(progress)
+    repair_missing_preview_images(progress)
     return gr.update(visible=True)
+
+
+def repair_missing_preview_images(progress=gr.Progress()):
+    """Check all downloaded models and download missing or invalid preview images."""
+    if not model.Downloaded_InfoPath:
+        return
+
+    items = list(model.Downloaded_InfoPath.items())
+    for info_path, _vid in progress.tqdm(items, desc="Repairing preview images"):
+        try:
+            if not os.path.isfile(info_path):
+                continue
+
+            folder, info_file = os.path.split(info_path)
+            suffix_ext = f"{settings.INFO_SUFFIX}{settings.INFO_EXT}"
+            if suffix_ext not in info_file:
+                continue
+
+            basename = info_file[: info_file.rfind(suffix_ext)]
+            if not basename:
+                continue
+
+            preview_path = os.path.join(
+                folder,
+                f"{util.replace_filename(basename)}"
+                f"{settings.PREVIEW_IMAGE_SUFFIX}{settings.PREVIEW_IMAGE_EXT}",
+            )
+
+            if ImageFormatFilter.is_valid_static_image_file(preview_path):
+                continue
+
+            # Preview is missing or invalid; read version info for image URL
+            version_info = util.read_json(info_path)
+            if not version_info or "images" not in version_info:
+                continue
+
+            img_dict = None
+            for candidate in version_info["images"]:
+                if isinstance(candidate, dict) and ImageFormatFilter.is_static_image_dict(
+                    candidate
+                ):
+                    img_dict = candidate
+                    break
+
+            if not img_dict:
+                continue
+
+            img_url = img_dict.get("url")
+            if not img_url:
+                continue
+
+            if img_dict.get("width"):
+                img_url = util.change_width_from_image_url(img_url, img_dict["width"])
+
+            logger.info(f"Downloading preview image to: {preview_path}")
+            download_scan_image(img_url, preview_path)
+        except Exception as e:
+            logger.warning(f"Failed to repair preview for {info_path}: {e}")
 
 
 @with_error_handling(
