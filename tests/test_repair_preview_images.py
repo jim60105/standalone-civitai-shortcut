@@ -3,6 +3,7 @@
 import json
 
 from scripts.civitai_manager_libs.scan_action import repair_missing_preview_images
+from scripts.civitai_manager_libs import settings
 
 
 class FakeProgress:
@@ -20,6 +21,12 @@ def _write_version_info(path, images):
 
 def test_downloads_preview_when_missing(tmp_path, monkeypatch):
     """When preview image is missing, it should be downloaded."""
+    # Ensure PREVIEW_IMAGE_EXT is set correctly (may be modified by other tests)
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_EXT', '.png')
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_SUFFIX', '.preview')
+    monkeypatch.setattr(settings, 'INFO_EXT', '.info')
+    monkeypatch.setattr(settings, 'INFO_SUFFIX', '.civitai')
+
     info_file = str(tmp_path / "mymodel.civitai.info")
     _write_version_info(
         info_file,
@@ -50,6 +57,12 @@ def test_downloads_preview_when_missing(tmp_path, monkeypatch):
 
 def test_skips_valid_preview(tmp_path, monkeypatch):
     """When preview image exists and is valid, it should be skipped."""
+    # Ensure correct settings
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_EXT', '.png')
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_SUFFIX', '.preview')
+    monkeypatch.setattr(settings, 'INFO_EXT', '.info')
+    monkeypatch.setattr(settings, 'INFO_SUFFIX', '.civitai')
+
     info_file = str(tmp_path / "mymodel.civitai.info")
     _write_version_info(
         info_file,
@@ -84,6 +97,12 @@ def test_skips_valid_preview(tmp_path, monkeypatch):
 
 def test_downloads_when_preview_is_invalid(tmp_path, monkeypatch):
     """When preview image exists but is invalid (e.g. MP4), it should be re-downloaded."""
+    # Ensure correct settings
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_EXT', '.png')
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_SUFFIX', '.preview')
+    monkeypatch.setattr(settings, 'INFO_EXT', '.info')
+    monkeypatch.setattr(settings, 'INFO_SUFFIX', '.civitai')
+
     info_file = str(tmp_path / "mymodel.civitai.info")
     _write_version_info(
         info_file,
@@ -118,6 +137,12 @@ def test_downloads_when_preview_is_invalid(tmp_path, monkeypatch):
 
 def test_skips_non_static_images_in_version_info(tmp_path, monkeypatch):
     """When version info only has video images, no download should occur."""
+    # Ensure correct settings
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_EXT', '.png')
+    monkeypatch.setattr(settings, 'PREVIEW_IMAGE_SUFFIX', '.preview')
+    monkeypatch.setattr(settings, 'INFO_EXT', '.info')
+    monkeypatch.setattr(settings, 'INFO_SUFFIX', '.civitai')
+
     info_file = str(tmp_path / "mymodel.civitai.info")
     _write_version_info(
         info_file,
